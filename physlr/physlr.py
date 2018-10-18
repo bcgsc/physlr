@@ -1,4 +1,7 @@
-#!/usr/bin/env pypy3
+#!/usr/bin/env python3
+"""
+Physlr: Physical Mapping of Linked Reads
+"""
 
 import argparse
 import sys
@@ -17,12 +20,14 @@ class Physlr:
         for filename in self.args.FASTA:
             with open(filename) as fin:
                 for name, seq in read_fasta(fin):
-                    print('"', name, '": ',
+                    print(
+                        '"', name, '": ',
                         minimerize(self.args.k, self.args.w, seq.upper()),
-                        sep ="")
+                        sep="")
         print("}")
 
-    def parse_arguments(self):
+    @staticmethod
+    def parse_arguments():
         "Parse the command line arguments."
         argparser = argparse.ArgumentParser()
         argparser.add_argument(
@@ -39,10 +44,13 @@ class Physlr:
             help="FASTA/FASTQ file of linked reads")
         return argparser.parse_args()
 
-    def main(self):
-        "Process each file specified on the command line"
+    def __init__(self):
+        "Create a new instance of Physlr."
         self.args = self.parse_arguments()
         self.args.FASTA = ["/dev/stdin" if s == "-" else s for s in self.args.FASTA]
+
+    def main(self):
+        "Run Physlr."
         if self.args.command == "index":
             self.physlr_index()
         else:
@@ -50,6 +58,7 @@ class Physlr:
             exit(1)
 
 def main():
+    "Run Physlr."
     Physlr().main()
 
 if __name__ == "__main__":

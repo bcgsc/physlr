@@ -1,11 +1,11 @@
 #!/usr/bin/env pypy3
 """
-Hash k-mers and integers
+Compute the minimizers of a nucleotide sequence.
 Written by Shaun Jackman @sjackman
 """
 
-from physlr.hash import hash_kmer
 import re
+from physlr.hash import hash_kmer
 
 ACGT = re.compile("^[ACGT]+$")
 
