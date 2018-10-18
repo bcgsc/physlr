@@ -1,0 +1,4 @@
+*.fa
+*.fq.gz
+*.json
+__pycache__/
