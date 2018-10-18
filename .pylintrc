@@ -1,0 +1,3 @@
+[basic]
+good-names = c, i, k, w, x, xs
+max-branches=13
