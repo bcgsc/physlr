@@ -9,7 +9,9 @@ jobs:
     inputs:
       versionSpec: "3.7"
       architecture: x64
+  - script: pip3 install pylint
+    displayName: Install pylint
   - script: pylint physlr
-    displayName: Pylint
+    displayName: Run pylint
   - script: pip3 install .
-    displayName: Pip
+    displayName: Run pip
