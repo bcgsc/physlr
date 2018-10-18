@@ -7,7 +7,11 @@ w=32
 .DELETE_ON_ERROR:
 .SECONDARY:
 
-all: check
+all: lint
+
+# Check the source code for errors with Pylint.
+lint:
+	pylint physlr
 
 check: mt/mt.fa.physlr.json
 
