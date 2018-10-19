@@ -14,14 +14,22 @@ def read_fasta(fin):
                     break
         if not last:
             break
-        name, seqs, last = last[1:].partition(" ")[0], [], None
+        xs = last[1:].split(None, 1)
+        if len(xs) == 1:
+            name = xs[0]
+            bx = None
+        else:
+            name, bx = xs
+            bx = bx[5:] if bx.startswith("BX:Z:") else None
+        seqs = []
+        last = None
         for line in fin: # read the sequence
             if line[0] in '@+>':
                 last = line[:-1]
                 break
             seqs.append(line[:-1])
         if not last or last[0] != '+': # this is a fasta record
-            yield name, ''.join(seqs) # yield a fasta record
+            yield name, ''.join(seqs), bx # yield a fasta record
             if not last:
                 break
         else: # this is a fastq record
@@ -30,8 +38,8 @@ def read_fasta(fin):
                 leng += len(line) - 1
                 if leng >= len(seq): # have read enough quality
                     last = None
-                    yield name, seq # yield a fastq record
+                    yield name, seq, bx # yield a fastq record
                     break
             if last: # reach EOF before reading enough quality
-                yield name, seq # yield a fasta record instead
+                yield name, seq, bx # yield a fasta record instead
                 break

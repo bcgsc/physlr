@@ -14,14 +14,26 @@ class Physlr:
     Physlr: Physical Mapping of Linked Reads
     """
 
-    def physlr_index(self):
+    def physlr_indexfa(self):
         "Index a set of sequences. The output file format is JSON."
         print("{")
         for filename in self.args.FASTA:
             with open(filename) as fin:
-                for name, seq in read_fasta(fin):
+                for name, seq, _ in read_fasta(fin):
                     print(
                         '"', name, '": ',
+                        minimerize(self.args.k, self.args.w, seq.upper()),
+                        sep="")
+        print("}")
+
+    def physlr_indexlr(self):
+        "Index a set of linked reads. The output file format is JSON."
+        print("{")
+        for filename in self.args.FASTA:
+            with open(filename) as fin:
+                for name, seq, bx in read_fasta(fin):
+                    print(
+                        '"', bx, '": ',
                         minimerize(self.args.k, self.args.w, seq.upper()),
                         sep="")
         print("}")
@@ -38,7 +50,7 @@ class Physlr:
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
             "command",
-            help="A command: assemble, graph, index")
+            help="A command: indexfa, indexlr")
         argparser.add_argument(
             "FASTA", nargs="+",
             help="FASTA/FASTQ file of linked reads")
@@ -51,10 +63,12 @@ class Physlr:
 
     def main(self):
         "Run Physlr."
-        if self.args.command == "index":
-            self.physlr_index()
+        if self.args.command == "indexfa":
+            self.physlr_indexfa()
+        elif self.args.command == "indexlr":
+            self.physlr_indexlr()
         else:
-            print("Unrecognized command: ", self.args.command, file=sys.stderr)
+            print("Unrecognized command:", self.args.command, file=sys.stderr)
             exit(1)
 
 def main():
