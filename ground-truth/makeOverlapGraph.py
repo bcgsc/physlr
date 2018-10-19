@@ -28,7 +28,7 @@ def createIntervalTree(TSVfilename):
 def createOverlapGraph(barcode_trees, TSVfilename, prefix, min_overlap):
 	# Go over each molecule, and determine its overlaps
 	overlap_graph = nx.Graph()
-	out_overlapCoords = prefix + ".overlaps.tsv"
+	out_overlapCoords = open(prefix + ".overlaps.tsv", 'w')
 	out_overlapCoords.write("B1\tB2\tchr_overlap\tStart_overlap\tEnd_overlap\n")
 	# Node attributes: BX (name)
 	# Edge attributes: Length of overlap, jaccard score
