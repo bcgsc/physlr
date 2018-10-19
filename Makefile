@@ -73,8 +73,17 @@ psitchensiscp/psitchensiscp.fa:
 	mkdir -p $(@D)
 	curl 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?retmode=text&id=KU215903.2&db=nucleotide&rettype=fasta' | seqtk seq >$@
 
+# Determine a set of barcodes containing plastid molecules.
+%.bx: %.fq.gz
+	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
+	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 100' then cut -f BX then sort -f BX >$@
+
+# Separate a set of plastid reads.
+%.bx.fq.gz: %.fq.gz %.bx
+	gunzip -c $< | paste - - - - | grep -Ff $*.bx | tr '\t' '\n' | $(gzip) >$@
+
 # Symlink the plastid reads.
-psitchensiscp/HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.fq.gz
+HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx.fq.gz
 	ln -sf $< $@
 
 ################################################################################
@@ -136,6 +145,14 @@ psitchensiscp/HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortb
 %.fq.gz: %.1.fq.gz %.2.fq.gz
 	seqtk mergepe $^ | $(gzip) >$@
 
+# Select the first read of the read pair.
+%.1.fq.gz: %.fq.gz
+	seqtk dropse $< | seqtk seq -1 | $(gzip) >$@
+
+# Select the second read of the read pair.
+%.2.fq.gz: %.fq.gz
+	seqtk dropse $< | seqtk seq -2 | $(gzip) >$@
+
 ################################################################################
 # EMA
 
@@ -169,6 +186,25 @@ psitchensiscp/HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortb
 # Convert a .hist to a .histo file for GenomeScope.
 %.histo: %.hist
 	sed -n 's/^f//p' $< | tr '\t' ' ' >$@
+
+################################################################################
+# Unicycler
+
+# Assembled paired-end reads.
+%.unicycler.gfa: %.1.fq.gz %.2.fq.gz
+	unicycler -t$t --mode bold -o $*.unicycler -1 $*.1.fq.gz -2 $*.2.fq.gz
+	ln -s $*.unicycler/assembly.gfa $@
+
+################################################################################
+# Bandage
+
+# Plot the assembly graph using Bandage.
+%.gfa.png: %.gfa
+	Bandage image $< $@
+
+# Plot the assembly graph using Bandage.
+%.gfa.svg: %.gfa
+	Bandage image $< $@
 
 ################################################################################
 # Physlr
