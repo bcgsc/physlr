@@ -23,14 +23,14 @@ lint:
 check: humanmt
 
 clean:
-	rm -f humanmt/mt.physlr.json
+	rm -f humanmt/mt.physlr.tsv
 
 ################################################################################
 # Human mitochondrion
 
 # Test Phsylr using the human mitochondrion.
 humanmt: \
-	humanmt/mt.physlr.json
+	humanmt/mt.physlr.tsv
 
 # Download the human mitochondrial genome.
 humanmt/mt.fa:
@@ -174,9 +174,9 @@ psitchensiscp/HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortb
 # Physlr
 
 # Index a FASTA file using Physlr.
-%.physlr.json: %.fa
+%.physlr.tsv: %.fa
 	PYTHONPATH=. bin/physlr indexfa -k$k -w$w $< >$@
 
 # Index linked reads using Physlr.
-%.physlr.json: %.fq.gz
+%.physlr.tsv: %.fq.gz
 	gunzip -c $< | PYTHONPATH=. bin/physlr indexlr -k$k -w$w - >$@

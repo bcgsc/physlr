@@ -15,28 +15,20 @@ class Physlr:
     """
 
     def physlr_indexfa(self):
-        "Index a set of sequences. The output file format is JSON."
-        print("{")
+        "Index a set of sequences. The output file format is TSV."
         for filename in self.args.FASTA:
             with open(filename) as fin:
                 for name, seq, _ in read_fasta(fin):
-                    print(
-                        '"', name, '": ',
-                        minimerize(self.args.k, self.args.w, seq.upper()),
-                        sep="")
-        print("}")
+                    print(name, "\t", sep="", end="")
+                    print(*minimerize(self.args.k, self.args.w, seq.upper()))
 
     def physlr_indexlr(self):
-        "Index a set of linked reads. The output file format is JSON."
-        print("{")
+        "Index a set of linked reads. The output file format is TSV."
         for filename in self.args.FASTA:
             with open(filename) as fin:
                 for _, seq, bx in read_fasta(fin):
-                    print(
-                        '"', bx, '": ',
-                        minimerize(self.args.k, self.args.w, seq.upper()),
-                        sep="")
-        print("}")
+                    print(bx, "\t", sep="", end="")
+                    print(*minimerize(self.args.k, self.args.w, seq.upper()))
 
     @staticmethod
     def parse_arguments():
