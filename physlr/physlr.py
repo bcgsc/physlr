@@ -31,7 +31,7 @@ class Physlr:
         print("{")
         for filename in self.args.FASTA:
             with open(filename) as fin:
-                for name, seq, bx in read_fasta(fin):
+                for _, seq, bx in read_fasta(fin):
                     print(
                         '"', bx, '": ',
                         minimerize(self.args.k, self.args.w, seq.upper()),
