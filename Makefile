@@ -49,8 +49,8 @@ fly: \
 	fly/fly.f1.sortbxn.bam
 
 # Download the fly genome from NCBI.
-fly/fly.fa.gz:
-	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz | seqtk seq | $(gzip) >$@
+fly/fly.fa:
+	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz | seqtk seq >$@
 
 # Download the fly linked reads from 10x Genomics.
 fly/f1.tar:
@@ -80,7 +80,7 @@ psitchensiscp/HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortb
 # BWA
 
 # Index the target genome.
-%.fa.bwt: %.fa.gz
+%.fa.bwt: %.fa
 	bwa index $<
 
 # Align linked reads to the draft genome and do not sort.
