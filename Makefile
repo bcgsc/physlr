@@ -83,9 +83,16 @@ psitchensiscp/HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortb
 %.fa.bwt: %.fa
 	bwa index $<
 
-# Align linked reads to the draft genome and do not sort.
+# Align linked reads to a target genome.
 %.$(lr).sortn.bam: %.fa.bwt $(lr).fq.gz
 	bwa mem -t$t -pC $*.fa $(lr).fq.gz | samtools view -@$t -F4 -o $@
+
+################################################################################
+# minimap2
+
+# Align linked reads to a target genome.
+%.$(lr).minimap2.sortn.bam: %.fa.bwt $(lr).fq.gz
+	minimap2 -t$t -a -xsr -y $*.fa $(lr).fq.gz | samtools view -@$t -F4 -o $@
 
 ################################################################################
 # samtools
