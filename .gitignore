@@ -1,5 +1,6 @@
 *.bam
 *.bam.bai
+*.bx
 *.ema-fcnt
 *.ema-ncnt
 *.fa
@@ -9,10 +10,15 @@
 *.fa.fai
 *.fa.pac
 *.fa.sa
+*.fasta
 *.fastq.gz
 *.fq.gz
+*.gfa
+*.gv
 *.json
 *.log
+*.png
 *.tar
+*.tsv
 *.txt
 __pycache__/
