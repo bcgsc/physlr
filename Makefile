@@ -12,7 +12,7 @@ gzip=pigz -p$t
 
 .DELETE_ON_ERROR:
 .SECONDARY:
-.PHONY: fly
+.PHONY: fly psitchensiscp
 
 all: lint
 
@@ -58,7 +58,14 @@ fly/f1.tar:
 	curl -o $@ http://s3-us-west-2.amazonaws.com/10x.files/samples/assembly/2.1.0/fly/fly_fastqs.tar
 
 ################################################################################
-# Picea sitchensis
+# Picea sitchensis plastid
+
+# Test Phsylr using the Picea sitchensis plastid data.
+psitchensiscp: \
+	psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortn.bam \
+	psitchensiscp/psitchensiscp.HYN5VCCXX_4.sort.bam.bai \
+	psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbx.bam \
+	psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.bam
 
 # Download the Picea sitchensis plastid genome.
 psitchensiscp/psitchensiscp.fa:
