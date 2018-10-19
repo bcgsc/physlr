@@ -12,6 +12,7 @@ gzip=pigz -p$t
 
 .DELETE_ON_ERROR:
 .SECONDARY:
+.PHONY: fly
 
 all: lint
 
@@ -40,8 +41,19 @@ mt/mt.fa:
 # See https://support.10xgenomics.com/de-novo-assembly/datasets/2.1.0/fly
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
+# Test Phsylr using the fly data.
+fly: \
+	fly/fly.f1.sortn.bam \
+	fly/fly.f1.sort.bam.bai \
+	fly/fly.f1.sortbx.bam \
+	fly/fly.f1.sortbxn.bam
+
+# Download the fly genome from NCBI.
+fly/fly.fa.gz:
+	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz | seqtk seq | $(gzip) >$@
+
 # Download the fly linked reads from 10x Genomics.
-fly/fly.tar:
+fly/f1.tar:
 	mkdir -p $(@D)
 	curl -o $@ http://s3-us-west-2.amazonaws.com/10x.files/samples/assembly/2.1.0/fly/fly_fastqs.tar
 
@@ -68,7 +80,7 @@ psitchensiscp/HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortb
 # BWA
 
 # Index the target genome.
-%.fa.bwt: %.fa
+%.fa.bwt: %.fa.gz
 	bwa index $<
 
 # Align linked reads to the draft genome and do not sort.
@@ -78,9 +90,21 @@ psitchensiscp/HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortb
 ################################################################################
 # samtools
 
+# Sort a BAM file by position.
+%.sort.bam: %.sortn.bam
+	samtools sort -@$t -T$$(mktemp -u -t $(@F).XXXXXX) -o $@ $<
+
+# Sort a BAM file by BX tag and position.
+%.sortbx.bam: %.sortn.bam
+	samtools sort -@$t -tBX -T$$(mktemp -u -t $(@F).XXXXXX) -o $@ $<
+
 # Sort a BAM file by BX tag and query name.
 %.sortbxn.bam: %.sortn.bam
 	samtools sort -@$t -tBX -n -T$$(mktemp -u -t $(@F).XXXXXX) -o $@ $<
+
+# Index a BAM file.
+%.bam.bai: %.bam
+	samtools index -@$t $<
 
 # Convert a BAM file to FASTQ.
 %.sortbxn.fq.gz: %.sortbxn.bam
