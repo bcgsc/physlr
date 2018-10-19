@@ -7,6 +7,9 @@ w=32
 # Number of threads.
 t=16
 
+# Compress in parallel.
+gzip=pigz -p$t
+
 .DELETE_ON_ERROR:
 .SECONDARY:
 
@@ -45,10 +48,21 @@ fly/fly.tar:
 ################################################################################
 # Picea sitchensis
 
-# Download the Picea sitchensis plastid FASTA.
+# Download the Picea sitchensis plastid genome.
 psitchensiscp/psitchensiscp.fa:
 	mkdir -p $(@D)
 	curl 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?retmode=text&id=KU215903.2&db=nucleotide&rettype=fasta' | seqtk seq >$@
+
+# Symlink the plastid reads.
+psitchensiscp/HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.fq.gz
+	ln -sf $< $@
+
+################################################################################
+# Trimadap
+
+# Trim adapter sequences using trimadap.
+%.trimadap.fq.gz: %.fq.gz
+	trimadap-mt -p$t -t1 $< | sed 's/^X$$/N/' | $(gzip) >$@
 
 ################################################################################
 # BWA
@@ -59,11 +73,60 @@ psitchensiscp/psitchensiscp.fa:
 
 # Align linked reads to the draft genome and do not sort.
 %.$(lr).sortn.bam: %.fa.bwt $(lr).fq.gz
-	bwa mem -t$t -pC $*.fa $(lr).fq.gz | samtools view -@$t -h -F4 -o $@
+	bwa mem -t$t -pC $*.fa $(lr).fq.gz | samtools view -@$t -F4 -o $@
 
 ################################################################################
 # samtools
 
+# Sort a BAM file by BX tag and query name.
+%.sortbxn.bam: %.sortn.bam
+	samtools sort -@$t -tBX -n -T$$(mktemp -u -t $(@F).XXXXXX) -o $@ $<
+
 # Convert a BAM file to FASTQ.
-%.sortn.bam.fq.gz: %.sortn.bam
-	samtools fastq -@$t -TBX $< | $(gzip) -p$t >$@
+%.sortbxn.fq.gz: %.sortbxn.bam
+	samtools fastq -@$t -TBX $< | $(gzip) >$@
+
+################################################################################
+# seqtk
+
+# Drop single-end reads.
+%.dropse.fq.gz: %.fq.gz
+	seqtk dropse $< | $(gzip) >$@
+
+# Merge paired-end reads.
+%.fq.gz: %.1.fq.gz %.2.fq.gz
+	seqtk mergepe $^ | $(gzip) >$@
+
+################################################################################
+# EMA
+
+# Download the barcode white list.
+4M-with-alts-february-2016.txt:
+	curl -o $@ https://raw.githubusercontent.com/10XGenomics/supernova/master/tenkit/lib/python/tenkit/barcodes/4M-with-alts-february-2016.txt
+
+# Count barcodes.
+%.ema-ncnt: %.fq.gz 4M-with-alts-february-2016.txt
+	ema count -w 4M-with-alts-february-2016.txt -o $* $<
+
+# Extract the barcode to BX:Z tag using ema preproc.
+%.bx.fq.gz: %.fq.gz %.ema-ncnt
+	gunzip -c $< | ema preproc -t$t -b -n1 -w 4M-with-alts-february-2016.txt -o $*.ema $*.ema-ncnt
+	$(gzip) <$*.ema/ema-bin-000 >$@
+	rm -rf $*.ema
+
+# Align linked reads to the draft genome using EMA and sort by position.
+%.$(lr).bx.ema.sort.bam: $(lr).bx.fq.gz %.fa.bwt
+	$(time) ema align -t$t -r $*.fa -1 $< \
+	| samtools view -@$t -u -F4 \
+	| samtools sort -@$t -T$$(mktemp -u -t $@.XXXXXX) -o $@
+
+################################################################################
+# ntHash
+
+# Count k-mers using ntCard.
+%.ntcard_k32.hist: %.fq.gz
+	ntcard -t$t -c1000 -k 32,64,96,128 -p $*.ntcard $<
+
+# Convert a .hist to a .histo file for GenomeScope.
+%.histo: %.hist
+	sed -n 's/^f//p' $< | tr '\t' ' ' >$@
