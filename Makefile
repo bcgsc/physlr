@@ -142,7 +142,7 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx.f
 	seqtk dropse $< | $(gzip) >$@
 
 # Merge paired-end reads.
-%.fq.gz: %.1.fq.gz %.2.fq.gz
+%.pe.fq.gz: %.1.fq.gz %.2.fq.gz
 	seqtk mergepe $^ | $(gzip) >$@
 
 # Select the first read of the read pair.
