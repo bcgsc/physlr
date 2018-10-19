@@ -12,7 +12,7 @@ gzip=pigz -p$t
 
 .DELETE_ON_ERROR:
 .SECONDARY:
-.PHONY: fly psitchensiscp
+.PHONY: fly humanmt psitchensiscp
 
 all: lint
 
@@ -20,21 +20,22 @@ all: lint
 lint:
 	pylint physlr
 
-check: mt/mt.fa.physlr.json
+check: humanmt
 
 clean:
-	rm -f mt/mt.fa.physlr.json
+	rm -f humanmt/mt.physlr.json
+
+################################################################################
+# Human mitochondrion
+
+# Test Phsylr using the human mitochondrion.
+humanmt: \
+	humanmt/mt.physlr.json
 
 # Download the human mitochondrial genome.
-mt/mt.fa:
+humanmt/mt.fa:
 	mkdir -p $(@D)
 	curl 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?retmode=text&id=NC_012920.1&db=nucleotide&rettype=fasta' | seqtk seq >$@
-
-# Physlr
-
-# Index a FASTA file using Physlr.
-%.fa.physlr.json: %.fa
-	PYTHONPATH=. bin/physlr index -k$k -w$w $< >$@
 
 ################################################################################
 # Fly
@@ -168,3 +169,14 @@ psitchensiscp/HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortb
 # Convert a .hist to a .histo file for GenomeScope.
 %.histo: %.hist
 	sed -n 's/^f//p' $< | tr '\t' ' ' >$@
+
+################################################################################
+# Physlr
+
+# Index a FASTA file using Physlr.
+%.physlr.json: %.fa
+	PYTHONPATH=. bin/physlr indexfa -k$k -w$w $< >$@
+
+# Index linked reads using Physlr.
+%.physlr.json: %.fq.gz
+	gunzip -c $< | PYTHONPATH=. bin/physlr indexlr -k$k -w$w - >$@
