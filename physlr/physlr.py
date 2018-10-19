@@ -4,6 +4,7 @@ Physlr: Physical Mapping of Linked Reads
 """
 
 import argparse
+import itertools
 import sys
 
 from physlr.minimerize import minimerize
@@ -30,6 +31,32 @@ class Physlr:
                     print(bx, "\t", sep="", end="")
                     print(*minimerize(self.args.k, self.args.w, seq.upper()))
 
+    def physlr_overlap(self):
+        "Find overlapping barcodes."
+
+        # Construct a dict of barcodes to minimizers.
+        bxtomin = {}
+        for filename in self.args.FASTA:
+            with open(filename) as fin:
+                for _, seq, bx in read_fasta(fin):
+                    if bx not in bxtomin:
+                        bxtomin[bx] = set()
+                    bxtomin[bx].update(minimerize(self.args.k, self.args.w, seq.upper()))
+
+        # Construct a dict of minimizers to barcodes.
+        mintobx = {}
+        for bx, minimizers in bxtomin.items():
+            for x in minimizers:
+                if x not in mintobx:
+                    mintobx[x] = set()
+                mintobx[x].add(bx)
+
+        # Output overlapping barcodes.
+        print("U\tV\tn")
+        for bxs in mintobx.values():
+            for u, v in itertools.combinations(bxs, 2):
+                print(u, v, len(bxtomin[u] & bxtomin[v]))
+
     @staticmethod
     def parse_arguments():
         "Parse the command line arguments."
@@ -42,7 +69,7 @@ class Physlr:
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
             "command",
-            help="A command: indexfa, indexlr")
+            help="A command: indexfa, indexlr, overlap")
         argparser.add_argument(
             "FASTA", nargs="+",
             help="FASTA/FASTQ file of linked reads")
@@ -59,6 +86,8 @@ class Physlr:
             self.physlr_indexfa()
         elif self.args.command == "indexlr":
             self.physlr_indexlr()
+        elif self.args.command == "overlap":
+            self.physlr_overlap()
         else:
             print("Unrecognized command:", self.args.command, file=sys.stderr)
             exit(1)
