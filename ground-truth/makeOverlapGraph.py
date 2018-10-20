@@ -1,59 +1,75 @@
 #!/usr/bin/env python3
 import networkx as nx
 import argparse
-from intervaltree import *
-from networkx.drawing.nx_agraph import write_dot
 
 '''
 Given a molecule TSV file from Tigmint, produce an overlap graph of barcodes (Nodes: barcodes; Edges: molecule overlap based on alignments)
 Also output TSV file summarizing the molecule extents per barcode
 '''
 
-#Given the molecule TSV file, read through and store all the molecule extents in an Interval  Tree
-def createIntervalTree(TSVfilename):
-	interval_trees = {} #chr -> interval_tree
-
-	with open(TSVfilename, 'r') as TSV:
-		header = TSV.readline()
-		for extent in TSV:
-			extent = extent.strip().split("\t")
-			(chr, start, end, BX) = (extent[0], int(extent[1]), int(extent[2]), extent[4])
-			if chr not in interval_trees:
-				interval_trees[chr] = IntervalTree()
-			interval_trees[chr][start:end] = BX
-
-	return interval_trees
-
-#Go through the molecule extents, and produce a graph of overlaps (Nodes: barcodes, Edges: molecule(s) of that barcode overlap)
-def createOverlapGraph(barcode_trees, TSVfilename, prefix, min_overlap):
-	# Go over each molecule, and determine its overlaps
+def readBED(BEDfilename, min_overlap, prefix):
 	overlap_graph = nx.Graph()
-	out_overlapCoords = open(prefix + ".overlaps.tsv", 'w')
-	out_overlapCoords.write("B1\tB2\tchr_overlap\tStart_overlap\tEnd_overlap\n")
-	# Node attributes: BX (name)
-	# Edge attributes: Length of overlap, jaccard score
-	with open(TSVfilename, 'r') as TSV:
-		header = TSV.readline()
-		for extent in TSV:
-			extent = extent.strip().split("\t")
-			(chr, start, end, BX) = (extent[0], int(extent[1]), int(extent[2]), extent[4])
-			interval_tree = barcode_trees[chr]
-			overlaps = interval_tree[start:end]
-			for overlap in overlaps:
-				# Compute the overlap between the extents
-				len_overlap = min(end, overlap.end) - max(start, overlap.begin)
-				if len_overlap < min_overlap:
-					continue
-				# Decide if this is an overlap we want to store
-				# Store overlap if start of overlap is less than others. If equal starts, store lexicographically smaller barcode
-				if start < overlap.begin or (start == overlap.begin and BX < overlap.data):
-					if overlap_graph.has_edge(BX, overlap.data):
-						print("WARNING: Already an edge between %s and %s" % (BX, overlap.data))
-						overlap_graph[BX][overlap.data]['l'] += len_overlap
-					else:
-						overlap_graph.add_edge(BX, overlap.data, l=len_overlap)
-				out_overlapCoords.write("%s\t%s\t%s\t%d\t%d\n" % (BX, overlap.data, chr, max(start, overlap.begin), min(end, overlap.end)))
-	write_dot(overlap_graph, prefix + "overlap_graph.dot")
+	with open(BEDfilename, 'r') as BED:
+		for bed_entry in BED:
+			bed_entry = bed_entry.strip().split("\t")
+			(chr1, start1, end1, bx1, mi1) = (bed_entry[0], int(bed_entry[1]), int(bed_entry[2]), bed_entry[3], int(bed_entry[4]))
+			(chr2, start2, end2, bx2, mi2) = (bed_entry[5], int(bed_entry[6]), int(bed_entry[7]), bed_entry[8], int(bed_entry[9]))
+			overlap = int(bed_entry[10])
+			if overlap < min_overlap:
+				continue
+			if start1 < start2 or (start1 == start2 and bx1 < bx2):
+				if overlap_graph.has_edge(bx1, bx2):
+					# print("WARNING: Already an edge between %s and %s" % (BX, overlap.data))
+					overlap_graph[bx1][bx2]['l'] += overlap
+				else:
+					overlap_graph.add_edge(bx1, bx2, l=overlap)
+	print("DONE building barcode graph")
+	out_graph = open(prefix + ".overlap_graph.dot", 'w')
+	out_tsv = open(prefix + ".overlap_graph.tsv", 'w')
+	out_graph.write("strict graph  {\n")
+	out_tsv.write("U\tV\tl\n")
+	for edge in overlap_graph.edges():
+		out_str = "\t\"%s\" -- \"%s\"\t[l=%d];\n" % (edge[0], edge[1], overlap_graph[edge[0]][edge[1]]["l"])
+		out_graph.write(out_str)
+		out_str = "%s\t%s\t%d\n" % (edge[0], edge[1], overlap_graph[edge[0]][edge[1]]["l"])
+		out_tsv.write(out_str)
+	out_graph.write("}\n")
+	print("DONE writing barcode graph")
+	out_graph.close()
+	out_tsv.close()
+
+def readBED_molec(BEDfilename, min_overlap, prefix):
+	out_graph = open(prefix + ".overlap_graph_molec.dot", 'w')
+	out_graph.write("strict graph  {\n")
+
+	out_tsv = open(prefix + ".overlap_graph_molec.tsv", 'w')
+	out_tsv.write("U\tV\tl\n")
+
+	with open(BEDfilename, 'r') as BED:
+		for bed_entry in BED:
+			bed_entry = bed_entry.strip().split("\t")
+			(chr1, start1, end1, bx1, mi1) = (bed_entry[0], int(bed_entry[1]), int(bed_entry[2]), bed_entry[3], int(bed_entry[4]))
+			(chr2, start2, end2, bx2, mi2) = (bed_entry[5], int(bed_entry[6]), int(bed_entry[7]), bed_entry[8], int(bed_entry[9]))
+			overlap = int(bed_entry[10])
+			if overlap < min_overlap:
+				continue
+			if start1 < start2 or (start1 == start2 and bx1 < bx2):
+				out_graph.write("\t\"%s_%s\" -- \"%s_%s\"\t[l=%d];\n" % (bx1, mi1, bx2, mi2, overlap))
+				out_tsv.write("%s_%s\t%s_%s\t%d\n" % (bx1, mi1, bx2, mi2, overlap))
+	out_graph.write("}\n")
+	print("DONE building molecule graph")
+	print("DONE writing molecule graph")
+	out_graph.close()
+	out_tsv.close()
+
+
+def analyze_successors(G):
+	out_file = open("degree.tsv", 'w')
+	for node in G.nodes():
+		deg = G.degree(node)
+		out_file.write("%s\t%d\n" % (node, deg))
+	out_file.close()
+
 
 def main():
 	parser = argparse.ArgumentParser(description="Produce a barcode overlap graph based on read alignments")
@@ -62,8 +78,11 @@ def main():
 	parser.add_argument("-p", type=str, help="Prefix for output files", default="barcode_overlap", required=False)
 	args = parser.parse_args()
 
-	barcode_trees = createIntervalTree(args.TSV)
-	createOverlapGraph(barcode_trees, args.TSV, args.p, args.m)
+	#barcode_trees = createIntervalTree(args.TSV)
+	#createOverlapGraph(barcode_trees, args.TSV, args.p, args.m)
+	G = readBED(args.TSV, args.m, args.p)
+	readBED_molec(args.TSV, args.m, args.p)
+	analyze_successors(G)
 
 if __name__ == "__main__":
 	main()
