@@ -32,18 +32,23 @@ class Physlr:
                     print(*minimerize(self.args.k, self.args.w, seq.upper()))
 
     def physlr_overlap(self):
-        "Find overlapping barcodes."
+        "Read a sketch of linked reads and find overlapping barcodes."
 
-        # Construct a dict of barcodes to minimizers.
+        # Read a dictionary of barcodes to minimizers.
         bxtomin = {}
         for filename in self.args.FASTA:
             with open(filename) as fin:
-                for _, seq, bx in read_fasta(fin):
+                for line in fin:
+                    fields = line.split(None, 1)
+                    if len(fields) < 2:
+                        continue
+                    bx = fields[0]
+                    minimizers = fields[1].split()
                     if bx not in bxtomin:
                         bxtomin[bx] = set()
-                    bxtomin[bx].update(minimerize(self.args.k, self.args.w, seq.upper()))
+                    bxtomin[bx].update(minimizers)
 
-        # Construct a dict of minimizers to barcodes.
+        # Construct a dictionary of minimizers to barcodes.
         mintobx = {}
         for bx, minimizers in bxtomin.items():
             for x in minimizers:
@@ -51,11 +56,16 @@ class Physlr:
                     mintobx[x] = set()
                 mintobx[x].add(bx)
 
-        # Output overlapping barcodes.
-        print("U\tV\tn")
+        # Construct a set of barcode pairs that share a minimizer.
+        bxpairs = set()
         for bxs in mintobx.values():
             for u, v in itertools.combinations(bxs, 2):
-                print(u, v, len(bxtomin[u] & bxtomin[v]))
+                bxpairs.add((min(u, v), max(u, v)))
+
+        # Output overlapping barcodes.
+        print("U\tV\tUn\tVn\tn")
+        for u, v in bxpairs:
+            print(u, v, len(bxtomin[u]), len(bxtomin[v]), len(bxtomin[u] & bxtomin[v]), sep="\t")
 
     @staticmethod
     def parse_arguments():
