@@ -1,0 +1,37 @@
+---
+title: Plot a BED file
+author: Shaun Jackman
+output:
+  html_document:
+    keep_md: true
+params:
+  input_bed:
+    label: "Input BED file"
+    value: "HYN5VCCXX_4cp.physlr.overlap.mst.backbone.path.molecule.bed"
+    input: text
+---
+
+```{r setup, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(readr)
+
+knit_print.data.frame <- function(x, ...) kable(x) %>% paste(collapse = "\n") %>% asis_output
+input_bed <- params$input_bed
+
+input_bed
+```
+
+# Read the BED file
+```{r read-data}
+bed_orig <- read_tsv(input_bed, col_names = c("Rname", "Start", "End", "BX", "Reads"))
+bed <- bed_orig %>% mutate(Index = cumsum(BX != lag(BX, default="")))
+```
+
+# Plot the BED file
+```{r plot-bed}
+ggplot(bed) +
+	aes(xmin = Start, xmax = End, ymin = Index, ymax = Index + 1) +
+	geom_rect() +
+	scale_y_reverse()
+```

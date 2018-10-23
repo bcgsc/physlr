@@ -63,10 +63,7 @@ fly/f1.tar:
 
 # Test Phsylr using the Picea sitchensis plastid data.
 psitchensiscp: \
-	psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortn.bam \
-	psitchensiscp/psitchensiscp.HYN5VCCXX_4.sort.bam.bai \
-	psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbx.bam \
-	psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.bam
+	HYN5VCCXX_4cp.physlr.overlap.mst.backbone.path.molecule.bed.png
 
 # Download the Picea sitchensis plastid genome.
 psitchensiscp/psitchensiscp.fa:
@@ -248,6 +245,15 @@ minsize=2000
 # Determine the backbone of the tree.
 %.physlr.overlap.mst.backbone.path: %.physlr.overlap.mst.gv
 	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
+
+# Extract a BED file of the backbone barcodes.
+%.physlr.overlap.mst.backbone.path.molecule.bed: psitchensiscp/psitchensiscp.%.a0.65.d10000.n5.q1.s2000.molecule.bed %.physlr.overlap.mst.backbone.path
+	(head -n1 $<; for i in $$(<$*.physlr.overlap.mst.backbone.path); do grep $$i $<; done) >$@
+
+# Plot a BED file.
+%.bed.png: %.bed
+	Rscript -e 'rmarkdown::render("plotbed.rmd", "html_document", "$*.plotbed.html", params = list(input_bed="$<"))'
+	cp -a $*.plotbed_files/figure-html/plot-bed-1.png $@
 
 ################################################################################
 # GraphViz
