@@ -79,7 +79,7 @@ class Physlr:
                 if header != "U\tV\tUn\tVn\tn\n":
                     print("Unexpected header:", header, file=sys.stderr)
                     exit(1)
-                tsvin = csv.reader(fin, delimiter='\t')
+                tsvin = csv.reader(fin, delimiter="\t")
                 for u, v, u_minimizers, v_minimizers, shared_minimizers in tsvin:
                     g.add_edge(u, v, Un=u_minimizers, Vn=v_minimizers, n=shared_minimizers)
         nx.drawing.nx_agraph.write_dot(g, sys.stdout)
@@ -93,13 +93,13 @@ class Physlr:
                 if header != "U\tV\tUn\tVn\tn\n":
                     print("Unexpected header:", header, file=sys.stderr)
                     exit(1)
-                tsvin = csv.reader(fin, delimiter='\t')
+                tsvin = csv.reader(fin, delimiter="\t")
                 for u, v, u_minimizers, v_minimizers, shared_minimizers in tsvin:
                     g.add_edge(
                         u, v,
                         Un=int(u_minimizers), Vn=int(v_minimizers),
                         n=int(shared_minimizers))
-        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight='n')
+        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         nx.drawing.nx_agraph.write_dot(gmst, sys.stdout)
 
     def physlr_graph(self, fmt):
