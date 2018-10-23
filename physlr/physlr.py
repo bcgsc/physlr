@@ -110,7 +110,9 @@ class Physlr:
             eprop["Un"] = int(eprop["Un"])
             eprop["Vn"] = int(eprop["Vn"])
             eprop["n"] = int(eprop["n"])
-        sources = [u for u in g.nodes() if g.degree(u) == 1]
+        ecc = nx.algorithms.distance_measures.eccentricity(g)
+        diameter = nx.algorithms.distance_measures.diameter(g, e=ecc)
+        sources = [u for u, d in ecc.items() if d == diameter]
         u, v, _ = max(
             ((u, *max(
                 single_source_dijkstra_path_length(g, u, weight="n").items(),
