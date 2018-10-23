@@ -229,6 +229,10 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx.f
 %.physlr.overlap.mst.gv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr mst -k$k -w$w $< >$@
 
+# Determine the backbone of the tree.
+%.physlr.overlap.mst.backbone.gv: %.physlr.overlap.mst.gv
+	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
+
 ################################################################################
 # GraphViz
 

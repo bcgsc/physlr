@@ -9,6 +9,7 @@ import itertools
 import sys
 import networkx as nx
 
+from networkx.algorithms.shortest_paths.weighted import single_source_dijkstra_path_length
 from physlr.minimerize import minimerize
 from physlr.benv.graph import Graph
 from physlr.read_fasta import read_fasta
@@ -102,6 +103,23 @@ class Physlr:
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         nx.drawing.nx_agraph.write_dot(gmst, sys.stdout)
 
+    def physlr_backbone(self):
+        "Determine the backbone of the graph."
+        g = nx.drawing.nx_agraph.read_dot(self.args.FASTA[0])
+        for e, eprop in g.edges().items():
+            eprop["Un"] = int(eprop["Un"])
+            eprop["Vn"] = int(eprop["Vn"])
+            eprop["n"] = int(eprop["n"])
+        sources = [u for u in g.nodes() if g.degree(u) == 1]
+        u, v, _ = max(
+            ((u, *max(
+                single_source_dijkstra_path_length(g, u, weight="n").items(),
+                key=lambda x: x[1]))
+            for u in sources),
+            key=lambda x: x[2])
+        path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
+        print(*path)
+
     def physlr_graph(self, fmt):
         "Generate a graph from the minimizer index."
         graph = Graph()
@@ -122,7 +140,7 @@ class Physlr:
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
             "command",
-            help="A command: indexfa, indexlr, graphtsv, graphgv, overlap, tsvtogv")
+            help="A command: indexfa, indexlr, graphtsv, graphgv, overlap, tsvtogv, backbone")
         argparser.add_argument(
             "FASTA", nargs="+",
             help="FASTA/FASTQ file of linked reads")
@@ -135,7 +153,9 @@ class Physlr:
 
     def main(self):
         "Run Physlr."
-        if self.args.command == "indexfa":
+        if self.args.command == "backbone":
+            self.physlr_backbone()
+        elif self.args.command == "indexfa":
             self.physlr_indexfa()
         elif self.args.command == "indexlr":
             self.physlr_indexlr()
