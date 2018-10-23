@@ -177,6 +177,22 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx.f
 	| samtools sort -@$t -T$$(mktemp -u -t $@.XXXXXX) -o $@
 
 ################################################################################
+# Tigmint
+as=0.65
+dist=10000
+nm=5
+mapq=1
+minsize=2000
+
+# Create molecule extents BED.
+%.a$(as).d$(dist).n$(nm).q$(mapq).s$(minsize).molecule.bed: %.sortbx.bam
+	tigmint-molecule -a$(as) -n$(nm) -q$(mapq) -d$(dist) -s$(minsize) -o $@ $<
+
+# Create molecule extents TSV.
+%.a$(as).d$(dist).n$(nm).q$(mapq).s$(minsize).molecule.tsv: %.sortbx.bam
+	tigmint-molecule -a$(as) -n$(nm) -q$(mapq) -d$(dist) -s$(minsize) --tsv -o $@ $<
+
+################################################################################
 # ntHash
 
 # Count k-mers using ntCard.
