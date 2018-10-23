@@ -76,7 +76,7 @@ psitchensiscp/psitchensiscp.fa:
 # Determine a set of barcodes containing plastid molecules.
 %.bx: %.fq.gz
 	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
-	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 100' then cut -f BX then sort -f BX >$@
+	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 100 && $$count < 200' then cut -f BX then sort -f BX >$@
 
 # Separate a set of plastid reads.
 %.bx.fq.gz: %.fq.gz %.bx
