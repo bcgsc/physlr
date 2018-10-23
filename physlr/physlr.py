@@ -4,8 +4,10 @@ Physlr: Physical Mapping of Linked Reads
 """
 
 import argparse
+import csv
 import itertools
 import sys
+import networkx as nx
 
 from physlr.minimerize import minimerize
 from physlr.benv.graph import Graph
@@ -68,6 +70,38 @@ class Physlr:
         for u, v in bxpairs:
             print(u, v, len(bxtomin[u]), len(bxtomin[v]), len(bxtomin[u] & bxtomin[v]), sep="\t")
 
+    def physlr_tsvtogv(self):
+        "Convert a graph from TSV to GraphViz."
+        g = nx.Graph()
+        for filename in self.args.FASTA:
+            with open(filename) as fin:
+                header = fin.readline()
+                if header != "U\tV\tUn\tVn\tn\n":
+                    print("Unexpected header:", header, file=sys.stderr)
+                    exit(1)
+                tsvin = csv.reader(fin, delimiter='\t')
+                for u, v, u_minimizers, v_minimizers, shared_minimizers in tsvin:
+                    g.add_edge(u, v, Un=u_minimizers, Vn=v_minimizers, n=shared_minimizers)
+        nx.drawing.nx_agraph.write_dot(g, sys.stdout)
+
+    def physlr_mst(self):
+        "Determine the maximum spanning tree."
+        g = nx.Graph()
+        for filename in self.args.FASTA:
+            with open(filename) as fin:
+                header = fin.readline()
+                if header != "U\tV\tUn\tVn\tn\n":
+                    print("Unexpected header:", header, file=sys.stderr)
+                    exit(1)
+                tsvin = csv.reader(fin, delimiter='\t')
+                for u, v, u_minimizers, v_minimizers, shared_minimizers in tsvin:
+                    g.add_edge(
+                        u, v,
+                        Un=int(u_minimizers), Vn=int(v_minimizers),
+                        n=int(shared_minimizers))
+        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight='n')
+        nx.drawing.nx_agraph.write_dot(gmst, sys.stdout)
+
     def physlr_graph(self, fmt):
         "Generate a graph from the minimizer index."
         graph = Graph()
@@ -88,7 +122,7 @@ class Physlr:
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
             "command",
-            help="A command: indexfa, indexlr, overlap")
+            help="A command: indexfa, indexlr, graphtsv, graphgv, overlap, tsvtogv")
         argparser.add_argument(
             "FASTA", nargs="+",
             help="FASTA/FASTQ file of linked reads")
@@ -109,8 +143,12 @@ class Physlr:
             self.physlr_graph("tsv")
         elif self.args.command == "graphgv":
             self.physlr_graph("graphviz")
+        elif self.args.command == "mst":
+            self.physlr_mst()
         elif self.args.command == "overlap":
             self.physlr_overlap()
+        elif self.args.command == "tsvtogv":
+            self.physlr_tsvtogv()
         else:
             print("Unrecognized command:", self.args.command, file=sys.stderr)
             exit(1)

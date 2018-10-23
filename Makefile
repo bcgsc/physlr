@@ -209,10 +209,29 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx.f
 ################################################################################
 # Physlr
 
-# Index a FASTA file using Physlr.
+# Index a FASTA file.
 %.physlr.tsv: %.fa
 	PYTHONPATH=. bin/physlr indexfa -k$k -w$w $< >$@
 
-# Index linked reads using Physlr.
+# Index linked reads.
 %.physlr.tsv: %.fq.gz
 	gunzip -c $< | PYTHONPATH=. bin/physlr indexlr -k$k -w$w - >$@
+
+# Determine overlaps and output the graph in TSV.
+%.physlr.overlap.tsv: %.physlr.tsv
+	PYTHONPATH=. bin/physlr overlap -k$k -w$w $< >$@
+
+# Convert a graph from TSV to GraphViz.
+%.physlr.overlap.gv: %.physlr.overlap.tsv
+	PYTHONPATH=. bin/physlr tsvtogv -k$k -w$w $< >$@
+
+# Determine the maximum spanning tree.
+%.physlr.overlap.mst.gv: %.physlr.overlap.tsv
+	PYTHONPATH=. bin/physlr mst -k$k -w$w $< >$@
+
+################################################################################
+# GraphViz
+
+# Layout and render a graph.
+%.gv.png: %.gv
+	dot -Tpng -o $@ $<
