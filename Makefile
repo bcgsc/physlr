@@ -258,6 +258,10 @@ minsize=2000
 ################################################################################
 # GraphViz
 
-# Layout and render a graph.
+# Layout and render a graph to PDF.
+%.gv.pdf: %.gv
+	dot -Tpdf -o $@ $<
+
+# Layout and render a graph to PNG.
 %.gv.png: %.gv
 	dot -Tpng -o $@ $<
