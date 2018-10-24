@@ -47,6 +47,21 @@ class Physlr:
             eprop["n"] = int(eprop["n"])
         return g
 
+    @staticmethod
+    def determine_backbone(g):
+        "Determine the backbone of the maximum spanning tree."
+        ecc = nx.algorithms.distance_measures.eccentricity(g)
+        diameter = nx.algorithms.distance_measures.diameter(g, e=ecc)
+        sources = [u for u, d in ecc.items() if d == diameter]
+        u, v, _ = max(
+            (
+                (u, *max(
+                    single_source_dijkstra_path_length(g, u, weight="n").items(),
+                    key=lambda x: x[1]))
+                for u in sources),
+            key=lambda x: x[2])
+        return nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
+
     def physlr_indexfa(self):
         "Index a set of sequences. The output file format is TSV."
         for filename in self.args.FASTA:
@@ -125,6 +140,14 @@ class Physlr:
         backbone = self.determine_backbone(g)
         print(*backbone)
 
+    def physlr_backbone_graph(self):
+        "Determine the backbone-induced subgraph."
+        g = self.read_tsv(self.args.FASTA)
+        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
+        backbone = self.determine_backbone(gmst)
+        subgraph = g.subgraph(backbone)
+        nx.drawing.nx_agraph.write_dot(subgraph, sys.stdout)
+
     def physlr_graph(self, fmt):
         "Generate a graph from the minimizer index."
         graph = Graph()
@@ -160,6 +183,8 @@ class Physlr:
         "Run Physlr."
         if self.args.command == "backbone":
             self.physlr_backbone()
+        if self.args.command == "backbone-graph":
+            self.physlr_backbone_graph()
         elif self.args.command == "indexfa":
             self.physlr_indexfa()
         elif self.args.command == "indexlr":
