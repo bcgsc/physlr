@@ -196,8 +196,8 @@ class Physlr:
             "-w", "--window", action="store", dest="w", type=int, required=True,
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
-                "-n", "--min-n", action="store", dest="n", type=int, default=0,
-                help="remove edges with fewer than n shared barcodes [0]")
+            "-n", "--min-n", action="store", dest="n", type=int, default=0,
+            help="remove edges with fewer than n shared barcodes [0]")
         argparser.add_argument(
             "command",
             help="A command: indexfa, indexlr, graphtsv, graphgv, overlap, tsvtogv, backbone")
