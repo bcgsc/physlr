@@ -44,13 +44,11 @@ humanmt/mt.fa:
 
 # Test Phsylr using the fly data.
 fly: \
-	fly/fly.f1.sortn.bam \
-	fly/fly.f1.sort.bam.bai \
-	fly/fly.f1.sortbx.bam \
-	fly/fly.f1.sortbxn.bam
+	f1chr4.physlr.overlap.mst.backbone.path.fly.molecule.bed.png
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
+	mkdir -p $(@D)
 	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz | seqtk seq >$@
 
 # Download the fly linked reads from 10x Genomics.
@@ -58,30 +56,41 @@ fly/f1.tar:
 	mkdir -p $(@D)
 	curl -o $@ http://s3-us-west-2.amazonaws.com/10x.files/samples/assembly/2.1.0/fly/fly_fastqs.tar
 
+# Extract the reads that map to chromosome 4.
+%.chr4.sortbxn.bam: %.sortbxn.bam
+	samtools view -h $< | awk '/^@/ || $$3 == "NC_004353.4"' | samtools view -@$t -o $@
+
+# Symlink the chromosome 4 reads.
+f1chr4.fq.gz: fly/fly.f1.chr4.sortbxn.dropse.bx100-200.fq.gz
+	ln -sf $< $@
+
 ################################################################################
 # Picea sitchensis plastid
 
 # Test Phsylr using the Picea sitchensis plastid data.
 psitchensiscp: \
-	HYN5VCCXX_4cp.physlr.overlap.mst.backbone.path.molecule.bed.png
+	HYN5VCCXX_4cp.physlr.overlap.mst.backbone.path.psitchensiscp.molecule.bed.png
 
 # Download the Picea sitchensis plastid genome.
 psitchensiscp/psitchensiscp.fa:
 	mkdir -p $(@D)
 	curl 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?retmode=text&id=KU215903.2&db=nucleotide&rettype=fasta' | seqtk seq >$@
 
-# Determine a set of barcodes containing plastid molecules.
-%.bx: %.fq.gz
+# Symlink the plastid reads.
+HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx100-200.fq.gz
+	ln -sf $< $@
+
+################################################################################
+# Filter reads
+
+# Determine a set of barcodes containing on-target molecules.
+%.bx100-200.txt: %.fq.gz
 	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
 	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 100 && $$count < 200' then cut -f BX then sort -f BX >$@
 
-# Separate a set of plastid reads.
-%.bx.fq.gz: %.fq.gz %.bx
-	gunzip -c $< | paste - - - - | grep -Ff $*.bx | tr '\t' '\n' | $(gzip) >$@
-
-# Symlink the plastid reads.
-HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx.fq.gz
-	ln -sf $< $@
+# Separate a set of on-target reads.
+%.bx100-200.fq.gz: %.fq.gz %.bx100-200.txt
+	gunzip -c $< | paste - - - - | grep -Ff $*.bx100-200.txt | tr '\t' '\n' | $(gzip) >$@
 
 ################################################################################
 # Trimadap
@@ -246,12 +255,20 @@ minsize=2000
 %.physlr.overlap.mst.gv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr mst -k$k -w$w $< >$@
 
-# Determine the backbone of the tree.
+# Determine the backbone path of the tree.
 %.physlr.overlap.mst.backbone.path: %.physlr.overlap.mst.gv
 	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
 
+# Determine the backbone graph from the overlap TSV.
+%.physlr.overlap.backbone.gv: %.physlr.overlap.tsv
+	PYTHONPATH=. bin/physlr backbone-graph -k$k -w$w $< >$@
+
+# Determine the backbone graph of the maximum spanning tree.
+%.physlr.overlap.mst.backbone.gv: %.physlr.overlap.mst.gv
+	PYTHONPATH=. bin/physlr backbone-graph -k$k -w$w $< >$@
+
 # Extract a BED file of the backbone barcodes.
-%.physlr.overlap.mst.backbone.path.molecule.bed: psitchensiscp/psitchensiscp.%.a0.65.d10000.n5.q1.s2000.molecule.bed %.physlr.overlap.mst.backbone.path
+%.physlr.overlap.mst.backbone.path.$(ref).molecule.bed: $(ref)/$(ref).%.a0.65.d10000.n5.q1.s2000.molecule.bed %.physlr.overlap.mst.backbone.path
 	(head -n1 $<; for i in $$(<$*.physlr.overlap.mst.backbone.path); do grep $$i $<; done) >$@
 
 # Plot a BED file.
@@ -262,10 +279,18 @@ minsize=2000
 ################################################################################
 # GraphViz
 
-# Layout and render a graph to PDF.
-%.gv.pdf: %.gv
-	dot -Tpdf -o $@ $<
+# Label the edges with edge weight.
+%.label.gv: %.gv
+	gvpr -c 'E { label = n }' $< >$@
 
-# Layout and render a graph to PNG.
+# Filter a graph by edge weight.
+%.n50.gv: %.gv
+	gvpr 'E[n >= 50]' $< >$@
+
+# Layout and render an undirected graph to PDF.
+%.gv.pdf: %.gv
+	neato -Goverlap=scale -Tpdf -o $@ $<
+
+# Layout and render an undirected graph to PNG.
 %.gv.png: %.gv
-	dot -Tpng -o $@ $<
+	neato -Goverlap=scale -Tpng -o $@ $<
