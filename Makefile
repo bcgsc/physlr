@@ -276,6 +276,10 @@ minsize=2000
 %.physlr.overlap.mst.backbone.gv: %.physlr.overlap.mst.gv
 	PYTHONPATH=. bin/physlr backbone-graph -k$k -w$w $< >$@
 
+# Determine the minimum tiling graph of the backbone graph.
+%.physlr.overlap.backbone.tiling.gv: %.physlr.overlap.backbone.gv
+	PYTHONPATH=. bin/physlr tiling-graph -k$k -w$w $< >$@
+
 # Extract a BED file of the backbone barcodes.
 %.physlr.overlap.mst.backbone.path.$(ref).molecule.bed: $(ref)/$(ref).%.a0.65.d10000.n5.q1.s2000.molecule.bed %.physlr.overlap.mst.backbone.path
 	(head -n1 $<; for i in $$(<$*.physlr.overlap.mst.backbone.path); do grep $$i $<; done) >$@

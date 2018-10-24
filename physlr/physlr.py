@@ -163,6 +163,20 @@ class Physlr:
         subgraph = g.subgraph(backbone)
         nx.drawing.nx_agraph.write_dot(subgraph, sys.stdout)
 
+    def physlr_tiling_graph(self):
+        "Determine the minimum-tiling-path-induced subgraph."
+        g = self.read_graph(self.args.FASTA)
+        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
+        backbone = self.determine_backbone(gmst)
+        if self.args.n == 0:
+            self.args.n = min(g[u][v]["n"] for u, v in zip(backbone, backbone[1:]))
+            print("Using n=", self.args.n, sep="", file=sys.stderr)
+        g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
+        u, v = backbone[0], backbone[-1]
+        tiling_path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
+        subgraph = g.subgraph(tiling_path)
+        nx.drawing.nx_agraph.write_dot(subgraph, sys.stdout)
+
     def physlr_graph(self, fmt):
         "Generate a graph from the minimizer index."
         graph = Graph()
@@ -181,6 +195,9 @@ class Physlr:
         argparser.add_argument(
             "-w", "--window", action="store", dest="w", type=int, required=True,
             help="number of k-mers in a window of size k + w - 1 bp")
+        argparser.add_argument(
+                "-n", "--min-n", action="store", dest="n", type=int, default=0,
+                help="remove edges with fewer than n shared barcodes [0]")
         argparser.add_argument(
             "command",
             help="A command: indexfa, indexlr, graphtsv, graphgv, overlap, tsvtogv, backbone")
@@ -212,6 +229,8 @@ class Physlr:
             self.physlr_mst()
         elif self.args.command == "overlap":
             self.physlr_overlap()
+        if self.args.command == "tiling-graph":
+            self.physlr_tiling_graph()
         elif self.args.command == "tsvtogv":
             self.physlr_tsvtogv()
         else:
