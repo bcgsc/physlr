@@ -20,32 +20,47 @@ class Physlr:
     """
 
     @staticmethod
-    def read_tsv(filenames):
+    def read_tsv(g, filename):
         "Read a graph in TSV format."
-        g = nx.Graph()
-        for filename in filenames:
-            with open(filename) as fin:
-                header = fin.readline()
-                if header != "U\tV\tUn\tVn\tn\n":
-                    print("Unexpected header:", header, file=sys.stderr)
-                    exit(1)
-                tsvin = csv.reader(fin, delimiter="\t")
-                for u, v, u_minimizers, v_minimizers, shared_minimizers in tsvin:
-                    g.add_edge(
-                        u, v,
-                        Un=int(u_minimizers), Vn=int(v_minimizers),
-                        n=int(shared_minimizers))
+        with open(filename) as fin:
+            header = fin.readline()
+            if header != "U\tV\tUn\tVn\tn\n":
+                print("Unexpected header:", header, file=sys.stderr)
+                exit(1)
+            tsvin = csv.reader(fin, delimiter="\t")
+            for u, v, u_minimizers, v_minimizers, shared_minimizers in tsvin:
+                g.add_edge(
+                    u, v,
+                    Un=int(u_minimizers), Vn=int(v_minimizers),
+                    n=int(shared_minimizers))
         return g
 
     @staticmethod
-    def read_graphviz(filename):
+    def read_graphviz(g, filename):
         "Read a GraphViz file."
-        g = nx.drawing.nx_agraph.read_dot(filename)
-        for _, eprop in g.edges().items():
+        graph = nx.drawing.nx_agraph.read_dot(filename)
+        for _, eprop in graph.edges().items():
             eprop["Un"] = int(eprop["Un"])
             eprop["Vn"] = int(eprop["Vn"])
             eprop["n"] = int(eprop["n"])
+        return nx.algorithms.operators.binary.compose(g, graph)
+
+    @staticmethod
+    def read_graph(filenames):
+        "Read a graph in either GraphViz or TSV format."
+        g = nx.Graph()
+        for filename in filenames:
+            with open(filename) as fin:
+                c = fin.read(1)
+                if c == "g" or c == "s":
+                    g = Physlr.read_graphviz(g, filename)
+                elif c == "U":
+                    g = Physlr.read_tsv(g, filename)
+                else:
+                    print("Unexpected graph format", c + fin.readline(), file=sys.stderr)
+                    sys.exit(1)
         return g
+
 
     @staticmethod
     def determine_backbone(g):
@@ -130,19 +145,19 @@ class Physlr:
 
     def physlr_mst(self):
         "Determine the maximum spanning tree."
-        g = self.read_tsv(self.args.FASTA)
+        g = self.read_graph(self.args.FASTA)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         nx.drawing.nx_agraph.write_dot(gmst, sys.stdout)
 
     def physlr_backbone(self):
         "Determine the backbone path of the graph."
-        g = self.read_graphviz(self.args.FASTA[0])
+        g = self.read_graph(self.args.FASTA)
         backbone = self.determine_backbone(g)
         print(*backbone)
 
     def physlr_backbone_graph(self):
         "Determine the backbone-induced subgraph."
-        g = self.read_tsv(self.args.FASTA)
+        g = self.read_graph(self.args.FASTA)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         backbone = self.determine_backbone(gmst)
         subgraph = g.subgraph(backbone)
