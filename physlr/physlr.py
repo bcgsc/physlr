@@ -19,6 +19,34 @@ class Physlr:
     Physlr: Physical Mapping of Linked Reads
     """
 
+    @staticmethod
+    def read_tsv(filenames):
+        "Read a graph in TSV format."
+        g = nx.Graph()
+        for filename in filenames:
+            with open(filename) as fin:
+                header = fin.readline()
+                if header != "U\tV\tUn\tVn\tn\n":
+                    print("Unexpected header:", header, file=sys.stderr)
+                    exit(1)
+                tsvin = csv.reader(fin, delimiter="\t")
+                for u, v, u_minimizers, v_minimizers, shared_minimizers in tsvin:
+                    g.add_edge(
+                        u, v,
+                        Un=int(u_minimizers), Vn=int(v_minimizers),
+                        n=int(shared_minimizers))
+        return g
+
+    @staticmethod
+    def read_graphviz(filename):
+        "Read a GraphViz file."
+        g = nx.drawing.nx_agraph.read_dot(filename)
+        for _, eprop in g.edges().items():
+            eprop["Un"] = int(eprop["Un"])
+            eprop["Vn"] = int(eprop["Vn"])
+            eprop["n"] = int(eprop["n"])
+        return g
+
     def physlr_indexfa(self):
         "Index a set of sequences. The output file format is TSV."
         for filename in self.args.FASTA:
@@ -87,40 +115,15 @@ class Physlr:
 
     def physlr_mst(self):
         "Determine the maximum spanning tree."
-        g = nx.Graph()
-        for filename in self.args.FASTA:
-            with open(filename) as fin:
-                header = fin.readline()
-                if header != "U\tV\tUn\tVn\tn\n":
-                    print("Unexpected header:", header, file=sys.stderr)
-                    exit(1)
-                tsvin = csv.reader(fin, delimiter="\t")
-                for u, v, u_minimizers, v_minimizers, shared_minimizers in tsvin:
-                    g.add_edge(
-                        u, v,
-                        Un=int(u_minimizers), Vn=int(v_minimizers),
-                        n=int(shared_minimizers))
+        g = self.read_tsv(self.args.FASTA)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         nx.drawing.nx_agraph.write_dot(gmst, sys.stdout)
 
     def physlr_backbone(self):
-        "Determine the backbone of the graph."
-        g = nx.drawing.nx_agraph.read_dot(self.args.FASTA[0])
-        for e, eprop in g.edges().items():
-            eprop["Un"] = int(eprop["Un"])
-            eprop["Vn"] = int(eprop["Vn"])
-            eprop["n"] = int(eprop["n"])
-        ecc = nx.algorithms.distance_measures.eccentricity(g)
-        diameter = nx.algorithms.distance_measures.diameter(g, e=ecc)
-        sources = [u for u, d in ecc.items() if d == diameter]
-        u, v, _ = max(
-            ((u, *max(
-                single_source_dijkstra_path_length(g, u, weight="n").items(),
-                key=lambda x: x[1]))
-            for u in sources),
-            key=lambda x: x[2])
-        path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
-        print(*path)
+        "Determine the backbone path of the graph."
+        g = self.read_graphviz(self.args.FASTA[0])
+        backbone = self.determine_backbone(g)
+        print(*backbone)
 
     def physlr_graph(self, fmt):
         "Generate a graph from the minimizer index."
