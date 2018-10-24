@@ -44,7 +44,8 @@ humanmt/mt.fa:
 
 # Test Phsylr using the fly data.
 fly: \
-	f1chr4.physlr.overlap.mst.backbone.path.fly.molecule.bed.png
+	f1chr4.physlr.overlap.mst.backbone.path.fly.molecule.bed.png \
+	f1chr2R.physlr.overlap.mst.backbone.path.fly.molecule.bed.png
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -62,6 +63,14 @@ fly/f1.tar:
 
 # Symlink the chromosome 4 reads.
 f1chr4.fq.gz: fly/fly.f1.chr4.sortbxn.dropse.bx100-200.fq.gz
+	ln -sf $< $@
+
+# Extract the reads that map to chromosome 2R.
+%.chr2R.sortbxn.bam: %.sortbxn.bam
+	samtools view -h $< | awk '/^@/ || $$3 == "NT_033778.4"' | samtools view -@$t -o $@
+
+# Symlink the chromosome 2R reads.
+f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx100-200.fq.gz
 	ln -sf $< $@
 
 ################################################################################
