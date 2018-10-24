@@ -215,7 +215,7 @@ class Physlr:
         "Run Physlr."
         if self.args.command == "backbone":
             self.physlr_backbone()
-        if self.args.command == "backbone-graph":
+        elif self.args.command == "backbone-graph":
             self.physlr_backbone_graph()
         elif self.args.command == "indexfa":
             self.physlr_indexfa()
@@ -229,7 +229,7 @@ class Physlr:
             self.physlr_mst()
         elif self.args.command == "overlap":
             self.physlr_overlap()
-        if self.args.command == "tiling-graph":
+        elif self.args.command == "tiling-graph":
             self.physlr_tiling_graph()
         elif self.args.command == "tsvtogv":
             self.physlr_tsvtogv()
