@@ -111,6 +111,10 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx.f
 ################################################################################
 # samtools
 
+# Index a FASTA file.
+%.fa.fai: %.fa
+	samtools faidx $<
+
 # Sort a BAM file by position.
 %.sort.bam: %.sortn.bam
 	samtools sort -@$t -T$$(mktemp -u -t $(@F).XXXXXX) -o $@ $<
