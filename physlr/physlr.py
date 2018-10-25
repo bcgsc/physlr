@@ -39,9 +39,9 @@ class Physlr:
     def read_graphviz(g, filename):
         "Read a GraphViz file."
         graph = nx.drawing.nx_agraph.read_dot(filename)
-        for _, eprop in graph.edges().items():
-            eprop["Un"] = int(eprop["Un"])
-            eprop["Vn"] = int(eprop["Vn"])
+        for vprop in graph.nodes().values():
+            vprop["n"] = int(vprop["n"])
+        for eprop in graph.edges().values():
             eprop["n"] = int(eprop["n"])
         return nx.algorithms.operators.binary.compose(g, graph)
 
@@ -127,16 +127,19 @@ class Physlr:
                     mintobx[x] = set()
                 mintobx[x].add(bx)
 
-        # Construct a set of barcode pairs that share a minimizer.
-        bxpairs = set()
+        # Add the vertices.
+        g = nx.Graph()
+        for u, minimizers in bxtomin.items():
+            g.add_node(u, n=len(minimizers))
+
+        # Add the overlap edges.
         for bxs in mintobx.values():
             for u, v in itertools.combinations(bxs, 2):
-                bxpairs.add((min(u, v), max(u, v)))
+                if not g.has_edge(u, v):
+                    g.add_edge(u, v, n=len(bxtomin[u] & bxtomin[v]))
 
-        # Output overlapping barcodes.
-        print("U\tV\tUn\tVn\tn")
-        for u, v in bxpairs:
-            print(u, v, len(bxtomin[u]), len(bxtomin[v]), len(bxtomin[u] & bxtomin[v]), sep="\t")
+        # Write the graph.
+        nx.drawing.nx_agraph.write_dot(g, sys.stdout)
 
     def physlr_tsvtogv(self):
         "Convert a graph from TSV to GraphViz."
