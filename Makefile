@@ -20,7 +20,7 @@ all: lint
 lint:
 	pylint physlr
 
-check: humanmt
+check: humanmt psitchensiscp fly
 
 clean:
 	rm -f humanmt/mt.physlr.tsv
@@ -44,7 +44,9 @@ humanmt/mt.fa:
 
 # Test Phsylr using the fly data.
 fly: \
+	f1chr4.physlr.overlap.backbone.n50.gv.pdf \
 	f1chr4.physlr.overlap.mst.backbone.path.fly.molecule.bed.png \
+	f1chr2R.physlr.overlap.backbone.n50.gv.pdf \
 	f1chr2R.physlr.overlap.mst.backbone.path.fly.molecule.bed.png
 
 # Download the fly genome from NCBI.
@@ -78,6 +80,7 @@ f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx100-200.fq.gz
 
 # Test Phsylr using the Picea sitchensis plastid data.
 psitchensiscp: \
+	HYN5VCCXX_4cp.physlr.overlap.backbone.n50.gv.pdf \
 	HYN5VCCXX_4cp.physlr.overlap.mst.backbone.path.psitchensiscp.molecule.bed.png
 
 # Download the Picea sitchensis plastid genome.
@@ -304,6 +307,18 @@ minsize=2000
 # Label the edges with edge weight.
 %.label.gv: %.gv
 	gvpr -c 'E { label = n }' $< >$@
+
+# Filter a graph by edge weight.
+%.n5.gv: %.gv
+	gvpr 'E[n >= 5]' $< >$@
+
+# Filter a graph by edge weight.
+%.n10.gv: %.gv
+	gvpr 'E[n >= 10]' $< >$@
+
+# Filter a graph by edge weight.
+%.n20.gv: %.gv
+	gvpr 'E[n >= 20]' $< >$@
 
 # Filter a graph by edge weight.
 %.n50.gv: %.gv
