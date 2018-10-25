@@ -92,6 +92,11 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx10
 ################################################################################
 # Filter reads
 
+# Count the number of reads per barcode.
+%.bx.tsv: %.fq.gz
+	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
+	| mlr -p --otsvlite rename 1,BX then count-distinct -f BX -o Reads then sort -nr Reads >$@
+
 # Determine a set of barcodes containing on-target molecules.
 %.bx100-200.txt: %.fq.gz
 	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
