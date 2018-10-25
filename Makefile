@@ -280,6 +280,10 @@ minsize=2000
 %.physlr.overlap.backbone.tiling.gv: %.physlr.overlap.backbone.gv
 	PYTHONPATH=. bin/physlr tiling-graph -k$k -w$w $< >$@
 
+# Estimate the nubmer of molecules per barcode.
+%.physlr.overlap.molecules.gv: %.physlr.overlap.tsv
+	PYTHONPATH=. bin/physlr molecules -k$k -w$w -n10 $< >$@
+
 # Extract a BED file of the backbone barcodes.
 %.physlr.overlap.mst.backbone.path.$(ref).molecule.bed: $(ref)/$(ref).%.a0.65.d10000.n5.q1.s2000.molecule.bed %.physlr.overlap.mst.backbone.path
 	(head -n1 $<; for i in $$(<$*.physlr.overlap.mst.backbone.path); do grep $$i $<; done) >$@

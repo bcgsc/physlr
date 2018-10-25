@@ -77,6 +77,15 @@ class Physlr:
             key=lambda x: x[2])
         return nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
 
+    @staticmethod
+    def count_adajcent_components(g):
+        "Estimate the nubmer of adjacent components of each vertex."
+        adjcomps = {}
+        for u in g:
+            vs = g.neighbors(u)
+            adjcomps[u] = nx.algorithms.components.number_connected_components(g.subgraph(vs))
+        return adjcomps
+
     def physlr_indexfa(self):
         "Index a set of sequences. The output file format is TSV."
         for filename in self.args.FASTA:
@@ -177,6 +186,14 @@ class Physlr:
         subgraph = g.subgraph(tiling_path)
         nx.drawing.nx_agraph.write_dot(subgraph, sys.stdout)
 
+    def physlr_molecules(self):
+        "Estimate the nubmer of molecules per barcode."
+        g = self.read_graph(self.args.FASTA)
+        g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
+        for u, nmolecules in self.count_adajcent_components(g).items():
+            g.nodes[u]["m"] = nmolecules
+        nx.drawing.nx_agraph.write_dot(g, sys.stdout)
+
     def physlr_graph(self, fmt):
         "Generate a graph from the minimizer index."
         graph = Graph()
@@ -225,6 +242,8 @@ class Physlr:
             self.physlr_graph("tsv")
         elif self.args.command == "graphgv":
             self.physlr_graph("graphviz")
+        elif self.args.command == "molecules":
+            self.physlr_molecules()
         elif self.args.command == "mst":
             self.physlr_mst()
         elif self.args.command == "overlap":
