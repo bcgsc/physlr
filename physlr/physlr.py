@@ -61,6 +61,33 @@ class Physlr:
                     sys.exit(1)
         return g
 
+    @staticmethod
+    def read_minimizers(filenames):
+        "Read a graph in TSV format."
+        bxtomin = {}
+        for filename in filenames:
+            with open(filename) as fin:
+                for line in fin:
+                    fields = line.split(None, 1)
+                    if len(fields) < 2:
+                        continue
+                    bx = fields[0]
+                    minimizers = fields[1].split()
+                    if bx not in bxtomin:
+                        bxtomin[bx] = set()
+                    bxtomin[bx].update(minimizers)
+        return bxtomin
+
+    @staticmethod
+    def construct_minimizers_to_barcodes(bxtomin):
+        "Construct a dictionary of minimizers to barcodes."
+        mintobx = {}
+        for bx, minimizers in bxtomin.items():
+            for x in minimizers:
+                if x not in mintobx:
+                    mintobx[x] = set()
+                mintobx[x].add(bx)
+        return mintobx
 
     @staticmethod
     def determine_backbone(g):
@@ -102,30 +129,23 @@ class Physlr:
                     print(bx, "\t", sep="", end="")
                     print(*minimerize(self.args.k, self.args.w, seq.upper()))
 
+    def physlr_intersect(self):
+        "Print the minimizers in the intersection of each pair of barcodes."
+        bxtomin = self.read_minimizers(self.args.FASTA)
+        mintobx = self.construct_minimizers_to_barcodes(bxtomin)
+        seen = set()
+        for bxs in mintobx.values():
+            for u, v in itertools.combinations(bxs, 2):
+                if not (u, v) in seen:
+                    seen.add((u,v))
+                    uv = bxtomin[u] & bxtomin[v]
+                    if len(uv) >= self.args.n:
+                        print(u, v, " ".join(uv), sep="\t")
+
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
-
-        # Read a dictionary of barcodes to minimizers.
-        bxtomin = {}
-        for filename in self.args.FASTA:
-            with open(filename) as fin:
-                for line in fin:
-                    fields = line.split(None, 1)
-                    if len(fields) < 2:
-                        continue
-                    bx = fields[0]
-                    minimizers = fields[1].split()
-                    if bx not in bxtomin:
-                        bxtomin[bx] = set()
-                    bxtomin[bx].update(minimizers)
-
-        # Construct a dictionary of minimizers to barcodes.
-        mintobx = {}
-        for bx, minimizers in bxtomin.items():
-            for x in minimizers:
-                if x not in mintobx:
-                    mintobx[x] = set()
-                mintobx[x].add(bx)
+        bxtomin = self.read_minimizers(self.args.FASTA)
+        mintobx = self.construct_minimizers_to_barcodes(bxtomin)
 
         # Add the vertices.
         g = nx.Graph()
@@ -245,6 +265,8 @@ class Physlr:
             self.physlr_graph("tsv")
         elif self.args.command == "graphgv":
             self.physlr_graph("graphviz")
+        elif self.args.command == "intersect":
+            self.physlr_intersect()
         elif self.args.command == "molecules":
             self.physlr_molecules()
         elif self.args.command == "mst":
