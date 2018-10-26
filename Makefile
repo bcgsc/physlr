@@ -44,9 +44,9 @@ humanmt/mt.fa:
 
 # Test Phsylr using the fly data.
 fly: \
-	f1chr4.physlr.overlap.backbone.n50.gv.pdf \
+	f1chr4.physlr.overlap.backbone.label.n50.gv.pdf \
 	f1chr4.physlr.overlap.mst.backbone.path.fly.molecule.bed.png \
-	f1chr2R.physlr.overlap.backbone.n50.gv.pdf \
+	f1chr2R.physlr.overlap.backbone.label.n50.gv.pdf \
 	f1chr2R.physlr.overlap.mst.backbone.path.fly.molecule.bed.png
 
 # Download the fly genome from NCBI.
