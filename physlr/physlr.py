@@ -181,7 +181,7 @@ class Physlr:
 
         # Add the vertices.
         g = nx.Graph()
-        for u, minimizers in bxtomin.items():
+        for u, minimizers in sorted(bxtomin.items()):
             g.add_node(u, n=len(minimizers))
 
         # Add the overlap edges.
