@@ -147,7 +147,7 @@ class Physlr:
 
     def physlr_indexfa(self):
         "Index a set of sequences. The output file format is TSV."
-        for filename in self.args.FASTA:
+        for filename in self.args.FILES:
             with open(filename) as fin:
                 for name, seq, _ in read_fasta(fin):
                     print(name, "\t", sep="", end="")
@@ -155,7 +155,7 @@ class Physlr:
 
     def physlr_indexlr(self):
         "Index a set of linked reads. The output file format is TSV."
-        for filename in self.args.FASTA:
+        for filename in self.args.FILES:
             with open(filename) as fin:
                 for _, seq, bx in read_fasta(fin):
                     print(bx, "\t", sep="", end="")
@@ -163,7 +163,7 @@ class Physlr:
 
     def physlr_intersect(self):
         "Print the minimizers in the intersection of each pair of barcodes."
-        bxtomin = self.read_minimizers(self.args.FASTA)
+        bxtomin = self.read_minimizers(self.args.FILES)
         mintobx = self.construct_minimizers_to_barcodes(bxtomin)
         seen = set()
         for bxs in mintobx.values():
@@ -177,7 +177,7 @@ class Physlr:
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
-        bxtomin = self.read_minimizers(self.args.FASTA)
+        bxtomin = self.read_minimizers(self.args.FILES)
         mintobx = self.construct_minimizers_to_barcodes(bxtomin)
 
         # Add the vertices.
@@ -197,7 +197,7 @@ class Physlr:
     def physlr_tsvtogv(self):
         "Convert a graph from TSV to GraphViz."
         g = nx.Graph()
-        for filename in self.args.FASTA:
+        for filename in self.args.FILES:
             with open(filename) as fin:
                 header = fin.readline()
                 if header != "U\tV\tUn\tVn\tn\n":
@@ -212,20 +212,20 @@ class Physlr:
 
     def physlr_mst(self):
         "Determine the maximum spanning tree."
-        g = self.read_graph(self.args.FASTA)
+        g = self.read_graph(self.args.FILES)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         nx.drawing.nx_agraph.write_dot(gmst, sys.stdout)
 
     def physlr_backbone(self):
         "Determine the backbone path of the graph."
-        g = self.read_graph(self.args.FASTA)
+        g = self.read_graph(self.args.FILES)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         backbone = self.determine_backbone(gmst)
         print(*backbone)
 
     def physlr_backbone_graph(self):
         "Determine the backbone-induced subgraph."
-        g = self.read_graph(self.args.FASTA)
+        g = self.read_graph(self.args.FILES)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         backbone = self.determine_backbone(gmst)
         subgraph = g.subgraph(backbone)
@@ -233,7 +233,7 @@ class Physlr:
 
     def physlr_tiling_graph(self):
         "Determine the minimum-tiling-path-induced subgraph."
-        g = self.read_graph(self.args.FASTA)
+        g = self.read_graph(self.args.FILES)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         backbone = self.determine_backbone(gmst)
         if self.args.n == 0:
@@ -247,7 +247,7 @@ class Physlr:
 
     def physlr_molecules(self):
         "Estimate the nubmer of molecules per barcode."
-        g = self.read_graph(self.args.FASTA)
+        g = self.read_graph(self.args.FILES)
         g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
         for u, nmolecules in self.count_adajcent_components(g).items():
             g.nodes[u]["m"] = nmolecules
@@ -256,7 +256,7 @@ class Physlr:
     def physlr_graph(self, fmt):
         "Generate a graph from the minimizer index."
         graph = Graph()
-        for filename in self.args.FASTA:
+        for filename in self.args.FILES:
             with open(filename) as fin:
                 graph.read_index(fin)
                 graph.output_graph(pmin=0, fmt=fmt)
@@ -278,14 +278,14 @@ class Physlr:
             "command",
             help="A command: indexfa, indexlr, graphtsv, graphgv, overlap, tsvtogv, backbone")
         argparser.add_argument(
-            "FASTA", nargs="+",
-            help="FASTA/FASTQ file of linked reads")
+            "FILES", nargs="+",
+            help="FASTA/FASTQ, TSV, or GraphViz format")
         return argparser.parse_args()
 
     def __init__(self):
         "Create a new instance of Physlr."
         self.args = self.parse_arguments()
-        self.args.FASTA = ["/dev/stdin" if s == "-" else s for s in self.args.FASTA]
+        self.args.FILES = ["/dev/stdin" if s == "-" else s for s in self.args.FILES]
 
     def main(self):
         "Run Physlr."
