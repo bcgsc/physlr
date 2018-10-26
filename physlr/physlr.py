@@ -218,7 +218,8 @@ class Physlr:
     def physlr_backbone(self):
         "Determine the backbone path of the graph."
         g = self.read_graph(self.args.FASTA)
-        backbone = self.determine_backbone(g)
+        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
+        backbone = self.determine_backbone(gmst)
         print(*backbone)
 
     def physlr_backbone_graph(self):

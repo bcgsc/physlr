@@ -45,9 +45,9 @@ humanmt/mt.fa:
 # Test Phsylr using the fly data.
 fly: \
 	f1chr4.physlr.overlap.backbone.label.n50.gv.pdf \
-	f1chr4.physlr.overlap.mst.backbone.path.fly.molecule.bed.png \
+	f1chr4.physlr.overlap.backbone.path.fly.molecule.bed.png \
 	f1chr2R.physlr.overlap.backbone.label.n50.gv.pdf \
-	f1chr2R.physlr.overlap.mst.backbone.path.fly.molecule.bed.png
+	f1chr2R.physlr.overlap.backbone.path.fly.molecule.bed.png
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -80,8 +80,8 @@ f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx100-200.fq.gz
 
 # Test Phsylr using the Picea sitchensis plastid data.
 psitchensiscp: \
-	HYN5VCCXX_4cp.physlr.overlap.backbone.n50.gv.pdf \
-	HYN5VCCXX_4cp.physlr.overlap.mst.backbone.path.psitchensiscp.molecule.bed.png
+	HYN5VCCXX_4cp.physlr.overlap.backbone.label.n50.gv.pdf \
+	HYN5VCCXX_4cp.physlr.overlap.backbone.path.psitchensiscp.molecule.bed.png
 
 # Download the Picea sitchensis plastid genome.
 psitchensiscp/psitchensiscp.fa:
@@ -272,21 +272,13 @@ minsize=2000
 %.physlr.overlap.mst.gv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr mst -k$k -w$w $< >$@
 
-# Determine the backbone path of the overlap graph.
-%.physlr.overlap.backbone.path: %.physlr.overlap.tsv
-	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
-
-# Determine the backbone path of the tree.
-%.physlr.overlap.mst.backbone.path: %.physlr.overlap.mst.gv
-	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
-
 # Determine the backbone graph from the overlap TSV.
 %.physlr.overlap.backbone.gv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr backbone-graph -k$k -w$w $< >$@
 
-# Determine the backbone graph of the maximum spanning tree.
-%.physlr.overlap.mst.backbone.gv: %.physlr.overlap.mst.gv
-	PYTHONPATH=. bin/physlr backbone-graph -k$k -w$w $< >$@
+# Determine the backbone path of the backbone graph.
+%.backbone.path: %.backbone.gv
+	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
 
 # Determine the minimum tiling graph of the backbone graph.
 %.physlr.overlap.backbone.tiling.gv: %.physlr.overlap.backbone.gv
@@ -297,8 +289,8 @@ minsize=2000
 	PYTHONPATH=. bin/physlr molecules -k$k -w$w -n10 $< >$@
 
 # Extract a BED file of the backbone barcodes.
-%.physlr.overlap.mst.backbone.path.$(ref).molecule.bed: $(ref)/$(ref).%.a0.65.d10000.n5.q1.s2000.molecule.bed %.physlr.overlap.mst.backbone.path
-	(head -n1 $<; for i in $$(<$*.physlr.overlap.mst.backbone.path); do grep $$i $<; done) >$@
+%.physlr.overlap.backbone.path.$(ref).molecule.bed: $(ref)/$(ref).%.a0.65.d10000.n5.q1.s2000.molecule.bed %.physlr.overlap.backbone.path
+	(head -n1 $<; for i in $$(<$*.physlr.overlap.backbone.path); do grep $$i $<; done) >$@
 
 # Plot a BED file.
 %.bed.png: %.bed
