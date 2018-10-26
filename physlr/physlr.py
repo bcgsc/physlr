@@ -124,6 +124,7 @@ class Physlr:
     @staticmethod
     def determine_backbone(g):
         "Determine the backbone of the maximum spanning tree."
+        g.remove_nodes_from([u for u, deg in g.degree if deg == 0])
         ecc = nx.algorithms.distance_measures.eccentricity(g)
         diameter = nx.algorithms.distance_measures.diameter(g, e=ecc)
         sources = [u for u, d in ecc.items() if d == diameter]
