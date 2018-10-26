@@ -20,19 +20,38 @@ class Physlr:
     """
 
     @staticmethod
+    def write_tsv(g, fout):
+        "Write a grpah in TSV format."
+        print("U\tn", file=fout)
+        for u, prop in g.nodes.items():
+            print(u, prop["n"], sep="\t", file=fout)
+        print("\nU\tV\tn", file=fout)
+        for e, prop in g.edges.items():
+            print(e[0], e[1], prop["n"], sep="\t", file=fout)
+
+    @staticmethod
     def read_tsv(g, filename):
         "Read a graph in TSV format."
         with open(filename) as fin:
-            header = fin.readline()
-            if header != "U\tV\tUn\tVn\tn\n":
-                print("Unexpected header:", header, file=sys.stderr)
+            line = fin.readline()
+            if line != "U\tn\n":
+                print("Unexpected header:", line, file=sys.stderr)
                 exit(1)
-            tsvin = csv.reader(fin, delimiter="\t")
-            for u, v, u_minimizers, v_minimizers, shared_minimizers in tsvin:
-                g.add_edge(
-                    u, v,
-                    Un=int(u_minimizers), Vn=int(v_minimizers),
-                    n=int(shared_minimizers))
+            for line in fin:
+                if line == "\n":
+                    line = fin.readline()
+                    if line != "U\tV\tn\n":
+                        print("Unexpected header:", line, file=sys.stderr)
+                        exit(1)
+                    line = fin.readline()
+                xs = line.split()
+                if len(xs) == 2:
+                    g.add_node(xs[0], n=int(xs[1]))
+                elif len(xs) == 3:
+                    g.add_edge(xs[0], xs[1], n=int(xs[2]))
+                else:
+                    print("Unexpected row:", line, file=sys.stderr)
+                    exit(1)
         return g
 
     @staticmethod
@@ -172,7 +191,7 @@ class Physlr:
                     g.add_edge(u, v, n=len(bxtomin[u] & bxtomin[v]))
 
         # Write the graph.
-        nx.drawing.nx_agraph.write_dot(g, sys.stdout)
+        self.write_tsv(g, sys.stdout)
 
     def physlr_tsvtogv(self):
         "Convert a graph from TSV to GraphViz."
@@ -184,8 +203,10 @@ class Physlr:
                     print("Unexpected header:", header, file=sys.stderr)
                     exit(1)
                 tsvin = csv.reader(fin, delimiter="\t")
-                for u, v, u_minimizers, v_minimizers, shared_minimizers in tsvin:
-                    g.add_edge(u, v, Un=u_minimizers, Vn=v_minimizers, n=shared_minimizers)
+                for u, v, un, vn, n in tsvin:
+                    g.add_edge(u, v, n=int(n))
+                    g.nodes[u]["n"] = int(un)
+                    g.nodes[v]["n"] = int(vn)
         nx.drawing.nx_agraph.write_dot(g, sys.stdout)
 
     def physlr_mst(self):

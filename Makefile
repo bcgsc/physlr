@@ -261,7 +261,7 @@ minsize=2000
 	gunzip -c $< | PYTHONPATH=. bin/physlr indexlr -k$k -w$w - >$@
 
 # Determine overlaps and output the graph in TSV.
-%.physlr.overlap.gv: %.physlr.tsv
+%.physlr.overlap.tsv: %.physlr.tsv
 	PYTHONPATH=. bin/physlr overlap -k$k -w$w $< >$@
 
 # Convert a graph from TSV to GraphViz.
@@ -269,7 +269,7 @@ minsize=2000
 	PYTHONPATH=. bin/physlr tsvtogv -k$k -w$w $< >$@
 
 # Determine the maximum spanning tree.
-%.physlr.overlap.mst.gv: %.physlr.overlap.gv
+%.physlr.overlap.mst.gv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr mst -k$k -w$w $< >$@
 
 # Determine the backbone path of the tree.
@@ -277,7 +277,7 @@ minsize=2000
 	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
 
 # Determine the backbone graph from the overlap TSV.
-%.physlr.overlap.backbone.gv: %.physlr.overlap.gv
+%.physlr.overlap.backbone.gv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr backbone-graph -k$k -w$w $< >$@
 
 # Determine the backbone graph of the maximum spanning tree.
@@ -289,7 +289,7 @@ minsize=2000
 	PYTHONPATH=. bin/physlr tiling-graph -k$k -w$w $< >$@
 
 # Estimate the nubmer of molecules per barcode.
-%.physlr.overlap.molecules.gv: %.physlr.overlap.gv
+%.physlr.overlap.molecules.gv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr molecules -k$k -w$w -n10 $< >$@
 
 # Extract a BED file of the backbone barcodes.
