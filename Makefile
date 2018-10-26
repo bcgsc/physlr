@@ -272,6 +272,10 @@ minsize=2000
 %.physlr.overlap.mst.gv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr mst -k$k -w$w $< >$@
 
+# Determine the backbone path of the overlap graph.
+%.physlr.overlap.backbone.path: %.physlr.overlap.tsv
+	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
+
 # Determine the backbone path of the tree.
 %.physlr.overlap.mst.backbone.path: %.physlr.overlap.mst.gv
 	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
