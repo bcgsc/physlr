@@ -298,7 +298,7 @@ minsize=2000
 
 # Extract a BED file of the backbone barcodes.
 %.physlr.overlap.backbone.path.$(ref).molecule.bed: $(ref)/$(ref).%.a0.65.d10000.n5.q1.s2000.molecule.bed %.physlr.overlap.backbone.path
-	(head -n1 $<; for i in $$(<$*.physlr.overlap.backbone.path); do grep $$i $<; done) >$@
+	(head -n1 $<; for i in $$(<$*.physlr.overlap.backbone.path); do grep $$i $< || true; done) >$@
 
 # Plot a BED file.
 %.bed.png: %.bed

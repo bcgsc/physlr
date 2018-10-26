@@ -14,6 +14,11 @@ from physlr.minimerize import minimerize
 from physlr.benv.graph import Graph
 from physlr.read_fasta import read_fasta
 
+def quantile(quantiles, xs):
+    "Return the specified quantiles p of xs."
+    sorted_xs = sorted(xs)
+    return [sorted_xs[round(p * (len(sorted_xs)-1))] for p in quantiles]
+
 class Physlr:
     """
     Physlr: Physical Mapping of Linked Reads
@@ -197,13 +202,32 @@ class Physlr:
         bxtomin = self.read_minimizers(self.args.FILES)
         mintobx = self.construct_minimizers_to_barcodes(bxtomin)
 
+        # Ignore markers that were seen only once.
+        freqs = [len(bxs) for bxs in mintobx.values() if len(bxs) >= 2]
+        q1, q2, q3 = quantile([0.25, 0.5, 0.75], freqs)
+        whisker = int(q3 + self.args.coef * (q3 - q1))
+        if self.args.C is None:
+            self.args.C = whisker
+        print(
+            "Removing markers that are frequent and likely repetitive.\n",
+            "Q1=", q1, " Q2=", q2, " Q3=", q3,
+            " Q3+", self.args.coef, "*(Q3-Q1)=", whisker,
+            " C=", self.args.C, sep="", file=sys.stderr)
+
+        # Remove frequent (likely repetitive) minimizers.
+        unique = set(x for x, bxs in mintobx.items() if len(bxs) < self.args.C)
+        for xs in bxtomin.values():
+            xs &= unique
+
         # Add the vertices.
         g = nx.Graph()
         for u, minimizers in sorted(bxtomin.items()):
             g.add_node(u, n=len(minimizers))
 
         # Add the overlap edges.
-        for bxs in mintobx.values():
+        for x, bxs in mintobx.items():
+            if x not in unique:
+                continue
             for u, v in itertools.combinations(bxs, 2):
                 if not g.has_edge(u, v):
                     g.add_edge(u, v, n=len(bxtomin[u] & bxtomin[v]))
@@ -289,11 +313,17 @@ class Physlr:
             "-w", "--window", action="store", dest="w", type=int, required=True,
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
+            "-c", "--coef", action="store", dest="coef", type=float, default=1.5,
+            help="ignore markers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
+        argparser.add_argument(
+            "-C", "--max-count", action="store", dest="C", type=int,
+            help="ignore markers that occur in C or more barcodes [0]")
+        argparser.add_argument(
             "-n", "--min-n", action="store", dest="n", type=int, default=0,
-            help="remove edges with fewer than n shared barcodes [0]")
+            help="remove edges with fewer than n shared markers [0]")
         argparser.add_argument(
             "command",
-            help="A command: indexfa, indexlr, graphtsv, graphgv, overlap, tsvtogv, backbone")
+            help="A command")
         argparser.add_argument(
             "FILES", nargs="+",
             help="FASTA/FASTQ, TSV, or GraphViz format")
