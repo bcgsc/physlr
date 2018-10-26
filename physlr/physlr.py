@@ -161,6 +161,23 @@ class Physlr:
                     print(bx, "\t", sep="", end="")
                     print(*minimerize(self.args.k, self.args.w, seq.upper()))
 
+    def physlr_count_markers(self):
+        "Count the frequency of each minimizer."
+        if self.args.n == 0:
+            self.args.n = 2
+        bxtomin = self.read_minimizers(self.args.FILES)
+        freq = {}
+        for xs in bxtomin.values():
+            for x in xs:
+                if x in freq:
+                    freq[x] += 1
+                else:
+                    freq[x] = 1
+        print("Marker\tCount")
+        for x, c in sorted(freq.items(), key=lambda x: x[1]):
+            if c >= self.args.n:
+                print(x, c, sep="\t")
+
     def physlr_intersect(self):
         "Print the minimizers in the intersection of each pair of barcodes."
         bxtomin = self.read_minimizers(self.args.FILES)
@@ -293,6 +310,8 @@ class Physlr:
             self.physlr_backbone()
         elif self.args.command == "backbone-graph":
             self.physlr_backbone_graph()
+        elif self.args.command == "count-markers":
+            self.physlr_count_markers()
         elif self.args.command == "indexfa":
             self.physlr_indexfa()
         elif self.args.command == "indexlr":
