@@ -260,6 +260,10 @@ minsize=2000
 %.physlr.tsv: %.fq.gz
 	gunzip -c $< | PYTHONPATH=. bin/physlr indexlr -k$k -w$w - >$@
 
+# Identify the overlapping markers of each pair of barcodes.
+%.physlr.intersect.tsv: %.physlr.tsv
+	PYTHONPATH=. bin/physlr intersect -k$k -w$w $< >$@
+
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
 	PYTHONPATH=. bin/physlr overlap -k$k -w$w $< >$@

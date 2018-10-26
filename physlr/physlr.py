@@ -172,7 +172,8 @@ class Physlr:
                     seen.add((u, v))
                     common = bxtomin[u] & bxtomin[v]
                     if len(common) >= self.args.n:
-                        print(u, v, " ".join(common), sep="\t")
+                        print(u, v, "", sep="\t", end="")
+                        print(*common)
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
