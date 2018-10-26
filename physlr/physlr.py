@@ -46,6 +46,19 @@ class Physlr:
         return nx.algorithms.operators.binary.compose(g, graph)
 
     @staticmethod
+    def sort_vertices(g):
+        """
+        Sort the vertices of a graph by name.
+        There may be more than one tree with the same minimum or maximum weight.
+        Which spanning tree is chosen depends on the order of the vertices.
+        Sort the vertices of a graph by name to ensure consistent results.
+        """
+        gsorted = nx.Graph()
+        gsorted.add_nodes_from(sorted(g.nodes().items()))
+        gsorted.add_edges_from((e[0], e[1], eprops) for e, eprops in g.edges().items())
+        return gsorted
+
+    @staticmethod
     def read_graph(filenames):
         "Read a graph in either GraphViz or TSV format."
         g = nx.Graph()
@@ -59,7 +72,7 @@ class Physlr:
                 else:
                     print("Unexpected graph format", c + fin.readline(), file=sys.stderr)
                     sys.exit(1)
-        return g
+        return Physlr.sort_vertices(g)
 
     @staticmethod
     def read_minimizers(filenames):
@@ -99,9 +112,9 @@ class Physlr:
             (
                 (u, *max(
                     single_source_dijkstra_path_length(g, u, weight="n").items(),
-                    key=lambda x: x[1]))
+                    key=lambda x: (x[1], x)))
                 for u in sources),
-            key=lambda x: x[2])
+            key=lambda x: (x[2], x))
         return nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
 
     @staticmethod
