@@ -84,7 +84,7 @@ class Physlr:
         for filename in filenames:
             with open(filename) as fin:
                 c = fin.read(1)
-                if c == "g" or c == "s":
+                if c == "s":
                     g = Physlr.read_graphviz(g, filename)
                 elif c == "U":
                     g = Physlr.read_tsv(g, filename)
@@ -169,10 +169,10 @@ class Physlr:
         for bxs in mintobx.values():
             for u, v in itertools.combinations(bxs, 2):
                 if not (u, v) in seen:
-                    seen.add((u,v))
-                    uv = bxtomin[u] & bxtomin[v]
-                    if len(uv) >= self.args.n:
-                        print(u, v, " ".join(uv), sep="\t")
+                    seen.add((u, v))
+                    common = bxtomin[u] & bxtomin[v]
+                    if len(common) >= self.args.n:
+                        print(u, v, " ".join(common), sep="\t")
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
