@@ -95,7 +95,7 @@ class Physlr:
 
     @staticmethod
     def read_minimizers(filenames):
-        "Read a graph in TSV format."
+        "Read minimizers in TSV format."
         bxtomin = {}
         for filename in filenames:
             with open(filename) as fin:
@@ -104,10 +104,9 @@ class Physlr:
                     if len(fields) < 2:
                         continue
                     bx = fields[0]
-                    minimizers = fields[1].split()
                     if bx not in bxtomin:
                         bxtomin[bx] = set()
-                    bxtomin[bx].update(minimizers)
+                    bxtomin[bx].update(int(x) for x in fields[1].split())
         return bxtomin
 
     @staticmethod
