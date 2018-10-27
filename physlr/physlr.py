@@ -35,6 +35,17 @@ class Physlr:
             print(e[0], e[1], prop["n"], sep="\t", file=fout)
 
     @staticmethod
+    def write_graph(g, fout, graph_format):
+        "Write a graph."
+        if graph_format == "gv":
+            nx.drawing.nx_agraph.write_dot(g, sys.stdout)
+        elif graph_format == "tsv":
+            Physlr.write_tsv(g, fout)
+        else:
+            print("Unknown graph format:", graph_format, file=sys.stderr)
+            exit(1)
+
+    @staticmethod
     def read_tsv(g, filename):
         "Read a graph in TSV format."
         with open(filename) as fin:
@@ -150,6 +161,13 @@ class Physlr:
             adjcomps[u] = nx.algorithms.components.number_connected_components(g.subgraph(vs))
         return adjcomps
 
+    def physlr_filter(self):
+        "Filter a graph."
+        g = self.read_graph(self.args.FILES)
+        if self.args.n > 0:
+            g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
+        self.write_graph(g, sys.stdout, self.args.graph_format)
+
     def physlr_indexfa(self):
         "Index a set of sequences. The output file format is TSV."
         for filename in self.args.FILES:
@@ -235,27 +253,11 @@ class Physlr:
         # Write the graph.
         self.write_tsv(g, sys.stdout)
 
-    def physlr_tsvtogv(self):
-        "Convert a graph from TSV to GraphViz."
-        g = nx.Graph()
-        for filename in self.args.FILES:
-            with open(filename) as fin:
-                header = fin.readline()
-                if header != "U\tV\tUn\tVn\tn\n":
-                    print("Unexpected header:", header, file=sys.stderr)
-                    exit(1)
-                tsvin = csv.reader(fin, delimiter="\t")
-                for u, v, un, vn, n in tsvin:
-                    g.add_edge(u, v, n=int(n))
-                    g.nodes[u]["n"] = int(un)
-                    g.nodes[v]["n"] = int(vn)
-        nx.drawing.nx_agraph.write_dot(g, sys.stdout)
-
     def physlr_mst(self):
         "Determine the maximum spanning tree."
         g = self.read_graph(self.args.FILES)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
-        nx.drawing.nx_agraph.write_dot(gmst, sys.stdout)
+        self.write_graph(gmst, sys.stdout, self.args.graph_format)
 
     def physlr_backbone(self):
         "Determine the backbone path of the graph."
@@ -270,7 +272,7 @@ class Physlr:
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         backbone = self.determine_backbone(gmst)
         subgraph = g.subgraph(backbone)
-        nx.drawing.nx_agraph.write_dot(subgraph, sys.stdout)
+        self.write_graph(subgraph, sys.stdout, self.args.graph_format)
 
     def physlr_tiling_graph(self):
         "Determine the minimum-tiling-path-induced subgraph."
@@ -284,7 +286,7 @@ class Physlr:
         u, v = backbone[0], backbone[-1]
         tiling_path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
         subgraph = g.subgraph(tiling_path)
-        nx.drawing.nx_agraph.write_dot(subgraph, sys.stdout)
+        self.write_graph(subgraph, sys.stdout, self.args.graph_format)
 
     def physlr_molecules(self):
         "Estimate the nubmer of molecules per barcode."
@@ -292,7 +294,7 @@ class Physlr:
         g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
         for u, nmolecules in self.count_adajcent_components(g).items():
             g.nodes[u]["m"] = nmolecules
-        nx.drawing.nx_agraph.write_dot(g, sys.stdout)
+        self.write_graph(g, sys.stdout, self.args.graph_format)
 
     def physlr_graph(self, fmt):
         "Generate a graph from the minimizer index."
@@ -322,6 +324,9 @@ class Physlr:
             "-n", "--min-n", action="store", dest="n", type=int, default=0,
             help="remove edges with fewer than n shared markers [0]")
         argparser.add_argument(
+            "-O", "--output-format", action="store", dest="graph_format", default="tsv",
+            help="the output graph file format [tsv]")
+        argparser.add_argument(
             "command",
             help="A command")
         argparser.add_argument(
@@ -342,6 +347,8 @@ class Physlr:
             self.physlr_backbone_graph()
         elif self.args.command == "count-markers":
             self.physlr_count_markers()
+        elif self.args.command == "filter":
+            self.physlr_filter()
         elif self.args.command == "indexfa":
             self.physlr_indexfa()
         elif self.args.command == "indexlr":
@@ -360,8 +367,6 @@ class Physlr:
             self.physlr_overlap()
         elif self.args.command == "tiling-graph":
             self.physlr_tiling_graph()
-        elif self.args.command == "tsvtogv":
-            self.physlr_tsvtogv()
         else:
             print("Unrecognized command:", self.args.command, file=sys.stderr)
             exit(1)

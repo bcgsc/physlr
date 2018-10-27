@@ -281,29 +281,29 @@ minsize=2000
 %.physlr.overlap.tsv: %.physlr.tsv
 	PYTHONPATH=. bin/physlr overlap -k$k -w$w $< >$@
 
-# Convert a graph from TSV to GraphViz.
-%.physlr.overlap.gv: %.physlr.overlap.tsv
-	PYTHONPATH=. bin/physlr tsvtogv -k$k -w$w $< >$@
-
 # Determine the maximum spanning tree.
-%.physlr.overlap.mst.gv: %.physlr.overlap.tsv
+%.physlr.overlap.mst.tsv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr mst -k$k -w$w $< >$@
 
 # Determine the backbone graph from the overlap TSV.
-%.physlr.overlap.backbone.gv: %.physlr.overlap.tsv
+%.physlr.overlap.backbone.tsv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr backbone-graph -k$k -w$w $< >$@
 
 # Determine the backbone path of the backbone graph.
-%.backbone.path: %.backbone.gv
+%.backbone.path: %.backbone.tsv
 	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
 
 # Determine the minimum tiling graph of the backbone graph.
-%.physlr.overlap.backbone.tiling.gv: %.physlr.overlap.backbone.gv
+%.physlr.overlap.backbone.tiling.tsv: %.physlr.overlap.backbone.tsv
 	PYTHONPATH=. bin/physlr tiling-graph -k$k -w$w $< >$@
 
 # Estimate the nubmer of molecules per barcode.
-%.physlr.overlap.molecules.gv: %.physlr.overlap.tsv
+%.physlr.overlap.molecules.tsv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr molecules -k$k -w$w -n10 $< >$@
+
+# Convert a graph from TSV to GraphViz.
+%.gv: %.tsv
+	PYTHONPATH=. bin/physlr filter -k$k -w$w -Ogv $< >$@
 
 # Extract a BED file of the backbone barcodes.
 %.physlr.overlap.backbone.path.$(ref).molecule.bed: $(ref)/$(ref).%.a0.65.d10000.n5.q1.s2000.molecule.bed %.physlr.overlap.backbone.path
