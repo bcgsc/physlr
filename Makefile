@@ -128,6 +128,15 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx10
 	bwa mem -t$t -pC $*.fa $(lr).fq.gz | samtools view -@$t -F4 -o $@
 
 ################################################################################
+# EMA
+
+# Map linked reads to the draft genome using EMA.
+# Filter out reads without barcodes.
+%.$(lr).ema.sortn.bam: $(lr).fq.gz %.fa.bwt
+	gunzip -c $< | paste - - - - - - - - | grep "BX:Z:" | tr '\t' '\n' \
+	| $(time) ema align -t$t -r $*.fa -1 /dev/stdin | samtools view -@$t -h -F4 -o $@
+
+################################################################################
 # minimap2
 
 # Align linked reads to a target genome.
