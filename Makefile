@@ -315,6 +315,13 @@ minsize=2000
 	cp -a $*.plotbed_files/figure-html/plot-bed-1.png $@
 
 ################################################################################
+# Bedtools
+
+# Compute genome coverage.
+%.bed.$(ref).cov: %.bed $(ref)/$(ref).fa.fai
+	bedtools genomecov -max 1 -g $(ref)/$(ref).fa.fai -i $< >$@
+
+################################################################################
 # GraphViz
 
 # Label the edges with edge weight.
