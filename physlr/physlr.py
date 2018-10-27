@@ -25,10 +25,16 @@ class Physlr:
 
     @staticmethod
     def write_tsv(g, fout):
-        "Write a grpah in TSV format."
-        print("U\tn", file=fout)
+        "Write a graph in TSV format."
+        if "m" in next(iter(g.nodes.values())):
+            print("U\tn\tm", file=fout)
+        else:
+            print("U\tn", file=fout)
         for u, prop in g.nodes.items():
-            print(u, prop["n"], sep="\t", file=fout)
+            if "m" in prop:
+                print(u, prop["n"], prop["m"], sep="\t", file=fout)
+            else:
+                print(u, prop["n"], sep="\t", file=fout)
         print("\nU\tV\tn", file=fout)
         for e, prop in g.edges.items():
             print(e[0], e[1], prop["n"], sep="\t", file=fout)
@@ -49,7 +55,7 @@ class Physlr:
         "Read a graph in TSV format."
         with open(filename) as fin:
             line = fin.readline()
-            if line != "U\tn\n":
+            if line not in ["U\tn\n", "U\tn\tm\n"]:
                 print("Unexpected header:", line, file=sys.stderr)
                 exit(1)
             reading_vertices = True
@@ -64,15 +70,19 @@ class Physlr:
                     line = fin.readline()
                 xs = line.split()
                 if reading_vertices:
-                    if len(xs) != 2:
+                    if len(xs) == 2:
+                        g.add_node(xs[0], n=int(xs[1]))
+                    elif len(xs) == 3:
+                        g.add_node(xs[0], n=int(xs[1]), m=int(xs[2]))
+                    else:
                         print("Unexpected row:", line, file=sys.stderr)
                         exit(1)
-                    g.add_node(xs[0], n=int(xs[1]))
                 else:
-                    if len(xs) != 3:
+                    if len(xs) == 3:
+                        g.add_edge(xs[0], xs[1], n=int(xs[2]))
+                    else:
                         print("Unexpected row:", line, file=sys.stderr)
                         exit(1)
-                    g.add_edge(xs[0], xs[1], n=int(xs[2]))
         return g
 
     @staticmethod
