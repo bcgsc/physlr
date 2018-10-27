@@ -339,7 +339,7 @@ minsize=2000
 
 # Layout and render an undirected graph to PDF.
 %.gv.pdf: %.gv
-	neato -Goverlap=scale -Tpdf -o $@ $<
+	neato -Goverlap=scale -Gsize=100,100 -Tpdf -o $@ $<
 
 # Layout and render an undirected graph to PNG.
 %.gv.png: %.gv
