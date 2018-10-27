@@ -4,7 +4,6 @@ Physlr: Physical Mapping of Linked Reads
 """
 
 import argparse
-import csv
 import itertools
 import sys
 import networkx as nx
@@ -53,21 +52,27 @@ class Physlr:
             if line != "U\tn\n":
                 print("Unexpected header:", line, file=sys.stderr)
                 exit(1)
+            reading_vertices = True
             for line in fin:
                 if line == "\n":
                     line = fin.readline()
-                    if line != "U\tV\tn\n":
+                    if line == "U\tV\tn\n":
+                        reading_vertices = False
+                    else:
                         print("Unexpected header:", line, file=sys.stderr)
                         exit(1)
                     line = fin.readline()
                 xs = line.split()
-                if len(xs) == 2:
+                if reading_vertices:
+                    if len(xs) != 2:
+                        print("Unexpected row:", line, file=sys.stderr)
+                        exit(1)
                     g.add_node(xs[0], n=int(xs[1]))
-                elif len(xs) == 3:
-                    g.add_edge(xs[0], xs[1], n=int(xs[2]))
                 else:
-                    print("Unexpected row:", line, file=sys.stderr)
-                    exit(1)
+                    if len(xs) != 3:
+                        print("Unexpected row:", line, file=sys.stderr)
+                        exit(1)
+                    g.add_edge(xs[0], xs[1], n=int(xs[2]))
         return g
 
     @staticmethod
