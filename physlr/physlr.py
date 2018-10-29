@@ -180,7 +180,15 @@ class Physlr:
         "Filter a graph."
         g = self.read_graph(self.args.FILES)
         if self.args.n > 0:
-            g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
+            edges = [e for e, eprop in g.edges().items() if eprop["n"] < self.args.n]
+            g.remove_edges_from(edges)
+            print("Removed", len(edges), "edges with fewer than ", self.args.n, "common markers.",
+                  file=sys.stderr)
+        if self.args.M > 0:
+            vertices = [u for u, prop in g.nodes().items() if prop["M"] >= self.args.M]
+            g.remove_nodes_from(vertices)
+            print("Removed", len(vertices), "vertices with", self.args.M, "or more molecules.",
+                  file=sys.stderr)
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
     def physlr_indexfa(self):
@@ -334,9 +342,12 @@ class Physlr:
             help="ignore markers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
         argparser.add_argument(
             "-C", "--max-count", action="store", dest="C", type=int,
-            help="ignore markers that occur in C or more barcodes [0]")
+            help="ignore markers that occur in C or more barcodes [NA]")
         argparser.add_argument(
-            "-n", "--min-n", action="store", dest="n", type=int, default=0,
+            "-M", "--max-molecules", action="store", dest="M", type=int,
+            help="remove barcodes with M or more molecules [NA]")
+        argparser.add_argument(
+            "-n", "--min-n", action="store", dest="n", type=int,
             help="remove edges with fewer than n shared markers [0]")
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",

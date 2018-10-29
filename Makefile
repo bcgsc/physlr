@@ -301,6 +301,10 @@ minsize=2000
 %.physlr.overlap.molecules.tsv: %.physlr.overlap.tsv
 	PYTHONPATH=. bin/physlr molecules -k$k -w$w -n5 $< >$@
 
+# Remove barcodes with more than one molecule.
+%.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
+	PYTHONPATH=. bin/physlr filter -k$k -w$w -M2 $< >$@
+
 # Convert a graph from TSV to GraphViz.
 %.gv: %.tsv
 	PYTHONPATH=. bin/physlr filter -k$k -w$w -Ogv $< >$@
