@@ -155,7 +155,9 @@ class Physlr:
     def determine_backbone(g):
         "Determine the backbone of the maximum spanning tree."
         g.remove_nodes_from([u for u, deg in g.degree if deg == 0])
-        ecc = nx.algorithms.distance_measures.eccentricity(g)
+        largest_cc_vertices = max(nx.connected_components(g), key=len)
+        largest_cc = g.subgraph(largest_cc_vertices)
+        ecc = nx.algorithms.distance_measures.eccentricity(largest_cc)
         diameter = nx.algorithms.distance_measures.diameter(g, e=ecc)
         sources = [u for u, d in ecc.items() if d == diameter]
         u, v, _ = max(
