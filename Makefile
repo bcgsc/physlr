@@ -275,43 +275,43 @@ minsize=2000
 
 # Count the frequency of the markers.
 %.physlr.markers.tsv: %.physlr.tsv
-	PYTHONPATH=. bin/physlr count-markers -k$k -w$w $< >$@
+	PYTHONPATH=. bin/physlr count-markers $< >$@
 	
 # Identify the overlapping markers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv
-	PYTHONPATH=. bin/physlr intersect -k$k -w$w $< >$@
+	PYTHONPATH=. bin/physlr intersect $< >$@
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
-	PYTHONPATH=. bin/physlr overlap -k$k -w$w $< >$@
+	PYTHONPATH=. bin/physlr overlap $< >$@
 
 # Determine the maximum spanning tree.
 %.physlr.overlap.mst.tsv: %.physlr.overlap.tsv
-	PYTHONPATH=. bin/physlr mst -k$k -w$w $< >$@
+	PYTHONPATH=. bin/physlr mst $< >$@
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	PYTHONPATH=. bin/physlr backbone-graph -k$k -w$w $< >$@
+	PYTHONPATH=. bin/physlr backbone-graph $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.backbone.path: %.backbone.tsv
-	PYTHONPATH=. bin/physlr backbone -k$k -w$w $< >$@
+	PYTHONPATH=. bin/physlr backbone $< >$@
 
 # Determine the minimum tiling graph of the backbone graph.
 %.physlr.overlap.backbone.tiling.tsv: %.physlr.overlap.backbone.tsv
-	PYTHONPATH=. bin/physlr tiling-graph -k$k -w$w $< >$@
+	PYTHONPATH=. bin/physlr tiling-graph $< >$@
 
 # Estimate the nubmer of molecules per barcode.
 %.physlr.overlap.molecules.tsv: %.physlr.overlap.tsv
-	PYTHONPATH=. bin/physlr molecules -k$k -w$w -n5 $< >$@
+	PYTHONPATH=. bin/physlr molecules -n5 $< >$@
 
 # Remove barcodes with more than one molecule.
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
-	PYTHONPATH=. bin/physlr filter -k$k -w$w -M2 $< >$@
+	PYTHONPATH=. bin/physlr filter -M2 $< >$@
 
 # Convert a graph from TSV to GraphViz.
 %.gv: %.tsv
-	PYTHONPATH=. bin/physlr filter -k$k -w$w -Ogv $< >$@
+	PYTHONPATH=. bin/physlr filter -Ogv $< >$@
 
 # Extract a BED file of the backbone barcodes.
 %.backbone.path.$(ref).molecule.bed: %.backbone.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
