@@ -46,8 +46,12 @@ humanmt/mt.fa:
 fly: \
 	f1chr4.physlr.overlap.backbone.label.n50.gv.pdf \
 	f1chr4.physlr.overlap.backbone.path.fly.molecule.bed.png \
+	f1chr4.physlr.overlap.molecules.M2.backbone.label.n50.gv.pdf \
+	f1chr4.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.png \
 	f1chr2R.physlr.overlap.backbone.label.n50.gv.pdf \
-	f1chr2R.physlr.overlap.backbone.path.fly.molecule.bed.png
+	f1chr2R.physlr.overlap.backbone.path.fly.molecule.bed.png \
+	f1chr2R.physlr.overlap.molecules.M2.backbone.label.n50.gv.pdf \
+	f1chr2R.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.png
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -286,7 +290,7 @@ minsize=2000
 	PYTHONPATH=. bin/physlr mst -k$k -w$w $< >$@
 
 # Determine the backbone graph from the overlap TSV.
-%.physlr.overlap.backbone.tsv: %.physlr.overlap.tsv
+%.backbone.tsv: %.tsv
 	PYTHONPATH=. bin/physlr backbone-graph -k$k -w$w $< >$@
 
 # Determine the backbone path of the backbone graph.
@@ -310,8 +314,8 @@ minsize=2000
 	PYTHONPATH=. bin/physlr filter -k$k -w$w -Ogv $< >$@
 
 # Extract a BED file of the backbone barcodes.
-%.physlr.overlap.backbone.path.$(ref).molecule.bed: $(ref)/$(ref).%.a0.65.d10000.n5.q1.s2000.molecule.bed %.physlr.overlap.backbone.path
-	(head -n1 $<; for i in $$(<$*.physlr.overlap.backbone.path); do grep $$i $< || true; done) >$@
+%.backbone.path.$(ref).molecule.bed: %.backbone.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
+	for i in $$(<$<); do grep $$i $(ref)/$(ref).$*.a0.65.d10000.n5.q1.s2000.molecule.bed || true; done >$@
 
 # Plot a BED file.
 %.bed.png: %.bed
