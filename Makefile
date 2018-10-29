@@ -299,7 +299,7 @@ minsize=2000
 
 # Estimate the nubmer of molecules per barcode.
 %.physlr.overlap.molecules.tsv: %.physlr.overlap.tsv
-	PYTHONPATH=. bin/physlr molecules -k$k -w$w -n10 $< >$@
+	PYTHONPATH=. bin/physlr molecules -k$k -w$w -n5 $< >$@
 
 # Convert a graph from TSV to GraphViz.
 %.gv: %.tsv
