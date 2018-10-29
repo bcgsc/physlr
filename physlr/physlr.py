@@ -184,7 +184,7 @@ class Physlr:
             g.remove_edges_from(edges)
             print("Removed", len(edges), "edges with fewer than ", self.args.n, "common markers.",
                   file=sys.stderr)
-        if self.args.M > 0:
+        if self.args.M is not None:
             vertices = [u for u, prop in g.nodes().items() if prop["M"] >= self.args.M]
             g.remove_nodes_from(vertices)
             print("Removed", len(vertices), "vertices with", self.args.M, "or more molecules.",
@@ -209,8 +209,6 @@ class Physlr:
 
     def physlr_count_markers(self):
         "Count the frequency of each minimizer."
-        if self.args.n == 0:
-            self.args.n = 2
         bxtomin = self.read_minimizers(self.args.FILES)
         freq = {}
         for xs in bxtomin.values():
@@ -221,7 +219,7 @@ class Physlr:
                     freq[x] = 1
         print("Marker\tCount")
         for x, c in sorted(freq.items(), key=lambda x: x[1]):
-            if c >= self.args.n:
+            if c >= 2:
                 print(x, c, sep="\t")
 
     def physlr_intersect(self):
@@ -342,12 +340,12 @@ class Physlr:
             help="ignore markers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
         argparser.add_argument(
             "-C", "--max-count", action="store", dest="C", type=int,
-            help="ignore markers that occur in C or more barcodes [NA]")
+            help="ignore markers that occur in C or more barcodes [None]")
         argparser.add_argument(
             "-M", "--max-molecules", action="store", dest="M", type=int,
-            help="remove barcodes with M or more molecules [NA]")
+            help="remove barcodes with M or more molecules [None]")
         argparser.add_argument(
-            "-n", "--min-n", action="store", dest="n", type=int,
+            "-n", "--min-n", action="store", dest="n", type=int, default=0,
             help="remove edges with fewer than n shared markers [0]")
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
