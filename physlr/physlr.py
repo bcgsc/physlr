@@ -185,7 +185,7 @@ class Physlr:
             print("Removed", len(edges), "edges with fewer than ", self.args.n, "common markers.",
                   file=sys.stderr)
         if self.args.M is not None:
-            vertices = [u for u, prop in g.nodes().items() if prop["M"] >= self.args.M]
+            vertices = [u for u, prop in g.nodes().items() if prop["m"] >= self.args.M]
             g.remove_nodes_from(vertices)
             print("Removed", len(vertices), "vertices with", self.args.M, "or more molecules.",
                   file=sys.stderr)
