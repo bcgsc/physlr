@@ -44,13 +44,11 @@ humanmt/mt.fa:
 
 # Test Phsylr using the fly data.
 fly: \
-	f1chr4.physlr.overlap.backbone.label.n50.gv.pdf \
-	f1chr4.physlr.overlap.backbone.path.fly.molecule.bed.pdf \
 	f1chr4.physlr.overlap.molecules.M2.backbone.label.n50.gv.pdf \
+	f1chr4.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.fly.cov \
 	f1chr4.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.pdf \
-	f1chr2R.physlr.overlap.backbone.label.n50.gv.pdf \
-	f1chr2R.physlr.overlap.backbone.path.fly.molecule.bed.pdf \
 	f1chr2R.physlr.overlap.molecules.M2.backbone.label.n50.gv.pdf \
+	f1chr2R.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.fly.cov \
 	f1chr2R.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.pdf
 
 # Download the fly genome from NCBI.
@@ -85,6 +83,7 @@ f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx100-200.fq.gz
 # Test Phsylr using the Picea sitchensis plastid data.
 psitchensiscp: \
 	HYN5VCCXX_4cp.physlr.overlap.backbone.label.n50.gv.pdf \
+	HYN5VCCXX_4cp.physlr.overlap.backbone.path.psitchensiscp.molecule.bed.psitchensiscp.cov \
 	HYN5VCCXX_4cp.physlr.overlap.backbone.path.psitchensiscp.molecule.bed.pdf
 
 # Download the Picea sitchensis plastid genome.
