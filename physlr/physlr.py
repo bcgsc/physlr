@@ -6,12 +6,15 @@ Physlr: Physical Mapping of Linked Reads
 import argparse
 import itertools
 import sys
+import timeit
 import networkx as nx
 
 from networkx.algorithms.shortest_paths.weighted import single_source_dijkstra_path_length
 from physlr.minimerize import minimerize
 from physlr.benv.graph import Graph
 from physlr.read_fasta import read_fasta
+
+t0 = timeit.default_timer()
 
 def quantile(quantiles, xs):
     "Return the specified quantiles p of xs."
@@ -193,6 +196,15 @@ class Physlr:
                   file=sys.stderr)
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
+    def physlr_subgraph(self):
+        "Extract a vertex-induced subgraph."
+        g = self.read_graph(self.args.FILES)
+        vertices = (u for u in self.args.v.split())
+        subgraph = g.subgraph(vertices)
+        print(int(timeit.default_timer() - t0), "Extracted subgraph", file=sys.stderr)
+        self.write_graph(subgraph, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
+
     def physlr_indexfa(self):
         "Index a set of sequences. The output file format is TSV."
         for filename in self.args.FILES:
@@ -350,6 +362,9 @@ class Physlr:
             "-n", "--min-n", action="store", dest="n", type=int, default=0,
             help="remove edges with fewer than n shared markers [0]")
         argparser.add_argument(
+            "-v", "--vertices", action="store", dest="v",
+            help="list of vertices")
+        argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
             help="the output graph file format [tsv]")
         argparser.add_argument(
@@ -391,6 +406,8 @@ class Physlr:
             self.physlr_mst()
         elif self.args.command == "overlap":
             self.physlr_overlap()
+        elif self.args.command == "subgraph":
+            self.physlr_subgraph()
         elif self.args.command == "tiling-graph":
             self.physlr_tiling_graph()
         else:
