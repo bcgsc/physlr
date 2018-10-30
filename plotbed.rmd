@@ -3,7 +3,7 @@ title: Plot a BED file
 author: Shaun Jackman
 output:
   html_document:
-    keep_md: true
+    keep_md: yes
 params:
   input_bed:
     label: "Input BED file"
@@ -29,9 +29,10 @@ bed <- bed_orig %>% mutate(Index = cumsum(BX != lag(BX, default="")))
 ```
 
 # Plot the BED file
-```{r plot-bed}
+```{r plot-bed, fig.height=6, fig.width=6}
 ggplot(bed) +
 	aes(xmin = Start, xmax = End, ymin = Index, ymax = Index + 1) +
 	geom_rect() +
 	scale_y_reverse()
+ggsave(paste0(input_bed, ".pdf"))
 ```

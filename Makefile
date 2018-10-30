@@ -45,13 +45,13 @@ humanmt/mt.fa:
 # Test Phsylr using the fly data.
 fly: \
 	f1chr4.physlr.overlap.backbone.label.n50.gv.pdf \
-	f1chr4.physlr.overlap.backbone.path.fly.molecule.bed.png \
+	f1chr4.physlr.overlap.backbone.path.fly.molecule.bed.pdf \
 	f1chr4.physlr.overlap.molecules.M2.backbone.label.n50.gv.pdf \
-	f1chr4.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.png \
+	f1chr4.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.pdf \
 	f1chr2R.physlr.overlap.backbone.label.n50.gv.pdf \
-	f1chr2R.physlr.overlap.backbone.path.fly.molecule.bed.png \
+	f1chr2R.physlr.overlap.backbone.path.fly.molecule.bed.pdf \
 	f1chr2R.physlr.overlap.molecules.M2.backbone.label.n50.gv.pdf \
-	f1chr2R.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.png
+	f1chr2R.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.pdf
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -85,7 +85,7 @@ f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx100-200.fq.gz
 # Test Phsylr using the Picea sitchensis plastid data.
 psitchensiscp: \
 	HYN5VCCXX_4cp.physlr.overlap.backbone.label.n50.gv.pdf \
-	HYN5VCCXX_4cp.physlr.overlap.backbone.path.psitchensiscp.molecule.bed.png
+	HYN5VCCXX_4cp.physlr.overlap.backbone.path.psitchensiscp.molecule.bed.pdf
 
 # Download the Picea sitchensis plastid genome.
 psitchensiscp/psitchensiscp.fa:
@@ -318,9 +318,8 @@ minsize=2000
 	for i in $$(<$<); do grep $$i $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done >$@
 
 # Plot a BED file.
-%.bed.png: %.bed
+%.bed.pdf: %.bed
 	Rscript -e 'rmarkdown::render("plotbed.rmd", "html_document", "$*.plotbed.html", params = list(input_bed="$<"))'
-	cp -a $*.plotbed_files/figure-html/plot-bed-1.png $@
 
 ################################################################################
 # Bedtools
