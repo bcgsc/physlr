@@ -354,7 +354,7 @@ class Physlr:
         subgraph = g.subgraph(tiling_path)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
 
-    def physlr_molecules(self):
+    def physlr_count_molecules(self):
         "Estimate the nubmer of molecules per barcode."
         g = self.read_graph(self.args.FILES)
         g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
@@ -431,8 +431,8 @@ class Physlr:
             self.physlr_graph("graphviz")
         elif self.args.command == "intersect":
             self.physlr_intersect()
-        elif self.args.command == "molecules":
-            self.physlr_molecules()
+        elif self.args.command == "count-molecules":
+            self.physlr_count_molecules()
         elif self.args.command == "mst":
             self.physlr_mst()
         elif self.args.command == "overlap":
