@@ -171,8 +171,8 @@ class Physlr:
         return (u, v, diameter)
 
     @staticmethod
-    def determine_backbones(g):
-        "Determine the backbone of the maximum spanning tree."
+    def determine_backbones_of_trees(g):
+        "Determine the backbones of the maximum spanning trees."
         paths = []
         for component in nx.connected_components(g):
             gcomponent = g.subgraph(component)
@@ -180,8 +180,25 @@ class Physlr:
             path = nx.shortest_path(gcomponent, u, v, weight="n")
             paths.append(path)
         paths.sort(key=len, reverse=True)
-        print(int(timeit.default_timer() - t0), "Determined the backbone paths", file=sys.stderr)
         return paths
+
+    @staticmethod
+    def determine_backbones(g):
+        "Determine the backbones of the graph."
+        g = g.copy()
+        backbones = []
+        while not nx.is_empty(g):
+            gmst = nx.maximum_spanning_tree(g, weight="n")
+            paths = Physlr.determine_backbones_of_trees(gmst)
+            backbones.extend(paths)
+            vertices = [u for path in paths for u in path]
+            neighbors = [v for u in vertices for v in g.neighbors(u)]
+            g.remove_nodes_from(vertices)
+            g.remove_nodes_from(neighbors)
+            g.remove_nodes_from([u for u, deg in g.degree if deg == 0])
+        backbones.sort(key=len, reverse=True)
+        print(int(timeit.default_timer() - t0), "Determined the backbone paths", file=sys.stderr)
+        return backbones
 
     @staticmethod
     def count_adajcent_components(g):
@@ -308,8 +325,7 @@ class Physlr:
     def physlr_backbone(self):
         "Determine the backbone path of the graph."
         g = self.read_graph(self.args.FILES)
-        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
-        backbones = self.determine_backbones(gmst)
+        backbones = self.determine_backbones(g)
         for backbone in backbones:
             print(*backbone)
 
@@ -317,8 +333,7 @@ class Physlr:
         "Determine the backbone-induced subgraph."
         g = self.read_graph(self.args.FILES)
         g.remove_nodes_from([u for u, deg in g.degree if deg == 0])
-        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
-        backbones = self.determine_backbones(gmst)
+        backbones = self.determine_backbones(g)
         backbone = (u for path in backbones for u in path)
         subgraph = self.sort_vertices(g.subgraph(backbone))
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
@@ -327,8 +342,7 @@ class Physlr:
     def physlr_tiling_graph(self):
         "Determine the minimum-tiling-path-induced subgraph."
         g = self.read_graph(self.args.FILES)
-        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
-        backbones = self.determine_backbones(gmst)
+        backbones = self.determine_backbones(g)
         # Select the largest backbone.
         backbone = backbones[0]
         if self.args.n == 0:
