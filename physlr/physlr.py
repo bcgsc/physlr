@@ -332,10 +332,10 @@ class Physlr:
         "Parse the command line arguments."
         argparser = argparse.ArgumentParser()
         argparser.add_argument(
-            "-k", "--k", action="store", type=int, required=True,
+            "-k", "--k", action="store", type=int,
             help="size of a k-mer (bp)")
         argparser.add_argument(
-            "-w", "--window", action="store", dest="w", type=int, required=True,
+            "-w", "--window", action="store", dest="w", type=int,
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
             "-c", "--coef", action="store", dest="coef", type=float, default=1.5,
