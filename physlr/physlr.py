@@ -159,22 +159,27 @@ class Physlr:
         return mintobx
 
     @staticmethod
+    def diameter_of_tree(g, weight=None):
+        """
+        Compute the diameter of a tree.
+        The diameter of an arbitrary component is returned if there are multiple components."
+        """
+        u = next(iter(g.nodes))
+        paths = nx.shortest_path_length(g, u, weight=weight)
+        u, _ = max(paths.items(), key=lambda x: x[1])
+        paths = nx.shortest_path_length(g, u, weight=weight)
+        v, diameter = max(paths.items(), key=lambda x: x[1])
+        print(int(timeit.default_timer() - t0), "Computed the diameter of the tree", file=sys.stderr)
+        return (u, v, diameter)
+
+    @staticmethod
     def determine_backbone(g):
         "Determine the backbone of the maximum spanning tree."
         g.remove_nodes_from([u for u, deg in g.degree if deg == 0])
         largest_cc_vertices = max(nx.connected_components(g), key=len)
         largest_cc = g.subgraph(largest_cc_vertices)
         print(int(timeit.default_timer() - t0), "Identified the largest connected component", file=sys.stderr)
-        ecc = nx.algorithms.distance_measures.eccentricity(largest_cc)
-        diameter = nx.algorithms.distance_measures.diameter(g, e=ecc)
-        sources = [u for u, d in ecc.items() if d == diameter]
-        u, v, _ = max(
-            (
-                (u, *max(
-                    single_source_dijkstra_path_length(g, u, weight="n").items(),
-                    key=lambda x: (x[1], x)))
-                for u in sources),
-            key=lambda x: (x[2], x))
+        u, v, diameter = Physlr.diameter_of_tree(g)
         path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
         print(int(timeit.default_timer() - t0), "Determined the backbone path", file=sys.stderr)
         return path
