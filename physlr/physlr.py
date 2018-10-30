@@ -125,7 +125,10 @@ class Physlr:
                 else:
                     print("Unexpected graph format", c + fin.readline(), file=sys.stderr)
                     sys.exit(1)
-        return Physlr.sort_vertices(g)
+        print(int(timeit.default_timer() - t0), "Read", *filenames, file=sys.stderr)
+        g = Physlr.sort_vertices(g)
+        print(int(timeit.default_timer() - t0), "Sorted the vertices", file=sys.stderr)
+        return g
 
     @staticmethod
     def read_minimizers(filenames):
@@ -160,6 +163,7 @@ class Physlr:
         g.remove_nodes_from([u for u, deg in g.degree if deg == 0])
         largest_cc_vertices = max(nx.connected_components(g), key=len)
         largest_cc = g.subgraph(largest_cc_vertices)
+        print(int(timeit.default_timer() - t0), "Identified the largest connected component", file=sys.stderr)
         ecc = nx.algorithms.distance_measures.eccentricity(largest_cc)
         diameter = nx.algorithms.distance_measures.diameter(g, e=ecc)
         sources = [u for u, d in ecc.items() if d == diameter]
@@ -170,7 +174,9 @@ class Physlr:
                     key=lambda x: (x[1], x)))
                 for u in sources),
             key=lambda x: (x[2], x))
-        return nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
+        path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
+        print(int(timeit.default_timer() - t0), "Determined the backbone path", file=sys.stderr)
+        return path
 
     @staticmethod
     def count_adajcent_components(g):
@@ -308,6 +314,7 @@ class Physlr:
         backbone = self.determine_backbone(gmst)
         subgraph = g.subgraph(backbone)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Output the backbone subgraph", file=sys.stderr)
 
     def physlr_tiling_graph(self):
         "Determine the minimum-tiling-path-induced subgraph."
