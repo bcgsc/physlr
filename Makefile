@@ -303,7 +303,7 @@ minsize=2000
 
 # Estimate the nubmer of molecules per barcode.
 %.physlr.overlap.molecules.tsv: %.physlr.overlap.tsv
-	PYTHONPATH=. bin/physlr molecules -n5 $< >$@
+	PYTHONPATH=. bin/physlr molecules -n10 $< >$@
 
 # Remove barcodes with more than one molecule.
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
