@@ -315,7 +315,7 @@ minsize=2000
 
 # Extract a BED file of the backbone barcodes.
 %.backbone.path.$(ref).molecule.bed: %.backbone.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
-	for i in $$(<$<); do grep $$i $(ref)/$(ref).$*.a0.65.d10000.n5.q1.s2000.molecule.bed || true; done >$@
+	for i in $$(<$<); do grep $$i $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done >$@
 
 # Plot a BED file.
 %.bed.png: %.bed
