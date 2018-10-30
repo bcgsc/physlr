@@ -40,7 +40,8 @@ class Physlr:
                 print(u, prop["n"], sep="\t", file=fout)
         print("\nU\tV\tn", file=fout)
         for e, prop in g.edges.items():
-            print(e[0], e[1], prop["n"], sep="\t", file=fout)
+            u, v = sorted(e)
+            print(u, v, prop["n"], sep="\t", file=fout)
 
     @staticmethod
     def write_graph(g, fout, graph_format):
@@ -312,7 +313,7 @@ class Physlr:
         g = self.read_graph(self.args.FILES)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         backbone = self.determine_backbone(gmst)
-        subgraph = g.subgraph(backbone)
+        subgraph = self.sort_vertices(g.subgraph(backbone))
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Output the backbone subgraph", file=sys.stderr)
 
