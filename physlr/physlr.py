@@ -9,7 +9,6 @@ import sys
 import timeit
 import networkx as nx
 
-from networkx.algorithms.shortest_paths.weighted import single_source_dijkstra_path_length
 from physlr.minimerize import minimerize
 from physlr.benv.graph import Graph
 from physlr.read_fasta import read_fasta
@@ -175,9 +174,9 @@ class Physlr:
     def determine_backbones(g):
         "Determine the backbone of the maximum spanning tree."
         paths = []
-        for i, component in enumerate(nx.connected_components(g)):
+        for component in nx.connected_components(g):
             gcomponent = g.subgraph(component)
-            u, v, diameter = Physlr.diameter_of_tree(gcomponent, weight="n")
+            u, v, _ = Physlr.diameter_of_tree(gcomponent, weight="n")
             path = nx.shortest_path(gcomponent, u, v, weight="n")
             paths.append(path)
         paths.sort(key=len, reverse=True)
