@@ -179,8 +179,8 @@ class Physlr:
         largest_cc_vertices = max(nx.connected_components(g), key=len)
         largest_cc = g.subgraph(largest_cc_vertices)
         print(int(timeit.default_timer() - t0), "Identified the largest connected component", file=sys.stderr)
-        u, v, diameter = Physlr.diameter_of_tree(g)
-        path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
+        u, v, diameter = Physlr.diameter_of_tree(g, weight="n")
+        path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v, weight="n")
         print(int(timeit.default_timer() - t0), "Determined the backbone path", file=sys.stderr)
         return path
 
