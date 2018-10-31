@@ -47,12 +47,12 @@ fly: f1chr4 f1chr2R
 
 f1chr4: \
 	f1chr4.physlr.overlap.n20.mol.backbone.label.gv \
-	f1chr4.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.fly.cov \
+	f1chr4.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
 	f1chr4.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.pdf
 
 f1chr2R: \
 	f1chr2R.physlr.overlap.n20.mol.backbone.label.gv \
-	f1chr2R.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.fly.cov \
+	f1chr2R.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
 	f1chr2R.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.pdf
 
 # Download the fly genome from NCBI.
@@ -87,7 +87,7 @@ f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx100-200.fq.gz
 # Test Phsylr using the Picea sitchensis plastid data.
 psitchensiscp: \
 	HYN5VCCXX_4cp.physlr.overlap.backbone.label.n50.gv.pdf \
-	HYN5VCCXX_4cp.physlr.overlap.backbone.path.psitchensiscp.molecule.bed.psitchensiscp.cov \
+	HYN5VCCXX_4cp.physlr.overlap.backbone.path.psitchensiscp.molecule.bed.psitchensiscp.cov.tsv \
 	HYN5VCCXX_4cp.physlr.overlap.backbone.path.psitchensiscp.molecule.bed.pdf
 
 # Download the Picea sitchensis plastid genome.
@@ -332,7 +332,7 @@ minsize=2000
 # Bedtools
 
 # Compute genome coverage.
-%.bed.$(ref).cov: %.bed $(ref)/$(ref).fa.fai
+%.bed.$(ref).cov.tsv: %.bed $(ref)/$(ref).fa.fai
 	bedtools genomecov -max 1 -g $(ref)/$(ref).fa.fai -i $< \
 	| awk '$$2 != 0 || $$5 != 1' >$@
 
