@@ -7,7 +7,7 @@ output:
 params:
   input_bed:
     label: "Input BED file"
-    value: "HYN5VCCXX_4cp.physlr.overlap.mst.backbone.path.molecule.bed"
+    value: "f1chr4.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed"
     input: text
 ---
 
@@ -15,6 +15,7 @@ params:
 library(dplyr)
 library(ggplot2)
 library(readr)
+library(scales)
 
 knit_print.data.frame <- function(x, ...) kable(x) %>% paste(collapse = "\n") %>% asis_output
 input_bed <- params$input_bed
@@ -24,7 +25,7 @@ input_bed
 
 # Read the BED file
 ```{r read-data}
-bed_orig <- read_tsv(input_bed, col_names = c("Rname", "Start", "End", "BX", "Reads"))
+bed_orig <- read_tsv(input_bed, col_names = c("Rname", "Start", "End", "BX", "Reads"), col_types = "ciici")
 bed <- bed_orig %>% mutate(Index = cumsum(BX != lag(BX, default="")))
 ```
 
@@ -33,6 +34,6 @@ bed <- bed_orig %>% mutate(Index = cumsum(BX != lag(BX, default="")))
 ggplot(bed) +
 	aes(xmin = Start, xmax = End, ymin = Index, ymax = Index + 1) +
 	geom_rect() +
-	scale_y_reverse()
+	scale_x_continuous(name = "Position", labels = unit_format(unit = "Mbp", scale = 1e-6))
 ggsave(paste0(input_bed, ".pdf"))
 ```
