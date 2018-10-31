@@ -1,9 +1,6 @@
 ---
 title: Plot a BED file
 author: Shaun Jackman
-output:
-  html_document:
-    keep_md: yes
 params:
   input_bed:
     label: "Input BED file"
