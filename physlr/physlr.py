@@ -226,8 +226,12 @@ class Physlr:
 
     def physlr_subgraph(self):
         "Extract a vertex-induced subgraph."
+        if self.args.d not in (0, 1):
+            exit("error: Only -d0 and -d1 are currently supported.")
         g = self.read_graph(self.args.FILES)
-        vertices = (u for u in self.args.v.split())
+        vertices = set(u for u in self.args.v.split())
+        if self.args.d == 1:
+            vertices.update(v for u in vertices for v in g.neighbors(u))
         subgraph = g.subgraph(vertices)
         print(int(timeit.default_timer() - t0), "Extracted subgraph", file=sys.stderr)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
@@ -395,6 +399,9 @@ class Physlr:
         argparser.add_argument(
             "-v", "--vertices", action="store", dest="v",
             help="list of vertices")
+        argparser.add_argument(
+            "-d", "--distance", action="store", dest="d", type=int, default=0,
+            help="include vertices within d edges away")
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
             help="the output graph file format [tsv]")
