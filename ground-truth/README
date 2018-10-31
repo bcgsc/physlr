@@ -1,0 +1,13 @@
+Making ground truth overlap graph:
+
+1. Align the reads to the reference, then run tigmint-molecule to generate the molecule TSV file:
+tigmint-molecule --tsv -o molecExtents.2000bp.tsv alignments.bxSorted.bam
+
+2. Convert the TSV to a BED file, retaining BX tag and MI fields and sort
+tail -n +2 molecExtents.2000bp.tsv |head|awk 'BEGIN {OFS="\t"}{print $1,$2,$3,$5,$6}' |sort -k1,1 -k2,2n -k3,3n > out.bed
+
+3. Run bedtools overlap to get molecule overlaps
+bedtools overlap -wo -a test.bed -b test.bed > overlap.bed
+
+4. Run makeOverlapGraph.py script
+makeOverlapGraph.py overlap.bed
