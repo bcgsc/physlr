@@ -366,6 +366,31 @@ class Physlr:
             g.nodes[u]["m"] = nmolecules
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
+    def physlr_molecules(self):
+        "Separate barcodes into molecules."
+        gin = self.read_graph(self.args.FILES)
+        gin.remove_edges_from([e for e, prop in gin.edges().items() if prop["n"] < self.args.n])
+
+        gout = nx.Graph()
+        molecules = {}
+        for u, prop in gin.nodes.items():
+            subgraph = gin.subgraph(gin.neighbors(u))
+            components = list(nx.connected_components(subgraph))
+            components.sort(key=len, reverse=True)
+            for i in range(len(components)):
+                gout.add_node(f"{u}_{i}", n=prop["n"])
+            molecules[u] = {v: i for i, vs in enumerate(components) for v in vs}
+        print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
+
+        for (u, v), prop in gin.edges.items():
+            u_molecule = molecules[u][v]
+            v_molecule = molecules[v][u]
+            gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
+        print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
+
+        self.write_graph(gout, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
+
     def physlr_graph(self, fmt):
         "Generate a graph from the minimizer index."
         graph = Graph()
@@ -426,6 +451,8 @@ class Physlr:
             self.physlr_backbone_graph()
         elif self.args.command == "count-markers":
             self.physlr_count_markers()
+        elif self.args.command == "count-molecules":
+            self.physlr_count_molecules()
         elif self.args.command == "filter":
             self.physlr_filter()
         elif self.args.command == "indexfa":
@@ -438,8 +465,8 @@ class Physlr:
             self.physlr_graph("graphviz")
         elif self.args.command == "intersect":
             self.physlr_intersect()
-        elif self.args.command == "count-molecules":
-            self.physlr_count_molecules()
+        elif self.args.command == "molecules":
+            self.physlr_molecules()
         elif self.args.command == "mst":
             self.physlr_mst()
         elif self.args.command == "overlap":

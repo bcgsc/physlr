@@ -43,13 +43,17 @@ humanmt/mt.fa:
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Test Phsylr using the fly data.
-fly: \
-	f1chr4.physlr.overlap.molecules.M2.backbone.label.n50.gv.pdf \
-	f1chr4.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.fly.cov \
-	f1chr4.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.pdf \
-	f1chr2R.physlr.overlap.molecules.M2.backbone.label.n50.gv.pdf \
-	f1chr2R.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.fly.cov \
-	f1chr2R.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed.pdf
+fly: f1chr4 f1chr2R
+
+f1chr4: \
+	f1chr4.physlr.overlap.n20.mol.backbone.label.gv \
+	f1chr4.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.fly.cov \
+	f1chr4.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.pdf
+
+f1chr2R: \
+	f1chr2R.physlr.overlap.n20.mol.backbone.label.gv \
+	f1chr2R.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.fly.cov \
+	f1chr2R.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.pdf
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -300,13 +304,17 @@ minsize=2000
 %.physlr.overlap.backbone.tiling.tsv: %.physlr.overlap.backbone.tsv
 	PYTHONPATH=. bin/physlr tiling-graph $< >$@
 
-# Estimate the nubmer of molecules per barcode.
+# Estimate the number of molecules per barcode.
 %.physlr.overlap.molecules.tsv: %.physlr.overlap.tsv
-	PYTHONPATH=. bin/physlr count-molecules -n10 $< >$@
+	PYTHONPATH=. bin/physlr count-molecules -n20 $< >$@
 
 # Remove barcodes with more than one molecule.
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
 	PYTHONPATH=. bin/physlr filter -M2 $< >$@
+
+# Separate barcodes into molecules.
+%.physlr.overlap.n20.mol.tsv: %.physlr.overlap.tsv
+	PYTHONPATH=. bin/physlr molecules -n20 $< >$@
 
 # Convert a graph from TSV to GraphViz.
 %.gv: %.tsv
@@ -314,7 +322,7 @@ minsize=2000
 
 # Extract a BED file of the backbone barcodes.
 %.backbone.path.$(ref).molecule.bed: %.backbone.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
-	for i in $$(<$<); do grep $$i $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done >$@
+	for i in $$(<$<); do grep $${i%_*} $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done >$@
 
 # Plot a BED file.
 %.bed.pdf: %.bed
