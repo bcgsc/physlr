@@ -23,6 +23,8 @@
 *.path
 *.pdf
 *.png
+*.sh
+*.stamp
 *.tar
 *.tsv
 *.txt
