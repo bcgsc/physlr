@@ -83,6 +83,10 @@ f1chr4.fq.gz: fly/fly.f1.chr4.sortbxn.dropse.bx100-200.fq.gz
 f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx100-200.fq.gz
 	ln -sf $< $@
 
+# Symlink the subsampled chromosome 2R reads.
+f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
+	ln -sf $< $@
+
 ################################################################################
 # Picea sitchensis plastid
 
@@ -114,6 +118,42 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx10
 # Separate a set of on-target reads.
 %.bx100-200.fq.gz: %.fq.gz %.bx100-200.txt
 	gunzip -c $< | paste - - - - | grep -Ff $*.bx100-200.txt | tr '\t' '\n' | $(gzip) >$@
+
+# Determine a set of barcodes containing on-target molecules.
+%.bx200-300.txt: %.fq.gz
+	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
+	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 200 && $$count < 300' then cut -f BX then sort -f BX >$@
+
+# Separate a set of on-target reads.
+%.bx200-300.fq.gz: %.fq.gz %.bx200-300.txt
+	gunzip -c $< | paste - - - - | grep -Ff $*.bx200-300.txt | tr '\t' '\n' | $(gzip) >$@
+
+# Determine a set of barcodes containing on-target molecules.
+%.bx300-400.txt: %.fq.gz
+	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
+	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 300 && $$count < 400' then cut -f BX then sort -f BX >$@
+
+# Separate a set of on-target reads.
+%.bx300-400.fq.gz: %.fq.gz %.bx300-400.txt
+	gunzip -c $< | paste - - - - | grep -Ff $*.bx300-400.txt | tr '\t' '\n' | $(gzip) >$@
+
+# Determine a set of barcodes containing on-target molecules.
+%.bx400-500.txt: %.fq.gz
+	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
+	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 400 && $$count < 500' then cut -f BX then sort -f BX >$@
+
+# Separate a set of on-target reads.
+%.bx400-500.fq.gz: %.fq.gz %.bx400-500.txt
+	gunzip -c $< | paste - - - - | grep -Ff $*.bx400-500.txt | tr '\t' '\n' | $(gzip) >$@
+
+# Determine a set of barcodes containing on-target molecules.
+%.bx100-500.txt: %.fq.gz
+	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
+	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 100 && $$count < 500' then cut -f BX then sort -f BX >$@
+
+# Separate a set of on-target reads.
+%.bx100-500.fq.gz: %.fq.gz %.bx100-500.txt
+	gunzip -c $< | paste - - - - | grep -Ff $*.bx100-500.txt | tr '\t' '\n' | $(gzip) >$@
 
 ################################################################################
 # Trimadap
