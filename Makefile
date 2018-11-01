@@ -10,6 +10,9 @@ t=16
 # Compress in parallel.
 gzip=pigz -p$t
 
+# Python interpreter.
+python=PYTHONPATH=. pypy3
+
 SHELL=bash -e -o pipefail
 ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
 # Set pipefail to ensure that all commands of a pipe succeed.
@@ -279,55 +282,55 @@ minsize=2000
 
 # Index a FASTA file.
 %.physlr.tsv: %.fa
-	PYTHONPATH=. bin/physlr indexfa -k$k -w$w $< >$@
+	$(python) bin/physlr indexfa -k$k -w$w $< >$@
 
 # Index linked reads.
 %.physlr.tsv: %.fq.gz
-	gunzip -c $< | PYTHONPATH=. bin/physlr indexlr -k$k -w$w - >$@
+	gunzip -c $< | $(python) bin/physlr indexlr -k$k -w$w - >$@
 
 # Count the frequency of the markers.
 %.physlr.markers.tsv: %.physlr.tsv
-	PYTHONPATH=. bin/physlr count-markers $< >$@
+	$(python) bin/physlr count-markers $< >$@
 	
 # Identify the overlapping markers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv
-	PYTHONPATH=. bin/physlr intersect $< >$@
+	$(python) bin/physlr intersect $< >$@
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
-	PYTHONPATH=. bin/physlr overlap $< >$@
+	$(python) bin/physlr overlap $< >$@
 
 # Determine the maximum spanning tree.
 %.physlr.overlap.mst.tsv: %.physlr.overlap.tsv
-	PYTHONPATH=. bin/physlr mst $< >$@
+	$(python) bin/physlr mst $< >$@
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	PYTHONPATH=. bin/physlr backbone-graph $< >$@
+	$(python) bin/physlr backbone-graph $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.backbone.path: %.backbone.tsv
-	PYTHONPATH=. bin/physlr backbone $< >$@
+	$(python) bin/physlr backbone $< >$@
 
 # Determine the minimum tiling graph of the backbone graph.
 %.physlr.overlap.backbone.tiling.tsv: %.physlr.overlap.backbone.tsv
-	PYTHONPATH=. bin/physlr tiling-graph $< >$@
+	$(python) bin/physlr tiling-graph $< >$@
 
 # Estimate the number of molecules per barcode.
 %.physlr.overlap.molecules.tsv: %.physlr.overlap.tsv
-	PYTHONPATH=. bin/physlr count-molecules -n20 $< >$@
+	$(python) bin/physlr count-molecules -n20 $< >$@
 
 # Remove barcodes with more than one molecule.
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
-	PYTHONPATH=. bin/physlr filter -M2 $< >$@
+	$(python) bin/physlr filter -M2 $< >$@
 
 # Separate barcodes into molecules.
 %.physlr.overlap.n20.mol.tsv: %.physlr.overlap.tsv
-	PYTHONPATH=. bin/physlr molecules -n20 $< >$@
+	$(python) bin/physlr molecules -n20 $< >$@
 
 # Convert a graph from TSV to GraphViz.
 %.gv: %.tsv
-	PYTHONPATH=. bin/physlr filter -Ogv $< >$@
+	$(python) bin/physlr filter -Ogv $< >$@
 
 # Extract a BED file of the backbone barcodes.
 %.backbone.path.$(ref).molecule.bed: %.backbone.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
