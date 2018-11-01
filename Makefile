@@ -10,6 +10,15 @@ t=16
 # Compress in parallel.
 gzip=pigz -p$t
 
+SHELL=bash -e -o pipefail
+ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
+# Set pipefail to ensure that all commands of a pipe succeed.
+SHELL=zsh -e -o pipefail
+# Report run time and memory usage with zsh.
+export REPORTTIME=1
+export TIMEFMT=time user=%U system=%S elapsed=%E cpu=%P memory=%M job=%J
+endif
+
 .DELETE_ON_ERROR:
 .SECONDARY:
 .PHONY: fly humanmt psitchensiscp
