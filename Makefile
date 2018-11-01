@@ -55,17 +55,7 @@ humanmt/mt.fa:
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Test Phsylr using the fly data.
-fly: f1chr4 f1chr2R
-
-f1chr4: \
-	f1chr4.physlr.overlap.n20.mol.backbone.label.gv \
-	f1chr4.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
-	f1chr4.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.pdf
-
-f1chr2R: \
-	f1chr2R.physlr.overlap.n20.mol.backbone.label.gv \
-	f1chr2R.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
-	f1chr2R.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed.pdf
+fly: f1chr4.physlr.stamp f1chr2R.physlr.stamp
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -97,10 +87,7 @@ f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx100-200.fq.gz
 # Picea sitchensis plastid
 
 # Test Phsylr using the Picea sitchensis plastid data.
-psitchensiscp: \
-	HYN5VCCXX_4cp.physlr.overlap.backbone.label.n50.gv.pdf \
-	HYN5VCCXX_4cp.physlr.overlap.backbone.path.psitchensiscp.molecule.bed.psitchensiscp.cov.tsv \
-	HYN5VCCXX_4cp.physlr.overlap.backbone.path.psitchensiscp.molecule.bed.pdf
+psitchensiscp: HYN5VCCXX_4cp.physlr.stamp
 
 # Download the Picea sitchensis plastid genome.
 psitchensiscp/psitchensiscp.fa:
@@ -339,6 +326,13 @@ minsize=2000
 # Plot a BED file.
 %.bed.pdf: %.bed
 	Rscript -e 'rmarkdown::render("plotbed.rmd", "html_document", "$*.plotbed.html", params = list(input_bed="$<"))'
+
+# Assemble a physical map.
+%.physlr.stamp: \
+		%.physlr.overlap.n20.mol.backbone.label.gv.pdf \
+		%.physlr.overlap.n20.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
+		%.physlr.overlap.n20.mol.backbone.path.$(ref).molecule.bed.pdf
+	touch $@
 
 ################################################################################
 # Bedtools
