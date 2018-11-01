@@ -270,17 +270,19 @@ class Physlr:
 
     def physlr_intersect(self):
         "Print the minimizers in the intersection of each pair of barcodes."
+        if self.args.n == 0:
+            self.args.n = 1
         bxtomin = self.read_minimizers(self.args.FILES)
         mintobx = self.construct_minimizers_to_barcodes(bxtomin)
-        seen = set()
-        for bxs in mintobx.values():
-            for u, v in itertools.combinations(bxs, 2):
-                if not (u, v) in seen:
-                    seen.add((u, v))
-                    common = bxtomin[u] & bxtomin[v]
-                    if len(common) >= self.args.n:
-                        print(u, v, "", sep="\t", end="")
-                        print(*common)
+        if self.args.v:
+            pairs = itertools.combinations(self.args.v.split(), 2)
+        else:
+            pairs = {(u, v) for bxs in mintobx.values() for u, v in itertools.combinations(bxs, 2)}
+        for u, v in pairs:
+            common = bxtomin[u] & bxtomin[v]
+            if len(common) >= self.args.n:
+                print(u, v, "", sep="\t", end="")
+                print(*common)
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
