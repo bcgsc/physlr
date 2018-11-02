@@ -356,12 +356,14 @@ minsize=2000
 	$(python) bin/physlr molecules -n20 $< >$@
 
 # Convert a graph from TSV to GraphViz.
+# Filter out small components.
 %.gv: %.tsv
-	$(python) bin/physlr filter -Ogv $< >$@
+	$(python) bin/physlr filter --min-component-size=50 -Ogv $< >$@
 
 # Extract a BED file of the backbone barcodes.
+# Filter out small components.
 %.backbone.path.$(ref).molecule.bed: %.backbone.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
-	sh -c 'while read line; do for i in $$line; do grep $${i%_*} $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done; printf "NA\tNA\tNA\tNA\tNA\n"; done' <$< >$@
+	awk 'NF >= 50' $< | sh -c 'while read line; do for i in $$line; do grep $${i%_*} $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done; printf "NA\tNA\tNA\tNA\tNA\n"; done' >$@
 
 # Plot a BED file.
 %.bed.pdf: %.bed
