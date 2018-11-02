@@ -381,8 +381,7 @@ minsize=2000
 
 # Compute genome coverage.
 %.bed.$(ref).cov.tsv: %.bed $(ref)/$(ref).fa.fai
-	bedtools genomecov -max 1 -g $(ref)/$(ref).fa.fai -i $< \
-	| awk '$$2 != 0 || $$5 != 1' >$@
+	grep -v NA $< | sort -k1,1 -k2,2n -k3,3n | bedtools genomecov -max 1 -g $(ref)/$(ref).fa.fai -i - | awk '$$2 != 0 || $$5 != 1' >$@
 
 ################################################################################
 # GraphViz
