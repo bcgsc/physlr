@@ -344,7 +344,7 @@ minsize=2000
 	$(python) bin/physlr tiling-graph $< >$@
 
 # Estimate the number of molecules per barcode.
-%.physlr.overlap.molecules.tsv: %.physlr.overlap.tsv
+%.physlr.overlap.n20.countmol.tsv: %.physlr.overlap.tsv
 	$(python) bin/physlr count-molecules -n20 $< >$@
 
 # Remove barcodes with more than one molecule.
