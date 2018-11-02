@@ -9,6 +9,8 @@ import sys
 import timeit
 import networkx as nx
 
+from networkx.algorithms.connectivity.edge_kcomponents import bridge_components
+
 from physlr.minimerize import minimerize
 from physlr.benv.graph import Graph
 from physlr.read_fasta import read_fasta
@@ -201,12 +203,12 @@ class Physlr:
         return backbones
 
     @staticmethod
-    def count_adajcent_components(g):
+    def count_adjacent_components(g):
         "Estimate the nubmer of adjacent components of each vertex."
         adjcomps = {}
         for u in g:
-            vs = g.neighbors(u)
-            adjcomps[u] = nx.algorithms.components.number_connected_components(g.subgraph(vs))
+            subgraph = g.subgraph(g.neighbors(u))
+            adjcomps[u] = sum(1 for _ in bridge_components(subgraph))
         return adjcomps
 
     def physlr_filter(self):
@@ -364,7 +366,7 @@ class Physlr:
         "Estimate the nubmer of molecules per barcode."
         g = self.read_graph(self.args.FILES)
         g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
-        for u, nmolecules in self.count_adajcent_components(g).items():
+        for u, nmolecules in self.count_adjacent_components(g).items():
             g.nodes[u]["m"] = nmolecules
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
@@ -377,7 +379,7 @@ class Physlr:
         molecules = {}
         for u, prop in gin.nodes.items():
             subgraph = gin.subgraph(gin.neighbors(u))
-            components = list(nx.connected_components(subgraph))
+            components = list(bridge_components(subgraph))
             components.sort(key=len, reverse=True)
             for i in range(len(components)):
                 gout.add_node(f"{u}_{i}", n=prop["n"])
