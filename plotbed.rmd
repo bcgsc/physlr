@@ -4,7 +4,7 @@ author: Shaun Jackman
 params:
   input_bed:
     label: "Input BED file"
-    value: "f1chr4.physlr.overlap.molecules.M2.backbone.path.fly.molecule.bed"
+    value: "f1chr4.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed"
     input: text
 ---
 
@@ -31,6 +31,7 @@ bed <- bed_orig %>%
 		Rname = "Contig boundary",
 		Start = 0, End = max(bed_orig$End, na.rm = TRUE),
 		BX = "None", Reads = 0)) %>%
+	filter(!startsWith(Rname, "NW_")) %>%
 	mutate(Index = cumsum(BX != lag(BX, default="")))
 ```
 
@@ -40,6 +41,9 @@ ggplot(bed) +
 	aes(xmin = Start, xmax = End, ymin = Index, ymax = Index + 1, fill = Rname) +
 	geom_rect() +
 	scale_x_continuous(name = "Position", labels = unit_format(unit = "Mbp", scale = 1e-6)) +
-	scale_fill_manual(values = c("violet", "black"))
+	scale_fill_brewer(type = "qual", palette = "Set1", direction = -1)
+```
+
+```{r save-plot}
 ggsave(paste0(input_bed, ".pdf"))
 ```
