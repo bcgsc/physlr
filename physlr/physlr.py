@@ -217,13 +217,31 @@ class Physlr:
         if self.args.n > 0:
             edges = [e for e, eprop in g.edges().items() if eprop["n"] < self.args.n]
             g.remove_edges_from(edges)
-            print("Removed", len(edges), "edges with fewer than ", self.args.n, "common markers.",
-                  file=sys.stderr)
+            print(
+                int(timeit.default_timer() - t0),
+                "Removed", len(edges), "edges with fewer than ", self.args.n, "common markers.",
+                file=sys.stderr)
         if self.args.M is not None:
             vertices = [u for u, prop in g.nodes().items() if prop["m"] >= self.args.M]
             g.remove_nodes_from(vertices)
-            print("Removed", len(vertices), "vertices with", self.args.M, "or more molecules.",
-                  file=sys.stderr)
+            print(
+                int(timeit.default_timer() - t0),
+                "Removed", len(vertices), "vertices with", self.args.M, "or more molecules.",
+                file=sys.stderr)
+        if self.args.min_component_size > 0:
+            ncomponents, nvertices = 0, 0
+            vertices = set()
+            for component in nx.connected_components(g):
+                if len(component) < self.args.min_component_size:
+                    vertices.update(component)
+                    ncomponents += 1
+                    nvertices += len(component)
+            g.remove_nodes_from(vertices)
+            print(
+                int(timeit.default_timer() - t0),
+                "Removed", nvertices, "vertices in", ncomponents,
+                "with fewer than", self.args.min_component_size, "vertices in a component.",
+                file=sys.stderr)
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
     def physlr_subgraph(self):
@@ -425,6 +443,9 @@ class Physlr:
         argparser.add_argument(
             "-n", "--min-n", action="store", dest="n", type=int, default=0,
             help="remove edges with fewer than n shared markers [0]")
+        argparser.add_argument(
+            "--min-component-size", action="store", dest="min_component_size", type=int, default=0,
+            help="remove components with fewer than N vertices [0]")
         argparser.add_argument(
             "-v", "--vertices", action="store", dest="v",
             help="list of vertices")
