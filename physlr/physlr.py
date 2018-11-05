@@ -7,6 +7,7 @@ import argparse
 import itertools
 import sys
 import timeit
+import tqdm
 import networkx as nx
 
 from networkx.algorithms.connectivity.edge_kcomponents import bridge_components
@@ -21,6 +22,10 @@ def quantile(quantiles, xs):
     "Return the specified quantiles p of xs."
     sorted_xs = sorted(xs)
     return [sorted_xs[round(p * (len(sorted_xs)-1))] for p in quantiles]
+
+def progress(it):
+    "Return an iterator that displays a progress bar."
+    return tqdm.tqdm(it, mininterval=1, smoothing=0.1, bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
 
 class Physlr:
     """
@@ -202,15 +207,6 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Determined the backbone paths", file=sys.stderr)
         return backbones
 
-    @staticmethod
-    def count_adjacent_components(g):
-        "Estimate the nubmer of adjacent components of each vertex."
-        adjcomps = {}
-        for u in g:
-            subgraph = g.subgraph(g.neighbors(u))
-            adjcomps[u] = sum(1 for _ in bridge_components(subgraph))
-        return adjcomps
-
     def physlr_filter(self):
         "Filter a graph."
         g = self.read_graph(self.args.FILES)
@@ -384,8 +380,9 @@ class Physlr:
         "Estimate the nubmer of molecules per barcode."
         g = self.read_graph(self.args.FILES)
         g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
-        for u, nmolecules in self.count_adjacent_components(g).items():
-            g.nodes[u]["m"] = nmolecules
+        for u, prop in progress(g.nodes.items()):
+            subgraph = g.subgraph(g.neighbors(u))
+            prop["m"] = sum(1 for _ in bridge_components(subgraph))
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
     def physlr_molecules(self):
@@ -395,7 +392,7 @@ class Physlr:
 
         gout = nx.Graph()
         molecules = {}
-        for u, prop in gin.nodes.items():
+        for u, prop in progress(gin.nodes.items()):
             subgraph = gin.subgraph(gin.neighbors(u))
             components = list(bridge_components(subgraph))
             components.sort(key=len, reverse=True)
