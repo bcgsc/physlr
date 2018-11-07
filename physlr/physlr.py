@@ -7,8 +7,9 @@ import argparse
 import itertools
 import sys
 import timeit
-import tqdm
+
 import networkx as nx
+import tqdm
 
 from physlr.minimerize import minimerize
 from physlr.benv.graph import Graph
@@ -21,9 +22,11 @@ def quantile(quantiles, xs):
     sorted_xs = sorted(xs)
     return [sorted_xs[round(p * (len(sorted_xs)-1))] for p in quantiles]
 
-def progress(it):
+def progress(iterator):
     "Return an iterator that displays a progress bar."
-    return tqdm.tqdm(it, mininterval=1, smoothing=0.1, bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
+    return tqdm.tqdm(
+        iterator, mininterval=1, smoothing=0.1,
+        bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
 
 class Physlr:
     """
