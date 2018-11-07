@@ -393,7 +393,10 @@ class Physlr:
         "Estimate the nubmer of molecules per barcode."
         g = self.read_graph(self.args.FILES)
         g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
-        print(int(timeit.default_timer() - t0), "Separating barcodes into molecules")
+        print(
+            int(timeit.default_timer() - t0),
+            "Separating barcodes into molecules", file=sys.stderr)
+
         for u, prop in progress(g.nodes.items()):
             subgraph = g.subgraph(g.neighbors(u))
             # Ignore K3 (triangle) components.
@@ -406,8 +409,10 @@ class Physlr:
         "Separate barcodes into molecules."
         gin = self.read_graph(self.args.FILES)
         gin.remove_edges_from([e for e, prop in gin.edges().items() if prop["n"] < self.args.n])
+        print(
+            int(timeit.default_timer() - t0),
+            "Separating barcodes into molecules", file=sys.stderr)
 
-        print(int(timeit.default_timer() - t0), "Separating barcodes into molecules")
         # Parition the neighbouring vertices of each barcode into molecules.
         molecules = {}
         for u, prop in progress(gin.nodes.items()):
