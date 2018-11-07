@@ -5,6 +5,7 @@ Physlr: Physical Mapping of Linked Reads
 
 import argparse
 import itertools
+import os
 import sys
 import timeit
 
@@ -65,20 +66,28 @@ class Physlr:
     def read_tsv(g, filename):
         "Read a graph in TSV format."
         with open(filename) as fin:
+            progressbar = tqdm.tqdm(
+                total=os.fstat(fin.fileno()).st_size,
+                mininterval=1, smoothing=0.1,
+                bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
             line = fin.readline()
+            progressbar.update(len(line))
             if line not in ["U\tn\n", "U\tn\tm\n"]:
                 print("Unexpected header:", line, file=sys.stderr)
                 exit(1)
             reading_vertices = True
             for line in fin:
+                progressbar.update(len(line))
                 if line == "\n":
                     line = fin.readline()
+                    progressbar.update(len(line))
                     if line == "U\tV\tn\n":
                         reading_vertices = False
                     else:
                         print("Unexpected header:", line, file=sys.stderr)
                         exit(1)
                     line = fin.readline()
+                    progressbar.update(len(line))
                 xs = line.split()
                 if reading_vertices:
                     if len(xs) == 2:
@@ -94,6 +103,8 @@ class Physlr:
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
                         exit(1)
+                progressbar.refresh()
+        progressbar.close()
         return g
 
     @staticmethod
@@ -122,6 +133,7 @@ class Physlr:
     @staticmethod
     def read_graph(filenames):
         "Read a graph in either GraphViz or TSV format."
+        print(int(timeit.default_timer() - t0), "Reading", *filenames, file=sys.stderr)
         g = nx.Graph()
         for filename in filenames:
             with open(filename) as fin:
@@ -381,6 +393,7 @@ class Physlr:
         "Estimate the nubmer of molecules per barcode."
         g = self.read_graph(self.args.FILES)
         g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
+        print(int(timeit.default_timer() - t0), "Separating barcodes into molecules")
         for u, prop in progress(g.nodes.items()):
             subgraph = g.subgraph(g.neighbors(u))
             # Ignore K3 (triangle) components.
@@ -394,6 +407,7 @@ class Physlr:
         gin = self.read_graph(self.args.FILES)
         gin.remove_edges_from([e for e, prop in gin.edges().items() if prop["n"] < self.args.n])
 
+        print(int(timeit.default_timer() - t0), "Separating barcodes into molecules")
         # Parition the neighbouring vertices of each barcode into molecules.
         molecules = {}
         for u, prop in progress(gin.nodes.items()):
