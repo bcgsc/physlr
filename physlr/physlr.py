@@ -10,8 +10,6 @@ import timeit
 import tqdm
 import networkx as nx
 
-from networkx.algorithms.connectivity.edge_kcomponents import bridge_components
-
 from physlr.minimerize import minimerize
 from physlr.benv.graph import Graph
 from physlr.read_fasta import read_fasta
@@ -382,7 +380,10 @@ class Physlr:
         g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
         for u, prop in progress(g.nodes.items()):
             subgraph = g.subgraph(g.neighbors(u))
-            prop["m"] = sum(1 for _ in bridge_components(subgraph))
+            # Ignore K3 (triangle) components.
+            prop["m"] = sum(
+                1 for component in nx.biconnected_components(subgraph)
+                if len(component) >= 4)
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
     def physlr_molecules(self):
@@ -390,18 +391,35 @@ class Physlr:
         gin = self.read_graph(self.args.FILES)
         gin.remove_edges_from([e for e, prop in gin.edges().items() if prop["n"] < self.args.n])
 
-        gout = nx.Graph()
+        # Parition the neighbouring vertices of each barcode into molecules.
         molecules = {}
         for u, prop in progress(gin.nodes.items()):
             subgraph = gin.subgraph(gin.neighbors(u))
-            components = list(bridge_components(subgraph))
+            components = list(nx.biconnected_components(subgraph))
             components.sort(key=len, reverse=True)
-            for i in range(len(components)):
-                gout.add_node(f"{u}_{i}", n=prop["n"])
-            molecules[u] = {v: i for i, vs in enumerate(components) for v in vs}
-        print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
+            # Add articulation vertices to the largest component.
+            molecules[u] = {v: i for i, vs in reversed(list(enumerate(components))) for v in vs}
 
+        # Add vertices.
+        gout = nx.Graph()
+        for u, vs in sorted(molecules.items()):
+            n = gin.nodes[u]["n"]
+            nmolecules = 1 + max(vs.values()) if vs else 0
+            for i in range(nmolecules):
+                gout.add_node(f"{u}_{i}", n=n)
+
+        print(
+            int(timeit.default_timer() - t0),
+            "Identified", gout.number_of_nodes(), "molecules in",
+            gin.number_of_nodes(), "barcodes.",
+            round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
+            file=sys.stderr)
+
+        # Add edges.
         for (u, v), prop in gin.edges.items():
+            # Skip singleton vertices, which are excluded from the partition.
+            if v not in molecules[u]:
+                continue
             u_molecule = molecules[u][v]
             v_molecule = molecules[v][u]
             gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
