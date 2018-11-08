@@ -178,6 +178,30 @@ class Physlr:
         return mintobx
 
     @staticmethod
+    def triconnected_components(g):
+        "Return the triconnected components of the graph."
+        components = []
+        for component in nx.biconnected_components(g):
+            if len(component) < 3:
+                components.append(component)
+                continue
+            try:
+                cuts = next(nx.all_node_cuts(g.subgraph(component), k=2))
+                if len(cuts) > 2:
+                    components.append(component)
+                    continue
+                assert len(cuts) == 2
+                subcomponents = list(nx.connected_components(g.subgraph(component - cuts)))
+                if len(subcomponents) == 1:
+                    components.append(component)
+                    continue
+                components += subcomponents
+                components.append(cuts)
+            except StopIteration:
+                components.append(component)
+        return components
+
+    @staticmethod
     def diameter_of_tree(g, weight=None):
         """
         Compute the diameter of a tree.
@@ -408,8 +432,7 @@ class Physlr:
     @staticmethod
     def determine_molecules(g, u):
         "Assign the neighbours of this vertex to molecules."
-        subgraph = g.subgraph(g.neighbors(u))
-        components = list(nx.biconnected_components(subgraph))
+        components = list(nx.biconnected_components(g.subgraph(g.neighbors(u))))
         components.sort(key=len, reverse=True)
         # Add articulation vertices to the largest component.
         return u, {v: i for i, vs in reversed(list(enumerate(components))) for v in vs}
