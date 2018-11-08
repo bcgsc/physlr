@@ -103,7 +103,6 @@ class Physlr:
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
                         exit(1)
-                progressbar.refresh()
         progressbar.close()
         return g
 
