@@ -113,7 +113,7 @@ class Physlr:
         graph = nx.drawing.nx_agraph.read_dot(filename)
         for vprop in graph.nodes().values():
             vprop["n"] = int(vprop["n"])
-        for eprop in graph.edges().values():
+        for _, _, eprop in graph.edges.data():
             eprop["n"] = int(eprop["n"])
         return nx.algorithms.operators.binary.compose(g, graph)
 
@@ -224,7 +224,7 @@ class Physlr:
         "Filter a graph."
         g = self.read_graph(self.args.FILES)
         if self.args.n > 0:
-            edges = [e for e, eprop in g.edges().items() if eprop["n"] < self.args.n]
+            edges = [(u, v) for u, v, n in g.edges(data="n") if n < self.args.n]
             g.remove_edges_from(edges)
             print(
                 int(timeit.default_timer() - t0),
@@ -383,7 +383,7 @@ class Physlr:
         if self.args.n == 0:
             self.args.n = min(g[u][v]["n"] for u, v in zip(backbone, backbone[1:]))
             print("Using n=", self.args.n, sep="", file=sys.stderr)
-        g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
+        g.remove_edges_from([(u, v) for u, v, n in g.edges(data="n") if n < self.args.n])
         u, v = backbone[0], backbone[-1]
         tiling_path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
         subgraph = g.subgraph(tiling_path)
@@ -392,7 +392,7 @@ class Physlr:
     def physlr_count_molecules(self):
         "Estimate the nubmer of molecules per barcode."
         g = self.read_graph(self.args.FILES)
-        g.remove_edges_from([e for e, eprop in g.edges().items() if eprop["n"] < self.args.n])
+        g.remove_edges_from([(u, v) for u, v, n in g.edges(data="n") if n < self.args.n])
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules", file=sys.stderr)
@@ -425,7 +425,7 @@ class Physlr:
     def physlr_molecules(self):
         "Separate barcodes into molecules."
         gin = self.read_graph(self.args.FILES)
-        gin.remove_edges_from([e for e, prop in gin.edges().items() if prop["n"] < self.args.n])
+        gin.remove_edges_from([(u, v) for u, v, n in gin.edges(data="n") if n < self.args.n])
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules", file=sys.stderr)
