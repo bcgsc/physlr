@@ -5,6 +5,7 @@ Physlr: Physical Mapping of Linked Reads
 
 import argparse
 import itertools
+import multiprocessing
 import os
 import sys
 import timeit
@@ -404,6 +405,23 @@ class Physlr:
                 if len(component) >= 4)
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
+    @staticmethod
+    def determine_molecules(g, u):
+        "Assign the neighbours of this vertex to molecules."
+        subgraph = g.subgraph(g.neighbors(u))
+        components = list(nx.biconnected_components(subgraph))
+        components.sort(key=len, reverse=True)
+        # Add articulation vertices to the largest component.
+        return u, {v: i for i, vs in reversed(list(enumerate(components))) for v in vs}
+
+    @staticmethod
+    def determine_molecules_process(u):
+        """
+        Assign the neighbours of this vertex to molecules.
+        The graph is passed in the class variable Physlr.graph.
+        """
+        return Physlr.determine_molecules(Physlr.graph, u)
+
     def physlr_molecules(self):
         "Separate barcodes into molecules."
         gin = self.read_graph(self.args.FILES)
@@ -413,13 +431,15 @@ class Physlr:
             "Separating barcodes into molecules", file=sys.stderr)
 
         # Parition the neighbouring vertices of each barcode into molecules.
-        molecules = {}
-        for u, prop in progress(gin.nodes.items()):
-            subgraph = gin.subgraph(gin.neighbors(u))
-            components = list(nx.biconnected_components(subgraph))
-            components.sort(key=len, reverse=True)
-            # Add articulation vertices to the largest component.
-            molecules[u] = {v: i for i, vs in reversed(list(enumerate(components))) for v in vs}
+        if self.args.threads == 1:
+            molecules = dict(self.determine_molecules(gin, u) for u in progress(gin))
+        else:
+            Physlr.graph = gin
+            with multiprocessing.Pool(self.args.threads) as pool:
+                molecules = dict(pool.map(
+                    self.determine_molecules_process, progress(gin), chunksize=100))
+            Physlr.graph = None
+        print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
 
         # Add vertices.
         gout = nx.Graph()
@@ -461,6 +481,10 @@ class Physlr:
     def parse_arguments():
         "Parse the command line arguments."
         argparser = argparse.ArgumentParser()
+        argparser.add_argument(
+            "-t", "--threads", action="store", dest="threads", type=int,
+            default=min(16, os.cpu_count()),
+            help="number of threads [16 or number of CPU]")
         argparser.add_argument(
             "-k", "--k", action="store", type=int,
             help="size of a k-mer (bp)")
