@@ -41,8 +41,10 @@ def readBED(BEDfilename, min_overlap, prefix):
 					# print("WARNING: Already an edge between %s and %s" % (BX, overlap.data))
 					overlap_graph[bx1][bx2]['n'] += overlap
 				else:
-					overlap_graph.add_node(bx1, l = 0)
-					overlap_graph.add_node(bx2, l = 0)
+					if not overlap_graph.has_node(bx1):
+						overlap_graph.add_node(bx1, l = 0)
+					if not overlap_graph.has_node(bx2):
+						overlap_graph.add_node(bx2, l = 0)
 					overlap_graph.add_edge(bx1, bx2, n=overlap)
 	
 	out_tsv.write("\nU\tl\n")

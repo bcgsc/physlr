@@ -1,3 +1,19 @@
 #!/usr/bin/env python3
+import atexit
+import cProfile
+import os
+import pstats
+import sys
 import physlr.physlr
+
+def print_profile(profile):
+    profile.disable()
+    stats = pstats.Stats(profile, stream=sys.stderr)
+    stats.sort_stats(pstats.SortKey.CUMULATIVE).print_stats()
+
+if "PHYSLR_PROFILE" in os.environ:
+    profile = cProfile.Profile()
+    atexit.register(print_profile, profile)
+    profile.enable()
+
 physlr.physlr.main()

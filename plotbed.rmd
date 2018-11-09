@@ -1,0 +1,49 @@
+---
+title: Plot a BED file
+author: Shaun Jackman
+params:
+  input_bed:
+    label: "Input BED file"
+    value: "f1chr4.physlr.overlap.n20.mol.backbone.path.fly.molecule.bed"
+    input: text
+---
+
+```{r setup, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(scales)
+library(tidyr)
+
+knit_print.data.frame <- function(x, ...) kable(x) %>% paste(collapse = "\n") %>% asis_output
+input_bed <- params$input_bed
+
+input_bed
+```
+
+# Read the BED file
+```{r read-data}
+bed_orig <- read_tsv(input_bed,
+	col_names = c("Rname", "Start", "End", "BX", "Reads"),
+	col_types = "ciici")
+bed <- bed_orig %>%
+	replace_na(list(
+		Rname = "Contig boundary",
+		Start = 0, End = max(bed_orig$End, na.rm = TRUE),
+		BX = "None", Reads = 0)) %>%
+	filter(!startsWith(Rname, "NW_")) %>%
+	mutate(Index = cumsum(BX != lag(BX, default="")))
+```
+
+# Plot the BED file
+```{r plot-bed, fig.height=6, fig.width=6}
+ggplot(bed) +
+	aes(xmin = Start, xmax = End, ymin = Index, ymax = Index + 1, fill = Rname) +
+	geom_rect() +
+	scale_x_continuous(name = "Position", labels = unit_format(unit = "Mbp", scale = 1e-6)) +
+	scale_fill_brewer(type = "qual", palette = "Set1", direction = -1)
+```
+
+```{r save-plot}
+ggsave(paste0(input_bed, ".pdf"))
+```

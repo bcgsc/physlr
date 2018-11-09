@@ -1,3 +1,5 @@
 [basic]
-good-names = bx, c, i, k, w, x, xs
-max-branches=15
+good-names = bx, c, e, g, i, k, n, q1, q2, q3, t0, u, un, vn, v, vs, w, x, xs
+max-branches=20
+max-locals=20
+max-public-methods=50
