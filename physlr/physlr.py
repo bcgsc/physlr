@@ -134,20 +134,24 @@ class Physlr:
     def read_graph(filenames):
         "Read a graph in either GraphViz or TSV format."
         print(int(timeit.default_timer() - t0), "Reading", *filenames, file=sys.stderr)
+        read_gv = False
         g = nx.Graph()
         for filename in filenames:
             with open(filename) as fin:
                 c = fin.read(1)
                 if c == "s":
                     g = Physlr.read_graphviz(g, filename)
+                    read_gv = True
                 elif c == "U":
                     g = Physlr.read_tsv(g, filename)
                 else:
                     print("Unexpected graph format", c + fin.readline(), file=sys.stderr)
                     sys.exit(1)
         print(int(timeit.default_timer() - t0), "Read", *filenames, file=sys.stderr)
-        g = Physlr.sort_vertices(g)
-        print(int(timeit.default_timer() - t0), "Sorted the vertices", file=sys.stderr)
+        if read_gv:
+            print(int(timeit.default_timer() - t0), "Sorting the vertices", file=sys.stderr)
+            g = Physlr.sort_vertices(g)
+            print(int(timeit.default_timer() - t0), "Sorted the vertices", file=sys.stderr)
         return g
 
     @staticmethod
