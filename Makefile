@@ -355,33 +355,25 @@ minsize=2000
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
 	$(python) bin/physlr filter -M2 $< >$@
 
-# Filter edges by number of common molecules using Miller.
-%.physlr.overlap.n50.tsv: %.physlr.overlap.tsv
+# Filter edges n >= 10 using Miller.
+%.n10.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 10' $< >$@
+
+# Filter edges n >= 20 using Miller.
+%.n20.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 20' $< >$@
+
+# Filter edges n >= 50 using Miller.
+%.n50.tsv: %.tsv
 	mlr --tsvlite filter '$$n >= 50' $< >$@
 
-# Filter edges by number of common molecules using Miller.
-%.physlr.overlap.n100.tsv: %.physlr.overlap.tsv
+# Filter edges n >= 100 using Miller.
+%.n100.tsv: %.tsv
 	mlr --tsvlite filter '$$n >= 100' $< >$@
-
-# Separate barcodes into molecules (n >= 10).
-%.physlr.overlap.n10.mol.tsv: %.physlr.overlap.tsv
-	$(python) bin/physlr molecules -t8 -n10 $< >$@
-
-# Separate barcodes into molecules (n >= 20).
-%.physlr.overlap.n20.mol.tsv: %.physlr.overlap.tsv
-	$(python) bin/physlr molecules -t8 -n20 $< >$@
-
-# Separate barcodes into molecules (n >= 50).
-%.physlr.overlap.n50.mol.tsv: %.physlr.overlap.tsv
-	$(python) bin/physlr molecules -t8 -n50 $< >$@
-
-# Separate barcodes into molecules (n >= 100).
-%.physlr.overlap.n100.mol.tsv: %.physlr.overlap.tsv
-	$(python) bin/physlr molecules -t8 -n100 $< >$@
 
 # Separate barcodes into molecules.
 %.mol.tsv: %.tsv
-	$(python) bin/physlr molecules -t8 $< >$@
+	$(python) bin/physlr molecules -t$t $< >$@
 
 # Convert a graph from TSV to GraphViz.
 # Filter out small components.
@@ -399,9 +391,9 @@ minsize=2000
 
 # Assemble a physical map.
 %.physlr.stamp: \
-		%.physlr.overlap.n20.mol.backbone.label.gv.pdf \
-		%.physlr.overlap.n20.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
-		%.physlr.overlap.n20.mol.backbone.path.$(ref).molecule.bed.pdf
+		%.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
+		%.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
+		%.physlr.overlap.n50.mol.backbone.label.gv.pdf
 	touch $@
 
 ################################################################################
