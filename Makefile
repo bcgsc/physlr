@@ -351,9 +351,25 @@ minsize=2000
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
 	$(python) bin/physlr filter -M2 $< >$@
 
-# Separate barcodes into molecules.
+# Separate barcodes into molecules (n >= 10).
+%.physlr.overlap.n10.mol.tsv: %.physlr.overlap.tsv
+	$(python) bin/physlr molecules -t8 -n10 $< >$@
+
+# Separate barcodes into molecules (n >= 20).
 %.physlr.overlap.n20.mol.tsv: %.physlr.overlap.tsv
-	$(python) bin/physlr molecules -n20 $< >$@
+	$(python) bin/physlr molecules -t8 -n20 $< >$@
+
+# Separate barcodes into molecules (n >= 50).
+%.physlr.overlap.n50.mol.tsv: %.physlr.overlap.tsv
+	$(python) bin/physlr molecules -t8 -n50 $< >$@
+
+# Separate barcodes into molecules (n >= 100).
+%.physlr.overlap.n100.mol.tsv: %.physlr.overlap.tsv
+	$(python) bin/physlr molecules -t8 -n100 $< >$@
+
+# Separate barcodes into molecules.
+%.mol.tsv: %.tsv
+	$(python) bin/physlr molecules -t8 $< >$@
 
 # Convert a graph from TSV to GraphViz.
 # Filter out small components.
