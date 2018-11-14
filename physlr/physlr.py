@@ -452,10 +452,10 @@ class Physlr:
     @staticmethod
     def determine_molecules(g, u):
         "Assign the neighbours of this vertex to molecules."
-        components = list(nx.biconnected_components(g.subgraph(g.neighbors(u))))
+        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
+        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
         components.sort(key=len, reverse=True)
-        # Add articulation vertices to the largest component.
-        return u, {v: i for i, vs in reversed(list(enumerate(components))) for v in vs}
+        return u, {v: i for i, vs in enumerate(components) for v in vs}
 
     @staticmethod
     def determine_molecules_process(u):
@@ -502,8 +502,8 @@ class Physlr:
 
         # Add edges.
         for (u, v), prop in gin.edges.items():
-            # Skip singleton vertices, which are excluded from the partition.
-            if v not in molecules[u]:
+            # Skip singleton and cut vertices, which are excluded from the partition.
+            if v not in molecules[u] or u not in molecules[v]:
                 continue
             u_molecule = molecules[u][v]
             v_molecule = molecules[v][u]
