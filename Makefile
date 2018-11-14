@@ -331,12 +331,16 @@ minsize=2000
 %.physlr.overlap.mst.tsv: %.physlr.overlap.tsv
 	$(python) bin/physlr mst $< >$@
 
+# Separate a graph into its biconnected components by removing its cut vertices.
+%.bic.tsv: %.tsv
+	$(python) bin/physlr biconnected-components $< >$@
+
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
 	$(python) bin/physlr backbone-graph $< >$@
 
 # Determine the backbone path of the backbone graph.
-%.backbone.path: %.backbone.tsv
+%.path: %.tsv
 	$(python) bin/physlr backbone $< >$@
 
 # Determine the minimum tiling graph of the backbone graph.
@@ -386,7 +390,7 @@ minsize=2000
 
 # Extract a BED file of the backbone barcodes.
 # Filter out small components.
-%.backbone.path.$(ref).molecule.bed: %.backbone.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
+%.path.$(ref).molecule.bed: %.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
 	awk 'NF >= 50' $< | sh -c 'while read line; do for i in $$line; do grep $${i%_*} $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done; printf "NA\tNA\tNA\tNA\tNA\n"; done' >$@
 
 # Plot a BED file.

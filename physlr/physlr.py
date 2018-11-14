@@ -407,6 +407,17 @@ class Physlr:
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Output the backbone subgraph", file=sys.stderr)
 
+    def physlr_biconnected_components(self):
+        "Separate a graph into its biconnected components by removing its cut vertices."
+        g = self.read_graph(self.args.FILES)
+        cut_vertices = list(nx.articulation_points(g))
+        g.remove_nodes_from(cut_vertices)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", len(cut_vertices), "cut vertices.", file=sys.stderr)
+        self.write_graph(g, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
+
     def physlr_tiling_graph(self):
         "Determine the minimum-tiling-path-induced subgraph."
         g = self.read_graph(self.args.FILES)
@@ -567,6 +578,8 @@ class Physlr:
             self.physlr_backbone()
         elif self.args.command == "backbone-graph":
             self.physlr_backbone_graph()
+        elif self.args.command == "biconnected-components":
+            self.physlr_biconnected_components()
         elif self.args.command == "count-markers":
             self.physlr_count_markers()
         elif self.args.command == "count-molecules":
