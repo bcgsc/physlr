@@ -339,6 +339,10 @@ minsize=2000
 %.backbone.path: %.backbone.tsv
 	$(python) bin/physlr backbone $< >$@
 
+# Flesh out the backbone path
+%.backbone.fleshed.path: %.tsv %.backbone.path
+	$(python) bin/physlr flesh-backbone $< $*.backbone.path > $@
+
 # Determine the minimum tiling graph of the backbone graph.
 %.physlr.overlap.backbone.tiling.tsv: %.physlr.overlap.backbone.tsv
 	$(python) bin/physlr tiling-graph $< >$@
@@ -365,6 +369,15 @@ minsize=2000
 %.backbone.path.$(ref).molecule.bed: %.backbone.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
 	awk 'NF >= 50' $< | sh -c 'while read line; do for i in $$line; do grep $${i%_*} $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done; printf "NA\tNA\tNA\tNA\tNA\n"; done' >$@
 
+# Reformat fleshed file
+%.backbone.fleshed.all.path: %.backbone.fleshed.path
+	cat $< |sed 's/,/ /g; s/(//g; s/)//g' > $@
+
+# Filter fleshed file
+%.backbone.fleshed.all.path.$(ref).molecule.bed: %.backbone.fleshed.all.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
+	awk 'NF >= 50' $< | sh -c 'while read line; do for i in $$line; do grep $${i%_*} $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done; printf "NA\tNA\tNA\tNA\tNA\n"; done' >$@
+
+
 # Plot a BED file.
 %.bed.pdf: %.bed
 	Rscript -e 'rmarkdown::render("plotbed.rmd", "html_document", "$*.plotbed.html", params = list(input_bed="$<"))'
@@ -373,7 +386,8 @@ minsize=2000
 %.physlr.stamp: \
 		%.physlr.overlap.n20.mol.backbone.label.gv.pdf \
 		%.physlr.overlap.n20.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
-		%.physlr.overlap.n20.mol.backbone.path.$(ref).molecule.bed.pdf
+		%.physlr.overlap.n20.mol.backbone.path.$(ref).molecule.bed.pdf \
+		%.physlr.overlap.n20.mol.backbone.fleshed.all.path.$(ref).molecule.bed.pdf
 	touch $@
 
 ################################################################################

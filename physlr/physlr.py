@@ -117,6 +117,18 @@ class Physlr:
         return nx.algorithms.operators.binary.compose(g, graph)
 
     @staticmethod
+    def read_path(filename, min_component_size):
+        "Read a path file, return a list of paths"
+        paths = []
+        with open(filename, 'r') as pathfile:
+            for path in pathfile:
+                path = path.strip()
+                nodes = path.split(" ")
+                if len(nodes) >= min_component_size:
+                    paths.append(nodes)
+        return paths
+
+    @staticmethod
     def sort_vertices(g):
         """
         Sort the vertices of a graph by name.
@@ -219,6 +231,16 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Determined the backbone paths", file=sys.stderr)
         return backbones
 
+    @staticmethod
+    def print_flesh_path(backbone, backbone_insertions):
+        "Print out the backbone path with 'flesh' barcodes added"
+        for i in range(0, len(backbone)-1):
+            print(backbone[i], file=sys.stdout, end=' ')
+            if i in backbone_insertions:
+                insertions = ",".join(backbone_insertions[i])
+                print("(" + insertions + ")", file=sys.stdout, end=' ')
+        print(backbone[len(backbone)-1], file=sys.stdout)
+
     def physlr_filter(self):
         "Filter a graph."
         g = self.read_graph(self.args.FILES)
@@ -251,6 +273,44 @@ class Physlr:
                 "with fewer than", self.args.min_component_size, "vertices in a component.",
                 file=sys.stderr)
         self.write_graph(g, sys.stdout, self.args.graph_format)
+
+    def physlr_flesh(self):
+        "Flesh out the barcodes in the backbone paths"
+        g = self.read_graph([self.args.FILES[0]])
+        backbones = self.read_path(self.args.FILES[1], self.args.min_component_size)
+        for backbone in backbones:
+            backbone_insertions = {}
+            neighbours = set(v for u in backbone for v in g.neighbors(u))
+            #Find where the neighbours should go in the backbone path
+            for neighbour in neighbours:
+                if neighbour in backbone:
+                    continue
+                (max_n, max_index) = (float("-inf"),float("-inf"))
+                for i, k in enumerate(backbone):
+                    try:
+                        n = g[neighbour][k]["n"]
+                        if n > max_n:
+                            (max_n, max_index) = (n, i)
+                    except KeyError:
+                        continue
+                # Put R or L of node with most shared markers?
+                if max_index == 0:
+                    insert_index = max_index
+                elif max_index == len(backbone) - 1:
+                    insert_index = max_index - 1
+                else:
+                    r_n = g[neighbour][backbone[max_index+1]]['n'] \
+                        if g.has_edge(neighbour, backbone[max_index+1]) else 0
+                    l_n = g[neighbour][backbone[max_index-1]]['n'] \
+                        if g.has_edge(neighbour, backbone[max_index-1]) else 0
+                    if l_n > r_n:
+                        insert_index = max_index - 1
+                    else:
+                        insert_index = max_index
+                if insert_index not in backbone_insertions:
+                    backbone_insertions[insert_index] = []
+                backbone_insertions[insert_index].append(neighbour)
+            self.print_flesh_path(backbone, backbone_insertions)
 
     def physlr_subgraph(self):
         "Extract a vertex-induced subgraph."
@@ -516,6 +576,8 @@ class Physlr:
             self.physlr_count_molecules()
         elif self.args.command == "filter":
             self.physlr_filter()
+        elif self.args.command == "flesh-backbone":
+            self.physlr_flesh()
         elif self.args.command == "indexfa":
             self.physlr_indexfa()
         elif self.args.command == "indexlr":
