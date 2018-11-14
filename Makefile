@@ -373,6 +373,10 @@ minsize=2000
 %.path: %.tsv
 	$(python) bin/physlr backbone $< >$@
 
+# Flesh out the backbone path
+%.backbone.fleshed.path: %.tsv %.backbone.path
+	$(python) bin/physlr flesh-backbone $< $*.backbone.path > $@
+
 # Determine the minimum tiling graph of the backbone graph.
 %.backbone.tiling.tsv: %.backbone.tsv
 	$(python) bin/physlr tiling-graph $< >$@
@@ -423,6 +427,14 @@ minsize=2000
 %.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.path
 	$(python) bin/physlr filter-bed --min-component-size=50 $^ >$@
 
+# Reformat fleshed file
+%.backbone.fleshed.all.path: %.backbone.fleshed.path
+	cat $< |sed 's/,/ /g; s/(//g; s/)//g' > $@
+
+# Filter fleshed file
+%.backbone.fleshed.all.path.$(ref).molecule.bed: %.backbone.fleshed.all.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
+	awk 'NF >= 50' $< | sh -c 'while read line; do for i in $$line; do grep $${i%_*} $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done; printf "NA\tNA\tNA\tNA\tNA\n"; done' >$@
+
 # Sort a BED file.
 %.sort.bed: %.bed
 	sort -k1,1n -k1,1 -k2,2n -k3,3n -k5,5nr -k4,4 $< >$@
@@ -447,7 +459,8 @@ minsize=2000
 %.physlr.stamp: \
 		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
 		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.label.gv.pdf
+		%.n100-2000.physlr.overlap.n50.mol.backbone.label.gv.pdf \
+		%.n100-2000.physlr.overlap.n50.mol.backbone.fleshed.all.path.$(ref).molecule.bed.pdf
 	touch $@
 
 ################################################################################
