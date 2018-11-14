@@ -291,7 +291,7 @@ class Physlr:
             g.remove_nodes_from(vertices)
             print(
                 int(timeit.default_timer() - t0),
-                "Removed", nvertices, "vertices in", ncomponents,
+                "Removed", nvertices, "vertices in", ncomponents, "components",
                 "with fewer than", self.args.min_component_size, "vertices in a component.",
                 file=sys.stderr)
         self.write_graph(g, sys.stdout, self.args.graph_format)
