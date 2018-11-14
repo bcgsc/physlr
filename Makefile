@@ -351,6 +351,14 @@ minsize=2000
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
 	$(python) bin/physlr filter -M2 $< >$@
 
+# Filter edges by number of common molecules using Miller.
+%.physlr.overlap.n50.tsv: %.physlr.overlap.tsv
+	mlr --tsvlite filter '$$n >= 50' $< >$@
+
+# Filter edges by number of common molecules using Miller.
+%.physlr.overlap.n100.tsv: %.physlr.overlap.tsv
+	mlr --tsvlite filter '$$n >= 100' $< >$@
+
 # Separate barcodes into molecules (n >= 10).
 %.physlr.overlap.n10.mol.tsv: %.physlr.overlap.tsv
 	$(python) bin/physlr molecules -t8 -n10 $< >$@
