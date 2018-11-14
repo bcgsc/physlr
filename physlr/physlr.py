@@ -151,6 +151,13 @@ class Physlr:
         return g
 
     @staticmethod
+    def remove_singletons(g):
+        "Remove singletons (isolated vertices) and return the number removed."
+        singletons = [u for u, deg in g.degree if deg == 0]
+        g.remove_nodes_from(singletons)
+        return len(singletons)
+
+    @staticmethod
     def read_minimizers(filenames):
         "Read minimizers in TSV format."
         bxtomin = {}
@@ -239,7 +246,7 @@ class Physlr:
             neighbors = [v for u in vertices for v in g.neighbors(u)]
             g.remove_nodes_from(vertices)
             g.remove_nodes_from(neighbors)
-            g.remove_nodes_from([u for u, deg in g.degree if deg == 0])
+            Physlr.remove_singletons(g)
         backbones.sort(key=len, reverse=True)
         print(int(timeit.default_timer() - t0), "Determined the backbone paths", file=sys.stderr)
         return backbones
@@ -248,11 +255,13 @@ class Physlr:
         "Filter a graph."
         g = self.read_graph(self.args.FILES)
         if self.args.n > 0:
-            edges = [(u, v) for u, v, n in g.edges(data="n") if n < self.args.n]
+            edges = [(u, v) for u, v, n in progress(g.edges(data="n")) if n < self.args.n]
             g.remove_edges_from(edges)
+            n_singletons = Physlr.remove_singletons(g)
             print(
                 int(timeit.default_timer() - t0),
-                "Removed", len(edges), "edges with fewer than ", self.args.n, "common markers.",
+                "Removed", len(edges), "edges with fewer than", self.args.n, "common markers.",
+                "Removed", n_singletons, "isolated vertices.",
                 file=sys.stderr)
         if self.args.M is not None:
             vertices = [u for u, prop in g.nodes().items() if prop["m"] >= self.args.M]
@@ -391,7 +400,7 @@ class Physlr:
     def physlr_backbone_graph(self):
         "Determine the backbone-induced subgraph."
         g = self.read_graph(self.args.FILES)
-        g.remove_nodes_from([u for u, deg in g.degree if deg == 0])
+        Physlr.remove_singletons(g)
         backbones = self.determine_backbones(g)
         backbone = (u for path in backbones for u in path)
         subgraph = self.sort_vertices(g.subgraph(backbone))
@@ -449,6 +458,7 @@ class Physlr:
         "Separate barcodes into molecules."
         gin = self.read_graph(self.args.FILES)
         gin.remove_edges_from([(u, v) for u, v, n in gin.edges(data="n") if n < self.args.n])
+        Physlr.remove_singletons(gin)
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules", file=sys.stderr)
