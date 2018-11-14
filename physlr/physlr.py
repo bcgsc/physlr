@@ -162,6 +162,20 @@ class Physlr:
         return len(singletons)
 
     @staticmethod
+    def filter_edges(g, arg_n):
+        "Remove edges with n < arg_n."
+        if arg_n == 0:
+            return
+        edges = [(u, v) for u, v, n in progress(g.edges(data="n")) if n < arg_n]
+        g.remove_edges_from(edges)
+        n_singletons = Physlr.remove_singletons(g)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", len(edges), "edges with fewer than", arg_n, "common markers.",
+            "Removed", n_singletons, "isolated vertices.",
+            file=sys.stderr)
+
+    @staticmethod
     def read_minimizers(filenames):
         "Read minimizers in TSV format."
         bxtomin = {}
@@ -258,15 +272,7 @@ class Physlr:
     def physlr_filter(self):
         "Filter a graph."
         g = self.read_graph(self.args.FILES)
-        if self.args.n > 0:
-            edges = [(u, v) for u, v, n in progress(g.edges(data="n")) if n < self.args.n]
-            g.remove_edges_from(edges)
-            n_singletons = Physlr.remove_singletons(g)
-            print(
-                int(timeit.default_timer() - t0),
-                "Removed", len(edges), "edges with fewer than", self.args.n, "common markers.",
-                "Removed", n_singletons, "isolated vertices.",
-                file=sys.stderr)
+        Physlr.filter_edges(g, self.args.n)
         if self.args.M is not None:
             vertices = [u for u, prop in g.nodes().items() if prop["m"] >= self.args.M]
             g.remove_nodes_from(vertices)
@@ -431,7 +437,7 @@ class Physlr:
         if self.args.n == 0:
             self.args.n = min(g[u][v]["n"] for u, v in zip(backbone, backbone[1:]))
             print("Using n=", self.args.n, sep="", file=sys.stderr)
-        g.remove_edges_from([(u, v) for u, v, n in g.edges(data="n") if n < self.args.n])
+        Physlr.filter_edges(g, self.args.n)
         u, v = backbone[0], backbone[-1]
         tiling_path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
         subgraph = g.subgraph(tiling_path)
@@ -440,7 +446,7 @@ class Physlr:
     def physlr_count_molecules(self):
         "Estimate the nubmer of molecules per barcode."
         g = self.read_graph(self.args.FILES)
-        g.remove_edges_from([(u, v) for u, v, n in g.edges(data="n") if n < self.args.n])
+        Physlr.filter_edges(g, self.args.n)
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules", file=sys.stderr)
@@ -472,8 +478,7 @@ class Physlr:
     def physlr_molecules(self):
         "Separate barcodes into molecules."
         gin = self.read_graph(self.args.FILES)
-        gin.remove_edges_from([(u, v) for u, v, n in gin.edges(data="n") if n < self.args.n])
-        Physlr.remove_singletons(gin)
+        Physlr.filter_edges(gin, self.args.n)
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules", file=sys.stderr)
