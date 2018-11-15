@@ -300,11 +300,12 @@ class Physlr:
         "Extract a vertex-induced subgraph."
         if self.args.d not in (0, 1):
             exit("error: Only -d0 and -d1 are currently supported.")
+        vertices = set(self.args.v.split())
+        exclude_vertices = set(self.args.exclude_vertices.split())
         g = self.read_graph(self.args.FILES)
-        vertices = set(u for u in self.args.v.split())
         if self.args.d == 1:
             vertices.update(v for u in vertices for v in g.neighbors(u))
-        subgraph = g.subgraph(vertices)
+        subgraph = g.subgraph(vertices - exclude_vertices)
         print(int(timeit.default_timer() - t0), "Extracted subgraph", file=sys.stderr)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
@@ -556,6 +557,9 @@ class Physlr:
         argparser.add_argument(
             "-v", "--vertices", action="store", dest="v",
             help="list of vertices")
+        argparser.add_argument(
+            "-V", "--exclude-vertices", action="store", dest="exclude_vertices",
+            help="list of vertices to exclude")
         argparser.add_argument(
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away")
