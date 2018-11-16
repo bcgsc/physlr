@@ -344,7 +344,7 @@ minsize=2000
 	$(python) bin/physlr backbone $< >$@
 
 # Determine the minimum tiling graph of the backbone graph.
-%.physlr.overlap.backbone.tiling.tsv: %.physlr.overlap.backbone.tsv
+%.backbone.tiling.tsv: %.backbone.tsv
 	$(python) bin/physlr tiling-graph $< >$@
 
 # Estimate the number of molecules per barcode.
