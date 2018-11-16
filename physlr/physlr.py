@@ -431,16 +431,10 @@ class Physlr:
     def physlr_tiling_graph(self):
         "Determine the minimum-tiling-path-induced subgraph."
         g = self.read_graph(self.args.FILES)
-        backbones = self.determine_backbones(g)
-        # Select the largest backbone.
-        backbone = backbones[0]
-        if self.args.n == 0:
-            self.args.n = min(g[u][v]["n"] for u, v in zip(backbone, backbone[1:]))
-            print("Using n=", self.args.n, sep="", file=sys.stderr)
         Physlr.filter_edges(g, self.args.n)
-        u, v = backbone[0], backbone[-1]
-        tiling_path = nx.algorithms.shortest_paths.generic.shortest_path(g, u, v)
-        subgraph = g.subgraph(tiling_path)
+        backbones = self.determine_backbones(g)
+        tiling = {u for path in backbones for u in nx.shortest_path(g, path[0], path[-1])}
+        subgraph = g.subgraph(tiling)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
 
     def physlr_count_molecules(self):
