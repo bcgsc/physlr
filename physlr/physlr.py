@@ -24,6 +24,13 @@ def quantile(quantiles, xs):
     sorted_xs = sorted(xs)
     return [sorted_xs[round(p * (len(sorted_xs)-1))] for p in quantiles]
 
+def progress_bar_for_file(fin):
+    "Return a progress bar for a file."
+    return tqdm.tqdm(
+        total=os.fstat(fin.fileno()).st_size,
+        mininterval=1, smoothing=0.1,
+        bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
+
 def progress(iterator):
     "Return an iterator that displays a progress bar."
     return tqdm.tqdm(
@@ -67,10 +74,7 @@ class Physlr:
     def read_tsv(g, filename):
         "Read a graph in TSV format."
         with open(filename) as fin:
-            progressbar = tqdm.tqdm(
-                total=os.fstat(fin.fileno()).st_size,
-                mininterval=1, smoothing=0.1,
-                bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
+            progressbar = progress_bar_for_file(fin)
             line = fin.readline()
             progressbar.update(len(line))
             if line not in ["U\tn\n", "U\tn\tm\n"]:
@@ -180,8 +184,11 @@ class Physlr:
         "Read minimizers in TSV format."
         bxtomin = {}
         for filename in filenames:
+            print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
             with open(filename) as fin:
+                progressbar = progress_bar_for_file(fin)
                 for line in fin:
+                    progressbar.update(len(line))
                     fields = line.split(None, 1)
                     if len(fields) < 2:
                         continue
@@ -189,17 +196,20 @@ class Physlr:
                     if bx not in bxtomin:
                         bxtomin[bx] = set()
                     bxtomin[bx].update(int(x) for x in fields[1].split())
+                progressbar.close()
+            print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return bxtomin
 
     @staticmethod
     def construct_minimizers_to_barcodes(bxtomin):
         "Construct a dictionary of minimizers to barcodes."
         mintobx = {}
-        for bx, minimizers in bxtomin.items():
+        for bx, minimizers in progress(bxtomin.items()):
             for x in minimizers:
                 if x not in mintobx:
                     mintobx[x] = set()
                 mintobx[x].add(bx)
+        print(int(timeit.default_timer() - t0), "Indexed minimizers", file=sys.stderr)
         return mintobx
 
     @staticmethod
@@ -375,25 +385,33 @@ class Physlr:
             " C=", self.args.C, sep="", file=sys.stderr)
 
         # Remove frequent (likely repetitive) minimizers.
-        unique = set(x for x, bxs in mintobx.items() if len(bxs) < self.args.C)
-        for xs in bxtomin.values():
-            xs &= unique
+        repetitive = set(x for x, bxs in mintobx.items() if len(bxs) >= self.args.C)
+        for xs in progress(bxtomin.values()):
+            xs -= repetitive
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", len(repetitive), "repetitive minimizers of", len(mintobx),
+            f"({round(100 * len(repetitive) / len(mintobx), 2)}%)",
+            file=sys.stderr)
 
         # Add the vertices.
         g = nx.Graph()
-        for u, minimizers in sorted(bxtomin.items()):
+        for u, minimizers in sorted(progress(bxtomin.items())):
             g.add_node(u, n=len(minimizers))
+        print(int(timeit.default_timer() - t0), "Sorted the vertices", file=sys.stderr)
 
         # Add the overlap edges.
-        for x, bxs in mintobx.items():
-            if x not in unique:
+        for x, bxs in progress(mintobx.items()):
+            if x in repetitive:
                 continue
             for u, v in itertools.combinations(bxs, 2):
                 if not g.has_edge(u, v):
                     g.add_edge(u, v, n=len(bxtomin[u] & bxtomin[v]))
+        print(int(timeit.default_timer() - t0), "Constructed the similarity graph", file=sys.stderr)
 
         # Write the graph.
         self.write_tsv(g, sys.stdout)
+        print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
     def physlr_mst(self):
         "Determine the maximum spanning tree."
