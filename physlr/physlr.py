@@ -372,15 +372,24 @@ class Physlr:
         bxtomin = self.read_minimizers(self.args.FILES)
         mintobx = self.construct_minimizers_to_barcodes(bxtomin)
 
-        # Ignore markers that were seen only once.
-        freqs = [len(bxs) for bxs in mintobx.values() if len(bxs) >= 2]
-        q1, q2, q3 = quantile([0.25, 0.5, 0.75], freqs)
+        # Remove markers that occur only once.
+        num_markers = len(mintobx)
+        singletons = [x for x, bxs in progress(mintobx.items()) if len(bxs) < 2]
+        for x in progress(singletons):
+            del mintobx[x]
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", len(singletons), "minimizers that occur only once of", num_markers,
+            f"({round(100 * len(singletons) / num_markers, 2)}%)", file=sys.stderr)
+
+        # Identify repetitive markers.
+        q1, q2, q3 = quantile([0.25, 0.5, 0.75], (len(bxs) for bxs in mintobx.values()))
         whisker = int(q3 + self.args.coef * (q3 - q1))
         if self.args.C is None:
             self.args.C = whisker
         print(
-            "Removing markers that are frequent and likely repetitive.\n",
-            "Q1=", q1, " Q2=", q2, " Q3=", q3,
+            int(timeit.default_timer() - t0),
+            " Minimizer frequency: Q1=", q1, " Q2=", q2, " Q3=", q3,
             " Q3+", self.args.coef, "*(Q3-Q1)=", whisker,
             " C=", self.args.C, sep="", file=sys.stderr)
 
@@ -390,7 +399,7 @@ class Physlr:
             xs -= repetitive
         print(
             int(timeit.default_timer() - t0),
-            "Removed", len(repetitive), "repetitive minimizers of", len(mintobx),
+            "Removed", len(repetitive), "most frequent minimizers of", len(mintobx),
             f"({round(100 * len(repetitive) / len(mintobx), 2)}%)",
             file=sys.stderr)
 
