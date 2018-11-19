@@ -374,9 +374,11 @@ class Physlr:
 
         # Remove markers that occur only once.
         num_markers = len(mintobx)
-        singletons = [x for x, bxs in progress(mintobx.items()) if len(bxs) < 2]
+        singletons = {x for x, bxs in progress(mintobx.items()) if len(bxs) < 2}
         for x in progress(singletons):
             del mintobx[x]
+        for markers in progress(bxtomin.values()):
+            markers -= singletons
         print(
             int(timeit.default_timer() - t0),
             "Removed", len(singletons), "minimizers that occur only once of", num_markers,
@@ -394,7 +396,7 @@ class Physlr:
             " C=", self.args.C, sep="", file=sys.stderr)
 
         # Remove frequent (likely repetitive) minimizers.
-        repetitive = set(x for x, bxs in mintobx.items() if len(bxs) >= self.args.C)
+        repetitive = {x for x, bxs in mintobx.items() if len(bxs) >= self.args.C}
         for xs in progress(bxtomin.values()):
             xs -= repetitive
         print(
