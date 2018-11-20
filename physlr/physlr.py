@@ -428,7 +428,7 @@ class Physlr:
                 g.add_node(u, n=len(minimizers))
         print(
             int(timeit.default_timer() - t0),
-            "Loaded", g.number_of_nodes(), "barcodes", file=sys.stderr)
+            "Added", g.number_of_nodes(), "barcodes to the graph", file=sys.stderr)
 
         # Add the overlap edges.
         discarded = set()
