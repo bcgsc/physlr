@@ -348,17 +348,16 @@ class Physlr:
     def physlr_count_markers(self):
         "Count the frequency of each minimizer."
         bxtomin = self.read_minimizers(self.args.FILES)
-        freq = {}
-        for xs in bxtomin.values():
-            for x in xs:
-                if x in freq:
-                    freq[x] += 1
-                else:
-                    freq[x] = 1
+        marker_counts = collections.Counter(
+            x for markers in progress(bxtomin.values()) for x in markers)
+        print(
+            int(timeit.default_timer() - t0),
+            "Counted", len(marker_counts), "minimizers", file=sys.stderr)
+
         print("Marker\tCount")
-        for x, c in sorted(freq.items(), key=lambda x: x[1]):
-            if c >= 2:
-                print(x, c, sep="\t")
+        for x, n in sorted(marker_counts.items(), key=lambda x: x[1]):
+            if n >= 2:
+                print(x, n, sep="\t")
 
     def physlr_intersect(self):
         "Print the minimizers in the intersection of each pair of barcodes."
