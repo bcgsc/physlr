@@ -216,7 +216,9 @@ class Physlr:
                 if x not in mintobx:
                     mintobx[x] = set()
                 mintobx[x].add(bx)
-        print(int(timeit.default_timer() - t0), "Indexed minimizers", file=sys.stderr)
+        print(
+            int(timeit.default_timer() - t0),
+            "Indexed", len(mintobx), "minimizers", file=sys.stderr)
         return mintobx
 
     @staticmethod
@@ -424,7 +426,9 @@ class Physlr:
         for u, minimizers in sorted(progress(bxtomin.items())):
             if len(minimizers) >= self.args.n:
                 g.add_node(u, n=len(minimizers))
-        print(int(timeit.default_timer() - t0), "Added", g.number_of_nodes(), "barcodes", file=sys.stderr)
+        print(
+            int(timeit.default_timer() - t0),
+            "Loaded", g.number_of_nodes(), "barcodes", file=sys.stderr)
 
         # Add the overlap edges.
         discarded = set()
