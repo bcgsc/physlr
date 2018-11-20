@@ -179,13 +179,17 @@ class Physlr:
         if arg_n == 0:
             return
         edges = [(u, v) for u, v, n in progress(g.edges(data="n")) if n < arg_n]
-        g.remove_edges_from(edges)
-        n_singletons = Physlr.remove_singletons(g)
         print(
             int(timeit.default_timer() - t0),
-            "Removed", len(edges), "edges with fewer than", arg_n, "common markers.",
-            "Removed", n_singletons, "isolated vertices.",
-            file=sys.stderr)
+            "Removed", len(edges), "edges with fewer than", arg_n,
+            "common markers of", g.number_of_edges(),
+            f"({round(100 * len(edges) / g.number_of_edges(), 2)}%)", file=sys.stderr)
+        g.remove_edges_from(edges)
+
+        num_singletons = Physlr.remove_singletons(g)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
 
     @staticmethod
     def read_minimizers(filenames):
