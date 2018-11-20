@@ -43,6 +43,13 @@ class Physlr:
     """
 
     @staticmethod
+    def print_graph_stats(g, fout=sys.stderr):
+        "Print graph stats."
+        v = g.number_of_nodes()
+        e = g.number_of_edges()
+        print(int(timeit.default_timer() - t0), f"V={v} E={e} E/V={round(e/v, 2)}", file=fout)
+
+    @staticmethod
     def write_tsv(g, fout):
         "Write a graph in TSV format."
         if "m" in next(iter(g.nodes.values())):
@@ -367,15 +374,13 @@ class Physlr:
                 print(u, v, "", sep="\t", end="")
                 print(*common)
 
-    def physlr_overlap(self):
-        "Read a sketch of linked reads and find overlapping barcodes."
-        bxtomin = self.read_minimizers(self.args.FILES)
-        mintobx = self.construct_minimizers_to_barcodes(bxtomin)
+    def remove_repetitive_minimizers(self, bxtomin, mintobx):
+        "Remove reptitive minimizers."
 
         # Remove markers that occur only once.
         num_markers = len(mintobx)
         singletons = {x for x, bxs in progress(mintobx.items()) if len(bxs) < 2}
-        for x in progress(singletons):
+        for x in singletons:
             del mintobx[x]
         for markers in progress(bxtomin.values()):
             markers -= singletons
@@ -396,33 +401,51 @@ class Physlr:
             " C=", self.args.C, sep="", file=sys.stderr)
 
         # Remove frequent (likely repetitive) minimizers.
+        num_markers = len(mintobx)
         repetitive = {x for x, bxs in mintobx.items() if len(bxs) >= self.args.C}
+        for x in repetitive:
+            del mintobx[x]
         for xs in progress(bxtomin.values()):
             xs -= repetitive
         print(
             int(timeit.default_timer() - t0),
-            "Removed", len(repetitive), "most frequent minimizers of", len(mintobx),
-            f"({round(100 * len(repetitive) / len(mintobx), 2)}%)",
-            file=sys.stderr)
+            "Removed", len(repetitive), "most frequent minimizers of", num_markers,
+            f"({round(100 * len(repetitive) / num_markers, 2)}%)", file=sys.stderr)
+
+    def physlr_overlap(self):
+        "Read a sketch of linked reads and find overlapping barcodes."
+
+        bxtomin = self.read_minimizers(self.args.FILES)
+        mintobx = self.construct_minimizers_to_barcodes(bxtomin)
+        self.remove_repetitive_minimizers(bxtomin, mintobx)
 
         # Add the vertices.
         g = nx.Graph()
         for u, minimizers in sorted(progress(bxtomin.items())):
-            g.add_node(u, n=len(minimizers))
-        print(int(timeit.default_timer() - t0), "Sorted the vertices", file=sys.stderr)
+            if len(minimizers) >= self.args.n:
+                g.add_node(u, n=len(minimizers))
+        print(int(timeit.default_timer() - t0), "Added", g.number_of_nodes(), "barcodes", file=sys.stderr)
 
         # Add the overlap edges.
-        for x, bxs in progress(mintobx.items()):
-            if x in repetitive:
-                continue
+        discarded = set()
+        for bxs in progress(mintobx.values()):
             for u, v in itertools.combinations(bxs, 2):
-                if not g.has_edge(u, v):
-                    g.add_edge(u, v, n=len(bxtomin[u] & bxtomin[v]))
-        print(int(timeit.default_timer() - t0), "Constructed the similarity graph", file=sys.stderr)
+                if g.has_edge(u, v) or (u, v) in discarded:
+                    continue
+                n = len(bxtomin[u] & bxtomin[v])
+                if n >= self.args.n:
+                    g.add_edge(u, v, n=n)
+                else:
+                    discarded.add((u, v))
+        print(
+            int(timeit.default_timer() - t0),
+            "Discarded", len(discarded), "edges with fewer than", self.args.n, "common markers",
+            file=sys.stderr)
+        Physlr.print_graph_stats(g)
 
         # Write the graph.
         self.write_tsv(g, sys.stdout)
-        print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Wrote the graph", file=sys.stderr)
 
     def physlr_mst(self):
         "Determine the maximum spanning tree."
