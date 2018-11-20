@@ -4,6 +4,7 @@ Physlr: Physical Mapping of Linked Reads
 """
 
 import argparse
+import collections
 import itertools
 import multiprocessing
 import os
@@ -375,6 +376,68 @@ class Physlr:
                 print(u, v, "", sep="\t", end="")
                 print(*common)
 
+    @staticmethod
+    def remove_singleton_markers(bxtomin):
+        "Remove markers that occur only once."
+        marker_counts = collections.Counter(
+            x for markers in progress(bxtomin.values()) for x in markers)
+        print(
+            int(timeit.default_timer() - t0),
+            "Counted", len(marker_counts), "minimizers", file=sys.stderr)
+
+        singletons = {x for x, n in progress(marker_counts.items()) if n < 2}
+        for markers in progress(bxtomin.values()):
+            markers -= singletons
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", len(singletons), "minimizers that occur only once of", len(marker_counts),
+            f"({round(100 * len(singletons) / len(marker_counts), 2)}%)", file=sys.stderr)
+
+    def physlr_filter_barcodes(self):
+        """
+        Filter barcodes by number of markers.
+        Read a TSV file of barcodes to minimizers.
+        Remove markers that occur only once.
+        Remove barkers with too few or too many markers.
+        Write a TSV file of barcodes to minimizers.
+        """
+        bxtomin = self.read_minimizers(self.args.FILES)
+        Physlr.remove_singleton_markers(bxtomin)
+
+        q1, q2, q3 = quantile([0.25, 0.5, 0.75], (len(markers) for markers in bxtomin.values()))
+        low_whisker = int(q1 - self.args.coef * (q3 - q1))
+        high_whisker = int(q3 + self.args.coef * (q3 - q1))
+        if self.args.n == 0:
+            self.args.n = max(1, low_whisker)
+        if self.args.N is None:
+            self.args.N = high_whisker
+
+        print(int(timeit.default_timer() - t0), "Counted markers per barcode", file=sys.stderr)
+        print(
+            "    Markers per barcode: Q1=", q1, " Q2=", q2, " Q3=", q3, " Q3-Q1=", q3 - q1, "\n",
+            "    Q3-", self.args.coef, "*(Q3-Q1)=", low_whisker, " n=", self.args.n, "\n",
+            "    Q3+", self.args.coef, "*(Q3-Q1)=", high_whisker, " N=", self.args.N,
+            sep="", file=sys.stderr)
+
+        too_few, too_many = 0, 0
+        for bx, markers in progress(bxtomin.items()):
+            if len(markers) < self.args.n:
+                too_few += 1
+            elif len(markers) >= self.args.N:
+                too_many += 1
+            else:
+                print(bx, "\t", sep="", end="")
+                print(*markers)
+        print(
+            "    Discarded", too_few, "barcodes with too few markers of", len(bxtomin),
+            f"({round(100 * too_few / len(bxtomin), 2)}%)", file=sys.stderr)
+        print(
+            "    Discarded", too_many, "barcodes with too many markers of", len(bxtomin),
+            f"({round(100 * too_many / len(bxtomin), 2)}%)", file=sys.stderr)
+        print(
+            int(timeit.default_timer() - t0),
+            "Wrote", len(bxtomin) - too_few - too_many, "barcodes", file=sys.stderr)
+
     def remove_repetitive_minimizers(self, bxtomin, mintobx):
         "Remove reptitive minimizers."
 
@@ -607,6 +670,9 @@ class Physlr:
             "-n", "--min-n", action="store", dest="n", type=int, default=0,
             help="remove edges with fewer than n shared markers [0]")
         argparser.add_argument(
+            "-N", "--max-n", action="store", dest="N", type=int, default=None,
+            help="remove edges with at least N shared markers [None]")
+        argparser.add_argument(
             "--min-component-size", action="store", dest="min_component_size", type=int, default=0,
             help="remove components with fewer than N vertices [0]")
         argparser.add_argument(
@@ -648,6 +714,8 @@ class Physlr:
             self.physlr_count_molecules()
         elif self.args.command == "filter":
             self.physlr_filter()
+        elif self.args.command == "filter-barcodes":
+            self.physlr_filter_barcodes()
         elif self.args.command == "indexfa":
             self.physlr_indexfa()
         elif self.args.command == "indexlr":
