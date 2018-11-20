@@ -497,20 +497,25 @@ class Physlr:
             "Added", g.number_of_nodes(), "barcodes to the graph", file=sys.stderr)
 
         # Add the overlap edges.
-        discarded = set()
-        for bxs in progress(mintobx.values()):
-            for u, v in itertools.combinations(bxs, 2):
-                if g.has_edge(u, v) or (u, v) in discarded:
-                    continue
-                n = len(bxtomin[u] & bxtomin[v])
-                if n >= self.args.n:
-                    g.add_edge(u, v, n=n)
-                else:
-                    discarded.add((u, v))
+        edges = collections.Counter(
+            (u, v) for bxs in progress(mintobx.values()) for u, v in itertools.combinations(bxs, 2))
+        print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
+
+        for (u, v), n in progress(edges.items()):
+            if n >= self.args.n:
+                g.add_edge(u, v, n=n)
+        num_removed = len(edges) - g.number_of_edges()
         print(
             int(timeit.default_timer() - t0),
-            "Discarded", len(discarded), "edges with fewer than", self.args.n, "common markers",
-            file=sys.stderr)
+            "Removed", num_removed, "edges with fewer than", self.args.n,
+            "common markers of", len(edges),
+            f"({round(100 * num_removed / len(edges), 2)}%)", file=sys.stderr)
+
+        num_singletons = Physlr.remove_singletons(g)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
+
         Physlr.print_graph_stats(g)
 
         # Write the graph.
