@@ -54,8 +54,17 @@ humanmt/mt.fa:
 # See https://support.10xgenomics.com/de-novo-assembly/datasets/2.1.0/fly
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
-# Test Phsylr using the fly data.
-fly: f1chr4.physlr.stamp f1chr2R.physlr.stamp
+# Assemble a physical map of fly chromosome 4.
+f1chr4: f1chr4.physlr.stamp
+
+# Assemble a physical map of fly chromosome 2R.
+f1chr2R: f1chr2R.physlr.stamp
+
+# Assemble a physical map of the fly genome.
+f1: \
+	f1.n100-2000.physlr.overlap.n120.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
+	f1.n100-2000.physlr.overlap.n120.mol.backbone.path.fly.molecule.bed.pdf \
+	f1.n100-2000.physlr.overlap.n120.mol.backbone.label.gv.pdf
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -323,6 +332,10 @@ minsize=2000
 %.physlr.intersect.tsv: %.physlr.tsv
 	$(python) bin/physlr intersect $< >$@
 
+# Filter barcodes by number of markers.
+%.n100-2000.physlr.tsv: %.physlr.tsv
+	$(python) bin/physlr filter-barcodes -n100 -N2000 $< >$@
+
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
 	$(python) bin/physlr overlap $< >$@
@@ -370,6 +383,10 @@ minsize=2000
 # Filter edges n >= 100 using Miller.
 %.n100.tsv: %.tsv
 	mlr --tsvlite filter '$$n >= 100' $< >$@
+
+# Filter edges n >= 120 using Miller.
+%.n120.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 120' $< >$@
 
 # Separate barcodes into molecules.
 %.mol.tsv: %.tsv
