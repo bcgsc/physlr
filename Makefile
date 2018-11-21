@@ -62,9 +62,9 @@ f1chr2R: f1chr2R.physlr.stamp
 
 # Assemble a physical map of the fly genome.
 f1: \
-	f1.n100-2000.physlr.overlap.n120.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
-	f1.n100-2000.physlr.overlap.n120.mol.backbone.path.fly.molecule.bed.pdf \
-	f1.n100-2000.physlr.overlap.n120.mol.backbone.label.gv.pdf
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.path.fly.molecule.bed.pdf \
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.label.gv.pdf
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -384,9 +384,9 @@ minsize=2000
 %.n100.tsv: %.tsv
 	mlr --tsvlite filter '$$n >= 100' $< >$@
 
-# Filter edges n >= 120 using Miller.
-%.n120.tsv: %.tsv
-	mlr --tsvlite filter '$$n >= 120' $< >$@
+# Filter edges n >= 118 using Miller.
+%.n118.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 118' $< >$@
 
 # Separate barcodes into molecules.
 %.mol.tsv: %.tsv
