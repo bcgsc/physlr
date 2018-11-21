@@ -686,13 +686,13 @@ class Physlr:
             help="remove components with fewer than N vertices [0]")
         argparser.add_argument(
             "-v", "--vertices", action="store", dest="v",
-            help="list of vertices")
+            help="list of vertices [None]")
         argparser.add_argument(
-            "-V", "--exclude-vertices", action="store", dest="exclude_vertices",
-            help="list of vertices to exclude")
+            "-V", "--exclude-vertices", action="store", dest="exclude_vertices", default="",
+            help="list of vertices to exclude [None]")
         argparser.add_argument(
             "-d", "--distance", action="store", dest="d", type=int, default=0,
-            help="include vertices within d edges away")
+            help="include vertices within d edges away [0]")
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
             help="the output graph file format [tsv]")
