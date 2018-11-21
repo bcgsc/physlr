@@ -10,6 +10,8 @@ import os
 import statistics
 import sys
 import timeit
+import re
+from collections import defaultdict
 
 from collections import Counter
 
@@ -122,7 +124,7 @@ class Physlr:
     def write_graph(g, fout, graph_format):
         "Write a graph."
         if graph_format == "gv":
-            nx.drawing.nx_agraph.write_dot(g, sys.stdout)
+            nx.drawing.nx_pydot.write_dot(g, sys.stdout)
         elif graph_format == "tsv":
             Physlr.write_tsv(g, fout)
         else:
@@ -284,6 +286,25 @@ class Physlr:
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return bxtomin
+
+    @staticmethod
+    def read_minimizers_molecule(filenames):
+        "Read minimizers in TSV format, construct dictionary in form: bx -> molecule id -> set(minimizers)"
+        moltomin = defaultdict(dict) # bx -> molec id -> set(minimizers)
+        bx_match = re.compile(r'(\S+)_(\d+)')
+        for filename in filenames:
+            with open(filename) as fin:
+                for line in fin:
+                    fields = line.split(None, 1)
+                    if len(fields) < 2:
+                        continue
+                    bx_mol = re.search(bx_match, fields[0])
+                    (bx, mol) = (bx_mol.group(1), bx_mol.group(2))
+                    if bx not in moltomin or mol not in moltomin[bx]:
+                        moltomin[bx][mol] = set()
+                    moltomin[bx][mol].update(int(x) for x in fields[1].split())
+        return moltomin
+
 
     @staticmethod
     def construct_minimizers_to_barcodes(bxtomin):
@@ -706,6 +727,53 @@ class Physlr:
                 1 for component in nx.biconnected_components(subgraph)
                 if len(component) >= 4)
         self.write_graph(g, sys.stdout, self.args.graph_format)
+
+    def physlr_split_minimizers(self):
+        "Given the molecule overlap graph, split the minimizers into molecules"
+        g = self.read_graph([self.args.FILES[0]])
+        bxtomin = self.read_minimizers([self.args.FILES[1]])
+        moltomin = {}
+        bx_match = re.compile(r'^(\S+)_\d+$')
+
+        for bx in bxtomin:
+            bx_min = bxtomin[bx]
+            mol = 0
+            while g.has_node(bx + "_" + str(mol)):
+                bxmol = bx + "_" + str(mol)
+                neighbour_minimizers_list = [bxtomin[re.search(bx_match, v).group(1)]\
+                                             for v in g.neighbors(bxmol)\
+                                             if re.search(bx_match, v).group(1) in bxtomin]
+                neighbour_minimizers_set = set.union(*neighbour_minimizers_list)
+                molec_minimizers = set.intersection(bx_min, neighbour_minimizers_set)
+                moltomin[bxmol] = molec_minimizers
+                mol += 1
+        for mol in moltomin:
+            print("%s\t%s" % (mol, " ".join(map(str, moltomin[mol]))), file=sys.stdout)
+
+
+    def physlr_split_reads_molecules(self):
+        #Given the molecule -> minimizers table and the reads, partition reads into molecules
+        moltomin = self.read_minimizers_molecule([self.args.FILES[0]])
+        header_match = re.compile(r'^(\@\S+)\s+BX:Z:(\S+)')
+        seq_next = False
+        (header, bx) = (None, None)
+        for readfile in self.args.FILES[1:]:
+            with open(readfile, 'r') as fin:
+                for line in fin:
+                    line_header_match = re.search(header_match, line)
+                    if line_header_match:
+                        (header, bx) = (line_header_match.group(1), line_header_match.group(2))
+                        seq_next = True
+                    elif seq_next:
+                        sequence = line.strip()
+                        minimizers = minimerize(self.args.k, self.args.w, sequence.upper())
+                        bx_mol = self.assign_read_molecule(minimizers, moltomin[bx])
+                        seq_next = False
+
+    @staticmethod
+    def assign_read_molecule(minimizers, moltomin):
+        "Given the minimizers of a read and the barcode, assign to a molecule"
+        
 
     @staticmethod
     def determine_molecules(g, u):
