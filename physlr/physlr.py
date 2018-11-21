@@ -51,6 +51,38 @@ class Physlr:
         print(int(timeit.default_timer() - t0), f"V={v} E={e} E/V={round(e/v, 2)}", file=fout)
 
     @staticmethod
+    def read_bed(filenames):
+        "Read BED files."
+        bed = []
+        for filename in filenames:
+            print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
+            with open(filename) as fin:
+                progressbar = progress_bar_for_file(fin)
+                for line in fin:
+                    progressbar.update(len(line))
+                    fields = line.rstrip("\n").split("\t", 5)
+                    assert len(fields) >= 5
+                    bed.append(tuple(fields[0:5]))
+                progressbar.close()
+            print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
+        return bed
+
+    @staticmethod
+    def read_path(filenames):
+        "Read path files."
+        paths = []
+        for filename in filenames:
+            print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
+            with open(filename) as fin:
+                progressbar = progress_bar_for_file(fin)
+                for line in fin:
+                    progressbar.update(len(line))
+                    paths.append(line.split())
+                progressbar.close()
+            print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
+        return paths
+
+    @staticmethod
     def write_tsv(g, fout):
         "Write a graph in TSV format."
         if "m" in next(iter(g.nodes.values())):
@@ -644,6 +676,62 @@ class Physlr:
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
+    def physlr_filter_bed(self):
+        """
+        Select records from a BED file in the order given by a .path file.
+        Usage: physlr filter-bed BED PATH... >BED
+        """
+        bed_filenames = [self.args.FILES[0]]
+        path_filenames = self.args.FILES[1:]
+
+        num_beds = 0
+        bxtobeds = {}
+        for bed in progress(Physlr.read_bed(bed_filenames)):
+            num_beds += 1
+            qname = bed[3]
+            bxtobeds.setdefault(qname, []).append(bed)
+        print(
+            int(timeit.default_timer() - t0),
+            "Indexed", len(bxtobeds), "barcodes in", num_beds, "BED records", file=sys.stderr)
+
+        num_paths = 0
+        num_barcodes = 0
+        num_beds = 0
+        num_too_small = 0
+        num_missing = 0
+        for i, path in enumerate(progress(Physlr.read_path(path_filenames))):
+            if len(path) < self.args.min_component_size:
+                num_too_small += 1
+                continue
+            num_paths += 1
+            if i != 0:
+                print("NA\tNA\tNA\tNA\tNA")
+            for u in path:
+                num_barcodes += 1
+                bx = u.split("_", 1)[0]
+                if bx not in bxtobeds:
+                    num_missing += 1
+                    if self.args.verbose >= 1:
+                        print("warning:", bx, "not found in BED", *bed_filenames, file=sys.stderr)
+                    continue
+                beds = bxtobeds[bx]
+                num_beds += len(beds)
+                for bed in beds:
+                    print(*bed, sep="\t")
+        print(
+            int(timeit.default_timer() - t0),
+            "Skipped", num_too_small, "paths shorter than",
+            self.args.min_component_size, "vertices", file=sys.stderr)
+        if num_missing > 0:
+            print(
+                int(timeit.default_timer() - t0),
+                "Missing", num_missing, "barcodes of", num_barcodes,
+                f"({round(100 * num_missing / num_barcodes, 2)}%)", file=sys.stderr)
+        print(
+            int(timeit.default_timer() - t0),
+            "Wrote", num_beds, "BED records in", num_barcodes, "barcodes in", num_paths, "paths",
+            file=sys.stderr)
+
     def physlr_graph(self, fmt):
         "Generate a graph from the minimizer index."
         graph = Graph()
@@ -697,6 +785,9 @@ class Physlr:
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
             help="the output graph file format [tsv]")
         argparser.add_argument(
+            "--verbose", action="store", dest="verbose", type=int, default="0",
+            help="the level of verbosity [0]")
+        argparser.add_argument(
             "command",
             help="A command")
         argparser.add_argument(
@@ -725,6 +816,8 @@ class Physlr:
             self.physlr_filter()
         elif self.args.command == "filter-barcodes":
             self.physlr_filter_barcodes()
+        elif self.args.command == "filter-bed":
+            self.physlr_filter_bed()
         elif self.args.command == "indexfa":
             self.physlr_indexfa()
         elif self.args.command == "indexlr":

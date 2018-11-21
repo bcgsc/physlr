@@ -382,8 +382,8 @@ minsize=2000
 
 # Extract a BED file of the backbone barcodes.
 # Filter out small components.
-%.path.$(ref).molecule.bed: %.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
-	awk 'NF >= 50' $< | sh -c 'while read line; do for i in $$line; do grep $${i%_*} $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done; printf "NA\tNA\tNA\tNA\tNA\n"; done' >$@
+%.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.path
+	$(python) bin/physlr filter-bed --min-component-size=50 $^ >$@
 
 # Plot a BED file.
 %.bed.pdf: %.bed
