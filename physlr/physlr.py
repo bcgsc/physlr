@@ -676,6 +676,48 @@ class Physlr:
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
+    def physlr_map(self):
+        """
+        Map sequences to a physical map.
+        Usage: physlr map TGRAPH.tsv TMARKERS.tsv QMARKERS.tsv... >MAP.bed
+        """
+
+        graph_filenames = [self.args.FILES[0]]
+        target_filenames = [self.args.FILES[1]]
+        query_filenames = self.args.FILES[2:]
+
+        g = self.read_graph(graph_filenames)
+        bxtomin = self.read_minimizers(target_filenames)
+        query_markers = self.read_minimizers(query_filenames)
+
+        # Index the positions of the markers in the backbone.
+        backbones = self.determine_backbones(g)
+        markertopos = {}
+        for tid, path in enumerate(progress(backbones)):
+            for pos, (u, v) in enumerate(zip(path, path[1:])):
+                u = u.split("_", 1)[0]
+                v = u.split("_", 1)[0]
+                markers = bxtomin[u] & bxtomin[v]
+                for marker in markers:
+                    markertopos.setdefault(marker, set()).add((tid, pos))
+        print(
+            int(timeit.default_timer() - t0),
+            "Indexed", len(markertopos), "markers", file=sys.stderr)
+
+        # Map the query sequences to the physical map.
+        for qid, markers in progress(query_markers.items()):
+            positions = collections.Counter()
+            for marker in markers:
+                if marker in markertopos:
+                    positions.update(markertopos[marker])
+            best_match = positions.most_common(1)
+            if not best_match:
+                (tid, pos), score = best_match[0]
+                print(tid, pos, pos + 1, qid, score, sep="\t")
+        print(
+            int(timeit.default_timer() - t0),
+            "Mapped", len(query_markers), "sequences", file=sys.stderr)
+
     def physlr_filter_bed(self):
         """
         Select records from a BED file in the order given by a .path file.
@@ -828,6 +870,8 @@ class Physlr:
             self.physlr_graph("graphviz")
         elif self.args.command == "intersect":
             self.physlr_intersect()
+        elif self.args.command == "map":
+            self.physlr_map()
         elif self.args.command == "molecules":
             self.physlr_molecules()
         elif self.args.command == "mst":

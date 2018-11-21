@@ -360,6 +360,10 @@ minsize=2000
 %.backbone.tiling.tsv: %.backbone.tsv
 	$(python) bin/physlr tiling-graph $< >$@
 
+# Map query sequences to the backbone graph.
+%.overlap.n50.mol.backbone.map.$(query).bed: %.overlap.n50.mol.backbone.tsv %.tsv $(query).physlr.tsv
+	$(python) bin/physlr map $^ >$@
+
 # Estimate the number of molecules per barcode.
 %.physlr.overlap.n20.countmol.tsv: %.physlr.overlap.tsv
 	$(python) bin/physlr count-molecules -n20 $< >$@
