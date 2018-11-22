@@ -711,7 +711,7 @@ class Physlr:
                 if marker in markertopos:
                     positions.update(markertopos[marker])
             best_match = positions.most_common(1)
-            if not best_match:
+            if best_match:
                 (tid, pos), score = best_match[0]
                 print(tid, pos, pos + 1, qid, score, sep="\t")
         print(
