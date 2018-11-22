@@ -4,12 +4,13 @@ Physlr: Physical Mapping of Linked Reads
 """
 
 import argparse
-import collections
 import itertools
 import multiprocessing
 import os
 import sys
 import timeit
+
+from collections import Counter
 
 import networkx as nx
 import tqdm
@@ -385,8 +386,7 @@ class Physlr:
     def physlr_count_markers(self):
         "Count the frequency of each minimizer."
         bxtomin = self.read_minimizers(self.args.FILES)
-        marker_counts = collections.Counter(
-            x for markers in progress(bxtomin.values()) for x in markers)
+        marker_counts = Counter(x for markers in progress(bxtomin.values()) for x in markers)
         print(
             int(timeit.default_timer() - t0),
             "Counted", len(marker_counts), "minimizers", file=sys.stderr)
@@ -415,8 +415,7 @@ class Physlr:
     @staticmethod
     def remove_singleton_markers(bxtomin):
         "Remove markers that occur only once."
-        marker_counts = collections.Counter(
-            x for markers in progress(bxtomin.values()) for x in markers)
+        marker_counts = Counter(x for markers in progress(bxtomin.values()) for x in markers)
         print(
             int(timeit.default_timer() - t0),
             "Counted", len(marker_counts), "minimizers", file=sys.stderr)
@@ -530,7 +529,7 @@ class Physlr:
             "Added", g.number_of_nodes(), "barcodes to the graph", file=sys.stderr)
 
         # Add the overlap edges.
-        edges = collections.Counter(
+        edges = Counter(
             (u, v) for bxs in progress(mintobx.values()) for u, v in itertools.combinations(bxs, 2))
         print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
 
@@ -706,8 +705,7 @@ class Physlr:
 
         # Map the query sequences to the physical map.
         for qid, markers in progress(query_markers.items()):
-            positions = collections.Counter(
-                pos for marker in markers for pos in markertopos.get(marker, ()))
+            positions = Counter(pos for marker in markers for pos in markertopos.get(marker, ()))
             for (tid, pos), score in positions.most_common(1):
                 print(tid, pos, pos + 1, qid, score, sep="\t")
         print(
