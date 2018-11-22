@@ -704,13 +704,20 @@ class Physlr:
             "Indexed", len(markertopos), "markers", file=sys.stderr)
 
         # Map the query sequences to the physical map.
+        num_mapped = 0
         for qid, markers in progress(query_markers.items()):
+            mapped = False
             positions = Counter(pos for marker in markers for pos in markertopos.get(marker, ()))
-            for (tid, pos), score in positions.most_common(1):
-                print(tid, pos, pos + 1, qid, score, sep="\t")
+            for (tid, pos), score in positions.items():
+                if score >= self.args.n:
+                    mapped = True
+                    print(tid, pos, pos + 1, qid, score, sep="\t")
+            if mapped:
+                num_mapped += 1
         print(
             int(timeit.default_timer() - t0),
-            "Mapped", len(query_markers), "sequences", file=sys.stderr)
+            "Mapped", num_mapped, "sequences of", len(query_markers),
+            f"({round(100 * num_mapped / len(query_markers), 2)}%)", file=sys.stderr)
 
     def physlr_filter_bed(self):
         """
