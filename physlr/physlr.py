@@ -440,19 +440,20 @@ class Physlr:
         bxtomin = self.read_minimizers(self.args.FILES)
         Physlr.remove_singleton_markers(bxtomin)
 
-        q1, q2, q3 = quantile([0.25, 0.5, 0.75], (len(markers) for markers in bxtomin.values()))
+        q0, q1, q2, q3, q4 = quantile(
+            [0, 0.25, 0.5, 0.75, 1], (len(markers) for markers in bxtomin.values()))
         low_whisker = int(q1 - self.args.coef * (q3 - q1))
         high_whisker = int(q3 + self.args.coef * (q3 - q1))
         if self.args.n == 0:
-            self.args.n = max(1, low_whisker)
+            self.args.n = max(q0, low_whisker)
         if self.args.N is None:
-            self.args.N = high_whisker
+            self.args.N = min(1 + q4, high_whisker)
 
-        print(int(timeit.default_timer() - t0), "Counted markers per barcode", file=sys.stderr)
         print(
-            "    Markers per barcode: Q1=", q1, " Q2=", q2, " Q3=", q3, " Q3-Q1=", q3 - q1, "\n",
-            "    Q3-", self.args.coef, "*(Q3-Q1)=", low_whisker, " n=", self.args.n, "\n",
-            "    Q3+", self.args.coef, "*(Q3-Q1)=", high_whisker, " N=", self.args.N,
+            int(timeit.default_timer() - t0), " Counted markers per barcode\n",
+            f"    Markers per barcode: Q0={q0} Q1={q1} Q2={q2} Q3={q3} Q4={q4} Q3-Q1={q3 - q1}\n",
+            f"    Q3-{self.args.coef}*(Q3-Q1)={low_whisker} n={self.args.n}\n",
+            f"    Q3+{self.args.coef}*(Q3-Q1)={high_whisker} N={self.args.N}",
             sep="", file=sys.stderr)
 
         too_few, too_many = 0, 0
