@@ -697,8 +697,7 @@ class Physlr:
             for pos, (u, v) in enumerate(zip(path, path[1:])):
                 u = u.split("_", 1)[0]
                 v = u.split("_", 1)[0]
-                markers = bxtomin[u] & bxtomin[v]
-                for marker in markers:
+                for marker in bxtomin[u] & bxtomin[v]:
                     markertopos.setdefault(marker, set()).add((tid, pos))
         print(
             int(timeit.default_timer() - t0),
@@ -706,13 +705,9 @@ class Physlr:
 
         # Map the query sequences to the physical map.
         for qid, markers in progress(query_markers.items()):
-            positions = collections.Counter()
-            for marker in markers:
-                if marker in markertopos:
-                    positions.update(markertopos[marker])
-            best_match = positions.most_common(1)
-            if best_match:
-                (tid, pos), score = best_match[0]
+            positions = collections.Counter(
+                pos for marker in markers for pos in markertopos.get(marker, ()))
+            for (tid, pos), score in positions.most_common(1):
                 print(tid, pos, pos + 1, qid, score, sep="\t")
         print(
             int(timeit.default_timer() - t0),
