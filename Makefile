@@ -338,7 +338,7 @@ minsize=2000
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
-	$(python) bin/physlr overlap $< >$@
+	$(python) bin/physlr overlap -n10 $< >$@
 
 # Determine the maximum spanning tree.
 %.physlr.overlap.mst.tsv: %.physlr.overlap.tsv
