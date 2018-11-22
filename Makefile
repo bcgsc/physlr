@@ -64,7 +64,9 @@ f1chr2R: f1chr2R.physlr.stamp
 f1: \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.path.fly.molecule.bed.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.label.gv.pdf
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.label.gv.pdf \
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.pdf \
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.f1.abyss.concat.fly.paf.pdf
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -375,9 +377,9 @@ minsize=2000
 %.backbone.tiling.tsv: %.backbone.tsv
 	$(python) bin/physlr tiling-graph $< >$@
 
-# Map query sequences to the backbone graph.
-%.overlap.n50.mol.backbone.map.$(query).bed: %.overlap.n50.mol.backbone.tsv %.tsv $(query).physlr.tsv
-	$(python) bin/physlr map $^ >$@
+# Map the draft assembly to the backbone graph.
+%.overlap.n118.mol.backbone.map.$(draft).n10.bed: %.overlap.n118.mol.backbone.tsv %.tsv $(draft).physlr.tsv
+	$(python) bin/physlr map -n10 $^ >$@
 
 # Estimate the number of molecules per barcode.
 %.physlr.overlap.n20.countmol.tsv: %.physlr.overlap.tsv
@@ -420,6 +422,22 @@ minsize=2000
 # Filter out small components.
 %.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.path
 	$(python) bin/physlr filter-bed --min-component-size=50 $^ >$@
+
+# Sort a BED file.
+%.sort.bed: %.bed
+	sort -k1,1n -k1,1 -k2,2n -k3,3n -k5,5nr -k4,4 $< >$@
+
+# Keep the best record at each position.
+%.sort.best.bed: %.sort.bed
+	awk '{ keep = $$1 " " $$2 " " $$3 != x; x = $$1 " " $$2 " " $$3 } keep' $< >$@
+
+# Extract scaffolds that map to the largest eight components.
+%.bed.$(draft).fa: %.bed $(draft).fa
+	samtools faidx $(draft).fa $$(awk '$$1 < 8 && $$5 >= 0 { print $$4 }' $< | awk '!x[$$0]++') >$@
+
+# Concatenate FASTA sequences separated by Ns.
+%.concat.fa: %.fa
+	(echo '>0'; sed 's/^>.*/NNNNNNNNNN/' $<) | seqtk seq >$@
 
 # Plot a BED file.
 %.bed.pdf: %.bed
