@@ -427,9 +427,9 @@ minsize=2000
 
 # Assemble a physical map.
 %.physlr.stamp: \
-		%.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
-		%.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
-		%.physlr.overlap.n50.mol.backbone.label.gv.pdf
+		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
+		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
+		%.n100-2000.physlr.overlap.n50.mol.backbone.label.gv.pdf
 	touch $@
 
 ################################################################################
