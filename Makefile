@@ -198,6 +198,21 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx10
 %.$(lr).minimap2.sortn.bam: %.fa.bwt $(lr).fq.gz
 	minimap2 -t$t -a -xsr -y $*.fa $(lr).fq.gz | samtools view -@$t -F4 -o $@
 
+# Align a FASTA file to the reference genome and produce a PAF file.
+%.$(ref).paf.gz: $(ref)/$(ref).fa %.fa
+	$(time) minimap2 -t$t -xasm10 $^ | $(gzip) >$@
+
+################################################################################
+# miniasm
+
+# Draw a dot plot of a PAF file.
+%.paf.ps: %.paf.gz
+	minidot $< >$@
+
+# Convert Postscript to PDF
+%.pdf: %.ps
+	ps2pdf $< $@
+
 ################################################################################
 # samtools
 
