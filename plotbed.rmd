@@ -31,7 +31,9 @@ bed <- bed_orig %>%
 		Rname = "Contig boundary",
 		Start = 0, End = max(bed_orig$End, na.rm = TRUE),
 		BX = "None", Reads = 0)) %>%
-	filter(!startsWith(Rname, "NW_")) %>%
+	filter(
+		!startsWith(Rname, "NW_"),
+		replace_na(suppressWarnings(as.numeric(Rname)) < 8, TRUE)) %>%
 	mutate(Index = cumsum(BX != lag(BX, default="")))
 ```
 
