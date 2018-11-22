@@ -426,7 +426,7 @@ minsize=2000
 %.physlr.stamp: \
 		%.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
 		%.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
-		%.physlr.overlap.n50.mol.backbone.label.gv.pdf
+		%.physlr.overlap.n50.mol.backbone.label.gv.pdf \
 		%.physlr.overlap.n50.mol.backbone.fleshed.all.path.$(ref).molecule.bed.pdf
 	touch $@
 
