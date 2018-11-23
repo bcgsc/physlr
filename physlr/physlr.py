@@ -676,6 +676,21 @@ class Physlr:
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
+    @staticmethod
+    def index_markers_in_backbones(backbones, bxtomin):
+        "Index the positions of the markers in the backbones."
+        markertopos = {}
+        for tid, path in enumerate(progress(backbones)):
+            for pos, (u, v) in enumerate(zip(path, path[1:])):
+                u = u.split("_", 1)[0]
+                v = u.split("_", 1)[0]
+                for marker in bxtomin[u] & bxtomin[v]:
+                    markertopos.setdefault(marker, set()).add((tid, pos))
+        print(
+            int(timeit.default_timer() - t0),
+            "Indexed", len(markertopos), "markers", file=sys.stderr)
+        return markertopos
+
     def physlr_map(self):
         """
         Map sequences to a physical map.
@@ -691,17 +706,8 @@ class Physlr:
         query_markers = self.read_minimizers(query_filenames)
 
         # Index the positions of the markers in the backbone.
-        backbones = self.determine_backbones(g)
-        markertopos = {}
-        for tid, path in enumerate(progress(backbones)):
-            for pos, (u, v) in enumerate(zip(path, path[1:])):
-                u = u.split("_", 1)[0]
-                v = u.split("_", 1)[0]
-                for marker in bxtomin[u] & bxtomin[v]:
-                    markertopos.setdefault(marker, set()).add((tid, pos))
-        print(
-            int(timeit.default_timer() - t0),
-            "Indexed", len(markertopos), "markers", file=sys.stderr)
+        backbones = Physlr.determine_backbones(g)
+        markertopos = Physlr.index_markers_in_backbones(backbones, bxtomin)
 
         # Map the query sequences to the physical map.
         num_mapped = 0
