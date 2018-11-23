@@ -756,13 +756,16 @@ class Physlr:
         Usage: physlr map TGRAPH.tsv TMARKERS.tsv QMARKERS.tsv... >MAP.bed
         """
 
+        if len(self.args.FILES) < 3:
+            exit("physlr map: error: at least three file arguments are required")
         graph_filenames = [self.args.FILES[0]]
         target_filenames = [self.args.FILES[1]]
         query_filenames = self.args.FILES[2:]
 
         g = self.read_graph(graph_filenames)
         bxtomin = self.read_minimizers(target_filenames)
-        query_markers = self.read_minimizers(query_filenames)
+        query_markers = bxtomin if target_filenames == query_filenames else \
+            self.read_minimizers(query_filenames)
 
         # Index the positions of the markers in the backbone.
         backbones = Physlr.determine_backbones(g)

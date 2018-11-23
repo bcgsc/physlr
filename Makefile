@@ -387,6 +387,10 @@ minsize=2000
 %.backbone.tiling.tsv: %.backbone.tsv
 	$(python) bin/physlr tiling-graph $< >$@
 
+# Map the barcodes to the backbone graph.
+%.backbone.map.$(lr).n100-2000.n10.bed: %.backbone.tsv $(lr).n100-2000.physlr.tsv
+	$(python) bin/physlr map -n10 $^ $(lr).n100-2000.physlr.tsv >$@
+
 # Map the draft assembly to the backbone graph.
 %.overlap.n118.mol.backbone.map.$(draft).n10.bed: %.overlap.n118.mol.backbone.tsv %.tsv $(draft).physlr.tsv
 	$(python) bin/physlr map -n10 $^ >$@
