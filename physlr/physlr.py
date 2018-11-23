@@ -16,7 +16,6 @@ import networkx as nx
 import tqdm
 
 from physlr.minimerize import minimerize
-from physlr.benv.graph import Graph
 from physlr.read_fasta import read_fasta
 
 t0 = timeit.default_timer()
@@ -781,14 +780,6 @@ class Physlr:
             "Wrote", num_beds, "BED records in", num_barcodes, "barcodes in", num_paths, "paths",
             file=sys.stderr)
 
-    def physlr_graph(self, fmt):
-        "Generate a graph from the minimizer index."
-        graph = Graph()
-        for filename in self.args.FILES:
-            with open(filename) as fin:
-                graph.read_index(fin)
-                graph.output_graph(pmin=0, fmt=fmt)
-
     @staticmethod
     def parse_arguments():
         "Parse the command line arguments."
@@ -871,10 +862,6 @@ class Physlr:
             self.physlr_indexfa()
         elif self.args.command == "indexlr":
             self.physlr_indexlr()
-        elif self.args.command == "graphtsv":
-            self.physlr_graph("tsv")
-        elif self.args.command == "graphgv":
-            self.physlr_graph("graphviz")
         elif self.args.command == "intersect":
             self.physlr_intersect()
         elif self.args.command == "map":
