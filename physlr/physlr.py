@@ -428,7 +428,7 @@ class Physlr:
     def physlr_subgraph(self):
         "Extract a vertex-induced subgraph."
         if self.args.d not in (0, 1):
-            exit("error: Only -d0 and -d1 are currently supported.")
+            exit("physlr subgraph: error: Only -d0 and -d1 are currently supported.")
         vertices = set(self.args.v.split())
         exclude_vertices = set(self.args.exclude_vertices.split())
         g = self.read_graph(self.args.FILES)
@@ -805,8 +805,6 @@ class Physlr:
         Convert a BED file of mappings to scaffolds paths.
         Usage: physlr bed-to-path BED... >PATH
         """
-        if not self.args.FILES:
-            exit("physlr map: error: at least one file argument is required")
         num_scaffolds = 0
         num_contigs = 0
         prev_tname = None
@@ -837,7 +835,7 @@ class Physlr:
         Usage: physlr path-to-fasta FASTA PATH... >FASTA
         """
         if len(self.args.FILES) < 2:
-            exit("physlr map: error: at least two file arguments are required")
+            exit("physlr path-to-fasta: error: at least two file arguments are required")
         fasta_filenames = self.args.FILES[0:1]
         path_filenames = self.args.FILES[1:]
         seqs = Physlr.read_fastas(fasta_filenames)
@@ -865,7 +863,7 @@ class Physlr:
         Usage: physlr filter-bed BED PATH... >BED
         """
         if len(self.args.FILES) < 2:
-            exit("physlr map: error: at least two file arguments are required")
+            exit("physlr filter-bed: error: at least two file arguments are required")
         bed_filenames = [self.args.FILES[0]]
         path_filenames = self.args.FILES[1:]
 
@@ -982,49 +980,11 @@ class Physlr:
 
     def main(self):
         "Run Physlr."
-        if self.args.command == "backbone":
-            self.physlr_backbone()
-        elif self.args.command == "backbone-graph":
-            self.physlr_backbone_graph()
-        elif self.args.command == "biconnected-components":
-            self.physlr_biconnected_components()
-        elif self.args.command == "count-markers":
-            self.physlr_count_markers()
-        elif self.args.command == "count-molecules":
-            self.physlr_count_molecules()
-        elif self.args.command == "filter":
-            self.physlr_filter()
-        elif self.args.command == "filter-barcodes":
-            self.physlr_filter_barcodes()
-        elif self.args.command == "filter-bed":
-            self.physlr_filter_bed()
-        elif self.args.command == "flesh-backbone":
-            self.physlr_flesh()
-        elif self.args.command == "indexfa":
-            self.physlr_indexfa()
-        elif self.args.command == "indexlr":
-            self.physlr_indexlr()
-        elif self.args.command == "intersect":
-            self.physlr_intersect()
-        elif self.args.command == "map":
-            self.physlr_map()
-        elif self.args.command == "molecules":
-            self.physlr_molecules()
-        elif self.args.command == "mst":
-            self.physlr_mst()
-        elif self.args.command == "overlap":
-            self.physlr_overlap()
-        elif self.args.command == "bed-to-path":
-            self.physlr_bed_to_path()
-        elif self.args.command == "path-to-fasta":
-            self.physlr_path_to_fasta()
-        elif self.args.command == "subgraph":
-            self.physlr_subgraph()
-        elif self.args.command == "tiling-graph":
-            self.physlr_tiling_graph()
-        else:
-            print("Unrecognized command:", self.args.command, file=sys.stderr)
+        method_name = "physlr_" + self.args.command.replace("-", "_")
+        if not hasattr(Physlr, method_name):
+            print("physlr: error: unrecognized command:", self.args.command, file=sys.stderr)
             exit(1)
+        getattr(Physlr, method_name)(self)
 
 def main():
     "Run Physlr."
