@@ -66,8 +66,8 @@ f1: \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.path.fly.molecule.bed.pdf \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.label.gv.pdf \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.f1.abyss.concat.fly.paf.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.f1.abyss.concat.quast.tsv
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.fly.paf.pdf \
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -214,8 +214,9 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx10
 # miniasm
 
 # Draw a dot plot of a PAF file.
+# Skip alignments to non-chromosomal sequences.
 %.paf.ps: %.paf.gz
-	minidot $< >$@
+	gunzip -c $< | grep -v NW_ | minidot /dev/stdin >$@
 
 # Convert Postscript to PDF
 %.pdf: %.ps
@@ -395,6 +396,10 @@ minsize=2000
 %.overlap.n118.mol.backbone.map.$(draft).n10.bed: %.overlap.n118.mol.backbone.tsv %.tsv $(draft).physlr.tsv
 	$(python) bin/physlr map -n10 $^ >$@
 
+# Filter a BED file by score.
+%.n100.bed: %.n10.bed
+	awk '$$5 >= 100' $< >$@
+
 # Estimate the number of molecules per barcode.
 %.physlr.overlap.n20.countmol.tsv: %.physlr.overlap.tsv
 	$(python) bin/physlr count-molecules -n20 $< >$@
@@ -453,13 +458,13 @@ minsize=2000
 %.sort.best.bed: %.sort.bed
 	awk '{ keep = $$1 " " $$2 " " $$3 != x; x = $$1 " " $$2 " " $$3 } keep' $< >$@
 
-# Extract scaffolds that map to the largest eight components.
-%.bed.$(draft).fa: %.bed $(draft).fa
-	samtools faidx $(draft).fa $$(awk '$$1 < 8 && $$5 >= 0 { print $$4 }' $< | awk '!x[$$0]++') >$@
+# Extract scaffolds paths from a BED file.
+%.bed.path: %.bed
+	$(python) bin/physlr bed-to-path $^ >$@
 
-# Concatenate FASTA sequences separated by Ns.
-%.concat.fa: %.fa
-	(echo '>0'; sed 's/^>.*/NNNNNNNNNN/' $<) | seqtk seq >$@
+# Produce sequences in FASTA format from paths.
+%.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
+	$(python) bin/physlr path-to-fasta --min-length 100000 $^ >$@
 
 # Plot a BED file.
 %.bed.pdf: %.bed

@@ -60,12 +60,25 @@ class Physlr:
                 progressbar = progress_bar_for_file(fin)
                 for line in fin:
                     progressbar.update(len(line))
-                    fields = line.rstrip("\n").split("\t", 5)
-                    assert len(fields) >= 5
-                    bed.append(tuple(fields[0:5]))
+                    tname, tstart, tend, qname, score = line.rstrip("\n").split("\t", 5)
+                    bed.append((tname, int(tstart), int(tend), qname, int(score)))
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return bed
+
+    @staticmethod
+    def read_fastas(filenames):
+        "Read FASTA files. Return a dictionary of names to sequences."
+        seqs = {}
+        for filename in filenames:
+            print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
+            with open(filename) as fin:
+                for name, seq, _ in read_fasta(fin):
+                    seqs[name] = seq
+            print(
+                int(timeit.default_timer() - t0),
+                "Read", len(seqs), "sequences", file=sys.stderr)
+        return seqs
 
     @staticmethod
     def read_path(filenames):
@@ -787,11 +800,72 @@ class Physlr:
             "Mapped", num_mapped, "sequences of", len(query_markers),
             f"({round(100 * num_mapped / len(query_markers), 2)}%)", file=sys.stderr)
 
+    def physlr_bed_to_path(self):
+        """
+        Convert a BED file of mappings to scaffolds paths.
+        Usage: physlr bed-to-path BED... >PATH
+        """
+        if not self.args.FILES:
+            exit("physlr map: error: at least one file argument is required")
+        num_scaffolds = 0
+        num_contigs = 0
+        prev_tname = None
+        seen_qnames = set()
+        for tname, _, _, qname, score in progress(Physlr.read_bed(self.args.FILES)):
+            if score < self.args.n or qname in seen_qnames:
+                continue
+            seen_qnames.add(qname)
+            num_contigs += 1
+            if prev_tname:
+                if tname != prev_tname:
+                    num_scaffolds += 1
+                    print()
+                else:
+                    print(" ", end="")
+            print(qname, end="")
+            prev_tname = tname
+        num_scaffolds += 1
+        print()
+        print(
+            int(timeit.default_timer() - t0),
+            f"Wrote {num_contigs} contigs in {num_scaffolds} scaffolds.",
+            file=sys.stderr)
+
+    def physlr_path_to_fasta(self):
+        """
+        Produce sequences in FASTA format from paths.
+        Usage: physlr path-to-fasta FASTA PATH... >FASTA
+        """
+        if len(self.args.FILES) < 2:
+            exit("physlr map: error: at least two file arguments are required")
+        fasta_filenames = self.args.FILES[0:1]
+        path_filenames = self.args.FILES[1:]
+        seqs = Physlr.read_fastas(fasta_filenames)
+        paths = Physlr.read_path(path_filenames)
+
+        num_scaffolds = 0
+        num_contigs = 0
+        num_bases = 0
+        for path in progress(paths):
+            seq = "NNNNNNNNNN".join(seqs[name] for name in path)
+            if len(seq) < self.args.min_length:
+                continue
+            print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
+            num_scaffolds += 1
+            num_contigs += len(path)
+            num_bases += len(seq)
+        print(
+            int(timeit.default_timer() - t0),
+            f"Wrote {num_bases} bases in {num_contigs} contigs in {num_scaffolds} scaffolds.",
+            file=sys.stderr)
+
     def physlr_filter_bed(self):
         """
         Select records from a BED file in the order given by a .path file.
         Usage: physlr filter-bed BED PATH... >BED
         """
+        if len(self.args.FILES) < 2:
+            exit("physlr map: error: at least two file arguments are required")
         bed_filenames = [self.args.FILES[0]]
         path_filenames = self.args.FILES[1:]
 
@@ -873,6 +947,9 @@ class Physlr:
             "-N", "--max-n", action="store", dest="N", type=int, default=None,
             help="remove edges with at least N shared markers [None]")
         argparser.add_argument(
+            "--min-length", action="store", dest="min_length", type=int, default=0,
+            help="remove sequences with length less than N bp [0]")
+        argparser.add_argument(
             "--min-component-size", action="store", dest="min_component_size", type=int, default=0,
             help="remove components with fewer than N vertices [0]")
         argparser.add_argument(
@@ -937,6 +1014,10 @@ class Physlr:
             self.physlr_mst()
         elif self.args.command == "overlap":
             self.physlr_overlap()
+        elif self.args.command == "bed-to-path":
+            self.physlr_bed_to_path()
+        elif self.args.command == "path-to-fasta":
+            self.physlr_path_to_fasta()
         elif self.args.command == "subgraph":
             self.physlr_subgraph()
         elif self.args.command == "tiling-graph":
