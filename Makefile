@@ -66,12 +66,18 @@ f1: \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.path.fly.molecule.bed.pdf \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.label.gv.pdf \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.f1.abyss.concat.fly.paf.pdf
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.f1.abyss.concat.fly.paf.pdf \
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.f1.abyss.concat.quast.tsv
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
 	mkdir -p $(@D)
 	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz | seqtk seq >$@
+
+# Download the fly annotation from NCBI.
+fly/fly.gff:
+	mkdir -p $(@D)
+	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.gff.gz | gunzip -c >$@
 
 # Download the fly linked reads from 10x Genomics.
 fly/f1.tar:
@@ -469,6 +475,14 @@ minsize=2000
 # Compute genome coverage.
 %.bed.$(ref).cov.tsv: %.bed $(ref)/$(ref).fa.fai
 	grep -v NA $< | sort -k1,1 -k2,2n -k3,3n | bedtools genomecov -max 1 -g $(ref)/$(ref).fa.fai -i - | awk '$$2 != 0 || $$5 != 1' >$@
+
+################################################################################
+# QUAST
+
+# Calculate assembly contiguity and correctness metrics using QUAST.
+%.quast.tsv: %.fa $(ref)/$(ref).fa $(ref)/$(ref).gff
+	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 95 -R $(ref)/$(ref).fa -g $(ref)/$(ref).gff -o $*.quast $<
+	cp $*.quast/transposed_report.tsv $@
 
 ################################################################################
 # GraphViz
