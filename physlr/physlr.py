@@ -7,6 +7,7 @@ import argparse
 import itertools
 import multiprocessing
 import os
+import statistics
 import sys
 import timeit
 
@@ -763,6 +764,17 @@ class Physlr:
             "Indexed", len(markertopos), "markers", file=sys.stderr)
         return markertopos
 
+    @staticmethod
+    def determine_orientation(x, y, z):
+        "Determine the orientation of an alignment."
+        if x is not None and z is not None:
+            return "." if x == y == z else "+" if x <= y <= z else "-" if z >= y >= x else "."
+        if x is not None:
+            return "+" if x < y else "-" if x > y else "."
+        if z is not None:
+            return "+" if y < z else "-" if y > z else "."
+        return "."
+
     def physlr_map(self):
         """
         Map sequences to a physical map.
@@ -787,12 +799,26 @@ class Physlr:
         # Map the query sequences to the physical map.
         num_mapped = 0
         for qid, markers in progress(query_markers.items()):
+            # Map each target position to a query position.
+            tidpos_to_qpos = {}
+            for qpos, marker in enumerate(markers):
+                for tidpos in markertopos.get(marker, ()):
+                    tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
+            for tidpos, qpos in tidpos_to_qpos.items():
+                tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
+
+            # Count the number of markers mapped to each target position.
+            tidpos_to_n = Counter(pos for marker in markers for pos in markertopos.get(marker, ()))
+
             mapped = False
-            positions = Counter(pos for marker in markers for pos in markertopos.get(marker, ()))
-            for (tid, pos), score in positions.items():
+            for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
                     mapped = True
-                    print(tid, pos, pos + 1, qid, score, sep="\t")
+                    orientation = Physlr.determine_orientation(
+                        tidpos_to_qpos.get((tid, tpos - 1), None),
+                        tidpos_to_qpos.get((tid, tpos + 0), None),
+                        tidpos_to_qpos.get((tid, tpos + 1), None))
+                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
             if mapped:
                 num_mapped += 1
         print(
