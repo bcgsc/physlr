@@ -61,8 +61,13 @@ class Physlr:
                 progressbar = progress_bar_for_file(fin)
                 for line in fin:
                     progressbar.update(len(line))
-                    tname, tstart, tend, qname, score = line.rstrip("\n").split("\t", 5)
-                    bed.append((tname, int(tstart), int(tend), qname, int(score)))
+                    fields = line.rstrip("\n").split("\t")
+                    if len(fields) < 5:
+                        print("physlr: expected five or more BED fields:", line, file=sys.stderr)
+                        exit(1)
+                    tname, tstart, tend, qname, score = fields[0:6]
+                    orientation = fields[5] if len(fields) >= 6 else "."
+                    bed.append((tname, int(tstart), int(tend), qname, int(score), orientation))
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return bed
@@ -835,7 +840,7 @@ class Physlr:
         num_contigs = 0
         prev_tname = None
         seen_qnames = set()
-        for tname, _, _, qname, score in progress(Physlr.read_bed(self.args.FILES)):
+        for tname, _, _, qname, score, _ in progress(Physlr.read_bed(self.args.FILES)):
             if score < self.args.n or qname in seen_qnames:
                 continue
             seen_qnames.add(qname)
