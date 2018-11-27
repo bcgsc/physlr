@@ -393,6 +393,10 @@ minsize=2000
 	$(python) bin/physlr map -n10 $^ $(lr).n100-2000.physlr.tsv >$@
 
 # Map the draft assembly to the backbone graph.
+%.overlap.n50.mol.backbone.map.$(draft).n10.bed: %.overlap.n50.mol.backbone.tsv %.tsv $(draft).physlr.tsv
+	$(python) bin/physlr map -n10 $^ >$@
+
+# Map the draft assembly to the backbone graph.
 %.overlap.n118.mol.backbone.map.$(draft).n10.bed: %.overlap.n118.mol.backbone.tsv %.tsv $(draft).physlr.tsv
 	$(python) bin/physlr map -n10 $^ >$@
 
@@ -475,7 +479,9 @@ minsize=2000
 		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
 		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
 		%.n100-2000.physlr.overlap.n50.mol.backbone.label.gv.pdf \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.fleshed.all.path.$(ref).molecule.bed.pdf
+		%.n100-2000.physlr.overlap.n50.mol.backbone.fleshed.all.path.$(ref).molecule.bed.pdf \
+		%.n100-2000.physlr.overlap.n50.mol.backbone.map.f1.abyss.n10.sort.best.bed.pdf \
+		%.n100-2000.physlr.overlap.n50.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.fly.paf.pdf
 	touch $@
 
 ################################################################################
