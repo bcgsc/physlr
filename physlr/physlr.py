@@ -393,7 +393,7 @@ class Physlr:
                 file=sys.stderr)
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
-    def physlr_flesh(self):
+    def physlr_flesh_backbone(self):
         "Flesh out the barcodes in the backbone paths"
         g = self.read_graph([self.args.FILES[0]])
         backbones = self.read_path_filter(self.args.FILES[1], self.args.min_component_size)
