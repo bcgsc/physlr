@@ -768,7 +768,7 @@ class Physlr:
     def determine_orientation(x, y, z):
         "Determine the orientation of an alignment."
         if x is not None and z is not None:
-            return "." if x == y == z else "+" if x <= y <= z else "-" if z >= y >= x else "."
+            return "." if x == y == z else "+" if x <= y <= z else "-" if x >= y >= z else "."
         if x is not None:
             return "+" if x < y else "-" if x > y else "."
         if z is not None:
