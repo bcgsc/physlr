@@ -192,6 +192,28 @@ class Physlr:
                     paths.append(nodes)
         return paths
 
+    # Complement nucleotides.
+    TRANSLATE_COMPLEMENT = str.maketrans(
+        "ACGTUNMRWSYKVHDBacgtunmrwsykvhdb",
+        "TGCAANKYWSRMBDHVtgcaankywsrmbdhv")
+
+    @staticmethod
+    def reverse_complement(seq):
+        "Return the reverse complement of this sequence."
+        return seq[::-1].translate(Physlr.TRANSLATE_COMPLEMENT)
+
+    @staticmethod
+    def get_oriented_sequence(sequences, name_orientation):
+        "Fetch and orient the specified sequence."
+        name = name_orientation[0:-1]
+        orientation = name_orientation[-1]
+        if orientation == "+":
+            return sequences[name]
+        if orientation == "-":
+            return Physlr.reverse_complement(sequences[name])
+        print("physlr: Unexpected orientation:", orientation, file=sys.stderr)
+        sys.exit(1)
+
     @staticmethod
     def sort_vertices(g):
         """
@@ -895,7 +917,12 @@ class Physlr:
         num_contigs = 0
         num_bases = 0
         for path in progress(paths):
-            seq = "NNNNNNNNNN".join(seqs[name] for name in path)
+            # Remove unoriented sequences.
+            path = [name for name in path if name[-1] != "."]
+            if not path:
+                continue
+
+            seq = "NNNNNNNNNN".join(Physlr.get_oriented_sequence(seqs, name) for name in path)
             if len(seq) < self.args.min_length:
                 continue
             print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
