@@ -497,7 +497,7 @@ minsize=2000
 
 # Calculate assembly contiguity and correctness metrics using QUAST.
 %.quast.tsv: %.fa $(ref)/$(ref).fa $(ref)/$(ref).gff
-	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 95 -R $(ref)/$(ref).fa -g $(ref)/$(ref).gff -o $*.quast $<
+	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 95 -R $(ref)/$(ref).fa -o $*.quast $<
 	cp $*.quast/transposed_report.tsv $@
 
 ################################################################################
