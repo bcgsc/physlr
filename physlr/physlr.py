@@ -836,14 +836,33 @@ class Physlr:
         Convert a BED file of mappings to scaffolds paths.
         Usage: physlr bed-to-path BED... >PATH
         """
+
+        # Construct a dictionary of query names to their best position on the physical map.
+        qnames = {}
+        for tname, tstart, _, qname, score, orientation in \
+                progress(Physlr.read_bed(self.args.FILES)):
+            if score < self.args.n:
+                continue
+            qnames.setdefault(qname, {}).setdefault(tname, []).append((tstart, orientation))
+
+        # Order and orient the queries on the physical map.
+        scaffolds = []
+        for qname, targets in progress(qnames.items()):
+            tname, positions = max(targets.items(), key=lambda target: len(target[1]))
+            tstart = statistics.median_low(x[0] for x in positions)
+            orientations = Counter(x[1] for x in positions).most_common(2)
+            if len(orientations) == 1 or orientations[0][1] > orientations[1][1]:
+                orientation = orientations[0][0]
+            else:
+                orientation = "."
+            scaffolds.append((tname, tstart, orientation, qname))
+        scaffolds.sort()
+        print(int(timeit.default_timer() - t0), f"Ordered and oriented queries.", file=sys.stderr)
+
         num_scaffolds = 0
         num_contigs = 0
         prev_tname = None
-        seen_qnames = set()
-        for tname, _, _, qname, score, _ in progress(Physlr.read_bed(self.args.FILES)):
-            if score < self.args.n or qname in seen_qnames:
-                continue
-            seen_qnames.add(qname)
+        for tname, _, orientation, qname in progress(scaffolds):
             num_contigs += 1
             if prev_tname:
                 if tname != prev_tname:
@@ -851,7 +870,7 @@ class Physlr:
                     print()
                 else:
                     print(" ", end="")
-            print(qname, end="")
+            print(qname, orientation, sep="", end="")
             prev_tname = tname
         num_scaffolds += 1
         print()
