@@ -450,9 +450,10 @@ minsize=2000
 %.backbone.fleshed.all.path: %.backbone.fleshed.path
 	cat $< |sed 's/,/ /g; s/(//g; s/)//g' > $@
 
-# Filter fleshed file
-%.backbone.fleshed.all.path.$(ref).molecule.bed: %.backbone.fleshed.all.path $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed
-	awk 'NF >= 50' $< | sh -c 'while read line; do for i in $$line; do grep $${i%_*} $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed || true; done; printf "NA\tNA\tNA\tNA\tNA\n"; done' >$@
+# Extract a BED file of the fleshed-out backbone barcodes.
+# Filter out small components.
+%.backbone.fleshed.all.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.backbone.fleshed.all.path
+	$(python) bin/physlr filter-bed --min-component-size=50 $^ >$@
 
 # Sort a BED file.
 %.sort.bed: %.bed
