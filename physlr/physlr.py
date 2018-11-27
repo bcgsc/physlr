@@ -12,6 +12,7 @@ import sys
 import timeit
 import re
 from collections import defaultdict
+import random
 
 from collections import Counter
 
@@ -175,7 +176,7 @@ class Physlr:
     @staticmethod
     def read_graphviz(g, filename):
         "Read a GraphViz file."
-        graph = nx.drawing.nx_agraph.read_dot(filename)
+        graph = nx.drawing.nx_pydot.read_dot(filename)
         for vprop in graph.nodes().values():
             vprop["n"] = int(vprop["n"])
         for _, _, eprop in graph.edges.data():
@@ -396,6 +397,19 @@ class Physlr:
                 insertions = ",".join(backbone_insertions[i])
                 print("(" + insertions + ")", file=sys.stdout, end=' ')
         print(backbone[len(backbone)-1], file=sys.stdout)
+
+    def isValidPair(bxs, headers):
+        "Checks if read pair's headers match (sanity check), and they have associated barcodes"
+        header_suffix_match = re.search(r'(^\@\S+)\/[1-2]', headers[0])
+        if header_suffix_match:
+            trim = -2
+        else:
+            trim = len(headers[0])
+        if len(bxs) == 2 and len(headers) == 2 and \
+            headers[0][:trim] == headers[1][:trim] and bxs[0] == bxs[1]:
+            return True
+        else:
+            return False
 
     def physlr_filter(self):
         "Filter a graph."
@@ -755,24 +769,55 @@ class Physlr:
         #Given the molecule -> minimizers table and the reads, partition reads into molecules
         moltomin = self.read_minimizers_molecule([self.args.FILES[0]])
         header_match = re.compile(r'^(\@\S+)\s+BX:Z:(\S+)')
-        seq_next = False
-        (header, bx) = (None, None)
+        (bxs, headers, seqs, ors, quals) = ([], [], [], [], [])
+
+        line_count = 0
         for readfile in self.args.FILES[1:]:
             with open(readfile, 'r') as fin:
                 for line in fin:
-                    line_header_match = re.search(header_match, line)
-                    if line_header_match:
-                        (header, bx) = (line_header_match.group(1), line_header_match.group(2))
-                        seq_next = True
-                    elif seq_next:
-                        sequence = line.strip()
-                        minimizers = minimerize(self.args.k, self.args.w, sequence.upper())
-                        bx_mol = self.assign_read_molecule(minimizers, moltomin[bx])
-                        seq_next = False
+                    line = line.strip()
+                    if line_count % 4 == 0: #This is a header line
+                        line_header_match = re.search(header_match, line)
+                        if line_header_match:
+                            headers.append(line_header_match.group(1))
+                            bxs.append(line_header_match.group(2))
+                        else:
+                            headers.append(line)
+                    elif line_count % 4 == 1: #This is a sequence line
+                        seqs.append(line)
+                    elif line_count % 4 == 2:
+                        ors.append(line)
+                    elif line_count % 4 == 3:
+                        quals.append(line)
+                    if line_count == 7: #Fully read in the read pair now
+                        if self.isValidPair(bxs, headers) and bxs[0] in moltomin:
+                            minimizers1 = set(minimerize(self.args.k, self.args.w, seqs[0].upper()))
+                            minimizers2 = set(minimerize(self.args.k, self.args.w, seqs[1].upper()))
+                            bx_mol = bxs[0] + "_" + self.assign_read_molecule(set.union(minimizers1, minimizers2), moltomin[bxs[0]])
+                            print("%s %s\n%s\n%s\n%s" % (headers[0], "BX:Z:" + bx_mol, seqs[0], ors[0], quals[0]),
+                                  file=sys.stdout)
+                            print("%s %s\n%s\n%s\n%s" % (headers[1], "BX:Z:" + bx_mol, seqs[1], ors[1], quals[1]),
+                                  file=sys.stdout)
+                        else:
+                            print("%s\n%s\n%s\n%s" % (headers[0], seqs[0], ors[0], quals[0]), file=sys.stdout)
+                            print("%s\n%s\n%s\n%s" % (headers[1],seqs[1], ors[1], quals[1]), file=sys.stdout)
+                        line_count = -1
+                        list(map(list.clear, [bxs, headers, seqs, ors, quals]))
+                        assert(len(headers) == 0)
+                        assert(len(seqs) == 0)
+                    line_count += 1
 
     @staticmethod
     def assign_read_molecule(minimizers, moltomin):
         "Given the minimizers of a read and the barcode, assign to a molecule"
+        intersections = {mol:len(set.intersection(minimizers, moltomin[mol])) for mol in moltomin}
+        max_intersection = max(intersections.values())
+        #TODO: Consider if NO overlap with any of the neighbour minimizers
+        max_hits = [mol for mol in intersections if intersections[mol]==max_intersection]
+        if len(max_hits) == 1:
+            return max_hits[0]
+        else:
+            return random.choice(max_hits)
         
 
     @staticmethod
