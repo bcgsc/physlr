@@ -65,7 +65,7 @@ class Physlr:
                     if len(fields) < 5:
                         print("physlr: expected five or more BED fields:", line, file=sys.stderr)
                         exit(1)
-                    tname, tstart, tend, qname, score = fields[0:6]
+                    tname, tstart, tend, qname, score = fields[0:5]
                     orientation = fields[5] if len(fields) >= 6 else "."
                     bed.append((tname, int(tstart), int(tend), qname, int(score), orientation))
                 progressbar.close()
