@@ -382,7 +382,7 @@ minsize=2000
 
 # Flesh out the backbone path
 %.backbone.fleshed.path: %.tsv %.backbone.path
-	$(python) bin/physlr flesh-backbone $< $*.backbone.path > $@
+	$(python) bin/physlr flesh-backbone $< $*.backbone.path --min-component-size=50 > $@
 
 # Determine the minimum tiling graph of the backbone graph.
 %.backbone.tiling.tsv: %.backbone.tsv
@@ -446,13 +446,9 @@ minsize=2000
 %.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.path
 	$(python) bin/physlr filter-bed --min-component-size=50 $^ >$@
 
-# Reformat fleshed file
-%.backbone.fleshed.all.path: %.backbone.fleshed.path
-	cat $< |sed 's/,/ /g; s/(//g; s/)//g' > $@
-
 # Extract a BED file of the fleshed-out backbone barcodes.
 # Filter out small components.
-%.backbone.fleshed.all.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.backbone.fleshed.all.path
+%.backbone.fleshed.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.backbone.fleshed.path
 	$(python) bin/physlr filter-bed --min-component-size=50 $^ >$@
 
 # Sort a BED file.
@@ -480,7 +476,7 @@ minsize=2000
 		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
 		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
 		%.n100-2000.physlr.overlap.n50.mol.backbone.label.gv.pdf \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.fleshed.all.path.$(ref).molecule.bed.pdf \
+		%.n100-2000.physlr.overlap.n50.mol.backbone.fleshed.path.$(ref).molecule.bed.pdf \
 		%.n100-2000.physlr.overlap.n50.mol.backbone.map.f1.abyss.n10.sort.best.bed.pdf \
 		%.n100-2000.physlr.overlap.n50.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.fly.paf.pdf
 	touch $@
