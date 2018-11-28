@@ -180,18 +180,6 @@ class Physlr:
             eprop["n"] = int(eprop["n"])
         return nx.algorithms.operators.binary.compose(g, graph)
 
-    @staticmethod
-    def read_path_filter(filename, min_component_size):
-        "Read a path file, return a list of paths"
-        paths = []
-        with open(filename, 'r') as pathfile:
-            for path in pathfile:
-                path = path.strip()
-                nodes = path.split(" ")
-                if len(nodes) >= min_component_size:
-                    paths.append(nodes)
-        return paths
-
     # Complement nucleotides.
     TRANSLATE_COMPLEMENT = str.maketrans(
         "ACGTUNMRWSYKVHDBacgtunmrwsykvhdb",
@@ -381,8 +369,8 @@ class Physlr:
     @staticmethod
     def print_flesh_path(backbone, backbone_insertions):
         "Print out the backbone path with 'flesh' barcodes added"
-        for i in range(0, len(backbone)-1):
-            print(backbone[i], file=sys.stdout, end=' ')
+        for i, mol in enumerate(backbone):
+            print(mol, file=sys.stdout, end=' ')
             if i in backbone_insertions:
                 insertions = ",".join(backbone_insertions[i])
                 print("(" + insertions + ")", file=sys.stdout, end=' ')
@@ -418,22 +406,28 @@ class Physlr:
     def physlr_flesh_backbone(self):
         "Flesh out the barcodes in the backbone paths"
         g = self.read_graph([self.args.FILES[0]])
-        backbones = self.read_path_filter(self.args.FILES[1], self.args.min_component_size)
+        backbones_raw = self.read_path([self.args.FILES[1]])
+        backbones = [b for b in backbones_raw if len(b) >= self.args.min_component_size]
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", len(backbones_raw) - len(backbones),
+            "backbones of", len(backbones_raw),
+            "with fewer than", self.args.min_component_size,
+            "vertices", file=sys.stderr)
         for backbone in backbones:
             backbone_insertions = {}
-            neighbours = set(v for u in backbone for v in g.neighbors(u))
-            #Find where the neighbours should go in the backbone path
+            neighbours = {v for u in backbone for v in g.neighbors(u)}
+            # Find where the neighbours should go in the backbone path
             for neighbour in neighbours:
                 if neighbour in backbone:
                     continue
                 (max_n, max_index) = (float("-inf"), float("-inf"))
                 for i, k in enumerate(backbone):
-                    try:
-                        n = g[neighbour][k]["n"]
-                        if n > max_n:
-                            (max_n, max_index) = (n, i)
-                    except KeyError:
+                    if not g.has_edge(neighbour, k):
                         continue
+                    n = g[neighbour][k]["n"]
+                    if n > max_n:
+                        (max_n, max_index) = (n, i)
                 # Put R or L of node with most shared markers?
                 if max_index == 0:
                     insert_index = max_index
@@ -960,6 +954,7 @@ class Physlr:
         num_too_small = 0
         num_missing = 0
         for i, path in enumerate(progress(Physlr.read_path(path_filenames))):
+            path = [x for subpath in path for x in subpath.strip("()").split(",")]
             if len(path) < self.args.min_component_size:
                 num_too_small += 1
                 continue
