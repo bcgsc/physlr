@@ -81,6 +81,15 @@ fly/f1.tar:
 	mkdir -p $(@D)
 	curl -o $@ http://s3-us-west-2.amazonaws.com/10x.files/samples/assembly/2.1.0/fly/fly_fastqs.tar
 
+# Extract the tar file of fly FASTQ reads.
+fly/f1.fq.gz: fly/f1.tar
+	tar --wildcards -Oxf fly/f1.tar 'fly/H3C7LDMXX/read-RA*.fastq.gz' >$@
+
+# Symlink the fly reads.
+f1.fq.gz: fly/f1.fq.gz
+	ln -s $< $@
+
+# Download the fly linked reads from 10x Genomics.
 # Extract the reads that map to chromosome 4.
 %.chr4.sortbxn.bam: %.sortbxn.bam
 	samtools view -h $< | awk '/^@/ || $$3 == "NC_004353.4"' | samtools view -@$t -o $@
