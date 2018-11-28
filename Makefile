@@ -33,7 +33,7 @@ endif
 
 .DELETE_ON_ERROR:
 .SECONDARY:
-.PHONY: fly humanmt psitchensiscp
+.PHONY: fly
 
 all: lint
 
@@ -41,22 +41,7 @@ all: lint
 lint:
 	pylint physlr
 
-check: humanmt psitchensiscp fly
-
-clean:
-	rm -f humanmt/mt.physlr.tsv
-
-################################################################################
-# Human mitochondrion
-
-# Test Phsylr using the human mitochondrion.
-humanmt: \
-	humanmt/mt.physlr.tsv
-
-# Download the human mitochondrial genome.
-humanmt/mt.fa:
-	mkdir -p $(@D)
-	curl 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?retmode=text&id=NC_012920.1&db=nucleotide&rettype=fasta' | seqtk seq >$@
+check: f1
 
 ################################################################################
 # Fly
@@ -115,21 +100,6 @@ f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx100-200.fq.gz
 
 # Symlink the subsampled chromosome 2R reads.
 f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
-	ln -sf $< $@
-
-################################################################################
-# Picea sitchensis plastid
-
-# Test Phsylr using the Picea sitchensis plastid data.
-psitchensiscp: HYN5VCCXX_4cp.physlr.stamp
-
-# Download the Picea sitchensis plastid genome.
-psitchensiscp/psitchensiscp.fa:
-	mkdir -p $(@D)
-	curl 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?retmode=text&id=KU215903.2&db=nucleotide&rettype=fasta' | seqtk seq >$@
-
-# Symlink the plastid reads.
-HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx100-200.fq.gz
 	ln -sf $< $@
 
 ################################################################################
