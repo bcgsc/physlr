@@ -33,7 +33,6 @@ endif
 
 .DELETE_ON_ERROR:
 .SECONDARY:
-.PHONY: fly
 
 all: lint
 
