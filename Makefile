@@ -268,6 +268,10 @@ HYN5VCCXX_4cp.fq.gz: psitchensiscp/psitchensiscp.HYN5VCCXX_4.sortbxn.dropse.bx10
 %.2.fq.gz: %.fq.gz
 	seqtk dropse $< | seqtk seq -2 | $(gzip) >$@
 
+# Cut scaffolds at Ns to create scaftigs.
+%.scaftigs.fa: %.fa
+	seqtk cutN -n1 $< | tr :- _ | seqtk seq >$@
+
 ################################################################################
 # EMA
 
