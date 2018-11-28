@@ -954,8 +954,7 @@ class Physlr:
         num_too_small = 0
         num_missing = 0
         for i, path in enumerate(progress(Physlr.read_path(path_filenames))):
-            path = list(itertools.chain.from_iterable(\
-                [m.translate(str.maketrans({')': '', '(': ''})).split(",") for m in path]))
+            path = [x for subpath in path for x in subpath.strip("()").split(",")]
             if len(path) < self.args.min_component_size:
                 num_too_small += 1
                 continue

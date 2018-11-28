@@ -382,7 +382,7 @@ minsize=2000
 
 # Flesh out the backbone path
 %.backbone.fleshed.path: %.tsv %.backbone.path
-	$(python) bin/physlr flesh-backbone $< $*.backbone.path --min-component-size=50 > $@
+	$(python) bin/physlr flesh-backbone --min-component-size=50 $< $*.backbone.path >$@
 
 # Determine the minimum tiling graph of the backbone graph.
 %.backbone.tiling.tsv: %.backbone.tsv
