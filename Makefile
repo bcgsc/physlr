@@ -17,10 +17,10 @@ python=PYTHONPATH=. pypy3
 ref=fly
 
 # Linked reads.
-#lr=f1
+lr=f1
 
 # Draft genome assembly.
-#draft=f1.abyss
+draft=f1.supernova.scaftigs
 
 SHELL=bash -e -o pipefail
 ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
@@ -87,6 +87,10 @@ fly/fly.fa:
 fly/fly.gff:
 	mkdir -p $(@D)
 	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.gff.gz | gunzip -c >$@
+
+# Download the Supernova assembly of the linked reads from 10x Genomics.
+f1.supernova.fa:
+	curl http://cf.10xgenomics.com/samples/assembly/2.1.0/fly/fly_pseudohap.fasta.gz | gunzip -c >$@
 
 # Download the fly linked reads from 10x Genomics.
 fly/f1.tar:
