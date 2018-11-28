@@ -1038,6 +1038,8 @@ class Physlr:
             "--verbose", action="store", dest="verbose", type=int, default="0",
             help="the level of verbosity [0]")
         argparser.add_argument(
+            "--version", action="version", version="physlr 0.1.0")
+        argparser.add_argument(
             "command",
             help="A command")
         argparser.add_argument(
