@@ -58,9 +58,9 @@ f1: \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.path.fly.molecule.bed.pdf \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.label.gv.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.fly.paf.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.pdf \
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.fly.paf.pdf \
+	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 
 # Download the fly genome from NCBI.
 fly/fly.fa:
@@ -463,8 +463,8 @@ minsize=2000
 		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
 		%.n100-2000.physlr.overlap.n50.mol.backbone.label.gv.pdf \
 		%.n100-2000.physlr.overlap.n50.mol.backbone.fleshed.path.$(ref).molecule.bed.pdf \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.map.f1.abyss.n10.sort.best.bed.pdf \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.fly.paf.pdf
+		%.n100-2000.physlr.overlap.n50.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.pdf \
+		%.n100-2000.physlr.overlap.n50.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.fly.paf.pdf
 	touch $@
 
 ################################################################################
