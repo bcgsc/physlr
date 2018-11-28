@@ -13,6 +13,15 @@ gzip=pigz -p$t
 # Python interpreter.
 python=PYTHONPATH=. pypy3
 
+# Reference genome.
+ref=fly
+
+# Linked reads.
+#lr=f1
+
+# Draft genome assembly.
+#draft=f1.abyss
+
 SHELL=bash -e -o pipefail
 ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
 # Set pipefail to ensure that all commands of a pipe succeed.
