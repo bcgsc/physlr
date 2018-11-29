@@ -1,0 +1,99 @@
+---
+title: Plot and tabulate assembly metrics
+author: Shaun Jackman
+output:
+  html_document:
+    keep_md: true
+params:
+  input_tsv:
+    label: "Input TSV file of QUAST metrics"
+    value: "f1.quast.tsv"
+    input: text
+  output_tsv:
+    label: "Output table of QUAST metrics"
+    value: "f1.quast.table.tsv"
+    input: text
+---
+
+```{r setup, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+library(knitr)
+library(readr)
+library(scales)
+library(stringr)
+library(tibble)
+library(tidyr)
+
+knit_print.data.frame <- function(x, ...) kable(x) %>% paste(collapse = "\n") %>% asis_output
+input_tsv <- params$input_tsv
+output_tsv <- params$output_tsv
+
+c(input_tsv, output_tsv)
+```
+
+# Read the data
+```{r read-data, message=FALSE}
+quast_orig <- read_tsv(input_tsv)
+
+metrics <- quast_orig %>%
+	filter(!str_detect(Assembly, "_broken")) %>%
+	rename(
+		Misassemblies = `# misassemblies`,
+		Scaffold_NG50 = NG50,
+		Scaffold_NGA50 = NGA50) %>%
+	mutate(
+		Assembly = Assembly %>%
+			str_replace("abyss", "ABySS-LR") %>%
+			str_replace("supernova", "Supernova") %>%
+			str_replace("physlr", "Physlr") %>%
+			str_replace(".scaftigs", " scaftigs"),
+		Assembler = str_extract(Assembly, "(ABySS-LR|Supernova)( scaftigs)?"),
+		Scaffolder = str_extract(Assembly, "Physlr"),
+		Tools = ifelse(!is.na(Scaffolder), Scaffolder, Assembler))
+```
+
+# Plot NGA50 and Misassemblies
+```{r nga50-misassemblies, fig.width=6, fig.height=4, dpi=300}
+ggplot(metrics) +
+	aes(x = Misassemblies, y = Scaffold_NGA50, label = Tools, shape = Assembler, colour = Assembler) +
+	geom_point(colour = "black") +
+	geom_text_repel(segment.alpha = 0.5) +
+	scale_x_continuous(name = "QUAST Misassemblies", labels = comma) +
+	scale_y_continuous(name = "Scaffold NGA50", labels = unit_format(unit = "Mbp", scale = 1e-6)) +
+	scale_colour_brewer(palette = "Dark2", guide = FALSE) +
+	expand_limits(x = c(0, 500)) +
+	expand_limits(y = c(0, 1e6)) +
+	theme_minimal(base_size = 14) +
+	theme(legend.position = "bottom", legend.title = element_blank())
+```
+
+# Plot NG50 and Misassemblies
+```{r ng50-misassemblies, fig.width=6, fig.height=4, dpi=300}
+ggplot(metrics) +
+	aes(x = Misassemblies, y = Scaffold_NG50, label = Tools, shape = Assembler, colour = Assembler) +
+	geom_point(colour = "black") +
+	geom_text_repel(segment.alpha = 0.5) +
+	scale_x_continuous(name = "QUAST Misassemblies", labels = comma) +
+	scale_y_continuous(name = "Scaffold NG50", labels = unit_format(unit = "Mbp", scale = 1e-6)) +
+	scale_colour_brewer(palette = "Dark2", guide = FALSE) +
+	expand_limits(x = c(0, 500)) +
+	expand_limits(y = c(0, 25e6)) +
+	theme_minimal(base_size = 14) +
+	theme(legend.position = "bottom", legend.title = element_blank())
+```
+
+# Table of assembly metrics
+```{r metrics-table}
+metrics_table <- metrics %>%
+	transmute(
+		Assembler,
+		Scaffolder,
+		`NG50 (Mbp)` = round(Scaffold_NG50 / 1e6, 2),
+		`NGA50 (Mbp)` = round(Scaffold_NGA50 / 1e6, 2),
+		Misassemblies = comma(Misassemblies))
+
+metrics_table
+write_tsv(metrics_table, output_tsv)
+```
