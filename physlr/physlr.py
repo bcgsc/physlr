@@ -399,6 +399,7 @@ class Physlr:
                 print("(" + insertions + ")", file=sys.stdout, end=' ')
         print(backbone[len(backbone)-1], file=sys.stdout)
 
+    @staticmethod
     def isValidPair(bxs, headers):
         "Checks if read pair's headers match (sanity check), and they have associated barcodes"
         header_prefix = re.compile(r'(^\@\S+)\/[1-2]')
@@ -758,12 +759,19 @@ class Physlr:
                 neighbour_minimizers_list = [bxtomin[re.search(bx_match, v).group(1)]\
                                              for v in g.neighbors(bxmol)\
                                              if re.search(bx_match, v).group(1) in bxtomin]
+                if len(neighbour_minimizers_list) == 0:
+                    neighbour_minimizers_list = [set()]
                 neighbour_minimizers_set = set.union(*neighbour_minimizers_list)
                 molec_minimizers = set.intersection(bx_min, neighbour_minimizers_set)
                 moltomin[bxmol] = molec_minimizers
                 mol += 1
+        empty_ct = 0
         for mol in moltomin:
-            print("%s\t%s" % (mol, " ".join(map(str, moltomin[mol]))), file=sys.stdout)
+            if len(moltomin[mol]) == 0:
+                empty_ct += 1
+                print("Warning:", mol, "has no associated minimizers", file=sys.stderr)
+            else:
+                print("%s\t%s" % (mol, " ".join(map(str, moltomin[mol]))), file=sys.stdout)
 
 
     def physlr_split_reads_molecules(self):
@@ -821,6 +829,7 @@ class Physlr:
         print("Saw", read_log["num_pairs"], "read pairs, saw",
               read_log["num_valid_pairs"], "valid read pairs with associated barcodes.",
               read_log["num_noMin"], "read pairs' barcodes had no split minimizers.",
+              read_log["num_noIntMin"], "read pairs' barcodes had no intersecting minimizers",
               read_log["num_equalMin"], "read pairs had multiple molecule assignments", file=sys.stderr)
 
     @staticmethod
