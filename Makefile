@@ -491,6 +491,16 @@ minsize=2000
 	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 95 -R $(ref)/$(ref).fa -o $*.quast $<
 	cp $*.quast/transposed_report.tsv $@
 
+# Aggregate QUAST metrics.
+f1.quast.tsv: \
+		f1.abyss.scaftigs.quast.tsv \
+		f1.abyss.quast.tsv \
+		f1.supernova.scaftigs.quast.tsv \
+		f1.supernova.quast.tsv \
+		f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv \
+		f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
+
 ################################################################################
 # GraphViz
 
@@ -521,3 +531,10 @@ minsize=2000
 # Layout and render an undirected graph to PNG.
 %.gv.png: %.gv
 	neato -Goverlap=scale -Tpng -o $@ $<
+
+################################################################################
+# RMarkdown reports
+
+# Compare assembly metrics.
+%.quast.html: %.quast.tsv
+	Rscript -e 'rmarkdown::render("quast.rmd", "html_document", "$*.quast.html", params = list(input_tsv="$<", output_tsv="$*.quast.table.tsv"))'
