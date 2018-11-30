@@ -32,3 +32,5 @@
 *.tar
 *.tsv
 *.txt
+!f1.quast.tsv
+!f1.quast.table.tsv
