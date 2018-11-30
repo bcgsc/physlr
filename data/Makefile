@@ -66,9 +66,13 @@ f1: \
 	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 
 # Download the fly genome from NCBI.
-fly/fly.fa:
+fly/fly.all.fa:
 	mkdir -p $(@D)
 	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz | seqtk seq >$@
+
+# Filter out the unplaced contigs from the fly genome.
+fly/fly.fa: fly/fly.all.fa
+	paste - - <$< | grep -v NW_ | tr '\t' '\n' >$@
 
 # Download the fly annotation from NCBI.
 fly/fly.gff:
@@ -442,7 +446,7 @@ minsize=2000
 
 # Calculate assembly contiguity and correctness metrics using QUAST.
 %.quast.tsv: %.fa $(ref)/$(ref).fa $(ref)/$(ref).gff
-	quast-lg -t$t -es --fast --large --fragmented --scaffold-gap-max-size 100000 --min-identity 95 -R $(ref)/$(ref).fa -o $*.quast $<
+	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 95 -R $(ref)/$(ref).fa -o $*.quast $<
 	cp $*.quast/transposed_report.tsv $@
 
 # Aggregate QUAST metrics.
