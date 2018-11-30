@@ -98,7 +98,7 @@ f1.fq.gz: fly/f1.fq.gz
 	samtools view -h $< | awk '/^@/ || $$3 == "NC_004353.4"' | samtools view -@$t -o $@
 
 # Symlink the chromosome 4 reads.
-f1chr4.fq.gz: fly/fly.f1.chr4.sortbxn.dropse.bx100-200.fq.gz
+f1chr4.fq.gz: fly/fly.f1.chr4.sortbxn.dropse.fq.gz
 	ln -sf $< $@
 
 # Extract the reads that map to chromosome 2R.
@@ -106,65 +106,12 @@ f1chr4.fq.gz: fly/fly.f1.chr4.sortbxn.dropse.bx100-200.fq.gz
 	samtools view -h $< | awk '/^@/ || $$3 == "NT_033778.4"' | samtools view -@$t -o $@
 
 # Symlink the chromosome 2R reads.
-f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx100-200.fq.gz
+f1chr2R.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.fq.gz
 	ln -sf $< $@
 
 # Symlink the subsampled chromosome 2R reads.
 f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 	ln -sf $< $@
-
-################################################################################
-# Filter reads
-
-# Count the number of reads per barcode.
-%.bx.tsv: %.fq.gz
-	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
-	| mlr -p --otsvlite rename 1,BX then count-distinct -f BX -o Reads then sort -nr Reads >$@
-
-# Determine a set of barcodes containing on-target molecules.
-%.bx100-200.txt: %.fq.gz
-	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
-	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 100 && $$count < 200' then cut -f BX then sort -f BX >$@
-
-# Separate a set of on-target reads.
-%.bx100-200.fq.gz: %.fq.gz %.bx100-200.txt
-	gunzip -c $< | paste - - - - | grep -Ff $*.bx100-200.txt | tr '\t' '\n' | $(gzip) >$@
-
-# Determine a set of barcodes containing on-target molecules.
-%.bx200-300.txt: %.fq.gz
-	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
-	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 200 && $$count < 300' then cut -f BX then sort -f BX >$@
-
-# Separate a set of on-target reads.
-%.bx200-300.fq.gz: %.fq.gz %.bx200-300.txt
-	gunzip -c $< | paste - - - - | grep -Ff $*.bx200-300.txt | tr '\t' '\n' | $(gzip) >$@
-
-# Determine a set of barcodes containing on-target molecules.
-%.bx300-400.txt: %.fq.gz
-	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
-	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 300 && $$count < 400' then cut -f BX then sort -f BX >$@
-
-# Separate a set of on-target reads.
-%.bx300-400.fq.gz: %.fq.gz %.bx300-400.txt
-	gunzip -c $< | paste - - - - | grep -Ff $*.bx300-400.txt | tr '\t' '\n' | $(gzip) >$@
-
-# Determine a set of barcodes containing on-target molecules.
-%.bx400-500.txt: %.fq.gz
-	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
-	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 400 && $$count < 500' then cut -f BX then sort -f BX >$@
-
-# Separate a set of on-target reads.
-%.bx400-500.fq.gz: %.fq.gz %.bx400-500.txt
-	gunzip -c $< | paste - - - - | grep -Ff $*.bx400-500.txt | tr '\t' '\n' | $(gzip) >$@
-
-# Determine a set of barcodes containing on-target molecules.
-%.bx100-500.txt: %.fq.gz
-	gunzip -c $< | sed -n 's/^.*BX:Z://p' \
-	| mlr -p rename 1,BX then count-distinct -f BX then filter '$$count >= 100 && $$count < 500' then cut -f BX then sort -f BX >$@
-
-# Separate a set of on-target reads.
-%.bx100-500.fq.gz: %.fq.gz %.bx100-500.txt
-	gunzip -c $< | paste - - - - | grep -Ff $*.bx100-500.txt | tr '\t' '\n' | $(gzip) >$@
 
 ################################################################################
 # Trimadap
@@ -355,6 +302,10 @@ minsize=2000
 	$(python) $(bin)/physlr intersect $< >$@
 
 # Filter barcodes by number of markers.
+%.n100-1000.physlr.tsv: %.physlr.tsv
+	$(python) $(bin)/physlr filter-barcodes -n100 -N1000 $< >$@
+
+# Filter barcodes by number of markers.
 %.n100-2000.physlr.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr filter-barcodes -n100 -N2000 $< >$@
 
@@ -471,12 +422,12 @@ minsize=2000
 
 # Assemble a physical map.
 %.physlr.stamp: \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.label.gv.pdf \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.fleshed.path.$(ref).molecule.bed.pdf \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.pdf \
-		%.n100-2000.physlr.overlap.n50.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.fly.paf.pdf
+		%.n100-1000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
+		%.n100-1000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
+		%.n100-1000.physlr.overlap.n50.mol.backbone.label.gv.pdf \
+		%.n100-1000.physlr.overlap.n50.mol.backbone.fleshed.path.$(ref).molecule.bed.pdf \
+		%.n100-1000.physlr.overlap.n50.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.pdf \
+		%.n100-1000.physlr.overlap.n50.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.fly.paf.pdf
 	touch $@
 
 ################################################################################
