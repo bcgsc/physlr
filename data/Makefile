@@ -37,13 +37,7 @@ endif
 .DELETE_ON_ERROR:
 .SECONDARY:
 
-all: lint
-
-# Check the source code for errors with Pylint.
-lint:
-	pylint physlr
-
-check: f1
+all: f1chr4 f1chr2R f1
 
 ################################################################################
 # Fly
