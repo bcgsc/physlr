@@ -1,0 +1,7 @@
+Assembler	Scaffolder	NG50 (Mbp)	NGA50 (Mbp)	Misassemblies
+ABySS-LR scaftigs	NA	0.01	0.01	115
+ABySS-LR	NA	0.29	0.17	245
+Supernova scaftigs	NA	0.14	0.11	411
+Supernova	NA	20.71	0.84	499
+ABySS-LR	Physlr	13.44	0.28	249
+Supernova scaftigs	Physlr	15.65	0.39	257
