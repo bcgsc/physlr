@@ -87,7 +87,7 @@ fly/f1.fq.gz: fly/f1.tar
 	tar --wildcards -Oxf fly/f1.tar 'fly/H3C7LDMXX/read-RA*.fastq.gz' >$@
 
 # Symlink the fly reads.
-f1.fq.gz: fly/f1.fq.gz
+f1.fq.gz: fly/f1.bx.trimadap.fq.gz
 	ln -s $< $@
 
 # Download the fly linked reads from 10x Genomics.
