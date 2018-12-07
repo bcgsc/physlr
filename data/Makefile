@@ -339,7 +339,7 @@ minsize=2000
 
 # Split the minimizers to molecules
 %.overlap.n$(n).mol.split.tsv: %.overlap.n$(n).mol.tsv %.tsv
-	$(python) $(bin)/physlr split-minimizers $< $(lr).n100-2000.physlr.tsv >$@
+	$(python) $(bin)/physlr split-minimizers -t$t $< $(lr).n100-2000.physlr.tsv >$@
 
 # Split the reads into molecules
 $(lr).n100-2000.overlap.n$(n).split.fq.gz: $(lr).fq.gz $(lr).n100-2000.physlr.overlap.n$(n).mol.split.tsv $(lr).physlr.tsv

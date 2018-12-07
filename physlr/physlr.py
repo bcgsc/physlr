@@ -738,29 +738,53 @@ class Physlr:
                 if len(component) >= 4)
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
+    @staticmethod
+    def split_minimizers_bx(bx, g, bxtomin):
+        "Partition the minimizers of the given barcode"
+        bx_match = re.compile(r'^(\S+)_\d+$')
+        bx_min = bxtomin[bx]
+        mol = 0
+        mol_list = []
+        while g.has_node(bx + "_" + str(mol)):
+            bxmol = bx + "_" + str(mol)
+            neighbour_minimizers_list = [bxtomin[re.search(bx_match, v).group(1)] \
+                                         for v in g.neighbors(bxmol) \
+                                         if re.search(bx_match, v).group(1) in bxtomin]
+            if not neighbour_minimizers_list:
+                neighbour_minimizers_list = [set()]
+            neighbour_minimizers_set = set.union(*neighbour_minimizers_list)
+            molec_minimizers = set.intersection(bx_min, neighbour_minimizers_set)
+            mol_list.append((bxmol, molec_minimizers))
+            mol += 1
+        return mol_list
+
+    @staticmethod
+    def split_minimizers_bx_process(bx):
+        """
+        Partition the minimizers of this barcode.
+        The Graph and bx->min dictionary are passed as class variables.
+        """
+        return Physlr.split_minimizers_bx(bx, Physlr.graph, Physlr.bxtomin)
+
     def physlr_split_minimizers(self):
         "Given the molecule overlap graph, split the minimizers into molecules"
         if len(self.args.FILES) < 2:
             exit("physlr split-minimizers: error: graph file and bx to minimizer inputs required")
         g = self.read_graph([self.args.FILES[0]])
         bxtomin = self.read_minimizers([self.args.FILES[1]])
-        moltomin = {}
-        bx_match = re.compile(r'^(\S+)_\d+$')
 
-        for bx in bxtomin:
-            bx_min = bxtomin[bx]
-            mol = 0
-            while g.has_node(bx + "_" + str(mol)):
-                bxmol = bx + "_" + str(mol)
-                neighbour_minimizers_list = [bxtomin[re.search(bx_match, v).group(1)]\
-                                             for v in g.neighbors(bxmol)\
-                                             if re.search(bx_match, v).group(1) in bxtomin]
-                if not neighbour_minimizers_list:
-                    neighbour_minimizers_list = [set()]
-                neighbour_minimizers_set = set.union(*neighbour_minimizers_list)
-                molec_minimizers = set.intersection(bx_min, neighbour_minimizers_set)
-                moltomin[bxmol] = molec_minimizers
-                mol += 1
+        if self.args.threads == 1:
+            moltomin = [self.split_minimizers_bx(bx, g, bxtomin) for bx in progress(bxtomin)]
+            moltomin = dict(x for l in moltomin for x in l)
+
+        else:
+            Physlr.graph = g
+            Physlr.bxtomin = bxtomin
+            with multiprocessing.Pool(self.args.threads) as pool:
+                moltomin = dict(x for l in pool.map(self.split_minimizers_bx_process, progress(bxtomin), chunksize=100) for x in l)
+            Physlr.graph = None
+            Physlr.bxtomin = None
+
         empty_ct = 0
         for mol in moltomin:
             if not moltomin[mol]:
@@ -777,7 +801,6 @@ class Physlr:
             bx minimizers, reads inputs required")
         moltomin = self.read_minimizers_molecule([self.args.FILES[0]])
         bxtomin = self.args.FILES[1]
-        (bxs, headers, seqs, ors, quals) = ([], [], [], [], [])
         read_log = Counter(num_pairs=0, num_valid_pairs=0,
                            num_noMin=0, num_equalMin=0, num_noIntMin=0)
 
