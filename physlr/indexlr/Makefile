@@ -1,8 +1,7 @@
-SOURCES = $(wildcard *.cpp)
+SOURCES = $(wildcard *.cc)
 HEADERS = $(wildcard *.h)
 
-OBJECTS = $(patsubst &.cpp,%.o,$(SOURCES))
-PRODUCT = minimizereads
+OBJECTS = $(patsubst &.cc,%.o,$(SOURCES))
 
 CC = c++
 CFLAGS = -std=c++0x -Wall -m64
@@ -21,16 +20,16 @@ $(shell echo release >.buildmode)
 endif
 endif
 
-all: $(PRODUCT)
+all: physlr-indexlr
 
 %.o: %.cpp $(HEADERS) .buildmode
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
 
-$(PRODUCT): $(OBJECTS) .buildmode
+physlr-indexlr: $(OBJECTS) .buildmode
 	$(CC) $(OBJECTS) $(CFLAGS) $(LDFLAGS) $(EXTRA_CFLAGS) -o $@
 
 
 clean:
-	$(RM) $(PRODUCT) *.o .buildmode
+	$(RM) physlr-indexlr *.o .buildmode
 
 .PHONY: all clean

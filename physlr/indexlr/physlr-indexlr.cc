@@ -1,6 +1,6 @@
-/* Convert linked-reads to minimizers using ntHash.
-   Usage: ./minimizereads -k 100 -w 5 [-i <FASTQ file>] [-v] >outfile
-   Output: Each line of output is a barcode followed by the list of minimzers.
+/* Convert linked-reads to minimizers using ntHash-2.0.0
+   usage:  physlr-indexlr -k K -w W [-v] file...
+   Output: Each line of output is a barcode followed by a list of minimzers.
 */
 
 #include <cassert>
@@ -27,50 +27,84 @@ set<uint64_t> getMinimizers(vector<uint64_t> hashes, size_t w);
 void printRead(string &barcode, string &readstr);
 void printMinimizedRead(string barcode, set<uint64_t> &minSet);
 void minimizeReads(std::istream*, size_t k, size_t w, bool verbose);
-void printUsage(char *argv_0);
+void printUsage(string);
+void printErrorMsg(string, string);
 // --------------------------------------------------------------------
 
 int main(int argc, char *argv[]) {
-	ifstream ifs;
-	istream *is = &std::cin;
-	int c;
-	size_t k = 0, w = 0;
+	string progname = "physlr-indexlr";
+	int c, help, optindex;
+	unsigned k, w;
 	string path;
-	bool verbose = false;
-	while((c = getopt(argc, argv, "k:w:i:v")) != -1) {
+	vector<string> infile;
+	bool verbose, abort, w_set, k_set;
+	k = w = 0;
+	verbose = abort = w_set = k_set = false;
+	optindex = help = 0;
+	struct option longopts[]= {
+				   {"help", no_argument, &help, 1},
+				   {0, 0, 0, 0}
+	};
+	while((c = getopt_long(argc, argv, "k:w:v",
+			       longopts, &optindex))!= -1) {
 		switch (c) {
+		case 0:
+			break;
 		case 'k':
+			k_set = true;
 			k = atoi(optarg);
 			break;
 		case 'w':
+			w_set = true;
 			w = atoi(optarg);
-			break;
-		case 'i':
-			path = string(optarg);
 			break;
 		case 'v':
 			verbose = true;
 			break;
 		default:
-			printUsage(argv[0]);
 			return EXIT_FAILURE;
 		}
 	}
-	// Switch input stream to a file
-	if (!path.empty()) {
-		ifs.open(path);
-		if (!ifs.is_open()) {
-			cerr << "ERROR: Failed to open: " << path << "\n";
-			return EXIT_FAILURE;
-		}
-		is = &ifs;
+	for (int i = optind; i < argc; ++i)
+		infile.push_back(argv[i]);
+	if (argc == 1 || help) {
+		printUsage(progname);
+		abort = true;
 	}
-	if (k == 0 || w == 0) {
-		cerr << "ERROR: Missing option\n";
-		printUsage(argv[0]);
+	else if (!k_set) {
+		printErrorMsg(progname, "missing option -- 'k'");
+		abort = true;
+	}
+	else if (!w_set) {
+		printErrorMsg(progname, "missing option -- 'w'");
+		abort = true;
+	}
+	else if (k == 0) {
+		printErrorMsg(progname,
+				"option has incorrect argument -- 'k'");
+		abort = true;
+	}
+	else if (w == 0) {
+		printErrorMsg(progname,
+				"option has incorrect argument -- 'w'");
+		abort = true;
+	}
+	else if (infile.empty()) {
+		printErrorMsg(progname, "missing file operand");
+		abort = true;
+	}
+	if (abort)
 		return EXIT_FAILURE;
+	for (unsigned i = 0; i < infile.size(); ++i) {
+		ifstream ifs;
+		ifs.open(infile[i]);
+		if (!ifs.is_open()) {
+			cerr << "ERROR: Failed to open: " << infile[i] << "\n";
+			continue;
+		}
+		minimizeReads(&ifs, k, w, verbose);
+		ifs.close();
 	}
-	minimizeReads(is, k, w, verbose);
 	return EXIT_SUCCESS;
 }
 
@@ -192,11 +226,18 @@ void printMinimizedRead(string barcode, set<uint64_t> &minSet) {
 	cout << '\n';
 }
 
-void printUsage(char *argv_0) {
-	cout << "Usage:  " << argv_0;
-	cout << " -w <window> -k <kmer> [-i <file>] [-v]\n";
-	cout << "\t <window> = Size of sliding window\n";
-	cout << "\t <kmer>   = k-mer length\n";
-	cout << "\t <file>   = Input FASTQ file\n";
+void printUsage(string progname) {
+	cout << "usage:  " << progname;
+	cout << " -k K -w W [-v] file...\n\n";
+	cout << " -k K     use K as k-mer size\n";
+	cout << " -w W     use W as sliding-window size\n";
+	cout << " -v       enable verbose output\n";
+	cout << " file     space separated list of FASTQ files\n";
+	cout << " --help   display this help and exit\n";
 }
-/* -------------------------------------------------------------------- */
+
+void printErrorMsg(string progname, string msg) {
+	cerr << progname << ": " << msg << "\n";
+	cerr << "Try 'physlr-indexlr --help' for more information.\n";
+}
+
