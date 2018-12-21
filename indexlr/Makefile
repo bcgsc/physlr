@@ -1,4 +1,4 @@
-CXXFLAGS=-g -O3 -Wall -Werror
+CXXFLAGS=-g -O3 -Wall -Werror -std=c++11
 
 all: physlr-indexlr
 
