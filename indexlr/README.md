@@ -1,13 +1,12 @@
     Compile
         Release: make
-        Debug: make DEBUG=1
 
     Usage
-	    minimizereads -k K -w W [-v] file...
+	    ./physlr-indexlr -k K -w W [-v] file...
 
     Run
-        ./minimizereads -k 100 -w 5 data/tiny.fq >out
+        ./physlr-indexlr -k100 -w5 data/tiny.fq >out
 
     Output
-	    Each line of output is a barcode followed by a list of minimizers.
-            <barcode>\t<minimizer1> <minimizer2> ... <minimizerN>
+	    Each line of output is a barcode followed by a tab, and then a list of space-separated minimizers.
+        <barcode>\t<minimizer1> <minimizer2> ... <minimizerN>
