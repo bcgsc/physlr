@@ -801,6 +801,8 @@ class Physlr:
         Map sequences to a physical map.
         Usage: physlr map TGRAPH.tsv TMARKERS.tsv QMARKERS.tsv... >MAP.bed
         """
+        import physlr.mkt
+        import numpy
 
         if len(self.args.FILES) < 3:
             exit("physlr map: error: at least three file arguments are required")
@@ -817,6 +819,10 @@ class Physlr:
         backbones = Physlr.determine_backbones(g)
         markertopos = Physlr.index_markers_in_backbones(backbones, bxtomin)
 
+        #debug file handle
+        debugPosFH = open("physlr_map_pos.txt", "w")
+        debugMapFH = open("physlr_map_debug.txt", "w")
+
         # Map the query sequences to the physical map.
         num_mapped = 0
         for qid, markers in progress(query_markers.items()):
@@ -825,23 +831,68 @@ class Physlr:
             for qpos, marker in enumerate(markers):
                 for tidpos in markertopos.get(marker, ()):
                     tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
-            for tidpos, qpos in tidpos_to_qpos.items():
-                tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
+#             for tidpos, qpos in tidpos_to_qpos.items():
+#                 tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
 
             # Count the number of markers mapped to each target position.
             tidpos_to_n = Counter(pos for marker in markers for pos in markertopos.get(marker, ()))
 
+            #calculate orientation
+            #tid->tpos->qpos_list
+            tid_to_qpos = {}
+            for (tid, tpos), score in tidpos_to_n.items():
+                if score >= self.args.n:
+                    if tid in tid_to_qpos:
+                        tid_to_qpos[tid][tpos] = tidpos_to_qpos[(tid, tpos)]
+                    else:
+                        tid_to_qpos[tid] = {}
+                        tid_to_qpos[tid][tpos] = tidpos_to_qpos[(tid, tpos)]
+                
+            tid_to_mkt = {}
+
+            for tid in tid_to_qpos.keys():
+                if len(tid_to_qpos[tid]) > 1:
+                    #build array of the time points of measurements
+                    #build array containing the measurements corresponding to entries of time
+                    timepoints = []
+                    measurements = []
+                    for tpos in tid_to_qpos[tid].keys():
+                        #do not use islands
+                        if (tpos + 1) in tid_to_qpos[tid] or (tpos - 1) in tid_to_qpos[tid]:
+                            for qpos in tid_to_qpos[tid][tpos]:
+                                print(qid, qpos, tid, tpos, sep="\t", file=debugPosFH)
+                                timepoints.append(tpos)
+                                measurements.append(qpos)
+                    if len(timepoints) > 0:
+                        tid_to_mkt[tid] = physlr.mkt.test(numpy.array(timepoints), numpy.array(measurements), 1, 0.01, "upordown")
+            
+            
             mapped = False
             for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
-                    mapped = True
-                    orientation = Physlr.determine_orientation(
-                        tidpos_to_qpos.get((tid, tpos - 1), None),
-                        tidpos_to_qpos.get((tid, tpos + 0), None),
-                        tidpos_to_qpos.get((tid, tpos + 1), None))
-                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
+                    if tid in tid_to_mkt:
+                        #MK: string of test result
+                        #m: slope
+                        #c: intecept
+                        #p: significance
+                        (MK, m, c, p) = tid_to_mkt[tid]
+                        mapped = True
+                        #TODO make into parameter
+                        if p < 0.01 and m != 0:
+                            if m > 0:
+                                orientation = "+"
+                            else:
+                                orientation = "-"
+                        else:
+                            orientation = "."
+                        print(tid, tpos, tpos + 1, qid, score, orientation, statistics.median_low(tidpos_to_qpos[(tid, tpos)]), MK, m, c, p, sep="\t", file = debugMapFH)
+                    else:
+                        orientation = "."
+                    print(tid, tpos, tpos + 1, qid, score, orientation, sep ="\t")
             if mapped:
                 num_mapped += 1
+        debugPosFH.close()
+        debugMapFH.close()
         print(
             int(timeit.default_timer() - t0),
             "Mapped", num_mapped, "sequences of", len(query_markers),
