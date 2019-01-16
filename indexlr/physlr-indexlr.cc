@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
@@ -97,7 +98,7 @@ static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, 
 
 static inline void assert_good(const std::ios& stream) {
 	if (!stream.good()) {
-		std::cerr << "physlr-indexlr: error: " << strerror(errno) << '\n';
+		std::cerr << "physlr-indexlr: error: " << std::strerror(errno) << '\n';
 		exit(EXIT_FAILURE);
 	}
 }
