@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     std::string progname = "physlr-indexlr";
     int      c;
     int      optindex = 0;
-    int      help     = 0;
+    static int help   = 0;
     unsigned k        = 0;
     unsigned w        = 0;
     bool     verbose  = false;
