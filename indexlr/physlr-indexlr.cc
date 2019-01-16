@@ -29,7 +29,7 @@ static bool startsWith(const std::string& s, const char (&prefix)[N]) {
 static std::vector<uint64_t> hashKmers(const std::string &readstr, const size_t k) {
     std::vector<uint64_t> hashes;
     hashes.reserve(readstr.size() - k + 1);
-    for (ntHashIterator iter(readstr, 1, k); iter != iter.end(); ++iter) {
+    for (ntHashIterator iter(readstr, 1, k); iter != ntHashIterator::end(); ++iter) {
         hashes.push_back((*iter)[0]);
     }
     return hashes;
@@ -80,10 +80,12 @@ static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, 
     auto minIt   = hashes.end();
     for (auto leftIt = firstIt; leftIt < hashes.end() - w + 1; ++leftIt) {
         auto rightIt = leftIt + w;
-        if (i < leftIt - firstIt)
+        if (i < leftIt - firstIt) {
             minIt = std::min_element(leftIt, rightIt, less_or_equal);
-        else if (*(rightIt - 1) <= *minIt)
+        }
+        else if (*(rightIt - 1) <= *minIt) {
             minIt = rightIt - 1;
+        }
         i = minIt - firstIt;
         if (i > prev) {
             prev = i;
@@ -122,8 +124,9 @@ static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool
     while (true) {
         std::string id, barcode, sequence;
         is >> id >> std::ws;
-        if (is.eof())
+        if (is.eof()) {
             break;
+        }
         if (!getline(is, barcode)) {
             std::cerr << "physlr-indexlr: error: failed to read header on line " << nline + 1 << '\n';
             exit(EXIT_FAILURE);
@@ -196,7 +199,7 @@ int main(int argc, char *argv[]) {
     bool     w_set    = false;
     bool     k_set    = false;
     char     *end;
-    static const struct option longopts[] = {{"help", no_argument, &help, 1}, {0, 0, 0, 0}};
+    static const struct option longopts[] = {{"help", no_argument, &help, 1}, {nullptr, 0, nullptr, 0}};
     while ((c = getopt_long(argc, argv, "k:w:v", longopts, &optindex)) != -1) {
         switch (c) {
         case 0:
@@ -240,8 +243,9 @@ int main(int argc, char *argv[]) {
         printErrorMsg(progname, "missing file operand");
         failed = true;
     }
-    if (failed)
+    if (failed) {
         exit(EXIT_FAILURE);
+    }
     for (auto &f : infile) {
         std::ifstream ifs(f);
         if (!ifs) {
