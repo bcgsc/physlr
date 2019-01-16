@@ -15,3 +15,5 @@ jobs:
     displayName: Run pylint
   - script: pip3 install .
     displayName: Run pip
+  - script: clang-tidy -warnings-as-errors='*' indexlr/*.cc
+    displayName: Run clang-tidy
