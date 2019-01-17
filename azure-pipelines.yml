@@ -3,7 +3,7 @@
 jobs:
 - job: Test
   pool:
-    vmImage: Ubuntu 18.04
+    vmImage: Ubuntu 16.04
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -15,5 +15,7 @@ jobs:
     displayName: Run pylint
   - script: pip3 install .
     displayName: Run pip
+  - script: apt-get install clang-tidy-4.0
+    displayName: Install clang-tidy
   - script: clang-tidy -warnings-as-errors='*' indexlr/*.cc
     displayName: Run clang-tidy
