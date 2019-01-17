@@ -15,7 +15,4 @@ jobs:
     displayName: Run pylint
   - script: pip3 install .
     displayName: Run pip
-  - script: sudo apt-get install clang-tidy-4.0
-    displayName: Install clang-tidy-4.0
-  - script: clang-tidy-4.0 -warnings-as-errors='*' indexlr/*.cc
-    displayName: Run clang-tidy
+ 
