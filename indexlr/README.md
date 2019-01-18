@@ -5,8 +5,14 @@
 make
 ```
 ### Usage
-```sh
-./physlr-indexlr -k K -w W [-v] file...
+```
+physlr-indexlr  -k K -w W [-v] file...
+
+  -k K     use K as k-mer size
+  -w W     use W as sliding-window size
+  -v       enable verbose output
+  --help   display this help and exit
+  file     space separated list of FASTQ files
 ```
 ### Run
 ```sh
