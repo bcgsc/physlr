@@ -20,7 +20,6 @@
 #include "nthash.h"
 
 // Return true if the second string is a prefix of the string s.
-// NOTE: This snippet was copied over from abyss-dev/Common/StringUtil.h
 template <size_t N>
 static bool startsWith(const std::string& s, const char (&prefix)[N])
 {
@@ -39,8 +38,8 @@ static std::vector<uint64_t> hashKmers(const std::string &readstr, const size_t 
     return hashes;
 }
 
-/*
-Algorithm to find minimizers from a vector of hash values:
+// Minimerize a sequence: Find the minimizers of a vector of hash values representing a sequence.
+/* Algorithm
 v is a vector of non-negative integers
 w is the window size
 Invariants
@@ -69,9 +68,7 @@ for each window of v bounded by [l, r]
     }
     l = l + 1        Move window's left bound by one element
     r = l + w - 1    Set window's right bound
-}
-*/
-// Find the minimizers of a vector of hash values using a sliding-window of size 'w'.
+}*/
 static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, const unsigned w)
 {
     std::vector<uint64_t> minimizers;
@@ -82,7 +79,7 @@ static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, 
     for (auto leftIt = firstIt; leftIt < hashes.end() - w + 1; ++leftIt) {
         auto rightIt = leftIt + w;
         if (i < leftIt - firstIt) {
-            // Use of operator '<=' returns the minimum furthest from left.
+            // Use of operator '<=' returns the minimum that is furthest from left.
             minIt = std::min_element(leftIt, rightIt, std::less_equal<uint64_t>());
         }
         else if (*(rightIt - 1) <= *minIt) {
@@ -98,7 +95,6 @@ static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, 
 }
 
 // Test the condition of a I/O stream.
-// NOTE: This snippet was copied over from abyss-dev/Common/IOUtil.h
 static inline void assert_good(const std::ios& stream, const std::string& path)
 {
 	if (!stream.good()) {
@@ -145,7 +141,7 @@ static void minimizeReads(std::istream& is, const std::string &path, const size_
         }
         is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        // At this point four lines have been read, that is, one read and its associated information.
+        // At this point four lines have been read; equivalent to one read and its associated information.
         nline += 4;
         nread += 1;
         if (!startsWith(barcode, "BX:Z:")) {
@@ -174,7 +170,6 @@ static void minimizeReads(std::istream& is, const std::string &path, const size_
             }
             continue;
         }
-        // Minimerize the read, that is, pick the minimum hash values from the vector of hashes.
         printMinimizedRead(barcode, getMinimizers(hashes, w));
     }
 }
