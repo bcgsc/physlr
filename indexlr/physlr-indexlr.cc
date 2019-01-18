@@ -1,4 +1,4 @@
-// Convert linked-reads to minimizers using ntHash-2.0.0
+// Convert linked-reads to minimizers using ntHash-2.0.0.
 // Usage:  physlr-indexlr -k K -w W [-v] file...
 // Output: Each line of output is a barcode followed by a list of minimzers.
 
@@ -26,7 +26,7 @@ static bool startsWith(const std::string& s, const char (&prefix)[N]) {
 	return s.size() > n && equal(s.begin(), s.begin() + n, prefix);
 }
 
-// Hash the k-mers of a read using ntHash
+// Hash the k-mers of a read using ntHash.
 static std::vector<uint64_t> hashKmers(const std::string &readstr, const size_t k) {
     std::vector<uint64_t> hashes;
     hashes.reserve(readstr.size() - k + 1);
@@ -50,25 +50,25 @@ Invariants
     0 <  w <= v.size() - 1
     0 <= l <= r <= v.size() - 1
 Initial conditions
-    M = NIL       Final set of minimizers
-    i = -1        Index of minimum element
-    m = -1        Minimum element
-    prev = -1     Index of previous minimum element
-    l = 0         Index of left of window 
-    r = l + w - 1 Index of right end of window
+    M    = NIL       Final set of minimizers, empty initially
+    min  = -1        Minimum element
+    i    = -1        Index of minimum element
+    prev = -1        Index of previous minimum element
+    l    = 0         Index of left end of window 
+    r    = l + w - 1 Index of right end of window
 Computation
 for each window of v bounded by [l, r]
     if (i < l)
         i = index of minimum element in [l, r], furthest from l.
     else if (v[r] <= v[i])
         i = r
-    minval = v[i]
+    min = v[i]
     if (i != prev) {
         prev = i
-        add minval to minimizers
+        M <- M + m
     }
-    l = l + 1     Shift window right, by updating its left and right bounds
-    r = l + w - 1
+    l = l + 1        Move window's left bound by one element
+    r = l + w - 1    Set window's right bound
 }
 */
 // Find the minimizers of a vector of hash values using a sliding-window of size 'w'.
@@ -96,6 +96,7 @@ static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, 
     return minimizers;
 }
 
+// Test the condition of a I/O stream.
 static inline void assert_good(const std::ios& stream) {
 	if (!stream.good()) {
 		std::cerr << "physlr-indexlr: error: " << std::strerror(errno) << '\n';
@@ -103,7 +104,7 @@ static inline void assert_good(const std::ios& stream) {
 	}
 }
 
-// Print the barcode and minimzers of a read
+// Print the barcode and minimzers of a read.
 static void printMinimizedRead(const std::string &barcode, const std::vector<uint64_t> &minimizers) {
     std::cout << barcode;
     char sep = '\t';
@@ -117,6 +118,7 @@ static void printMinimizedRead(const std::string &barcode, const std::vector<uin
 
 // Read a FASTQ file and reduce each read to a set of minimizers
 static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool verbose) {
+    // Check if input file is empty.
     if (is.peek() == std::ifstream::traits_type::eof()) {
             std::cerr << "physlr-indexlr: error: empty input file\n";
             exit(EXIT_FAILURE);
@@ -138,6 +140,7 @@ static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool
         }
         is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        // At this point four lines have been read, that is, one read and its associated information.
         nline += 4;
         nread += 1;
         if (!startsWith(barcode, "BX:Z:")) {
@@ -156,9 +159,8 @@ static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool
             continue;
         }
         // Hash the kmers.
-        // NOTE: The predicate P(#kmers != #hashes) will be true when
-        // reads contains Ns, so check with the number of hashes ntHash
-        // gives after hashing a read. ntHash takes care to skip Ns.
+        // NOTE: The predicate P(#kmers != #hashes) will be true when reads contains Ns, so check with the number
+        // of hashes ntHash returns after hashing a read. ntHash takes care to skip Ns.
         std::vector<uint64_t> hashes = hashKmers(sequence, k);
         if (w > hashes.size()) {
             if (verbose) {
@@ -168,7 +170,7 @@ static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool
             }
             continue;
         }
-        // Minimerize.
+        // Minimerize the read, that is, pick the minimizers from the vector of hashes.
         std::vector<uint64_t> minimizers = getMinimizers(hashes, w);
         printMinimizedRead(barcode, minimizers);
     }
