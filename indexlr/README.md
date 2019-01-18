@@ -1,3 +1,4 @@
+
 # physlr-indexlr
 
 ### Compile
@@ -14,12 +15,16 @@ physlr-indexlr  -k K -w W [-v] file...
   --help   display this help and exit
   file     space separated list of FASTQ files
 ```
-### Run
+### Example
 ```sh
-./physlr-indexlr -k100 -w5 data/tiny.fq >out
+./physlr-indexlr -k100 -w5 data/tiny.fq >data/tiny.physlr.tsv
 ```
 ### Output
 Each line of output is a barcode followed by a tab, and then a list of space-separated minimizers.
 ```
-barcode   minimizers...
+barcode	minimizers...
+```
+### Test
+```sh
+make check
 ```

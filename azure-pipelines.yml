@@ -17,4 +17,5 @@ jobs:
     displayName: Run pip
   - script: make -C indexlr
     displayName: Build physlr-indexlr
- 
+  - script: make -C indexlr check
+    displayName: Test physlr-indexlr

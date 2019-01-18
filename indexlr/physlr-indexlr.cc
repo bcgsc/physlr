@@ -54,7 +54,7 @@ Initial conditions
     min  = -1        Minimum element
     i    = -1        Index of minimum element
     prev = -1        Index of previous minimum element
-    l    = 0         Index of left end of window 
+    l    = 0         Index of left end of window
     r    = l + w - 1 Index of right end of window
 Computation
 At each window, if the previous minimum is out of scope, find the new, right-most, minimum
