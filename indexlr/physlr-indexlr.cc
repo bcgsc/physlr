@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <getopt.h>
 #include <iostream>
 #include <limits>
@@ -23,7 +24,7 @@
 template <size_t N>
 static bool startsWith(const std::string& s, const char (&prefix)[N])
 {
-	size_t n = N - 1;
+	auto n = N - 1;
 	return s.size() > n && equal(s.begin(), s.begin() + n, prefix);
 }
 
@@ -37,12 +38,6 @@ static std::vector<uint64_t> hashKmers(const std::string &readstr, const size_t 
     }
     return hashes;
 }
-
-// Function object implements '<=' comparison; passed to std::min_element().
-template<typename T>
-struct Less_or_equal {
-    bool operator()(const T& a, const T& b) const { return a <= b; }
-};
 
 /*
 Algorithm to find minimizers from a vector of hash values:
@@ -79,7 +74,6 @@ for each window of v bounded by [l, r]
 // Find the minimizers of a vector of hash values using a sliding-window of size 'w'.
 static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, const unsigned w)
 {
-    Less_or_equal<uint64_t> less_or_equal;
     std::vector<uint64_t> minimizers;
     minimizers.reserve(hashes.size() / w);
     int i = -1, prev = -1;
@@ -88,8 +82,8 @@ static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, 
     for (auto leftIt = firstIt; leftIt < hashes.end() - w + 1; ++leftIt) {
         auto rightIt = leftIt + w;
         if (i < leftIt - firstIt) {
-            // Use of the comparison operator '<=' returns the right-most minimum.
-            minIt = std::min_element(leftIt, rightIt, less_or_equal);
+            // Use of operator '<=' returns the minimum furthest from left.
+            minIt = std::min_element(leftIt, rightIt, std::less_equal<uint64_t>());
         }
         else if (*(rightIt - 1) <= *minIt) {
             minIt = rightIt - 1;
@@ -123,7 +117,7 @@ static void printMinimizedRead(const std::string &barcode, const std::vector<uin
         sep = ' ';
     }
     std::cout << '\n';
-    assert_good(std::cout, "");
+    assert_good(std::cout, "/dev/stdout");
 }
 
 // Read a FASTQ file and reduce each read to a set of minimizers
@@ -172,18 +166,16 @@ static void minimizeReads(std::istream& is, const std::string &path, const size_
         // Hash the kmers.
         // NOTE: The predicate P(#kmers != #hashes) will be true when reads contains Ns, so check with the number
         // of hashes ntHash returns after hashing a read. ntHash takes care to skip Ns.
-        std::vector<uint64_t> hashes = hashKmers(sequence, k);
+        auto hashes = hashKmers(sequence, k);
         if (w > hashes.size()) {
             if (verbose) {
                 std::cerr << "physlr-indexlr: warning: Skip read " << nread << " on line " << nline - 2
-                          << "; window size > #hashes (w = " << w << ", #hashes = " << hashes.size()
-                          << ")\n";
+                          << "; window size > #hashes (w = " << w << ", #hashes = " << hashes.size() << ")\n";
             }
             continue;
         }
         // Minimerize the read, that is, pick the minimum hash values from the vector of hashes.
-        std::vector<uint64_t> minimizers = getMinimizers(hashes, w);
-        printMinimizedRead(barcode, minimizers);
+        printMinimizedRead(barcode, getMinimizers(hashes, w));
     }
 }
 
@@ -205,7 +197,7 @@ static void printUsage(const std::string &progname)
 
 int main(int argc, char *argv[])
 {
-    std::string progname = "physlr-indexlr";
+    auto progname = "physlr-indexlr";
     int      c;
     int      optindex = 0;
     static int help   = 0;
