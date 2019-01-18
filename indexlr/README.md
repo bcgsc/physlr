@@ -1,16 +1,18 @@
-# Compile
+# physlr-indexlr
+
+### Compile
 ```sh
 make
 ```
-# Usage
+### Usage
 ```sh
 ./physlr-indexlr -k K -w W [-v] file...
 ```
-# Run
+### Run
 ```sh
 ./physlr-indexlr -k100 -w5 data/tiny.fq >out
 ```
-# Output
+### Output
 Each line of output is a barcode followed by a tab, and then a list of space-separated minimizers.
 ```
 barcode   minimizers...
