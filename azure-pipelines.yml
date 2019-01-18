@@ -15,4 +15,6 @@ jobs:
     displayName: Run pylint
   - script: pip3 install .
     displayName: Run pip
+  - script: make -C indexlr
+    displayName: Build physlr-indexlr
  
