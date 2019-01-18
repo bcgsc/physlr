@@ -57,6 +57,9 @@ Initial conditions
     l    = 0         Index of left end of window 
     r    = l + w - 1 Index of right end of window
 Computation
+At each window, if the previous minimum is out of scope, find the new, right-most, minimum
+or else, check with only the right-most element to determine if that is the new minimum.
+A minimizer is added to the final vector only if it's index has changed.
 for each window of v bounded by [l, r]
     if (i < l)
         i = index of minimum element in [l, r], furthest from l.
@@ -82,6 +85,7 @@ static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, 
     for (auto leftIt = firstIt; leftIt < hashes.end() - w + 1; ++leftIt) {
         auto rightIt = leftIt + w;
         if (i < leftIt - firstIt) {
+            // Use of the comparison operator '<=' returns the right-most minimum.
             minIt = std::min_element(leftIt, rightIt, less_or_equal);
         }
         else if (*(rightIt - 1) <= *minIt) {
