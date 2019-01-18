@@ -124,7 +124,7 @@ static void printMinimizedRead(const std::string &barcode, const std::vector<uin
 static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool verbose) {
     // Check if input file is empty.
     if (is.peek() == std::ifstream::traits_type::eof()) {
-            std::cerr << "physlr-indexlr: error: empty input file\n";
+            std::cerr << "physlr-indexlr: error: Empty input file\n";
             exit(EXIT_FAILURE);
     }
     size_t nread = 0, nline = 0;
@@ -135,11 +135,11 @@ static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool
             break;
         }
         if (!getline(is, barcode)) {
-            std::cerr << "physlr-indexlr: error: failed to read header on line " << nline + 1 << '\n';
+            std::cerr << "physlr-indexlr: error: Failed to read header on line " << nline + 1 << '\n';
             exit(EXIT_FAILURE);
         }
         if (!getline(is, sequence)) {
-            std::cerr << "physlr-indexlr: error: failed to read sequence on line " << nline + 2 << '\n';
+            std::cerr << "physlr-indexlr: error: Failed to read sequence on line " << nline + 2 << '\n';
             exit(EXIT_FAILURE);
         }
         is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -148,7 +148,7 @@ static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool
         nline += 4;
         nread += 1;
         if (!startsWith(barcode, "BX:Z:")) {
-            std::cerr << "physlr-indexlr: error: expected BX:Z:... and saw " << barcode << " at line "
+            std::cerr << "physlr-indexlr: error: Expected BX:Z:... and saw " << barcode << " at line "
                       << nline - 3 << "\n";
             exit(EXIT_FAILURE);
         }
@@ -156,7 +156,7 @@ static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool
         // Validate parameters.
         if (k > sequence.size()) {
             if (verbose) {
-                std::cerr << "warning: skip read " << nread << " on line " << nline - 2
+                std::cerr << "physlr-indexlr: warning: Skip read " << nread << " on line " << nline - 2
                           << "; k > read length "
                           << "(k = " << k << ", read length = " << sequence.size() << ")\n";
             }
@@ -168,7 +168,7 @@ static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool
         std::vector<uint64_t> hashes = hashKmers(sequence, k);
         if (w > hashes.size()) {
             if (verbose) {
-                std::cerr << "warning: skip read " << nread << " on line " << nline - 2
+                std::cerr << "physlr-indexlr: warning: Skip read " << nread << " on line " << nline - 2
                           << "; window size > #hashes (w = " << w << ", #hashes = " << hashes.size()
                           << ")\n";
             }
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
     for (auto &f : infile) {
         std::ifstream ifs(f);
         if (!ifs) {
-            std::cerr << "phslyr-indexlr: error: failed to open: " << f << '\n';
+            std::cerr << "phslyr-indexlr: error: Failed to open: " << f << '\n';
             exit(EXIT_FAILURE);
         }
         minimizeReads(ifs, k, w, verbose);
