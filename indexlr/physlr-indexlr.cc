@@ -21,13 +21,15 @@
 // Return true if the second string is a prefix of the string s.
 // NOTE: This snippet was copied over from abyss-dev/Common/StringUtil.h
 template <size_t N>
-static bool startsWith(const std::string& s, const char (&prefix)[N]) {
+static bool startsWith(const std::string& s, const char (&prefix)[N])
+{
 	size_t n = N - 1;
 	return s.size() > n && equal(s.begin(), s.begin() + n, prefix);
 }
 
 // Hash the k-mers of a read using ntHash.
-static std::vector<uint64_t> hashKmers(const std::string &readstr, const size_t k) {
+static std::vector<uint64_t> hashKmers(const std::string &readstr, const size_t k)
+{
     std::vector<uint64_t> hashes;
     hashes.reserve(readstr.size() - k + 1);
     for (ntHashIterator iter(readstr, 1, k); iter != ntHashIterator::end(); ++iter) {
@@ -75,7 +77,8 @@ for each window of v bounded by [l, r]
 }
 */
 // Find the minimizers of a vector of hash values using a sliding-window of size 'w'.
-static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, const unsigned w) {
+static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, const unsigned w)
+{
     Less_or_equal<uint64_t> less_or_equal;
     std::vector<uint64_t> minimizers;
     minimizers.reserve(hashes.size() / w);
@@ -101,15 +104,18 @@ static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, 
 }
 
 // Test the condition of a I/O stream.
-static inline void assert_good(const std::ios& stream) {
+// NOTE: This snippet was copied over from abyss-dev/Common/IOUtil.h
+static inline void assert_good(const std::ios& stream, const std::string& path)
+{
 	if (!stream.good()) {
-		std::cerr << "physlr-indexlr: error: " << std::strerror(errno) << '\n';
+		std::cerr << "error: `" << path << "': " << strerror(errno) <<  ": " << path << '\n';
 		exit(EXIT_FAILURE);
 	}
 }
 
 // Print the barcode and minimzers of a read.
-static void printMinimizedRead(const std::string &barcode, const std::vector<uint64_t> &minimizers) {
+static void printMinimizedRead(const std::string &barcode, const std::vector<uint64_t> &minimizers)
+{
     std::cout << barcode;
     char sep = '\t';
     for (auto &m : minimizers) {
@@ -117,14 +123,15 @@ static void printMinimizedRead(const std::string &barcode, const std::vector<uin
         sep = ' ';
     }
     std::cout << '\n';
-    assert_good(std::cout);
+    assert_good(std::cout, "");
 }
 
 // Read a FASTQ file and reduce each read to a set of minimizers
-static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool verbose) {
+static void minimizeReads(std::istream& is, const std::string &path, const size_t k, const size_t w, bool verbose)
+{
     // Check if input file is empty.
     if (is.peek() == std::ifstream::traits_type::eof()) {
-            std::cerr << "physlr-indexlr: error: Empty input file\n";
+            std::cerr << "physlr-indexlr: error: Empty input file: " << path << '\n';
             exit(EXIT_FAILURE);
     }
     size_t nread = 0, nline = 0;
@@ -180,11 +187,13 @@ static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool
     }
 }
 
-static void printErrorMsg(const std::string &progname, const std::string &msg) {
+static void printErrorMsg(const std::string &progname, const std::string &msg)
+{
     std::cerr << progname << ": " << msg << "\nTry 'physlr-indexlr --help' for more information.\n";
 }
 
-static void printUsage(const std::string &progname) {
+static void printUsage(const std::string &progname)
+{
     std::cout << "Usage:  " << progname
          << "  -k K -w W [-v] file...\n\n"
             "  -k K     use K as k-mer size\n"
@@ -194,7 +203,8 @@ static void printUsage(const std::string &progname) {
             "  file     space separated list of FASTQ files\n";
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     std::string progname = "physlr-indexlr";
     int      c;
     int      optindex = 0;
@@ -259,7 +269,7 @@ int main(int argc, char *argv[]) {
             std::cerr << "phslyr-indexlr: error: Failed to open: " << f << '\n';
             exit(EXIT_FAILURE);
         }
-        minimizeReads(ifs, k, w, verbose);
+        minimizeReads(ifs, f, k, w, verbose);
     }
     return 0;
 }
