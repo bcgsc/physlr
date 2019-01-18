@@ -174,7 +174,7 @@ static void minimizeReads(std::istream& is, const size_t k, const size_t w, bool
             }
             continue;
         }
-        // Minimerize the read, that is, pick the minimizers from the vector of hashes.
+        // Minimerize the read, that is, pick the minimum hash values from the vector of hashes.
         std::vector<uint64_t> minimizers = getMinimizers(hashes, w);
         printMinimizedRead(barcode, minimizers);
     }
