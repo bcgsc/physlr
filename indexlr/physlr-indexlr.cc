@@ -161,7 +161,7 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
         }
         // Hash the kmers.
         // NOTE: The predicate P(#kmers != #hashes) will be true when reads contains Ns, so check with the number
-        // of hashes ntHash returns after hashing a read. ntHash takes care to skip Ns.
+        // of hashes ntHash returns after hashing a sequence. ntHash's iterator takes care to skip Ns.
         auto hashes = hashKmers(sequence, k);
         if (w > hashes.size()) {
             if (verbose) {
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
     bool     failed   = false;
     bool     w_set    = false;
     bool     k_set    = false;
-    char     *end;
+    char     *end     = nullptr;
     std::string outfile("/dev/stdout");
     static const struct option longopts[] = {{"help", no_argument, &help, 1}, {nullptr, 0, nullptr, 0}};
     while ((c = getopt_long(argc, argv, "k:w:o:v", longopts, &optindex)) != -1) {
@@ -256,12 +256,10 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     std::ofstream ofs(outfile);
+    assert_good(ofs, outfile);
     for (auto &infile : infiles) {
         std::ifstream ifs(infile);
-        if (!ifs) {
-            std::cerr << "phslyr-indexlr: error: Failed to open: " << infile << '\n';
-            exit(EXIT_FAILURE);
-        }
+        assert_good(ifs, infile);
         minimizeReads(ifs, infile, ofs, outfile, k, w, verbose);
     }
     return 0;
