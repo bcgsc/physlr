@@ -98,7 +98,7 @@ static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, 
 static inline void assert_good(const std::ios& stream, const std::string& path)
 {
 	if (!stream.good()) {
-		std::cerr << "error: `" << path << "': " << strerror(errno) <<  ": " << path << '\n';
+		std::cerr << "error: " << strerror(errno) <<  ": " << path << '\n';
 		exit(EXIT_FAILURE);
 	}
 }
