@@ -1,5 +1,5 @@
 // Convert linked-reads to minimizers using ntHash-2.0.0.
-// Usage:  physlr-indexlr -k K -w W [-v] file...
+// Usage:  physlr-indexlr -k K -w W [-v] [-o file] file...
 // Output: Each line of output is a barcode followed by a list of minimzers.
 
 #include <algorithm>
@@ -104,24 +104,24 @@ static inline void assert_good(const std::ios& stream, const std::string& path)
 }
 
 // Print the barcode and minimzers of a read.
-static void printMinimizedRead(const std::string &barcode, const std::vector<uint64_t> &minimizers)
+static void writeMinimizedRead(std::ostream &os, const std::string &opath, const std::string &barcode, const std::vector<uint64_t> &minimizers)
 {
-    std::cout << barcode;
+    os << barcode;
     char sep = '\t';
     for (auto &m : minimizers) {
-        std::cout << sep << m;
+        os << sep << m;
         sep = ' ';
     }
-    std::cout << '\n';
-    assert_good(std::cout, "/dev/stdout");
+    os << '\n';
+    assert_good(os, opath);
 }
 
 // Read a FASTQ file and reduce each read to a set of minimizers
-static void minimizeReads(std::istream& is, const std::string &path, const size_t k, const size_t w, bool verbose)
+static void minimizeReads(std::istream &is, const std::string &ipath, std::ostream &os, const std::string &opath, const size_t k, const size_t w, bool verbose)
 {
     // Check if input file is empty.
     if (is.peek() == std::ifstream::traits_type::eof()) {
-            std::cerr << "physlr-indexlr: error: Empty input file: " << path << '\n';
+            std::cerr << "physlr-indexlr: error: Empty input file: " << ipath << '\n';
             exit(EXIT_FAILURE);
     }
     size_t nread = 0, nline = 0;
@@ -170,7 +170,7 @@ static void minimizeReads(std::istream& is, const std::string &path, const size_
             }
             continue;
         }
-        printMinimizedRead(barcode, getMinimizers(hashes, w));
+        writeMinimizedRead(os, opath, barcode, getMinimizers(hashes, w));
     }
 }
 
@@ -182,12 +182,13 @@ static void printErrorMsg(const std::string &progname, const std::string &msg)
 static void printUsage(const std::string &progname)
 {
     std::cout << "Usage:  " << progname
-         << "  -k K -w W [-v] file...\n\n"
-            "  -k K     use K as k-mer size\n"
-            "  -w W     use W as sliding-window size\n"
-            "  -v       enable verbose output\n"
-            "  --help   display this help and exit\n"
-            "  file     space separated list of FASTQ files\n";
+         << "  -k K -w W [-v] [-o file] file...\n\n"
+            "  -k K       use K as k-mer size\n"
+            "  -w W       use W as sliding-window size\n"
+            "  -v         enable verbose output\n"
+            "  -o file    write output to file, default is stdout\n"
+            "  --help     display this help and exit\n"
+            "  file       space separated list of FASTQ files\n";
 }
 
 int main(int argc, char *argv[])
@@ -203,8 +204,9 @@ int main(int argc, char *argv[])
     bool     w_set    = false;
     bool     k_set    = false;
     char     *end;
+    std::string outfile("/dev/stdout");
     static const struct option longopts[] = {{"help", no_argument, &help, 1}, {nullptr, 0, nullptr, 0}};
-    while ((c = getopt_long(argc, argv, "k:w:v", longopts, &optindex)) != -1) {
+    while ((c = getopt_long(argc, argv, "k:w:o:v", longopts, &optindex)) != -1) {
         switch (c) {
         case 0:
             break;
@@ -216,6 +218,9 @@ int main(int argc, char *argv[])
             w_set = true;
             w = strtoul(optarg, &end, 10);
             break;
+        case 'o':
+            outfile.assign(optarg);
+            break;
         case 'v':
             verbose = true;
             break;
@@ -223,7 +228,7 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
     }
-    std::vector<std::string> infile(&argv[optind], &argv[argc]);
+    std::vector<std::string> infiles(&argv[optind], &argv[argc]);
     if (argc < 2) {
         printUsage(progname);
         exit(EXIT_FAILURE);
@@ -243,20 +248,21 @@ int main(int argc, char *argv[])
     } else if (w == 0) {
         printErrorMsg(progname, "option has incorrect argument -- 'w'");
         failed = true;
-    } else if (infile.empty()) {
+    } else if (infiles.empty()) {
         printErrorMsg(progname, "missing file operand");
         failed = true;
     }
     if (failed) {
         exit(EXIT_FAILURE);
     }
-    for (auto &f : infile) {
-        std::ifstream ifs(f);
+    std::ofstream ofs(outfile);
+    for (auto &infile : infiles) {
+        std::ifstream ifs(infile);
         if (!ifs) {
-            std::cerr << "phslyr-indexlr: error: Failed to open: " << f << '\n';
+            std::cerr << "phslyr-indexlr: error: Failed to open: " << infile << '\n';
             exit(EXIT_FAILURE);
         }
-        minimizeReads(ifs, f, k, w, verbose);
+        minimizeReads(ifs, infile, ofs, outfile, k, w, verbose);
     }
     return 0;
 }
