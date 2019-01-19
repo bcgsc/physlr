@@ -262,5 +262,7 @@ int main(int argc, char *argv[])
         assert_good(ifs, infile);
         minimizeReads(ifs, infile, ofs, outfile, k, w, verbose);
     }
+    ofs.close();
+    assert_good(ofs, outfile);
     return 0;
 }
