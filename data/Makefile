@@ -133,8 +133,8 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 	bwa mem -t$t -pC $*.fa $(lr).fq.gz | samtools view -@$t -F4 -o $@
 
 # Align molecule-split linked reads to a target genome.
-%.$(lr).n100-2000.overlap.n$(n).split.sortn.bam: %.fa.bwt $(lr).n100-2000.overlap.n$(n).split.fq.gz
-	bwa mem -t$t -pC $*.fa $(lr).n100-2000.overlap.n$(n).split.fq.gz | samtools view -@$t -F4 -o $@
+%.$(lr).n100-2000.overlap.n$(n).split.sortn.bam: %.fa.bwt $(lr).n100-2000.physlr.overlap.n$(n).split.fq.gz
+	bwa mem -t$t -pC $*.fa $(lr).n100-2000.physlr.overlap.n$(n).split.fq.gz | samtools view -@$t -F4 -o $@
 
 ################################################################################
 # EMA
@@ -342,9 +342,9 @@ minsize=2000
 	$(python) $(bin)/physlr split-minimizers -t$t $< $(lr).n100-2000.physlr.tsv >$@
 
 # Split the reads into molecules
-$(lr).n100-2000.overlap.n$(n).split.fq.gz: $(lr).fq.gz $(lr).n100-2000.physlr.overlap.n$(n).mol.split.tsv $(lr).physlr.tsv
+$(lr).n100-2000.physlr.overlap.n$(n).split.fq.gz: $(lr).fq.gz $(lr).n100-2000.physlr.overlap.n$(n).mol.split.tsv $(lr).physlr.tsv
 	gunzip -c $< | $(python) $(bin)/physlr split-reads-molecules $(lr).n100-2000.physlr.overlap.n$(n).mol.split.tsv \
-		$(lr).physlr.tsv - |gzip > $@
+		$(lr).physlr.tsv - |gzip >$@
 
 # Determine the minimum tiling graph of the backbone graph.
 %.backbone.tiling.tsv: %.backbone.tsv

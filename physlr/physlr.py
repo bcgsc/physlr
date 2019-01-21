@@ -125,7 +125,7 @@ class Physlr:
     def write_graph(g, fout, graph_format):
         "Write a graph."
         if graph_format == "gv":
-            nx.drawing.nx_pydot.write_dot(g, sys.stdout)
+            nx.drawing.nx_agraph.write_dot(g, sys.stdout)
         elif graph_format == "tsv":
             Physlr.write_tsv(g, fout)
         else:
@@ -176,7 +176,7 @@ class Physlr:
     @staticmethod
     def read_graphviz(g, filename):
         "Read a GraphViz file."
-        graph = nx.drawing.nx_pydot.read_dot(filename)
+        graph = nx.drawing.nx_agraph.read_dot(filename)
         for vprop in graph.nodes().values():
             vprop["n"] = int(vprop["n"])
         for _, _, eprop in graph.edges.data():
@@ -292,7 +292,7 @@ class Physlr:
     def read_minimizers_molecule(filenames):
         "Read minimizers in TSV format, make dictionary in form: bx->molecule id->set(minimizers)"
         moltomin = defaultdict(dict) # bx -> molec id -> set(minimizers)
-        bx_match = re.compile(r'(\S+)_(\d+)')
+        bx_match = re.compile(r'^(\S+)_(\d+)$')
         for filename in filenames:
             with open(filename) as fin:
                 for line in fin:
@@ -401,7 +401,7 @@ class Physlr:
     @staticmethod
     def is_valid_pair(bx1, bx2, name1, name2):
         "Checks if read pair's headers match (sanity check), and they have associated barcodes"
-        header_prefix = re.compile(r'(^\S+)\/[1-2]')
+        header_prefix = re.compile(r'^(\S+?)(\/[1-2])?')
         header_prefix_match_r1 = re.search(header_prefix, name1)
         header_prefix_match_r2 = re.search(header_prefix, name2)
         return bx1 is not None and bx2 is not None and bx1 == bx2 and \
@@ -781,7 +781,8 @@ class Physlr:
             Physlr.graph = g
             Physlr.bxtomin = bxtomin
             with multiprocessing.Pool(self.args.threads) as pool:
-                moltomin = dict(x for l in pool.map(self.split_minimizers_bx_process, progress(bxtomin), chunksize=100) for x in l)
+                moltomin = dict(x for l in pool.map(self.split_minimizers_bx_process,
+                                                    progress(bxtomin), chunksize=100) for x in l)
             Physlr.graph = None
             Physlr.bxtomin = None
 
@@ -818,10 +819,10 @@ class Physlr:
                         (min_info1, min_info2) = (readmin.readline().strip(),
                                                   readmin.readline().strip())
                         if self.is_valid_pair(bx1, bx, name1, name) and bx in moltomin:
-                            (bx1_min, minimizers1) = self.parse_minimizer_line(min_info1)
-                            (bx2_min, minimizers2) = self.parse_minimizer_line(min_info2)
-                            if bx1_min != bx2_min or bx1_min != bx1:
-                                print("Should match: ", bx1_min, bx2_min, bx1, file=sys.stderr)
+                            (bx1_mol, minimizers1) = self.parse_minimizer_line(min_info1)
+                            (bx2_mol, minimizers2) = self.parse_minimizer_line(min_info2)
+                            if bx1_mol != bx2_mol or bx1_mol != bx1:
+                                print("Should match: ", bx1_mol, bx2_mol, bx1, file=sys.stderr)
                                 exit("Error: Minimizer TSV order doesn't match reads fq file")
 
                             bx_mol = bx1 + self.assign_read_molecule(
@@ -859,7 +860,7 @@ class Physlr:
 
     @staticmethod
     def parse_minimizer_line(min_line):
-        "Given a minimizer line from a read, parse out the barcode and set of minimizers"
+        "Given a minimizer line from a read, parse out the barcode_mol and set of minimizers"
         min_line = min_line.split("\t")
         if len(min_line) == 2:
             return (min_line[0], set(map(int, min_line[1].split())))
