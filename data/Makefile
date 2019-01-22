@@ -34,6 +34,8 @@ export REPORTTIME=1
 export TIMEFMT=time user=%U system=%S elapsed=%E cpu=%P memory=%M job=%J
 endif
 
+time=command time -v -o $@.time
+
 .DELETE_ON_ERROR:
 .SECONDARY:
 
@@ -285,67 +287,67 @@ minsize=2000
 
 # Index a FASTA file.
 %.physlr.tsv: %.fa
-	$(python) $(bin)/physlr indexfa -k$k -w$w $< >$@
+	$(time) $(python) $(bin)/physlr indexfa -k$k -w$w $< >$@
 
 # Index linked reads.
 %.physlr.tsv: %.fq.gz
-	gunzip -c $< | $(python) $(bin)/physlr indexlr -k$k -w$w - >$@
+	gunzip -c $< | $(time) $(python) $(bin)/physlr indexlr -k$k -w$w - >$@
 
 # Count the frequency of the markers.
 %.physlr.markers.tsv: %.physlr.tsv
-	$(python) $(bin)/physlr count-markers $< >$@
-	
+	$(time) $(python) $(bin)/physlr count-markers $< >$@
+
 # Identify the overlapping markers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv
-	$(python) $(bin)/physlr intersect $< >$@
+	$(time) $(python) $(bin)/physlr intersect $< >$@
 
 # Filter barcodes by number of markers.
 %.n100-1000.physlr.tsv: %.physlr.tsv
-	$(python) $(bin)/physlr filter-barcodes -n100 -N1000 $< >$@
+	$(time) $(python) $(bin)/physlr filter-barcodes -n100 -N1000 $< >$@
 
 # Filter barcodes by number of markers.
 %.n100-2000.physlr.tsv: %.physlr.tsv
-	$(python) $(bin)/physlr filter-barcodes -n100 -N2000 $< >$@
+	$(time) $(python) $(bin)/physlr filter-barcodes -n100 -N2000 $< >$@
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
-	$(python) $(bin)/physlr overlap -n10 $< >$@
+	$(time) $(python) $(bin)/physlr overlap -n10 $< >$@
 
 # Determine the maximum spanning tree.
 %.physlr.overlap.mst.tsv: %.physlr.overlap.tsv
-	$(python) $(bin)/physlr mst $< >$@
+	$(time) $(python) $(bin)/physlr mst $< >$@
 
 # Separate a graph into its biconnected components by removing its cut vertices.
 %.bic.tsv: %.tsv
-	$(python) $(bin)/physlr biconnected-components $< >$@
+	$(time) $(python) $(bin)/physlr biconnected-components $< >$@
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(python) $(bin)/physlr backbone-graph $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
-	$(python) $(bin)/physlr backbone $< >$@
+	$(time) $(python) $(bin)/physlr backbone $< >$@
 
 # Flesh out the backbone path
 %.backbone.fleshed.path: %.tsv %.backbone.path
-	$(python) $(bin)/physlr flesh-backbone --min-component-size=50 $< $*.backbone.path >$@
+	$(time) $(python) $(bin)/physlr flesh-backbone --min-component-size=50 $< $*.backbone.path >$@
 
 # Determine the minimum tiling graph of the backbone graph.
 %.backbone.tiling.tsv: %.backbone.tsv
-	$(python) $(bin)/physlr tiling-graph $< >$@
+	$(time) $(python) $(bin)/physlr tiling-graph $< >$@
 
 # Map the barcodes to the backbone graph.
 %.backbone.map.$(lr).n100-2000.n10.bed: %.backbone.tsv $(lr).n100-2000.physlr.tsv
-	$(python) $(bin)/physlr map -n10 $^ $(lr).n100-2000.physlr.tsv >$@
+	$(time) $(python) $(bin)/physlr map -n10 $^ $(lr).n100-2000.physlr.tsv >$@
 
 # Map the draft assembly to the backbone graph.
 %.overlap.n50.mol.backbone.map.$(draft).n10.bed: %.overlap.n50.mol.backbone.tsv %.tsv $(draft).physlr.tsv
-	$(python) $(bin)/physlr map -n10 $^ >$@
+	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph.
 %.overlap.n118.mol.backbone.map.$(draft).n10.bed: %.overlap.n118.mol.backbone.tsv %.tsv $(draft).physlr.tsv
-	$(python) $(bin)/physlr map -n10 $^ >$@
+	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
 # Filter a BED file by score.
 %.n100.bed: %.n10.bed
@@ -353,11 +355,11 @@ minsize=2000
 
 # Estimate the number of molecules per barcode.
 %.physlr.overlap.n20.countmol.tsv: %.physlr.overlap.tsv
-	$(python) $(bin)/physlr count-molecules -n20 $< >$@
+	$(time) $(python) $(bin)/physlr count-molecules -n20 $< >$@
 
 # Remove barcodes with more than one molecule.
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
-	$(python) $(bin)/physlr filter -M2 $< >$@
+	$(time) $(python) $(bin)/physlr filter -M2 $< >$@
 
 # Filter edges n >= 10 using Miller.
 %.n10.tsv: %.tsv
@@ -381,22 +383,22 @@ minsize=2000
 
 # Separate barcodes into molecules.
 %.mol.tsv: %.tsv
-	$(python) $(bin)/physlr molecules -t$t $< >$@
+	$(time) $(python) $(bin)/physlr molecules -t$t $< >$@
 
 # Convert a graph from TSV to GraphViz.
 # Filter out small components.
 %.gv: %.tsv
-	$(python) $(bin)/physlr filter --min-component-size=50 -Ogv $< >$@
+	$(time) $(python) $(bin)/physlr filter --min-component-size=50 -Ogv $< >$@
 
 # Extract a BED file of the backbone barcodes.
 # Filter out small components.
 %.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.path
-	$(python) $(bin)/physlr filter-bed --min-component-size=50 $^ >$@
+	$(time) $(python) $(bin)/physlr filter-bed --min-component-size=50 $^ >$@
 
 # Extract a BED file of the fleshed-out backbone barcodes.
 # Filter out small components.
 %.backbone.fleshed.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.backbone.fleshed.path
-	$(python) $(bin)/physlr filter-bed --min-component-size=50 $^ >$@
+	$(time) $(python) $(bin)/physlr filter-bed --min-component-size=50 $^ >$@
 
 # Sort a BED file.
 %.sort.bed: %.bed
@@ -408,11 +410,11 @@ minsize=2000
 
 # Extract scaffolds paths from a BED file.
 %.bed.path: %.bed
-	$(python) $(bin)/physlr bed-to-path $^ >$@
+	$(time) $(python) $(bin)/physlr bed-to-path $^ >$@
 
 # Produce sequences in FASTA format from paths.
 %.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
-	$(python) $(bin)/physlr path-to-fasta --min-length 100000 $^ >$@
+	$(time) $(python) $(bin)/physlr path-to-fasta --min-length 100000 $^ >$@
 
 # Plot a BED file.
 %.bed.pdf: %.bed
