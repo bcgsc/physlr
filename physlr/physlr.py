@@ -7,13 +7,12 @@ import argparse
 import itertools
 import multiprocessing
 import os
+import random
+import re
 import statistics
 import sys
 import timeit
-import re
-from collections import defaultdict
 from collections import Counter
-import random
 
 
 import networkx as nx
@@ -289,23 +288,15 @@ class Physlr:
         return bxtomin
 
     @staticmethod
-    def read_minimizers_molecule(filenames):
-        "Read minimizers in TSV format, make dictionary in form: bx->molecule id->set(minimizers)"
-        moltomin = defaultdict(dict) # bx -> molec id -> set(minimizers)
-        bx_match = re.compile(r'^(\S+)_(\d+)$')
-        for filename in filenames:
-            with open(filename) as fin:
-                for line in fin:
-                    fields = line.split(None, 1)
-                    if len(fields) < 2:
-                        continue
-                    bx_mol = re.search(bx_match, fields[0])
-                    (bx, mol) = (bx_mol.group(1), bx_mol.group(2))
-                    if bx not in moltomin or mol not in moltomin[bx]:
-                        moltomin[bx][mol] = set()
-                    moltomin[bx][mol].update(int(x) for x in fields[1].split())
-        return moltomin
-
+    def count_molecules_per_bx(moltomin):
+        "Iterate over minimizers dictionary, count molecules per barcode"
+        mol_counts = Counter()
+        bx_match = re.compile(r'^(\S+)_\d+$')
+        for bx_mol in moltomin:
+            bx_mol_match = re.search(bx_match, bx_mol)
+            if bx_mol_match:
+                mol_counts[bx_mol_match.group(1)] += 1
+        return mol_counts
 
     @staticmethod
     def construct_minimizers_to_barcodes(bxtomin):
@@ -398,12 +389,14 @@ class Physlr:
                 print("(" + insertions + ")", file=sys.stdout, end=' ')
         print(backbone[len(backbone)-1], file=sys.stdout)
 
+    # RE match for read header
+    header_prefix_re = re.compile(r'^(\S+?)(\/[1-2])?')
+
     @staticmethod
     def is_valid_pair(bx1, bx2, name1, name2):
         "Checks if read pair's headers match (sanity check), and they have associated barcodes"
-        header_prefix = re.compile(r'^(\S+?)(\/[1-2])?')
-        header_prefix_match_r1 = re.search(header_prefix, name1)
-        header_prefix_match_r2 = re.search(header_prefix, name2)
+        header_prefix_match_r1 = re.search(Physlr.header_prefix_re, name1)
+        header_prefix_match_r2 = re.search(Physlr.header_prefix_re, name2)
         return bx1 is not None and bx2 is not None and bx1 == bx2 and \
             header_prefix_match_r1.group(1) == header_prefix_match_r2.group(1)
 
@@ -800,10 +793,10 @@ class Physlr:
         if len(self.args.FILES) < 3:
             exit("physlr split-reads-molecules: error: molecule minimizers,\
             bx minimizers, reads inputs required")
-        moltomin = self.read_minimizers_molecule([self.args.FILES[0]])
+        moltomin = self.read_minimizers([self.args.FILES[0]])
+        mol_counts = self.count_molecules_per_bx(moltomin)
         bxtomin = self.args.FILES[1]
-        read_log = Counter(num_pairs=0, num_valid_pairs=0,
-                           num_noMin=0, num_equalMin=0, num_noIntMin=0)
+        (num_pairs, num_valid_pairs, num_no_min, num_equal_min, num_no_int_min) = (0, 0, 0, 0, 0)
 
         readmin = open(bxtomin, 'r')
 
@@ -815,48 +808,46 @@ class Physlr:
                         (name1, seq1, bx1, qual1) = (name, seq, bx, qual)
                         read_count += 1
                     else:
-                        read_log['num_pairs'] += 1
+                        num_pairs += 1
                         (min_info1, min_info2) = (readmin.readline().strip(),
                                                   readmin.readline().strip())
-                        if self.is_valid_pair(bx1, bx, name1, name) and bx in moltomin:
+                        if self.is_valid_pair(bx1, bx, name1, name) and bx in mol_counts:
                             (bx1_mol, minimizers1) = self.parse_minimizer_line(min_info1)
                             (bx2_mol, minimizers2) = self.parse_minimizer_line(min_info2)
                             if bx1_mol != bx2_mol or bx1_mol != bx1:
                                 print("Should match: ", bx1_mol, bx2_mol, bx1, file=sys.stderr)
                                 exit("Error: Minimizer TSV order doesn't match reads fq file")
 
-                            bx_mol = bx1 + self.assign_read_molecule(
-                                set.union(minimizers1, minimizers2), moltomin[bx1], read_log)
-                            self.print_read(name1 + " BX:Z:" + bx_mol,
-                                            seq1, "+", qual1)
-                            self.print_read(name + " BX:Z:" + bx_mol,
-                                            seq, "+", qual)
-                            read_log['num_valid_pairs'] += 1
+                            (mol, inc_no_int_min, inc_equal_min) = self.assign_read_molecule(
+                                set.union(minimizers1, minimizers2), moltomin, mol_counts, bx1)
+                            bx_mol = bx1 + mol
+                            num_no_int_min += inc_no_int_min
+                            num_equal_min += inc_equal_min
+                            self.print_read(name1 + " BX:Z:" + bx_mol, seq1, qual1)
+                            self.print_read(name + " BX:Z:" + bx_mol, seq, qual)
+                            num_valid_pairs += 1
                         elif self.is_valid_pair(bx1, bx, name1, name) and \
                                 not self.args.molecules_bx_only:
-                            self.print_read(name1 + " BX:Z:" + bx1,
-                                            seq1, "+", qual1)
-                            self.print_read(name + " BX:Z:" + bx,
-                                            seq, "+", qual)
-                            read_log["num_noMin"] += 1
+                            self.print_read(name1 + " BX:Z:" + bx1, seq1, qual1)
+                            self.print_read(name + " BX:Z:" + bx, seq, qual)
+                            num_no_min += 1
                         elif not self.args.molecules_bx_only:
-                            self.print_read(name1, seq1, "+", qual1)
-                            self.print_read(name, seq, "+", qual)
+                            self.print_read(name1, seq1, qual1)
+                            self.print_read(name, seq, qual)
                         read_count = 0
 
-        print("Saw", read_log["num_pairs"], "read pairs, saw",
-              read_log["num_valid_pairs"], "valid read pairs with associated barcodes.",
-              read_log["num_noMin"], "read pairs' barcodes had no split minimizers.",
-              read_log["num_noIntMin"], "read pairs' barcodes had no intersecting minimizers",
-              read_log["num_equalMin"], "read pairs had multiple molecule assignments",
+        print("Saw", num_pairs, "read pairs, saw",
+              num_valid_pairs, "valid read pairs with associated barcodes.",
+              num_no_min, "read pairs' barcodes had no split minimizers.",
+              num_no_int_min, "read pairs' barcodes had no intersecting minimizers",
+              num_equal_min, "read pairs had multiple molecule assignments",
               file=sys.stderr)
         readmin.close()
 
     @staticmethod
-    def print_read(header, seq, ori, qual):
+    def print_read(name, seq, qual):
         "Prints a read to stdout"
-        print("@%s\n%s\n%s\n%s" % (header, seq, ori, qual),
-              file=sys.stdout)
+        print("@", name, "\n", seq, "\n+\n", qual, sep="")
 
     @staticmethod
     def parse_minimizer_line(min_line):
@@ -867,18 +858,17 @@ class Physlr:
         return (min_line[0], set())
 
     @staticmethod
-    def assign_read_molecule(minimizers, moltomin, read_counter):
+    def assign_read_molecule(minimizers, moltomin, mol_counts, bx):
         "Given the minimizers of a read and the barcode, assign to a molecule"
-        intersections = {mol: len(set.intersection(minimizers, moltomin[mol])) for mol in moltomin}
+        intersections = {mol: len(set.intersection(minimizers, moltomin[bx + "_" + str(mol)]))
+                         for mol in range(0, mol_counts[bx])}
         max_intersection = max(intersections.values())
         if max_intersection == 0:
-            read_counter["num_noIntMin"] += 1
-            return ""
+            return "", 1, 0
         max_hits = [mol for mol in intersections if intersections[mol] == max_intersection]
         if len(max_hits) == 1:
-            return "_" + max_hits[0]
-        read_counter['num_equalMin'] += 1
-        return "_" + random.choice(max_hits)
+            return "_" + str(max_hits[0]), 0, 0
+        return "_" + str(random.choice(max_hits)), 0, 1
 
     @staticmethod
     def determine_molecules(g, u):
