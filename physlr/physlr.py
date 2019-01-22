@@ -796,7 +796,7 @@ class Physlr:
         moltomin = self.read_minimizers([self.args.FILES[0]])
         mol_counts = self.count_molecules_per_bx(moltomin)
         bxtomin = self.args.FILES[1]
-        (num_pairs, num_valid_pairs, num_no_min, num_equal_min, num_no_int_min) = (0, 0, 0, 0, 0)
+        num_pairs, num_valid_pairs, num_no_min, num_equal_min, num_no_int_min = 0, 0, 0, 0, 0
 
         readmin = open(bxtomin, 'r')
 
@@ -852,7 +852,7 @@ class Physlr:
     @staticmethod
     def parse_minimizer_line(min_line):
         "Given a minimizer line from a read, parse out the barcode_mol and set of minimizers"
-        min_line = min_line.split("\t")
+        min_line = min_line.split("\t", 1)
         if len(min_line) == 2:
             return (min_line[0], set(map(int, min_line[1].split())))
         return (min_line[0], set())
@@ -1189,10 +1189,10 @@ class Physlr:
             help="remove components with fewer than N vertices [0]")
         argparser.add_argument(
             "--molecule-bed", action="store", dest="molecule_bed", type=int, default=0,
-            help="Retain molecule splits in filtered BED [0]")
+            help="Retain molecule splits in filtered BED (0 or 1) [0]")
         argparser.add_argument(
             "--molecules-bx-only", action="store", dest="molecules_bx_only", type=int, default=1,
-            help="Only print out reads with barcodes that have been split to molecules [1]")
+            help="Only print reads with barcodes that have been split to molecules (0 or 1) [1]")
         argparser.add_argument(
             "-v", "--vertices", action="store", dest="v",
             help="list of vertices [None]")
