@@ -22,6 +22,9 @@ ref=fly
 # Linked reads.
 lr=f1
 
+# Minimum number of overlapping minimizsers
+n=100
+
 # Draft genome assembly.
 draft=f1.supernova.scaftigs
 
@@ -52,12 +55,12 @@ f1chr2R: f1chr2R.physlr.stamp
 
 # Assemble a physical map of the fly genome.
 f1: \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.path.fly.molecule.bed.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.label.gv.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.fly.paf.pdf \
-	f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	f1.n100-2000.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
+	f1.n100-2000.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.pdf \
+	f1.n100-2000.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1.n100-2000.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.pdf \
+	f1.n100-2000.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.fly.paf.pdf \
+	f1.n100-2000.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 
 # Download the fly genome from NCBI.
 fly/fly.all.fa:
@@ -128,6 +131,10 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 # Align linked reads to a target genome.
 %.$(lr).sortn.bam: %.fa.bwt $(lr).fq.gz
 	bwa mem -t$t -pC $*.fa $(lr).fq.gz | samtools view -@$t -F4 -o $@
+
+# Align molecule-split linked reads to a target genome.
+%.$(lr).n100-2000.overlap.n$n.split.sortn.bam: %.fa.bwt $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz
+	bwa mem -t$t -pC $*.fa $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz | samtools view -@$t -F4 -o $@
 
 ################################################################################
 # EMA
@@ -249,7 +256,6 @@ minsize=2000
 # Create molecule extents TSV.
 %.a$(as).d$(dist).n$(nm).q$(mapq).s$(minsize).molecule.tsv: %.sortbx.bam
 	tigmint-molecule -a$(as) -n$(nm) -q$(mapq) -d$(dist) -s$(minsize) --tsv -o $@ $<
-
 ################################################################################
 # ntHash
 
@@ -331,6 +337,15 @@ minsize=2000
 %.backbone.fleshed.path: %.tsv %.backbone.path
 	$(python) $(bin)/physlr flesh-backbone --min-component-size=50 $< $*.backbone.path >$@
 
+# Split the minimizers to molecules
+%.overlap.n$n.mol.split.tsv: %.overlap.n$n.mol.tsv %.tsv
+	$(python) $(bin)/physlr split-minimizers -t$t $< $(lr).n100-2000.physlr.tsv >$@
+
+# Split the reads into molecules
+$(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.physlr.overlap.n$n.mol.split.tsv $(lr).physlr.tsv
+	gunzip -c $< | $(python) $(bin)/physlr split-reads-molecules $(lr).n100-2000.physlr.overlap.n$n.mol.split.tsv \
+		$(lr).physlr.tsv - |gzip >$@
+
 # Determine the minimum tiling graph of the backbone graph.
 %.backbone.tiling.tsv: %.backbone.tsv
 	$(python) $(bin)/physlr tiling-graph $< >$@
@@ -344,7 +359,7 @@ minsize=2000
 	$(python) $(bin)/physlr map -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph.
-%.overlap.n118.mol.backbone.map.$(draft).n10.bed: %.overlap.n118.mol.backbone.tsv %.tsv $(draft).physlr.tsv
+%.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).physlr.tsv
 	$(python) $(bin)/physlr map -n10 $^ >$@
 
 # Filter a BED file by score.
@@ -376,8 +391,8 @@ minsize=2000
 	mlr --tsvlite filter '$$n >= 100' $< >$@
 
 # Filter edges n >= 118 using Miller.
-%.n118.tsv: %.tsv
-	mlr --tsvlite filter '$$n >= 118' $< >$@
+%.n$n.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= $n' $< >$@
 
 # Separate barcodes into molecules.
 %.mol.tsv: %.tsv
@@ -397,6 +412,11 @@ minsize=2000
 # Filter out small components.
 %.backbone.fleshed.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.backbone.fleshed.path
 	$(python) $(bin)/physlr filter-bed --min-component-size=50 $^ >$@
+
+# Extract a BED file of fleshed-out backbone barcodes from molecule-split reads
+# Filter out small components
+%.backbone.fleshed.path.$(ref).molecule.split.bed:  $(ref)/$(ref).$(lr).n100-2000.overlap.n$n.split.a0.65.d10000.n5.q1.s2000.molecule.bed %.backbone.fleshed.path
+	$(python) $(bin)/physlr filter-bed --min-component-size=50 --molecule-bed=1 $^ >$@
 
 # Sort a BED file.
 %.sort.bed: %.bed
@@ -420,12 +440,11 @@ minsize=2000
 
 # Assemble a physical map.
 %.physlr.stamp: \
-		%.n100-1000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
-		%.n100-1000.physlr.overlap.n50.mol.backbone.path.$(ref).molecule.bed.pdf \
-		%.n100-1000.physlr.overlap.n50.mol.backbone.label.gv.pdf \
-		%.n100-1000.physlr.overlap.n50.mol.backbone.fleshed.path.$(ref).molecule.bed.pdf \
-		%.n100-1000.physlr.overlap.n50.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.pdf \
-		%.n100-1000.physlr.overlap.n50.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.fly.paf.pdf
+		%.n100-2000.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
+		%.n100-2000.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+		%.n100-2000.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+		%.n100-2000.physlr.overlap.n$n.mol.backbone.fleshed.path.$(ref).molecule.bed.pdf \
+		%.n100-2000.physlr.overlap.n$n.mol.backbone.fleshed.path.$(ref).molecule.split.bed.pdf
 	touch $@
 
 ################################################################################
@@ -449,8 +468,8 @@ f1.quast.tsv: \
 		f1.abyss.quast.tsv \
 		f1.supernova.scaftigs.quast.tsv \
 		f1.supernova.quast.tsv \
-		f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv \
-		f1.n100-2000.physlr.overlap.n118.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+		f1.n100-2000.physlr.overlap.n$n.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv \
+		f1.n100-2000.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 ################################################################################

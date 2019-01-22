@@ -29,17 +29,18 @@ def read_fasta(fin):
                 break
             seqs.append(line[:-1])
         if not last or last[0] != '+': # this is a fasta record
-            yield name, ''.join(seqs), bx # yield a fasta record
+            yield name, ''.join(seqs), bx, None # yield a fasta record
             if not last:
                 break
         else: # this is a fastq record
-            seq, leng = ''.join(seqs), 0
+            seq, leng, seqs = ''.join(seqs), 0, []
             for line in fin: # read the quality
+                seqs.append(line[:-1])
                 leng += len(line) - 1
                 if leng >= len(seq): # have read enough quality
                     last = None
-                    yield name, seq, bx # yield a fastq record
+                    yield name, seq, bx, ''.join(seqs) # yield a fastq record
                     break
             if last: # reach EOF before reading enough quality
-                yield name, seq, bx # yield a fasta record instead
+                yield name, seq, bx, None # yield a fasta record instead
                 break
