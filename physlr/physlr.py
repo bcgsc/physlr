@@ -959,6 +959,19 @@ class Physlr:
             return "+" if y < z else "-" if y > z else "."
         return "."
 
+    def physlr_filter_markers(self):
+        """
+        Removes repeats from minimizers and outputs result to stdout
+        """
+        target_filenames = [self.args.FILES[0]]
+        bxtomin = self.read_minimizers(target_filenames)
+        mintobx = self.construct_minimizers_to_barcodes(bxtomin)
+        self.remove_repetitive_minimizers(bxtomin, mintobx)
+         
+        for bx, markers in progress(bxtomin.items()):
+            print(bx, "\t", sep="", end="")
+            print(*markers)
+
     def physlr_map_mkt(self):
         """
         Map sequences to a physical map.
