@@ -214,27 +214,27 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 	seqtk cutN -n1 $< | tr :- _ | seqtk seq >$@
 
 ################################################################################
-# EMA
+# # EMA
 
-# Download the barcode white list.
-4M-with-alts-february-2016.txt:
-	curl -o $@ https://raw.githubusercontent.com/10XGenomics/supernova/master/tenkit/lib/python/tenkit/barcodes/4M-with-alts-february-2016.txt
+# # Download the barcode white list.
+# 4M-with-alts-february-2016.txt:
+# 	curl -o $@ https://raw.githubusercontent.com/10XGenomics/supernova/master/tenkit/lib/python/tenkit/barcodes/4M-with-alts-february-2016.txt
 
-# Count barcodes.
-%.ema-ncnt: %.fq.gz 4M-with-alts-february-2016.txt
-	ema count -w 4M-with-alts-february-2016.txt -o $* $<
+# # Count barcodes.
+# %.ema-ncnt: %.fq.gz 4M-with-alts-february-2016.txt
+# 	ema count -w 4M-with-alts-february-2016.txt -o $* $<
 
-# Extract the barcode to BX:Z tag using ema preproc.
-%.bx.fq.gz: %.fq.gz %.ema-ncnt
-	gunzip -c $< | ema preproc -t$t -b -n1 -w 4M-with-alts-february-2016.txt -o $*.ema $*.ema-ncnt
-	$(gzip) <$*.ema/ema-bin-000 >$@
-	rm -rf $*.ema
+# # Extract the barcode to BX:Z tag using ema preproc.
+# %.bx.fq.gz: %.fq.gz %.ema-ncnt
+# 	gunzip -c $< | ema preproc -t$t -b -n1 -w 4M-with-alts-february-2016.txt -o $*.ema $*.ema-ncnt
+# 	$(gzip) <$*.ema/ema-bin-000 >$@
+# 	rm -rf $*.ema
 
-# Align linked reads to the draft genome using EMA and sort by position.
-%.$(lr).bx.ema.sort.bam: $(lr).bx.fq.gz %.fa.bwt
-	$(time) ema align -t$t -r $*.fa -1 $< \
-	| samtools view -@$t -u -F4 \
-	| samtools sort -@$t -T$$(mktemp -u -t $@.XXXXXX) -o $@
+# # Align linked reads to the draft genome using EMA and sort by position.
+# %.$(lr).bx.ema.sort.bam: $(lr).bx.fq.gz %.fa.bwt
+# 	$(time) ema align -t$t -r $*.fa -1 $< \
+# 	| samtools view -@$t -u -F4 \
+# 	| samtools sort -@$t -T$$(mktemp -u -t $@.XXXXXX) -o $@
 
 ################################################################################
 # Tigmint
