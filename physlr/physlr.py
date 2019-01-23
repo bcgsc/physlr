@@ -268,7 +268,7 @@ class Physlr:
 
     @staticmethod
     def read_minimizers(filenames):
-        "Read minimizers in TSV format."
+        "Read minimizers in TSV format. Returns unordered set."
         bxtomin = {}
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
@@ -286,6 +286,28 @@ class Physlr:
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return bxtomin
+
+    @staticmethod
+    def read_minimizers_list(filenames):
+        "Read minimizers in TSV format. Returns ordered list."
+        idtomin = {}
+        for filename in filenames:
+            print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
+            with open(filename) as fin:
+                progressbar = progress_bar_for_file(fin)
+                for line in fin:
+                    progressbar.update(len(line))
+                    fields = line.split(None, 1)
+                    if len(fields) < 2:
+                        continue
+                    id = fields[0]
+                    if id in idtomin:
+                        print("Error: Expected single id per in file", file=sys.stderr)
+                        exit(1)
+                    idtomin[id] = [int(x) for x in fields[1].split()]
+                progressbar.close()
+            print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
+        return idtomin
 
     @staticmethod
     def count_molecules_per_bx(moltomin):
@@ -1054,6 +1076,57 @@ class Physlr:
                 num_mapped += 1
 #         debugPosFH.close()
 #         debugMapFH.close()
+        print(
+            int(timeit.default_timer() - t0),
+            "Mapped", num_mapped, "sequences of", len(query_markers),
+            f"({round(100 * num_mapped / len(query_markers), 2)}%)", file=sys.stderr)
+
+    def physlr_map(self):
+        """
+        Map sequences to a physical map.
+        Usage: physlr map TGRAPH.tsv TMARKERS.tsv QMARKERS.tsv... >MAP.bed
+        """
+
+        if len(self.args.FILES) < 3:
+            exit("physlr map: error: at least three file arguments are required")
+        graph_filenames = [self.args.FILES[0]]
+        target_filenames = [self.args.FILES[1]]
+        query_filenames = self.args.FILES[2:]
+
+        g = self.read_graph(graph_filenames)
+        bxtomin = self.read_minimizers(target_filenames)
+        query_markers = bxtomin if target_filenames == query_filenames else \
+            self.read_minimizers(query_filenames)
+
+        # Index the positions of the markers in the backbone.
+        backbones = Physlr.determine_backbones(g)
+        markertopos = Physlr.index_markers_in_backbones(backbones, bxtomin)
+
+        # Map the query sequences to the physical map.
+        num_mapped = 0
+        for qid, markers in progress(query_markers.items()):
+            # Map each target position to a query position.
+            tidpos_to_qpos = {}
+            for qpos, marker in enumerate(markers):
+                for tidpos in markertopos.get(marker, ()):
+                    tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
+            for tidpos, qpos in tidpos_to_qpos.items():
+                tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
+
+            # Count the number of markers mapped to each target position.
+            tidpos_to_n = Counter(pos for marker in markers for pos in markertopos.get(marker, ()))
+
+            mapped = False
+            for (tid, tpos), score in tidpos_to_n.items():
+                if score >= self.args.n:
+                    mapped = True
+                    orientation = Physlr.determine_orientation(
+                        tidpos_to_qpos.get((tid, tpos - 1), None),
+                        tidpos_to_qpos.get((tid, tpos + 0), None),
+                        tidpos_to_qpos.get((tid, tpos + 1), None))
+                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
+            if mapped:
+                num_mapped += 1
         print(
             int(timeit.default_timer() - t0),
             "Mapped", num_mapped, "sequences of", len(query_markers),
