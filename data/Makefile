@@ -14,7 +14,7 @@ gzip=pigz -p$t
 bin=../bin
 
 # Python interpreter.
-python=PYTHONPATH=.. pypy3
+python=env PYTHONPATH=.. pypy3
 
 # Reference genome.
 ref=fly
