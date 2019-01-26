@@ -117,30 +117,30 @@ static void writeMinimizedRead(std::ostream &os, const std::string &opath, const
 }
 
 // Read a FASTQ file and reduce each read to a set of minimizers
-static void minimizeReads(std::istream *is, const std::string &ipath, std::ostream &os, const std::string &opath, const size_t k, const size_t w, bool verbose)
+static void minimizeReads(std::istream &is, const std::string &ipath, std::ostream &os, const std::string &opath, const size_t k, const size_t w, bool verbose)
 {
     // Check if input file is empty.
-    if (is->peek() == std::ifstream::traits_type::eof()) {
+    if (is.peek() == std::ifstream::traits_type::eof()) {
             std::cerr << "physlr-indexlr: error: Empty input file: " << ipath << '\n';
             exit(EXIT_FAILURE);
     }
     size_t nread = 0, nline = 0;
     while (true) {
         std::string id, barcode, sequence;
-        *is >> id >> std::ws;
-        if (is->eof()) {
+        is >> id >> std::ws;
+        if (is.eof()) {
             break;
         }
-        if (!getline(*is, barcode)) {
+        if (!getline(is, barcode)) {
             std::cerr << "physlr-indexlr: error: Failed to read header on line " << nline + 1 << '\n';
             exit(EXIT_FAILURE);
         }
-        if (!getline(*is, sequence)) {
+        if (!getline(is, sequence)) {
             std::cerr << "physlr-indexlr: error: Failed to read sequence on line " << nline + 2 << '\n';
             exit(EXIT_FAILURE);
         }
-        is->ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        is->ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         // At this point four lines have been read; equivalent to one read and its associated information.
         nline += 4;
         nread += 1;
@@ -258,16 +258,11 @@ int main(int argc, char *argv[])
     std::ofstream ofs(outfile);
     assert_good(ofs, outfile);
     for (auto &infile : infiles) {
-        std::istream *is;
-        std::ifstream ifs;
         if (infile == "-")
-            is = &std::cin;
-        else {
-            ifs.open(infile);
-            assert_good(ifs, infile);
-            is = &ifs;
-        }
-        minimizeReads(is, infile, ofs, outfile, k, w, verbose);
+            infile = "/dev/stdin";
+        std::ifstream ifs(infile);
+        assert_good(ifs, infile);
+        minimizeReads(ifs, infile, ofs, outfile, k, w, verbose);
     }
     ofs.flush();
     assert_good(ofs, outfile);
