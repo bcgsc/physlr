@@ -863,7 +863,7 @@ class Physlr:
         "Given the minimizers of a read and the barcode, assign to a molecule"
         intersections = {mol: len(set.intersection(minimizers, moltomin[bx + "_" + str(mol)]))
                          for mol in range(0, mol_counts[bx]) if bx + "_" + str(mol) in moltomin}
-        if len(intersections.values()) == 0:
+        if not intersections.values():
             return "", 1, 0
         max_intersection = max(intersections.values())
         if max_intersection == 0:
