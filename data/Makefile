@@ -25,6 +25,9 @@ lr=f1
 # Minimum number of overlapping minimizsers
 n=100
 
+# Minimum component size for backbones
+min_component_size=50
+
 # Draft genome assembly.
 draft=f1.supernova.scaftigs
 
@@ -335,7 +338,7 @@ minsize=2000
 
 # Flesh out the backbone path
 %.backbone.fleshed.path: %.tsv %.backbone.path
-	$(python) $(bin)/physlr flesh-backbone --min-component-size=50 $< $*.backbone.path >$@
+	$(python) $(bin)/physlr flesh-backbone --min-component-size=$(min_component_size) $< $*.backbone.path >$@
 
 # Split the minimizers to molecules
 %.overlap.n$n.mol.split.tsv: %.overlap.n$n.mol.tsv %.tsv
@@ -401,22 +404,22 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 # Convert a graph from TSV to GraphViz.
 # Filter out small components.
 %.gv: %.tsv
-	$(python) $(bin)/physlr filter --min-component-size=50 -Ogv $< >$@
+	$(python) $(bin)/physlr filter --min-component-size=$(min_component_size) -Ogv $< >$@
 
 # Extract a BED file of the backbone barcodes.
 # Filter out small components.
-%.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.path
-	$(python) $(bin)/physlr filter-bed --min-component-size=50 $^ >$@
+%.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d$(dist).n5.q1.s2000.molecule.bed %.path
+	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) $^ >$@
 
 # Extract a BED file of the fleshed-out backbone barcodes.
 # Filter out small components.
-%.backbone.fleshed.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d10000.n5.q1.s2000.molecule.bed %.backbone.fleshed.path
-	$(python) $(bin)/physlr filter-bed --min-component-size=50 $^ >$@
+%.backbone.fleshed.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d$(dist).n5.q1.s2000.molecule.bed %.backbone.fleshed.path
+	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) $^ >$@
 
 # Extract a BED file of fleshed-out backbone barcodes from molecule-split reads
 # Filter out small components
-%.backbone.fleshed.path.$(ref).molecule.split.bed:  $(ref)/$(ref).$(lr).n100-2000.overlap.n$n.split.a0.65.d10000.n5.q1.s2000.molecule.bed %.backbone.fleshed.path
-	$(python) $(bin)/physlr filter-bed --min-component-size=50 --molecule-bed=1 $^ >$@
+%.backbone.fleshed.path.$(ref).molecule.split.bed:  $(ref)/$(ref).$(lr).n100-2000.overlap.n$n.split.a0.65.d$(dist).n5.q1.s2000.molecule.bed %.backbone.fleshed.path
+	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) --molecule-bed=1 $^ >$@
 
 # Sort a BED file.
 %.sort.bed: %.bed
