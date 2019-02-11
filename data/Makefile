@@ -556,7 +556,7 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 # QUAST
 
 # Calculate assembly contiguity and correctness metrics using QUAST.
-%.quast.tsv: %.fa $(name)/$(ref).fa $(name)/$(ref).gff
+%.quast.tsv: %.fa $(name)/$(ref).fa
 	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 95 -R $(name)/$(ref).fa -o $*.quast $<
 	cp $*.quast/transposed_report.tsv $@
 
