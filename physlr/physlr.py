@@ -1187,7 +1187,7 @@ class Physlr:
         for tid, path in enumerate(progress(backbones)):
             for pos, (u, v) in enumerate(zip(path, path[1:])):
                 u = u.split("_", 1)[0]
-                v = u.split("_", 1)[0]
+                v = v.split("_", 1)[0]
                 for mx in bxtomxs[u] & bxtomxs[v]:
                     mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
