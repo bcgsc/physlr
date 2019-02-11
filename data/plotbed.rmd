@@ -24,13 +24,13 @@ input_bed
 # Read the BED file
 ```{r read-data}
 bed_orig <- read_tsv(input_bed,
-	col_names = c("Rname", "Start", "End", "BX", "Score"),
-	col_types = "ciici")
+	col_names = c("Rname", "Start", "End", "BX", "Score", "Orientation"),
+	col_types = "ciicic")
 bed <- bed_orig %>%
 	replace_na(list(
 		Rname = "Contig boundary",
 		Start = 0, End = max(bed_orig$End, na.rm = TRUE),
-		BX = "None", Reads = 0)) %>%
+		BX = NA, Reads = 0, Orientation = ".")) %>%
 	filter(
 		!startsWith(Rname, "NW_"),
 		replace_na(suppressWarnings(as.numeric(Rname)) < 8, TRUE)) %>%
