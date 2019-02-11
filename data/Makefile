@@ -298,7 +298,7 @@ minsize=2000
 
 # Index linked reads.
 %.physlr.tsv: %.fq.gz
-	gunzip -c $< | $(python) $(bin)/physlr indexlr -k$k -w$w - >$@
+	gunzip -c $< | ../indexlr/physlr-indexlr-fhash -k$k -w$w - >$@
 
 # Count the frequency of the markers.
 %.physlr.markers.tsv: %.physlr.tsv

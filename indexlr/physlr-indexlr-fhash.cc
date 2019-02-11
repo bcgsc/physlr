@@ -16,7 +16,7 @@
 #include <vector>
 
 // ntHash 2.0.0
-#include "ntHashIterator.h"
+#include "ntHashIterator-fhash.h"
 #include "nthash.h"
 
 // Return true if the second string is a prefix of the string s.
@@ -35,7 +35,7 @@ static std::vector<uint64_t> hashKmers(const std::string &readstr, const size_t 
     if (readstr.size() < k) return hashes;
     hashes.reserve(readstr.size() - k + 1);
     for (ntHashIterator iter(readstr, 1, k); iter != ntHashIterator::end(); ++iter) {
-        hashes.push_back((*iter)[0]);
+	hashes.push_back(*iter); 
     }
     return hashes;
 }
