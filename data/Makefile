@@ -332,7 +332,7 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 ################################################################################
 # Tigmint
 as=0.65
-dist=10000
+dist=50000
 nm=5
 mapq=1
 minsize=2000
@@ -344,6 +344,7 @@ minsize=2000
 # Create molecule extents TSV.
 %.a$(as).d$(dist).n$(nm).q$(mapq).s$(minsize).molecule.tsv: %.sortbx.bam
 	tigmint-molecule -a$(as) -n$(nm) -q$(mapq) -d$(dist) -s$(minsize) --tsv -o $@ $<
+
 ################################################################################
 # ntHash
 
