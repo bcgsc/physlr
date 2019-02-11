@@ -380,7 +380,7 @@ minsize=2000
 
 # Index a FASTA file.
 %.physlr.tsv: %.fa
-	$(python) $(bin)/physlr indexfa -k$k -w$w $< >$@
+	$(time) parallel -j$t --pipe -k -L2 $(python) $(bin)/physlr indexfa -k$k -w$w - <$< >$@
 
 # Index linked reads.
 %.physlr.tsv: %.fq.gz
