@@ -22,14 +22,21 @@ ref=fly
 # Linked reads.
 lr=f1
 
+# Name of the dataset.
+ifeq ($(ref),z11)
+name=fish
+else
+name=$(ref)
+endif
+
+# Draft genome assembly.
+draft=$(name).supernova.scaftigs
+
 # Minimum number of overlapping minimizsers
 n=100
 
 # Minimum component size for backbones
 min_component_size=50
-
-# Draft genome assembly.
-draft=f1.supernova.scaftigs
 
 SHELL=bash -e -o pipefail
 ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
@@ -40,10 +47,17 @@ export REPORTTIME=1
 export TIMEFMT=time user=%U system=%S elapsed=%E cpu=%P memory=%M job=%J
 endif
 
+# Record run time and memory usage in a file using GNU time.
+ifneq ($(shell command -v gtime),)
+time=command gtime -v -o $@.time
+else
+time=command time -v -o $@.time
+endif
+
 .DELETE_ON_ERROR:
 .SECONDARY:
 
-all: f1chr4 f1chr2R f1
+all: f1chr4 f1chr2R f1 fishchr25 fish
 
 ################################################################################
 # Fly
@@ -118,6 +132,77 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 	ln -sf $< $@
 
 ################################################################################
+# Zebrafish
+# See https://support.10xgenomics.com/de-novo-assembly/datasets/2.1.0/fish
+# and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
+
+# Assemble a physical map of fish.
+fish: \
+	fish.n100-5000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
+	fish.n100-5000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
+	fish.n100-5000.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fish.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.pdf \
+	fish.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.z11.paf.pdf \
+	fish.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+
+# Assemble a physical map of fish using physlr-indexlr (native implementation).
+fish-indexlr: \
+	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
+	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
+	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.pdf \
+	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.z11.paf.pdf \
+	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+
+# Assemble a physical map of fish chromosome 25.
+fishchr25: \
+	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
+	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
+	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.pdf \
+	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.z11.paf.pdf \
+	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+
+# Download the zebrafish genome from NCBI.
+fish/z11.ncbi.fa:
+	mkdir -p $(@D)
+	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/002/035/GCF_000002035.6_GRCz11/GCF_000002035.6_GRCz11_genomic.fna.gz | seqtk seq >$@
+
+# Download the zebrafish genome from Ensembl.
+fish/z11.all.fa:
+	mkdir -p $(@D)
+	curl ftp://ftp.ensembl.org/pub/release-95/fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.primary_assembly.fa.gz | seqtk seq >$@
+
+# Filter out the unplaced contigs from the reference genome.
+fish/z11.fa: fish/z11.all.fa
+	paste - - <$< | grep -v scaffold | gsort -V | tr '\t' '\n' >$@
+
+# Download the Supernova assembly of the linked reads from 10x Genomics.
+fish.supernova.fa:
+	curl http://cf.10xgenomics.com/samples/assembly/2.1.0/fish/fish_pseudohap.fasta.gz | gunzip -c >$@
+
+# Download the fish linked reads from 10x Genomics.
+fish/fish.tar:
+	mkdir -p $(@D)
+	curl -o $@ http://s3-us-west-2.amazonaws.com/10x.files/samples/assembly/2.1.0/fish/fish_fastqs.tar
+
+# Extract the tar file of fish FASTQ reads.
+fish/fish.fq.gz: fish/fish.tar
+	tar --wildcards -Oxf fish/fish.tar 'fish/H3*/read-RA*.fastq.gz' >$@
+
+# Symlink the fly reads.
+fish.fq.gz: fish/fish.bx.trimadap.fq.gz
+	ln -s $< $@
+
+# Extract the reads that map to chromosome 25.
+%.chr25.sortbxn.bam: %.sortbxn.bam
+	samtools view -h $< | awk '/^@/ || $$3 == "25"' | samtools view -@$t -o $@
+
+# Symlink the chromosome 25 reads.
+fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
+	ln -sf $< $@
+
+################################################################################
 # Trimadap
 
 # Trim adapter sequences using trimadap.
@@ -156,7 +241,7 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 	minimap2 -t$t -a -xsr -y $*.fa $(lr).fq.gz | samtools view -@$t -F4 -o $@
 
 # Align a FASTA file to the reference genome and produce a PAF file.
-%.$(ref).paf.gz: $(ref)/$(ref).fa %.fa
+%.$(ref).paf.gz: $(name)/$(ref).fa %.fa
 	$(time) minimap2 -t$t -xasm10 $^ | $(gzip) >$@
 
 ################################################################################
@@ -247,7 +332,7 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 ################################################################################
 # Tigmint
 as=0.65
-dist=10000
+dist=50000
 nm=5
 mapq=1
 minsize=2000
@@ -259,6 +344,7 @@ minsize=2000
 # Create molecule extents TSV.
 %.a$(as).d$(dist).n$(nm).q$(mapq).s$(minsize).molecule.tsv: %.sortbx.bam
 	tigmint-molecule -a$(as) -n$(nm) -q$(mapq) -d$(dist) -s$(minsize) --tsv -o $@ $<
+
 ################################################################################
 # ntHash
 
@@ -294,11 +380,16 @@ minsize=2000
 
 # Index a FASTA file.
 %.physlr.tsv: %.fa
-	$(python) $(bin)/physlr indexfa -k$k -w$w $< >$@
+	$(time) parallel -j$t --pipe -k -L2 $(python) $(bin)/physlr indexfa -k$k -w$w - <$< >$@
 
 # Index linked reads.
 %.physlr.tsv: %.fq.gz
 	gunzip -c $< | $(python) $(bin)/physlr indexlr -k$k -w$w - >$@
+
+# Index linked reads using physlr-indexlr (native implementation).
+%.indexlr.physlr.tsv: %.fq.gz
+	gunzip -c $< | paste - - - - - - - - | grep "BX:Z:" | tr '\t' '\n' \
+	| $(time) ../indexlr/physlr-indexlr -k$k -w$w -o $@ -
 
 # Count the frequency of the markers.
 %.physlr.markers.tsv: %.physlr.tsv
@@ -315,6 +406,10 @@ minsize=2000
 # Filter barcodes by number of markers.
 %.n100-2000.physlr.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr filter-barcodes -n100 -N2000 $< >$@
+
+# Filter barcodes by number of markers.
+%.n100-5000.physlr.tsv: %.physlr.tsv
+	$(python) $(bin)/physlr filter-barcodes -n100 -N5000 $< >$@
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
@@ -408,17 +503,17 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 
 # Extract a BED file of the backbone barcodes.
 # Filter out small components.
-%.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d$(dist).n5.q1.s2000.molecule.bed %.path
+%.path.$(ref).molecule.bed: $(name)/$(ref).$(lr).a0.65.d$(dist).n5.q1.s2000.molecule.bed %.path
 	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) $^ >$@
 
 # Extract a BED file of the fleshed-out backbone barcodes.
 # Filter out small components.
-%.backbone.fleshed.path.$(ref).molecule.bed: $(ref)/$(ref).$(lr).a0.65.d$(dist).n5.q1.s2000.molecule.bed %.backbone.fleshed.path
+%.backbone.fleshed.path.$(ref).molecule.bed: $(name)/$(ref).$(lr).a0.65.d$(dist).n5.q1.s2000.molecule.bed %.backbone.fleshed.path
 	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) $^ >$@
 
 # Extract a BED file of fleshed-out backbone barcodes from molecule-split reads
 # Filter out small components
-%.backbone.fleshed.path.$(ref).molecule.split.bed:  $(ref)/$(ref).$(lr).n100-2000.overlap.n$n.split.a0.65.d$(dist).n5.q1.s2000.molecule.bed %.backbone.fleshed.path
+%.backbone.fleshed.path.$(ref).molecule.split.bed:  $(name)/$(ref).$(lr).n100-2000.overlap.n$n.split.a0.65.d$(dist).n5.q1.s2000.molecule.bed %.backbone.fleshed.path
 	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) --molecule-bed=1 $^ >$@
 
 # Sort a BED file.
@@ -454,25 +549,25 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 # Bedtools
 
 # Compute genome coverage.
-%.bed.$(ref).cov.tsv: %.bed $(ref)/$(ref).fa.fai
-	grep -v NA $< | sort -k1,1 -k2,2n -k3,3n | bedtools genomecov -max 1 -g $(ref)/$(ref).fa.fai -i - | awk '$$2 != 0 || $$5 != 1' >$@
+%.bed.$(ref).cov.tsv: %.bed $(name)/$(ref).fa.fai
+	grep -v NA $< | sort -k1,1 -k2,2n -k3,3n | bedtools genomecov -max 1 -g $(name)/$(ref).fa.fai -i - | awk '$$2 != 0 || $$5 != 1' >$@
 
 ################################################################################
 # QUAST
 
 # Calculate assembly contiguity and correctness metrics using QUAST.
-%.quast.tsv: %.fa $(ref)/$(ref).fa $(ref)/$(ref).gff
-	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 95 -R $(ref)/$(ref).fa -o $*.quast $<
+%.quast.tsv: %.fa $(name)/$(ref).fa
+	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 95 -R $(name)/$(ref).fa -o $*.quast $<
 	cp $*.quast/transposed_report.tsv $@
 
 # Aggregate QUAST metrics.
-f1.quast.tsv: \
-		f1.abyss.scaftigs.quast.tsv \
-		f1.abyss.quast.tsv \
-		f1.supernova.scaftigs.quast.tsv \
-		f1.supernova.quast.tsv \
-		f1.n100-2000.physlr.overlap.n$n.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv \
-		f1.n100-2000.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+%.quast.tsv: \
+		%.abyss.scaftigs.quast.tsv \
+		%.abyss.quast.tsv \
+		%.supernova.scaftigs.quast.tsv \
+		%.supernova.quast.tsv \
+		%.n100-2000.physlr.overlap.n$n.mol.backbone.map.$(name).abyss.n10.sort.best.bed.path.quast.tsv \
+		%.n100-2000.physlr.overlap.n$n.mol.backbone.map.$(name).supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 ################################################################################

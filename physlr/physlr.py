@@ -1126,7 +1126,7 @@ class Physlr:
                 continue
             num_paths += 1
             if i != 0:
-                print("NA\tNA\tNA\tNA\tNA")
+                print("NA\tNA\tNA\tNA\tNA\tNA")
             for u in path:
                 num_barcodes += 1
                 bx = u
