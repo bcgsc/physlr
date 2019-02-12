@@ -879,8 +879,7 @@ class Physlr:
         cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
         components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
         components.sort(key=len, reverse=True)
-        multi_node_components = [i for i in components if len(i) > 1]  # Filter-out outlying nodes
-        return u, {v: i for i, vs in enumerate(multi_node_components) for v in vs}
+        return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs} # Filter-out outlying nodes
 
     @staticmethod
     def determine_molecules_process(u):
