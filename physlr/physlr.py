@@ -290,7 +290,7 @@ class Physlr:
     @staticmethod
     def read_minimizers_list(filenames):
         "Read minimizers in TSV format. Returns ordered list."
-        idtomin = {}
+        bxtomin = {}
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
             with open(filename) as fin:
@@ -300,14 +300,14 @@ class Physlr:
                     fields = line.split(None, 1)
                     if len(fields) < 2:
                         continue
-                    id = fields[0]
-                    if id in idtomin:
+                    bx = fields[0]
+                    if bx in bxtomin:
                         print("Error: Expected single id per in file", file=sys.stderr)
                         exit(1)
-                    idtomin[id] = [int(x) for x in fields[1].split()]
+                    bxtomin[bx] = [int(x) for x in fields[1].split()]
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
-        return idtomin
+        return bxtomin
 
     @staticmethod
     def count_molecules_per_bx(moltomin):
@@ -992,7 +992,6 @@ class Physlr:
         bxtomin = self.read_minimizers(target_filenames)
         mintobx = self.construct_minimizers_to_barcodes(bxtomin)
         self.remove_repetitive_minimizers(bxtomin, mintobx)
-         
         for bx, markers in progress(bxtomin.items()):
             print(bx, "\t", sep="", end="")
             print(*markers)
@@ -1019,10 +1018,6 @@ class Physlr:
         backbones = Physlr.determine_backbones(g)
         markertopos = Physlr.index_markers_in_backbones(backbones, bxtomin)
 
-#         #debug file handle
-#         debugPosFH = open("physlr_map_pos.txt", "w")
-#         debugMapFH = open("physlr_map_debug.txt", "w")
-
         # Map the query sequences to the physical map.
         num_mapped = 0
         for qid, markers in progress(query_markers.items()):
@@ -1034,51 +1029,42 @@ class Physlr:
             for qpos, marker in enumerate(markers):
                 if score >= self.args.n:
                     for (tid, tpos) in markertopos.get(marker, ()):
-                        if  not (tid in tid_to_qpos):
+                        if not tid in tid_to_qpos:
                             tid_to_qpos[tid] = {}
                         tid_to_qpos[tid][tpos] = qpos
-                
-            tid_to_mkt = {} 
-            for tid in tid_to_qpos.keys():
-                if len(tid_to_qpos[tid]) > 1:
-                    #build array of the time points of measurements
-                    #build array containing the measurements corresponding to entries of time
-                    timepoints = []
-                    measurements = []
-                    for tpos in tid_to_qpos[tid].keys():
-                        #do not use islands (noise?)
-                        if (tpos + 1) in tid_to_qpos[tid] or (tpos - 1) in tid_to_qpos[tid]:
-                            for qpos in tid_to_qpos[tid][tpos]:
-#                                 print(qid, qpos, tid, tpos, sep="\t", file=debugPosFH)
-                                timepoints.append(tpos)
-                                measurements.append(qpos)
-                    if len(timepoints) > 0:
-                        tid_to_mkt[tid] = physlr.mkt.test(numpy.array(timepoints), numpy.array(measurements), 1, 0.01, "upordown")
-             
-             
+
+            tid_to_mkt = {}
+            for (tid, tpos_to_qpos) in tid_to_qpos:
+                #build array of the time points of measurements
+                #build array containing the measurements corresponding to entries of time
+                timepoints = []
+                measurements = []
+                for (tpos, qpos_list) in tpos_to_qpos:
+                    #do not use islands (noise?)
+                    if tpos + 1 in tpos_to_qpos or tpos - 1 in tpos_to_qpos:
+                        for qpos in qpos_list:
+                            timepoints.append(tpos)
+                            measurements.append(qpos)
+                if timepoints:
+                    tid_to_mkt[tid] = physlr.mkt.test(numpy.array(timepoints), \
+                                                      numpy.array(measurements), \
+                                                      1, self.args.p, "upordown")
             mapped = False
             for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
                     orientation = "."
                     if tid in tid_to_mkt:
-                        #MK: string of test result
+                        #mk: string of test result
                         #m: slope
                         #c: intercept
                         #p: significance
-                        (MK, m, c, p) = tid_to_mkt[tid]
+                        result = tid_to_mkt[tid]
                         mapped = True
-                        #TODO make into parameter
-                        if p < 0.01 and m != 0:
-                            if m > 0:
-                                orientation = "+"
-                            else:
-                                orientation = "-"
-#                         print(tid, tpos, tpos + 1, qid, score, statistics.median_low(tidpos_to_qpos.get((tid, tpos + 0), None)), tidpos_to_qposMedian.get((tid, tpos + 0), None), statistics.median_low(tidpos_to_qpos.get((tid, tpos), 0)), MK, m, c, p, sep="\t", file = debugMapFH)
-                    print(tid, tpos, tpos + 1, qid, score, orientation, sep ="\t")
+                        if result[3] < self.args.p and result[1] != 0:
+                            orientation = "+" if result[1] > 0 else "-"
+                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
             if mapped:
                 num_mapped += 1
-#         debugPosFH.close()
-#         debugMapFH.close()
         print(
             int(timeit.default_timer() - t0),
             "Mapped", num_mapped, "sequences of", len(query_markers),
@@ -1330,6 +1316,9 @@ class Physlr:
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
             help="the output graph file format [tsv]")
+        argparser.add_argument(
+            "-p", "--min_p_val", action="store", dest="p", type=int, default=0.01,
+            help="Minimum significance threshold (FPR) for Mann-Kendall Test")
         argparser.add_argument(
             "--verbose", action="store", dest="verbose", type=int, default="0",
             help="the level of verbosity [0]")
