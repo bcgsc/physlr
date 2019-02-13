@@ -1030,6 +1030,8 @@ class Physlr:
                 for (tid, tpos) in markertopos.get(marker, ()):
                     if not tid in tid_to_qpos:
                         tid_to_qpos[tid] = {}
+                    if not tpos in tid_to_qpos[tid]:
+                        tid_to_qpos[tid][tpos] = []
                     tid_to_qpos[tid][tpos].append(qpos)
 
             tid_to_mkt = {}
