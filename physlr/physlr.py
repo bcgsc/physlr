@@ -1317,7 +1317,7 @@ class Physlr:
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
             help="the output graph file format [tsv]")
         argparser.add_argument(
-            "-p", "--min_p_val", action="store", dest="p", type=int, default=0.01,
+            "-p", "--min_p_val", action="store", dest="p", type=float, default=0.01,
             help="Minimum significance threshold (FPR) for Mann-Kendall Test")
         argparser.add_argument(
             "--verbose", action="store", dest="verbose", type=int, default="0",
