@@ -9,12 +9,10 @@ jobs:
     inputs:
       versionSpec: "3.7"
       architecture: x64
-  - script: pip3 install networkx pylint tqdm
-    displayName: Install Python packages
-  - script: pylint physlr
-    displayName: Run pylint
   - script: pip3 install .
     displayName: Run pip
+  - script: pylint physlr
+    displayName: Run pylint
   - script: make -C indexlr
     displayName: Build physlr-indexlr
   - script: make -C indexlr check
