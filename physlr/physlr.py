@@ -311,13 +311,14 @@ class Physlr:
 
     @staticmethod
     def count_molecules_per_bx(moltomin):
-        "Iterate over minimizers dictionary, count molecules per barcode"
+        "Iterate over minimizers dictionary, track # molecules per barcode"
         mol_counts = Counter()
-        bx_match = re.compile(r'^(\S+)_\d+$')
+        bx_match = re.compile(r'^(\S+)_(\d+)$')
         for bx_mol in moltomin:
             bx_mol_match = re.search(bx_match, bx_mol)
             if bx_mol_match:
-                mol_counts[bx_mol_match.group(1)] += 1
+                mol_counts[bx_mol_match.group(1)] = max(mol_counts[bx_mol_match.group(1)],
+                                                        int(bx_mol_match.group(2)) + 1)
         return mol_counts
 
     @staticmethod
@@ -883,7 +884,9 @@ class Physlr:
     def assign_read_molecule(minimizers, moltomin, mol_counts, bx):
         "Given the minimizers of a read and the barcode, assign to a molecule"
         intersections = {mol: len(set.intersection(minimizers, moltomin[bx + "_" + str(mol)]))
-                         for mol in range(0, mol_counts[bx])}
+                         for mol in range(0, mol_counts[bx]) if bx + "_" + str(mol) in moltomin}
+        if not intersections.values():
+            return "", 1, 0
         max_intersection = max(intersections.values())
         if max_intersection == 0:
             return "", 1, 0
@@ -898,7 +901,7 @@ class Physlr:
         cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
         components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
         components.sort(key=len, reverse=True)
-        return u, {v: i for i, vs in enumerate(components) for v in vs}
+        return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs}
 
     @staticmethod
     def determine_molecules_process(u):
@@ -1245,7 +1248,7 @@ class Physlr:
                 continue
             num_paths += 1
             if i != 0:
-                print("NA\tNA\tNA\tNA\tNA")
+                print("NA\tNA\tNA\tNA\tNA\tNA")
             for u in path:
                 num_barcodes += 1
                 bx = u
