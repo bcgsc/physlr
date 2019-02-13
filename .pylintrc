@@ -4,3 +4,5 @@ max-branches=20
 max-locals=50
 max-module-lines=2000
 max-public-methods=100
+[MASTER]
+ignore=mkt.py
