@@ -1030,15 +1030,15 @@ class Physlr:
                 for (tid, tpos) in markertopos.get(marker, ()):
                     if not tid in tid_to_qpos:
                         tid_to_qpos[tid] = {}
-                    tid_to_qpos[tid][tpos] = qpos
+                    tid_to_qpos[tid][tpos].append(qpos)
 
             tid_to_mkt = {}
-            for (tid, tpos_to_qpos) in tid_to_qpos:
+            for (tid, tpos_to_qpos) in tid_to_qpos.items():
                 #build array of the time points of measurements
                 #build array containing the measurements corresponding to entries of time
                 timepoints = []
                 measurements = []
-                for (tpos, qpos_list) in tpos_to_qpos:
+                for (tpos, qpos_list) in tpos_to_qpos.items():
                     #do not use islands (noise?)
                     if tpos + 1 in tpos_to_qpos or tpos - 1 in tpos_to_qpos:
                         for qpos in qpos_list:
