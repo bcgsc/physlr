@@ -596,16 +596,16 @@ class Physlr:
     def remove_repetitive_minimizers(self, bxtomin, mintobx):
         "Remove reptitive minimizers."
 
-        # Remove markers that occur only once.
+        # Remove markers that occur only once. Jess changed it so it also removes erros
         num_markers = len(mintobx)
-        singletons = {x for x, bxs in progress(mintobx.items()) if len(bxs) < 2}
+        singletons = {x for x, bxs in progress(mintobx.items()) if len(bxs) < self.args.E}
         for x in singletons:
             del mintobx[x]
         for markers in progress(bxtomin.values()):
             markers -= singletons
         print(
             int(timeit.default_timer() - t0),
-            "Removed", len(singletons), "minimizers that occur only once of", num_markers,
+            "Removed", len(singletons), "minimizers that occur only less than", self.args.E, " times of", num_markers,
             f"({round(100 * len(singletons) / num_markers, 2)}%)", file=sys.stderr)
 
         # Identify repetitive markers.
@@ -1175,6 +1175,9 @@ class Physlr:
         argparser.add_argument(
             "-C", "--max-count", action="store", dest="C", type=int,
             help="ignore markers that occur in C or more barcodes [None]")
+        argparser.add_argument(
+            "-E", "--error_min", action="store", dest="E", type=int, default=6,
+            help="remove error minimizers that have less than this amount of barcodes")
         argparser.add_argument(
             "-M", "--max-molecules", action="store", dest="M", type=int,
             help="remove barcodes with M or more molecules [None]")
