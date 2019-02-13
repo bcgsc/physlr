@@ -1027,11 +1027,10 @@ class Physlr:
             #tid->tpos->qpos_list
             tid_to_qpos = {}
             for qpos, marker in enumerate(markers):
-                if score >= self.args.n:
-                    for (tid, tpos) in markertopos.get(marker, ()):
-                        if not tid in tid_to_qpos:
-                            tid_to_qpos[tid] = {}
-                        tid_to_qpos[tid][tpos] = qpos
+                for (tid, tpos) in markertopos.get(marker, ()):
+                    if not tid in tid_to_qpos:
+                        tid_to_qpos[tid] = {}
+                    tid_to_qpos[tid][tpos] = qpos
 
             tid_to_mkt = {}
             for (tid, tpos_to_qpos) in tid_to_qpos:
