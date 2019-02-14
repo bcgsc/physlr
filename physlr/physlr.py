@@ -509,8 +509,9 @@ class Physlr:
                 # print("Subgraph for ", u, "-SSS:", file=sys.stdout)
                 # self.write_graph(subgraph, sys.stdout, self.args.graph_format)
                 # print("End ", u, "-EEE", file=sys.stdout)
-                fout = open("physlrSubgraphs/"+u, "w+")
+                fout = open("physlrSubgraphs/"+u+"."+self.args.graph_format, "w+")
                 self.write_graph(subgraph, fout, self.args.graph_format)
+                fout.close()
         print(int(timeit.default_timer() - t0), "Number of empty subgraphs:", no_subgraph.__len__(), file=sys.stderr)
         print(int(timeit.default_timer() - t0), "Wrote graphs", file=sys.stderr)
 
