@@ -504,7 +504,7 @@ class Physlr:
             if self.args.d == 1:
                 vertices_u.update(v for v in g.neighbors(u))
             subgraph = g.subgraph(vertices_u - exclude_vertices)
-            if len(subgraph) == 0:
+            if subgraph.number_of_nodes() == 0:
                 no_subgraph.update(u)
             else:
                 fout = open("physlrSubgraphs/"+u+"."+self.args.graph_format, "w+")
