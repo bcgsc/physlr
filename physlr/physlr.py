@@ -486,6 +486,34 @@ class Physlr:
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
+    def physlr_subgraphs(self):
+        "Extract multiple vertex-induced subgraphs."
+        remove_source = 1;  # make it a self.arg later
+        if self.args.d not in (0, 1):
+            exit("physlr subgraphs: error: Only -d0 and -d1 are currently supported.")
+        vertices = set(self.args.v.split(","))
+        exclude_vertices = set(self.args.exclude_vertices.split(","))
+        g = self.read_graph(self.args.FILES)
+        no_subgraph = set()  # barcodes with no neighboring subgraphs
+        print(int(timeit.default_timer() - t0), "Extracting and writing graphs:", file=sys.stderr)
+        for u in progress(vertices):
+            vertices_u = set()
+            if remove_source == 0:
+                vertices_u.update(u)
+            if self.args.d == 1:
+                vertices_u.update(v for v in g.neighbors(u))
+            subgraph = g.subgraph(vertices_u - exclude_vertices)
+            if len(subgraph) == 0:
+                no_subgraph.update(u)
+            else:
+                # print("Subgraph for ", u, "-SSS:", file=sys.stdout)
+                # self.write_graph(subgraph, sys.stdout, self.args.graph_format)
+                # print("End ", u, "-EEE", file=sys.stdout)
+                fout = open("physlrSubgraphs/"+u, "w+")
+                self.write_graph(subgraph, fout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Number of empty subgraphs:", no_subgraph.__len__(), file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Wrote graphs", file=sys.stderr)
+
     def physlr_indexfa(self):
         "Index a set of sequences. The output file format is TSV."
         for filename in self.args.FILES:
