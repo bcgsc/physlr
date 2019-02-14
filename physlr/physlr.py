@@ -494,7 +494,9 @@ class Physlr:
         exclude_vertices = set(self.args.exclude_vertices.split(","))
         g = self.read_graph(self.args.FILES)
         no_subgraph = set()  # barcodes with no neighboring subgraphs
-        print(int(timeit.default_timer() - t0), "Extracting and writing (sub)graphs", file=sys.stderr)
+        print(int(timeit.default_timer() - t0),
+              "Extracting and writing (sub)graphs",
+              file=sys.stderr)
         if not os.path.exists("physlrSubgraphs2"):
             os.makedirs("physlrSubgraphs2")
         for u in progress(vertices):
@@ -510,7 +512,9 @@ class Physlr:
                 fout = open("physlrSubgraphs/"+u+"."+self.args.graph_format, "w+")
                 self.write_graph(subgraph, fout, self.args.graph_format)
                 fout.close()
-        print(int(timeit.default_timer() - t0), "Number of empty subgraphs (not written):", no_subgraph.__len__(), file=sys.stderr)
+        print(int(timeit.default_timer() - t0),
+              "Number of empty subgraphs (not written):", no_subgraph.__len__(),
+              file=sys.stderr)
         print(int(timeit.default_timer() - t0), "Wrote graphs", file=sys.stderr)
 
     def physlr_indexfa(self):
