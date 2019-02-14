@@ -22,7 +22,7 @@ ref=fly
 # Linked reads.
 lr=f1
 
-# Exclude source when making subgraphs if barcodes
+# Exclude source node when making subgraphs of barcodes
 exs=1
 
 # Name of the dataset.
