@@ -488,17 +488,18 @@ class Physlr:
 
     def physlr_subgraphs(self):
         "Extract multiple vertex-induced subgraphs."
-        remove_source = 1;  # make it a self.arg later
         if self.args.d not in (0, 1):
             exit("physlr subgraphs: error: Only -d0 and -d1 are currently supported.")
         vertices = set(self.args.v.split(","))
         exclude_vertices = set(self.args.exclude_vertices.split(","))
         g = self.read_graph(self.args.FILES)
         no_subgraph = set()  # barcodes with no neighboring subgraphs
-        print(int(timeit.default_timer() - t0), "Extracting and writing graphs:", file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Extracting and writing (sub)graphs", file=sys.stderr)
+        if not os.path.exists("physlrSubgraphs2"):
+            os.makedirs("physlrSubgraphs2")
         for u in progress(vertices):
             vertices_u = set()
-            if remove_source == 0:
+            if self.args.exclude_source == 0:
                 vertices_u.update(u)
             if self.args.d == 1:
                 vertices_u.update(v for v in g.neighbors(u))
@@ -506,13 +507,10 @@ class Physlr:
             if len(subgraph) == 0:
                 no_subgraph.update(u)
             else:
-                # print("Subgraph for ", u, "-SSS:", file=sys.stdout)
-                # self.write_graph(subgraph, sys.stdout, self.args.graph_format)
-                # print("End ", u, "-EEE", file=sys.stdout)
                 fout = open("physlrSubgraphs/"+u+"."+self.args.graph_format, "w+")
                 self.write_graph(subgraph, fout, self.args.graph_format)
                 fout.close()
-        print(int(timeit.default_timer() - t0), "Number of empty subgraphs:", no_subgraph.__len__(), file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Number of empty subgraphs (not written):", no_subgraph.__len__(), file=sys.stderr)
         print(int(timeit.default_timer() - t0), "Wrote graphs", file=sys.stderr)
 
     def physlr_indexfa(self):
@@ -1231,6 +1229,9 @@ class Physlr:
         argparser.add_argument(
             "-V", "--exclude-vertices", action="store", dest="exclude_vertices", default="",
             help="list of vertices to exclude [None]")
+        argparser.add_argument(
+            "--exclude-source", action="store", dest="exclude_source", type=int, default=1,
+            help="exclude the barcode itself from the subgraph (0 or 1) [1]")
         argparser.add_argument(
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away [0]")
