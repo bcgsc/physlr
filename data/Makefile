@@ -501,7 +501,7 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 	$(python) $(bin)/physlr subgraph -v$v -d$d $< >$@
 
 # Make multiple vertex-induced subgraphs
-%.subgraphs.tsv: %.tsv
+%.subgraphs: %.tsv
 	mkdir -p physlrSubgraphs/
 	$(python) $(bin)/physlr subgraphs -v$v -d$d $< >$@
 
