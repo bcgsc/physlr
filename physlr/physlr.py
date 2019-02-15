@@ -493,7 +493,7 @@ class Physlr:
         vertices = set(self.args.v.split(","))
         exclude_vertices = set(self.args.exclude_vertices.split(","))
         g = self.read_graph(self.args.FILES)
-        no_subgraph = set()  # barcodes with no neighboring subgraphs
+        num_empty_subgraphs = 0
         print(int(timeit.default_timer() - t0),
               "Extracting and writing (sub)graphs",
               file=sys.stderr)
