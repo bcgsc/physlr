@@ -497,8 +497,8 @@ class Physlr:
         print(int(timeit.default_timer() - t0),
               "Extracting and writing (sub)graphs",
               file=sys.stderr)
-        if not os.path.exists("physlrSubgraphs2"):
-            os.makedirs("physlrSubgraphs2")
+        if not os.path.exists(self.args.output):
+            os.makedirs(self.args.output)
         for u in progress(vertices):
             vertices_u = set()
             if self.args.exclude_source == 0:
@@ -1239,6 +1239,9 @@ class Physlr:
         argparser.add_argument(
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away [0]")
+        argparser.add_argument(
+            "-o", "--output", action="store", dest="output", type=int, default="physlrSubgraphs",
+            help=" the directory for output subgraphs of physlr_subgraphs[physlrSubgraphs]")
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
             help="the output graph file format [tsv]")
