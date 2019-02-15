@@ -486,6 +486,37 @@ class Physlr:
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
+    def physlr_subgraphs(self):
+        "Extract multiple vertex-induced subgraphs."
+        if self.args.d not in (0, 1):
+            exit("physlr subgraphs: error: Only -d0 and -d1 are currently supported.")
+        vertices = set(self.args.v.split(","))
+        exclude_vertices = set(self.args.exclude_vertices.split(","))
+        g = self.read_graph(self.args.FILES)
+        num_empty_subgraphs = 0
+        print(int(timeit.default_timer() - t0),
+              "Extracting and writing (sub)graphs",
+              file=sys.stderr)
+        if not os.path.exists(self.args.output):
+            os.makedirs(self.args.output)
+        for u in progress(vertices):
+            vertices_u = set()
+            if self.args.exclude_source == 0:
+                vertices_u.update(u)
+            if self.args.d == 1:
+                vertices_u.update(v for v in g.neighbors(u))
+            subgraph = g.subgraph(vertices_u - exclude_vertices)
+            if subgraph.number_of_nodes() == 0:
+                num_empty_subgraphs += 1
+            else:
+                fout = open("physlrSubgraphs/"+u+"."+self.args.graph_format, "w+")
+                self.write_graph(subgraph, fout, self.args.graph_format)
+                fout.close()
+        print(int(timeit.default_timer() - t0),
+              "Number of empty subgraphs (not written):", num_empty_subgraphs,
+              file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Wrote graphs", file=sys.stderr)
+
     def physlr_indexfa(self):
         "Index a set of sequences. The output file format is TSV."
         for filename in self.args.FILES:
@@ -1203,8 +1234,14 @@ class Physlr:
             "-V", "--exclude-vertices", action="store", dest="exclude_vertices", default="",
             help="list of vertices to exclude [None]")
         argparser.add_argument(
+            "--exclude-source", action="store", dest="exclude_source", type=int, default=1,
+            help="exclude the barcode itself from the subgraph (0 or 1) [1]")
+        argparser.add_argument(
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away [0]")
+        argparser.add_argument(
+            "-o", "--output", action="store", dest="output",
+            help="the output file or directory")
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
             help="the output graph file format [tsv]")

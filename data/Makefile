@@ -496,6 +496,14 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 %.mol.tsv: %.tsv
 	$(python) $(bin)/physlr molecules -t$t $< >$@
 
+# Make a vertex-induced subgraph
+%.subgraph.tsv: %.tsv
+	$(python) $(bin)/physlr subgraph -v$v -d$d $< >$@
+
+# Make multiple vertex-induced subgraphs
+%.subgraphs: %.tsv
+	$(python) $(bin)/physlr subgraphs -v$v -d$d -o $*.subgraphs $<
+
 # Convert a graph from TSV to GraphViz.
 # Filter out small components.
 %.gv: %.tsv
