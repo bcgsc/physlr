@@ -513,7 +513,7 @@ class Physlr:
                 self.write_graph(subgraph, fout, self.args.graph_format)
                 fout.close()
         print(int(timeit.default_timer() - t0),
-              "Number of empty subgraphs (not written):", no_subgraph.__len__(),
+              "Number of empty subgraphs (not written):", num_empty_subgraphs,
               file=sys.stderr)
         print(int(timeit.default_timer() - t0), "Wrote graphs", file=sys.stderr)
 
