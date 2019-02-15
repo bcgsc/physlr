@@ -506,7 +506,7 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 # Make multiple vertex-induced subgraphs
 %.subgraphs.tsv: %.tsv
 	mkdir -p physlrSubgraphs/
-	$(python) $(bin)/physlr subgraphs -v$v -d$d --exclude-source $(exs) $< >$@
+	$(python) $(bin)/physlr subgraphs -v$v -d$d $< >$@
 
 # Convert a graph from TSV to GraphViz.
 # Filter out small components.
