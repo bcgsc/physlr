@@ -1240,7 +1240,7 @@ class Physlr:
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away [0]")
         argparser.add_argument(
-            "-o", "--output", action="store", dest="output", type=int, default="physlrSubgraphs",
+            "-o", "--output", action="store", dest="output",
             help=" the directory for output subgraphs of physlr_subgraphs[physlrSubgraphs]")
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
