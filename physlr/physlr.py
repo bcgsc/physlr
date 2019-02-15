@@ -509,7 +509,7 @@ class Physlr:
             if subgraph.number_of_nodes() == 0:
                 num_empty_subgraphs += 1
             else:
-                fout = open("physlrSubgraphs/"+u+"."+self.args.graph_format, "w+")
+                fout = open(self.args.output+"/"+u+"."+self.args.graph_format, "w+")
                 self.write_graph(subgraph, fout, self.args.graph_format)
                 fout.close()
         print(int(timeit.default_timer() - t0),
@@ -1240,7 +1240,7 @@ class Physlr:
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away [0]")
         argparser.add_argument(
-            "-o", "--output", action="store", dest="output",
+            "-o", "--output", action="store", dest="output", default="output",
             help="the output file or directory")
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
