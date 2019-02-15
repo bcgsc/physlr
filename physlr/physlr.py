@@ -1241,7 +1241,7 @@ class Physlr:
             help="include vertices within d edges away [0]")
         argparser.add_argument(
             "-o", "--output", action="store", dest="output",
-            help=" the output file or directory")
+            help="the output file or directory")
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
             help="the output graph file format [tsv]")
