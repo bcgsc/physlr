@@ -22,9 +22,6 @@ ref=fly
 # Linked reads.
 lr=f1
 
-# Exclude source node when making subgraphs of barcodes
-exs=1
-
 # Name of the dataset.
 ifeq ($(ref),z11)
 name=fish
