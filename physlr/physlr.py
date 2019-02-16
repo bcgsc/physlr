@@ -488,6 +488,8 @@ class Physlr:
 
     def physlr_subgraphs(self):
         "Extract multiple vertex-induced subgraphs."
+        if self.args.output is None:
+            exit("physlr subgraphs: missing parameter: --output is need but not provided.")
         if self.args.d not in (0, 1):
             exit("physlr subgraphs: error: Only -d0 and -d1 are currently supported.")
         vertices = set(self.args.v.split(","))
@@ -1240,7 +1242,7 @@ class Physlr:
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away [0]")
         argparser.add_argument(
-            "-o", "--output", action="store", dest="output", default="output",
+            "-o", "--output", action="store", dest="output",
             help="the output file or directory")
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
