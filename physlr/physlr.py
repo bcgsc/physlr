@@ -504,7 +504,7 @@ class Physlr:
         for u in progress(vertices):
             vertices_u = set()
             if self.args.exclude_source == 0:
-                vertices_u.update(u)
+                vertices_u.update(u.split())
             if self.args.d == 1:
                 vertices_u.update(v for v in g.neighbors(u))
             subgraph = g.subgraph(vertices_u - exclude_vertices)
