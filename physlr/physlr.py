@@ -566,7 +566,10 @@ class Physlr:
 
     @staticmethod
     def remove_singleton_markers(bxtomin):
-        "Remove markers that occur only once."
+        """
+        Remove markers that occur only once.
+        Return the counts of markers after removing singletons.
+        """
         marker_counts = Counter(x for markers in progress(bxtomin.values()) for x in markers)
         print(
             int(timeit.default_timer() - t0),
@@ -579,6 +582,9 @@ class Physlr:
             int(timeit.default_timer() - t0),
             "Removed", len(singletons), "minimizers that occur only once of", len(marker_counts),
             f"({round(100 * len(singletons) / len(marker_counts), 2)}%)", file=sys.stderr)
+        for marker in singletons:
+            del marker_counts[marker]
+        return marker_counts
 
     def physlr_filter_barcodes(self):
         """
@@ -626,8 +632,49 @@ class Physlr:
             int(timeit.default_timer() - t0),
             "Wrote", len(bxtomin) - too_few - too_many, "barcodes", file=sys.stderr)
 
+    def physlr_filter_minimizers(self):
+        "Filter minimizers by depth of coverage. Remove repetitive minimizers."
+        bxtomin = self.read_minimizers(self.args.FILES)
+        marker_counts = Physlr.remove_singleton_markers(bxtomin)
+
+        # Identify frequent markers.
+        q1, q2, q3 = quantile([0.25, 0.5, 0.75], marker_counts.values())
+        low_whisker = int(q1 - self.args.coef * (q3 - q1))
+        high_whisker = int(q3 + self.args.coef * (q3 - q1))
+        if self.args.C is None:
+            self.args.C = high_whisker
+        print(
+            int(timeit.default_timer() - t0),
+            " Minimizer frequency: Q1=", q1, " Q2=", q2, " Q3=", q3,
+            " Q1-", self.args.coef, "*(Q3-Q1)=", low_whisker,
+            " Q3+", self.args.coef, "*(Q3-Q1)=", high_whisker,
+            " C=", self.args.C, sep="", file=sys.stderr)
+
+        # Remove frequent markers.
+        frequent_markers = {x for x, count in marker_counts.items() if count >= self.args.C}
+        num_empty_barcodes = 0
+        for bx, markers in progress(bxtomin.items()):
+            markers -= frequent_markers
+            if not markers:
+                num_empty_barcodes += 1
+                continue
+            print(bx, "\t", sep="", end="")
+            print(*markers)
+
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", len(frequent_markers), "most frequent minimizers of", len(marker_counts),
+            f"({round(100 * len(frequent_markers) / len(marker_counts), 2)}%)", file=sys.stderr)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", num_empty_barcodes, "empty barcodes of", len(bxtomin),
+            f"({round(100 * num_empty_barcodes / len(bxtomin), 2)}%)", file=sys.stderr)
+        print(
+            int(timeit.default_timer() - t0),
+            "Wrote", len(bxtomin) - num_empty_barcodes, "barcodes", file=sys.stderr)
+
     def remove_repetitive_minimizers(self, bxtomin, mintobx):
-        "Remove reptitive minimizers."
+        "Remove repetitive minimizers."
 
         # Remove markers that occur only once.
         num_markers = len(mintobx)

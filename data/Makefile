@@ -411,6 +411,10 @@ minsize=2000
 %.n100-5000.physlr.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr filter-barcodes -n100 -N5000 $< >$@
 
+# Filter markers by their frequency.
+%.c.physlr.tsv: %.physlr.tsv
+	$(python) $(bin)/physlr filter-minimizers $< >$@
+
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr overlap -n10 $< >$@
