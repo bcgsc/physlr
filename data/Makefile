@@ -247,6 +247,10 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 ################################################################################
 # miniasm
 
+# Extract the scaftigs that map to chromosome 25.
+%.chr25.paf.gz: %.paf.gz
+	gunzip -c $< | awk '$$6 == "25"' | $(gzip) >$@
+
 # Draw a dot plot of a PAF file.
 # Skip alignments to non-chromosomal sequences.
 %.paf.ps: %.paf.gz
