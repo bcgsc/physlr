@@ -36,7 +36,7 @@ bed <- bed_orig %>%
 		replace_na(suppressWarnings(as.numeric(Rname)) < 50, TRUE)) %>%
 	mutate(
 		BX = if_else(is.na(BX), as.character(cumsum(is.na(BX))), BX),
-		mutate(Index = as.numeric(factor(BX, levels = unique(BX))))
+		Index = as.numeric(factor(BX, levels = unique(BX))))
 ```
 
 # Plot the BED file
