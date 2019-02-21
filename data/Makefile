@@ -138,30 +138,30 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 
 # Assemble a physical map of fish.
 fish: \
-	fish.n100-5000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
-	fish.n100-5000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
-	fish.n100-5000.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	fish.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.pdf \
-	fish.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.z11.paf.pdf \
-	fish.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
+	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
+	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
+	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.paf.pdf \
+	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
 
 # Assemble a physical map of fish using physlr-indexlr (native implementation).
 fish-indexlr: \
-	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
-	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
-	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.pdf \
-	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.z11.paf.pdf \
-	fish.indexlr.n100-5000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
+	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
+	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.pdf \
+	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.z11.paf.pdf \
+	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 
 # Assemble a physical map of fish chromosome 25.
 fishchr25: \
-	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
-	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
-	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.pdf \
-	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.z11.paf.pdf \
-	fishchr25.n100-2000.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
+	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
+	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.pdf \
+	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.z11.paf.pdf \
+	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 
 # Download the zebrafish genome from NCBI.
 fish/z11.ncbi.fa:
@@ -412,7 +412,7 @@ minsize=2000
 	$(python) $(bin)/physlr filter-barcodes -n100 -N5000 $< >$@
 
 # Filter markers by their frequency.
-%.c.physlr.tsv: %.physlr.tsv
+%.c2-x.physlr.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr filter-minimizers $< >$@
 
 # Determine overlaps and output the graph in TSV.
