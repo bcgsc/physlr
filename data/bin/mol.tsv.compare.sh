@@ -16,7 +16,7 @@
 # Output:
 # 	prints the stats of Consistent/underplsit/oversplit barcodes.
 # 
-# © birol lab - birollab.ca
+# Written by Amirhossein Afshinfard
 
 if [[ "$#" -eq 0 ]] || [[ "$#" -eq 2 ]] || [[ "$#" -eq 3 ]] || [[ "$#" -eq 4 ]]; then
 	echo ""
