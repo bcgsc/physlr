@@ -489,7 +489,7 @@ class Physlr:
     def physlr_subgraphs(self):
         "Extract multiple vertex-induced subgraphs."
         if self.args.output is None:
-            exit("physlr subgraphs: missing parameter: --output is need but not provided.")
+            exit("physlr subgraphs: missing parameter: --output is needed but not provided.")
         if self.args.d not in (0, 1):
             exit("physlr subgraphs: error: Only -d0 and -d1 are currently supported.")
         vertices = set(self.args.v.split(","))
