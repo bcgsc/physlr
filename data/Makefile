@@ -468,6 +468,10 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 %.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).physlr.tsv
 	$(python) $(bin)/physlr map -n10 $^ >$@
 
+# Map the draft assembly to the backbone graph using physlr map-mkt.
+%.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).physlr.tsv
+	$(time) $(python) $(bin)/physlr map-mkt -n10 $^ >$@
+
 # Filter a BED file by score.
 %.n100.bed: %.n10.bed
 	awk '$$5 >= 100' $< >$@
