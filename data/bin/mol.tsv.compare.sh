@@ -3,15 +3,15 @@
 # Description:
 # 	Compares "*.mol.tsv" of the physlr's barcode to molecule stage, or any other algorithm for barcode to molecule separation of linked reads,
 #			 with a reference file reporting the number of molecules per barcode.	
-#   - this script only compares the reported number of molecules per barcode, and consistency just means equal number of molecules per barcode.
-#   - undersplitting: less number of molecules per barcode compared to reference (golden truth ) of the molecule per barcodes.
-#   - oversplitting: more number of molecules per barcode compared to reference (golden truth ) of the molecule per barcodes.
+#	- this script only compares the reported number of molecules per barcode, and consistency just means equal number of molecules per barcode.
+#	- undersplitting: less number of molecules per barcode compared to reference (golden truth ) of the molecule per barcodes.
+#	- oversplitting: more number of molecules per barcode compared to reference (golden truth ) of the molecule per barcodes.
 #
 # Inputs: 
 # 	$1: the name of the ".mol.tsv" query file in "../" directory (without ".mol.tsv") - or the name of the file for molecule counts in current directory (molCount_"NAME").
 # 	$2: the reference (Tigmint results or results of another physlr run with the same barcodes - (molCount_"NAME")).
-#	  $3: If == "keep", keeps the files for comparison, otherwise removes the created files.
-#	  $4: If present (any string), the script skips the stats for 2+ mol/barcode as well as the stats for the whole data.
+#	$3: If == "keep", keeps the files for comparison, otherwise removes the created files.
+#	$4: If present (any string), the script skips the stats for 2+ mol/barcode as well as the stats for the whole data.
 #
 # Output:
 # 	prints the stats of Consistent/underplsit/oversplit barcodes.
