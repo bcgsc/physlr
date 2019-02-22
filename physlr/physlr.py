@@ -268,7 +268,7 @@ class Physlr:
 
     @staticmethod
     def read_minimizers(filenames):
-        "Read minimizers in TSV format."
+        "Read minimizers in TSV format. Returns unordered set."
         bxtomin = {}
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
@@ -283,6 +283,28 @@ class Physlr:
                     if bx not in bxtomin:
                         bxtomin[bx] = set()
                     bxtomin[bx].update(int(x) for x in fields[1].split())
+                progressbar.close()
+            print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
+        return bxtomin
+
+    @staticmethod
+    def read_minimizers_list(filenames):
+        "Read minimizers in TSV format. Returns ordered list."
+        bxtomin = {}
+        for filename in filenames:
+            print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
+            with open(filename) as fin:
+                progressbar = progress_bar_for_file(fin)
+                for line in fin:
+                    progressbar.update(len(line))
+                    fields = line.split(None, 1)
+                    if len(fields) < 2:
+                        continue
+                    bx = fields[0]
+                    if bx in bxtomin:
+                        print("Error: Expected single id per in file", file=sys.stderr)
+                        exit(1)
+                    bxtomin[bx] = [int(x) for x in fields[1].split()]
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return bxtomin
@@ -1042,6 +1064,93 @@ class Physlr:
             return "+" if y < z else "-" if y > z else "."
         return "."
 
+    def physlr_filter_markers(self):
+        """
+        Removes repeats from minimizers and outputs result to stdout
+        """
+        target_filenames = [self.args.FILES[0]]
+        bxtomin = self.read_minimizers(target_filenames)
+        mintobx = self.construct_minimizers_to_barcodes(bxtomin)
+        self.remove_repetitive_minimizers(bxtomin, mintobx)
+        for bx, markers in progress(bxtomin.items()):
+            print(bx, "\t", sep="", end="")
+            print(*markers)
+
+    def physlr_map_mkt(self):
+        """
+        Map sequences to a physical map.
+        Usage: physlr map TGRAPH.tsv TMARKERS.tsv QMARKERS.tsv... >MAP.bed
+        """
+        import physlr.mkt
+        import numpy
+
+        if len(self.args.FILES) < 3:
+            exit("physlr map: error: at least three file arguments are required")
+        graph_filenames = [self.args.FILES[0]]
+        target_filenames = [self.args.FILES[1]]
+        query_filenames = self.args.FILES[2:]
+
+        g = self.read_graph(graph_filenames)
+        bxtomin = self.read_minimizers(target_filenames)
+        query_markers = self.read_minimizers_list(query_filenames)
+
+        # Index the positions of the markers in the backbone.
+        backbones = Physlr.determine_backbones(g)
+        markertopos = Physlr.index_markers_in_backbones(backbones, bxtomin)
+
+        # Map the query sequences to the physical map.
+        num_mapped = 0
+        for qid, markers in progress(query_markers.items()):
+            # Count the number of markers mapped to each target position.
+            tidpos_to_n = Counter(pos for marker in markers for pos in markertopos.get(marker, ()))
+            # Map each target position to a query position.
+            #tid->tpos->qpos_list
+            tid_to_qpos = {}
+            for qpos, marker in enumerate(markers):
+                for (tid, tpos) in markertopos.get(marker, ()):
+                    if not tid in tid_to_qpos:
+                        tid_to_qpos[tid] = {}
+                    if not tpos in tid_to_qpos[tid]:
+                        tid_to_qpos[tid][tpos] = []
+                    tid_to_qpos[tid][tpos].append(qpos)
+
+            tid_to_mkt = {}
+            for (tid, tpos_to_qpos) in tid_to_qpos.items():
+                #build array of the time points of measurements
+                #build array containing the measurements corresponding to entries of time
+                timepoints = []
+                measurements = []
+                for (tpos, qpos_list) in tpos_to_qpos.items():
+                    #do not use islands (noise?)
+                    if tpos + 1 in tpos_to_qpos or tpos - 1 in tpos_to_qpos:
+                        for qpos in qpos_list:
+                            timepoints.append(tpos)
+                            measurements.append(qpos)
+                if timepoints:
+                    tid_to_mkt[tid] = physlr.mkt.test(numpy.array(timepoints), \
+                                                      numpy.array(measurements), \
+                                                      1, self.args.p, "upordown")
+            mapped = False
+            for (tid, tpos), score in tidpos_to_n.items():
+                if score >= self.args.n:
+                    orientation = "."
+                    if tid in tid_to_mkt:
+                        #mk: string of test result
+                        #m: slope
+                        #c: intercept
+                        #p: significance
+                        result = tid_to_mkt[tid]
+                        mapped = True
+                        if result[3] < self.args.p and result[1] != 0:
+                            orientation = "+" if result[1] > 0 else "-"
+                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
+            if mapped:
+                num_mapped += 1
+        print(
+            int(timeit.default_timer() - t0),
+            "Mapped", num_mapped, "sequences of", len(query_markers),
+            f"({round(100 * num_mapped / len(query_markers), 2)}%)", file=sys.stderr)
+
     def physlr_map(self):
         """
         Map sequences to a physical map.
@@ -1294,6 +1403,9 @@ class Physlr:
         argparser.add_argument(
             "-O", "--output-format", action="store", dest="graph_format", default="tsv",
             help="the output graph file format [tsv]")
+        argparser.add_argument(
+            "-p", "--min_p_val", action="store", dest="p", type=float, default=0.01,
+            help="Minimum significance threshold (FPR) for Mann-Kendall Test")
         argparser.add_argument(
             "--verbose", action="store", dest="verbose", type=int, default="0",
             help="the level of verbosity [0]")
