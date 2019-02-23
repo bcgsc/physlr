@@ -22,7 +22,7 @@ if [[ "$#" -eq 0 ]] || [[ "$#" -eq 2 ]] || [[ "$#" -eq 3 ]] || [[ "$#" -eq 4 ]];
 	echo ""
 else
 	printf "\n Error: unxpected number of parameters: $#."
-	printf "\n Expecting 1, 3 or 4."
+	printf "\n Expecting 0, 2, 3 or 4."
 	printf "\n Exiting.\n"
 	exit
 fi
