@@ -136,7 +136,7 @@ printf "\n"
 rm molCount_${ref}_filt${toCheck}
 rm molCount_${toCheck}_filt${ref}
 
-if [ keepfiles == "keep" ]; then
+if [ ! $keepfiles == "keep" ]; then
 	printf "\n Removing created files"
 	if [ file1 == 2 ]; then
 		rm molCount_${toCheck}
@@ -149,4 +149,4 @@ if [ keepfiles == "keep" ]; then
 	rm diff_${toCheck}_${ref}
 	printf "\n Removed: diff_${toCheck}_${ref}"
 fi
-printf "\n Finished.\n"
+printf "\n This task has finished.\n"
