@@ -1,0 +1,167 @@
+#!/usr/bin/bash
+
+# Description:
+# 	Compares two "*.mol.tsv" (with respect to a reference file) of the physlr's barcode to molecule stage, or any other algorithm for barcode to molecule separation of linked reads,
+#			based on a reference file for number of barcode to molecules,
+#			and reports the cases in which one of results is consistent with the reference and the other is not.
+#	- this script only compares the reported number of molecules per barcode, and consistency just means equal number of molecules per barcode.
+#	- undersplitting: less number of molecules per barcode compared to reference (golden truth ) of the molecule per barcodes.
+#	- oversplitting: more number of molecules per barcode compared to reference (golden truth ) of the molecule per barcodes.
+#
+# Inputs: 
+# 	$1: the name of the first result file (".mol.tsv") in "../" directory (without ".mol.tsv") - or the name of the file for it's molecule counts in current directory (molCount_"NAME").
+# 	$2: same as $1 but for the second file of the comparison.
+# 	$3: the golden-truth/reference (Tigmint results or results of another physlr run with the same barcodes - (molCount_"NAME")).
+#	$4: If == "keep", keeps the files for comparison, otherwise removes the created files.
+#	$5: If present (any string), the script skips the stats for 2+ mol/barcode as well as the stats for the whole data.
+#
+# Output:
+# 	prints/export the stats of Consistent/underplsit/oversplit barcodes for
+#	- Both files
+#	- Cases that these 2 are not consistent with each other
+#	- Barcodes for which result-1 is consistent but result-2 is not
+#		- Number of barcodes for which result-1 is consistent but result-2 is not 
+#	- Barcodes for which result-2 is consistent but result-1 is not
+#		- Number of barcodes for which result-2 is consistent but result-1 is not
+#
+# Written by Amirhossein Afshinfard
+
+if [[ "$#" -eq 0 ]] || [[ "$#" -eq 3 ]] || [[ "$#" -eq 4 ]] || [[ "$#" -eq 5 ]]; then
+	echo ""
+else
+	printf "\n Error: unxpected number of parameters: $#."
+	printf "\n Expecting 0, 3, 4 or 5."
+	printf "\n Exiting.\n"
+	exit
+fi
+
+if [ -n "$1" ];then
+	results1=$1
+	results2=$2
+	ref=$3
+	keepfiles=$4
+	plus2=$5
+else
+	results1=f1_n50_st3  #n50.t75.st2e3 # n50_st5e1_4parts  #  #n70.t85
+	results2=f1_n50_st2 #n70.st2
+	ref=GT_m8d100k
+	keepfiles="keep"
+	plus2=""
+fi
+
+printf "\n ##################################################################################"
+printf "\n #### Comparing results \"$results1\" and \"$results2\":"
+printf "\n \n"
+if [ ! -e molCount_${results1} ]; then
+	if [ -e ../${results1}.mol.tsv ]; then
+		printf "\n Making molCount_${results1} from ${results1}.mol.tsv ... "
+		header=$(cat ../${results1}.mol.tsv | awk '{if(gsub(/\t/,"")<2) print gsub(/\t/,"")}' | wc -l )
+		headerLenght=$(($header-1))
+		head ../${results1}.mol.tsv -n $headerLenght > ${results1}.header.mol.tsv
+		awk -F\| '$1 { print substr($1,1,18)}' ${results1}.header.mol.tsv | uniq -c | sort -k 2 > molCount_${results1}
+	else
+		printf "\n Error in accessing the query; no file named ${results1}.mol.tsv or molCount_${results1} ."
+		printf "\n You need to make ${results1}.mol.tsv using physlr's barcode to molecule function, (or provide any other similar file)."
+		printf "\n Exiting..."
+		exit
+	fi
+fi
+if [ ! -e molCount_${results2} ]; then
+	if [ -e ../${results2}.mol.tsv ]; then
+		printf "\n Making molCount_${results2} from ${results2}.mol.tsv ... "
+		header=$(cat ../${results2}.mol.tsv | awk '{if(gsub(/\t/,"")<2) print gsub(/\t/,"")}' | wc -l )
+		headerLenght=$(($header-1))
+		head ../${results2}.mol.tsv -n $headerLenght > ${results2}.header.mol.tsv
+		awk -F\| '$1 { print substr($1,1,18)}' ${results2}.header.mol.tsv | uniq -c | sort -k 2 > molCount_${results2}
+	else
+		printf "\n Error in accessing the query; no file named ${results2}.mol.tsv or molCount_${results2} ."
+		printf "\n You need to make ${results2}.mol.tsv using physlr's barcode to molecule function, (or provide any other similar file)."
+		printf "\n Exiting..."
+		exit
+	fi
+fi
+
+awk 'NR==FNR{seen[$2]; next} $2 in seen' molCount_${results1} molCount_${results2} > molCount_${results2}_filt${results1} 
+awk 'NR==FNR{seen[$2]; next} $2 in seen' molCount_${results2} molCount_${results1} > molCount_${results1}_filt${results2}
+
+printf "\n ############################################################################["
+printf "\n Comparing both the results with the input golden truth:"
+
+./compare-mol ${results2}_filt${results1} ${ref}
+./compare-mol ${results1}_filt${results2} ${ref}
+
+printf "\n ############################################################################]"
+
+diff -y molCount_${results2}_filt${results1}  molCount_${results1}_filt${results2}   | grep "\-.*\-" > diff_${results2}_${results1}
+diff -y molCount_${results1}_filt${results2}  molCount_${results2}_filt${results1}   | grep "\-.*\-" > diff_${results1}_${results2}
+
+# grep "|" diff_${results1}_${results2} | awk {'print "\t"$1" "$2'} > molCount_${results1}_incons_${results2}
+grep "|" diff_${results1}_${results2} | awk -F\| '$1 { print substr($1,1,26)}' > molCount_${results1}_incons_${results2}
+# grep "|" diff_${results2}_${results1} | awk {'print "\t"$1" "$2'} > molCount_${results2}_incons_${results1}
+grep "|" diff_${results2}_${results1} | awk -F\| '$1 { print substr($1,1,26)}' > molCount_${results2}_incons_${results1}
+
+
+printf "\n ############################################################################["
+printf "\n Comparing only the incosistent part of the two with the golden truth:"
+
+./compare-mol ${results1}_incons_${results2} ${ref} keep
+./compare-mol ${results2}_incons_${results1} ${ref} keep
+
+printf "\n ############################################################################["
+printf "\n Comparing their incosistenty with result1 being the query and result2 being the ref (no golden truth)."
+./compare-mol ${results1}_incons_${results2} ${results2}_incons_${results1} dontkeep skip2+
+
+#grep "|" diff_f1_n70.t85_incons_n70.st2_${ref} | awk {'print $2'} > weFailTheyMightDo.n70
+#grep "|" diff_${results1}_incons_${results2}_${ref} | awk {'print $2'} > FD_${results1}.Fail_${results2}.mayDo
+#grep "|" diff_${results2}_incons_${results1}_${ref} | awk {'print $2'} > FD_${results2}Fail_${results1}.mayDo
+
+printf "\n ############################################################################["
+printf "\n Creating incosnsitent barcode files..."
+
+grep -v "|" diff_${results1}_incons_${results2}_${ref} | awk {'print $1" "$2'} > FD_${results2}.Fail_${results1}.Do
+
+grep -v "|" diff_${results2}_incons_${results1}_${ref} | awk {'print $1" "$2'} > FD_${results1}.Fail_${results2}.Do
+
+printf "\n ############################################################################["
+printf "\n ## Done creating files"
+printf "\n You can check the barcodes each can solve while the other cannot in the following files:"
+printf "\n ${results1} fails splitting while ${results2} splits correctly:"
+printf "\n\t FD_${results1}.Fail_${results2}.Do"
+wcl=$(wc -l FD_${results1}.Fail_${results2}.Do | awk {'print $1'})
+printf "\t - with ${wcl} entries"
+printf "\n ${results2} fails splitting while ${results1} splits correctly:"
+printf "\n\t FD_${results2}.Fail_${results1}.Do"
+wcl=$(wc -l FD_${results2}.Fail_${results1}.Do | awk {'print $1'})
+printf "\t - with ${wcl} entries"
+
+
+#cd ..
+#cp f1.n100-2000.physlr.overlap.n70.tsv f1.weFailTheyDo.overlap.n70.tsv
+#make v=$(paste -sd, <compare/weFailTheyDo.n70) d=1 f1.weFailTheyDo.overlap.n70.subgraph.tsv
+#rm f1.weFailTheyDo.overlap.n70.tsv
+
+#cp f1.n100-2000.physlr.overlap.n70.tsv f1.theyFailWeDo.overlap.n70.tsv
+#make v=$(paste -sd, <compare/theyFailWeDo.n70) d=1 f1.theyFailWeDo.overlap.n70.subgraph.tsv
+#rm f1.theyFailWeDo.overlap.n70.tsv
+
+
+
+rm molCount_${results1}_incons_${results2}
+rm molCount_${results2}_incons_${results1}
+
+rm diff_${results1}_incons_${results2}_${ref}
+rm diff_${results2}_incons_${results1}_${ref}
+
+rm diff_${results1}_${results2}
+rm diff_${results2}_${results1}
+
+rm molCount_${results1}_filt${results2}
+rm molCount_${results2}_filt${results1} 
+
+if [ ! $keepfiles == "keep" ]; then
+	rm ${results1}.header.mol.tsv
+	rm molCount_${results1}
+	rm ${results2}.header.mol.tsv
+	rm molCount_${results2}
+fi
+printf "\n Finished.\n"
