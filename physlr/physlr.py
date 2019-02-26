@@ -1069,7 +1069,7 @@ class Physlr:
         Physlr.filter_edges(gin, self.args.n)
         print(
             int(timeit.default_timer() - t0),
-            "Retrieving statistics of the subgraphs...", file=sys.stderr)
+            "Computing statistics of the subgraphs...", file=sys.stderr)
         if self.args.threads == 1:
             stats = dict(self.subgraph_stats(gin, u) for u in progress(gin))
         else:
