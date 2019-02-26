@@ -134,7 +134,7 @@ class Physlr:
     @staticmethod
     def write_subgraphs_stats(g, fout):
         "Write statistics of the subgraphs."
-        print("Barcode\t\tnodes\tedges\talpha(2e/(n(n-1))", file=fout)
+        print("Barcode\tNodes\tEdges\tDensity", file=fout)
         for i in progress(g):
             print(i, g[i][0], g[i][1], g[i][2], sep="\t", file=fout)
 
