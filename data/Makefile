@@ -23,7 +23,7 @@ ref=fly
 lr=f1
 
 # Name of the dataset.
-ifeq ($(ref),z11)
+ifneq ($(filter z11%, $(ref)),)
 name=fish
 else
 name=$(ref)
@@ -176,6 +176,10 @@ fish/z11.all.fa:
 # Filter out the unplaced contigs from the reference genome.
 fish/z11.fa: fish/z11.all.fa
 	paste - - <$< | grep -v scaffold | gsort -V | tr '\t' '\n' >$@
+
+# Extract chromosome 25 from the fish z11 reference genome.
+fish/z11chr25.fa: fish/z11.fa
+	samtools faidx -n999999999 $< 25 >$@
 
 # Download the Supernova assembly of the linked reads from 10x Genomics.
 fish.supernova.fa:
