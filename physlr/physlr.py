@@ -1049,7 +1049,7 @@ class Physlr:
     def subgraph_stats(g, u):
         "Extract the statistics of the vertex-induced subgraph with the vertex being u."
         sub_graph = g.subgraph(g.neighbors(u))
-        nodes_count = len(sub_graph)
+        nodes_count = sub_graph.number_of_nodes()
         edges_count = sub_graph.number_of_edges()
         if nodes_count < 2:
             return u, [nodes_count, edges_count, 0.0]
