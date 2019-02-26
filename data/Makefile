@@ -516,6 +516,10 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 %.subgraphs: %.tsv
 	$(python) $(bin)/physlr subgraphs -v$v -d$d -o $*.subgraphs $<
 
+# Extract statistics of the subgraphs
+%.subgraphs_stats: %.tsv
+	$(python) $(bin)/physlr subgraphs-stats -t$t $< >$@
+
 # Convert a graph from TSV to GraphViz.
 # Filter out small components.
 %.gv: %.tsv
