@@ -409,6 +409,10 @@ minsize=2000
 %.physlr.tsv: %.fa
 	$(time) parallel -j$t --pipe -k -L2 $(python) $(bin)/physlr indexfa -k$k -w$w - <$< >$@
 
+# Index a FASTA file using physlr-indexfa (native implementation).
+%.indexlr.physlr.tsv: %.fa
+	$(time) parallel -j$t --pipe -k -L2 ../src/physlr-indexfa -k$k -w$w - <$< >$@
+
 # Index linked reads.
 %.physlr.tsv: %.fq.gz
 	gunzip -c $< | $(python) $(bin)/physlr indexlr -k$k -w$w - >$@
@@ -484,11 +488,11 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 	$(time) $(python) $(bin)/physlr map -n10 $^ $(lr).n100-2000.physlr.tsv >$@
 
 # Map the draft assembly to the backbone graph.
-%.overlap.n50.mol.backbone.map.$(draft).n10.bed: %.overlap.n50.mol.backbone.tsv %.tsv $(draft).physlr.tsv
-	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
-
-# Map the draft assembly to the backbone graph.
+ifneq ($(indexlr),)
+%.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).indexlr.physlr.tsv
+else
 %.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).physlr.tsv
+endif
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph using physlr map-mkt.
