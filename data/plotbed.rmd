@@ -34,7 +34,7 @@ bed <- bed_orig %>%
 		Start = 0, End = max(bed_orig$End, na.rm = TRUE),
 		BX = NA, Reads = 0, Orientation = ".")) %>%
 	filter(!startsWith(Rname, "NW_")) %>%
-	mutate(Rname = as.character(fct_lump(Rname, n = 8))) %>%
+	mutate(Rname = as.character(fct_lump(Rname, n = 7))) %>%
 	filter(Rname != "Other" | is.na(BX)) %>%
 	mutate(
 		Rname = if_else(is.na(BX), "Contig boundary", Rname),
@@ -50,7 +50,7 @@ ggplot(bed) +
 	aes(xmin = Start, xmax = End, ymin = Index, ymax = Index + 1, fill = Rname) +
 	geom_rect() +
 	scale_x_continuous(name = "Position", labels = x_labels) +
-	scale_fill_brewer(type = "qual", palette = "Set1")
+	scale_fill_brewer(type = "qual", palette = "Dark2")
 ```
 
 ```{r save-plot}
