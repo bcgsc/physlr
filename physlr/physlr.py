@@ -738,7 +738,6 @@ class Physlr:
 
         bxtomin = self.read_minimizers(self.args.FILES)
         mintobx = self.construct_minimizers_to_barcodes(bxtomin)
-        self.remove_repetitive_minimizers(bxtomin, mintobx)
 
         # Add the vertices.
         g = nx.Graph()
