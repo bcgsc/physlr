@@ -418,9 +418,9 @@ minsize=2000
 	gunzip -c $< | paste - - - - - - - - | grep "BX:Z:" | tr '\t' '\n' \
 	| $(time) ../src/physlr-indexlr -k$k -w$w -o $@ -
 
-# Count the frequency of the markers.
-%.physlr.markers.tsv: %.physlr.tsv
-	$(python) $(bin)/physlr count-markers $< >$@
+# Count the frequency of the minimizers.
+%.physlr.depth.tsv: %.physlr.tsv
+	$(python) $(bin)/physlr count-minimizers $< >$@
 	
 # Identify the overlapping markers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv

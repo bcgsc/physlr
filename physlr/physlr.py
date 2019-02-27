@@ -557,18 +557,21 @@ class Physlr:
                     print(bx, "\t", sep="", end="")
                     print(*minimerize(self.args.k, self.args.w, seq.upper()))
 
-    def physlr_count_markers(self):
+    def physlr_count_minimizers(self):
         "Count the frequency of each minimizer."
         bxtomin = self.read_minimizers(self.args.FILES)
-        marker_counts = Counter(x for markers in progress(bxtomin.values()) for x in markers)
+        mx_counts = Counter(mx for mxs in progress(bxtomin.values()) for mx in mxs)
         print(
             int(timeit.default_timer() - t0),
-            "Counted", len(marker_counts), "minimizers", file=sys.stderr)
+            "Counted", len(mx_counts), "minimizers", file=sys.stderr)
 
-        print("Marker\tCount")
-        for x, n in sorted(marker_counts.items(), key=lambda x: x[1]):
-            if n >= 2:
-                print(x, n, sep="\t")
+        count = 0
+        print("Depth")
+        for n in sorted(progress(mx_counts.values())):
+            if n >= self.args.c:
+                count += 1
+                print(n)
+        print(int(timeit.default_timer() - t0), "Wrote", count, "minimizers", file=sys.stderr)
 
     def physlr_intersect(self):
         "Print the minimizers in the intersection of each pair of barcodes."
@@ -1358,8 +1361,11 @@ class Physlr:
             "-w", "--window", action="store", dest="w", type=int,
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
-            "-c", "--coef", action="store", dest="coef", type=float, default=1.5,
+            "--coef", action="store", dest="coef", type=float, default=1.5,
             help="ignore markers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
+        argparser.add_argument(
+            "-c", "--min-count", action="store", dest="c", type=int, default=2,
+            help="ignore markers that occur in less than c barcodes [2]")
         argparser.add_argument(
             "-C", "--max-count", action="store", dest="C", type=int,
             help="ignore markers that occur in C or more barcodes [None]")
