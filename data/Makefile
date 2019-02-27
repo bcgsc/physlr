@@ -438,11 +438,11 @@ minsize=2000
 
 # Filter markers by their frequency.
 %.c2-x.physlr.tsv: %.physlr.tsv
-	$(python) $(bin)/physlr filter-minimizers $< >$@
+	$(time) $(python) $(bin)/physlr filter-minimizers $< >$@
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
-	$(python) $(bin)/physlr overlap -n10 $< >$@
+	$(time) $(python) $(bin)/physlr overlap -n10 $< >$@
 
 # Determine the maximum spanning tree.
 %.physlr.overlap.mst.tsv: %.physlr.overlap.tsv
@@ -454,11 +454,11 @@ minsize=2000
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(python) $(bin)/physlr backbone-graph $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
-	$(python) $(bin)/physlr backbone $< >$@
+	$(time) $(python) $(bin)/physlr backbone $< >$@
 
 # Flesh out the backbone path
 %.backbone.fleshed.path: %.tsv %.backbone.path
@@ -479,15 +479,15 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 
 # Map the barcodes to the backbone graph.
 %.backbone.map.$(lr).n100-2000.n10.bed: %.backbone.tsv $(lr).n100-2000.physlr.tsv
-	$(python) $(bin)/physlr map -n10 $^ $(lr).n100-2000.physlr.tsv >$@
+	$(time) $(python) $(bin)/physlr map -n10 $^ $(lr).n100-2000.physlr.tsv >$@
 
 # Map the draft assembly to the backbone graph.
 %.overlap.n50.mol.backbone.map.$(draft).n10.bed: %.overlap.n50.mol.backbone.tsv %.tsv $(draft).physlr.tsv
-	$(python) $(bin)/physlr map -n10 $^ >$@
+	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph.
 %.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).physlr.tsv
-	$(python) $(bin)/physlr map -n10 $^ >$@
+	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph using physlr map-mkt.
 %.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).physlr.tsv
@@ -527,7 +527,7 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 
 # Separate barcodes into molecules.
 %.mol.tsv: %.tsv
-	$(python) $(bin)/physlr molecules -t$t $< >$@
+	$(time) $(python) $(bin)/physlr molecules -t$t $< >$@
 
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv
@@ -567,11 +567,11 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 
 # Extract scaffolds paths from a BED file.
 %.bed.path: %.bed
-	$(python) $(bin)/physlr bed-to-path $^ >$@
+	$(time) $(python) $(bin)/physlr bed-to-path $^ >$@
 
 # Produce sequences in FASTA format from paths.
 %.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
-	$(python) $(bin)/physlr path-to-fasta --min-length 100000 $^ >$@
+	$(time) $(python) $(bin)/physlr path-to-fasta --min-length 100000 $^ >$@
 
 # Plot a BED file.
 %.bed.pdf: %.bed
