@@ -257,7 +257,7 @@ class Physlr:
         print(
             int(timeit.default_timer() - t0),
             "Removed", len(edges), "edges with fewer than", arg_n,
-            "common markers of", g.number_of_edges(),
+            "common minimizers of", g.number_of_edges(),
             f"({round(100 * len(edges) / g.number_of_edges(), 2)}%)", file=sys.stderr)
         g.remove_edges_from(edges)
 
@@ -269,7 +269,7 @@ class Physlr:
     @staticmethod
     def read_minimizers(filenames):
         "Read minimizers in TSV format. Returns unordered set."
-        bxtomin = {}
+        bxtomxs = {}
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
             with open(filename) as fin:
@@ -280,17 +280,17 @@ class Physlr:
                     if len(fields) < 2:
                         continue
                     bx = fields[0]
-                    if bx not in bxtomin:
-                        bxtomin[bx] = set()
-                    bxtomin[bx].update(int(x) for x in fields[1].split())
+                    if bx not in bxtomxs:
+                        bxtomxs[bx] = set()
+                    bxtomxs[bx].update(int(mx) for mx in fields[1].split())
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
-        return bxtomin
+        return bxtomxs
 
     @staticmethod
     def read_minimizers_list(filenames):
         "Read minimizers in TSV format. Returns ordered list."
-        bxtomin = {}
+        bxtomxs = {}
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
             with open(filename) as fin:
@@ -301,20 +301,20 @@ class Physlr:
                     if len(fields) < 2:
                         continue
                     bx = fields[0]
-                    if bx in bxtomin:
+                    if bx in bxtomxs:
                         print("Error: Expected single id per in file", file=sys.stderr)
                         exit(1)
-                    bxtomin[bx] = [int(x) for x in fields[1].split()]
+                    bxtomxs[bx] = [int(mx) for mx in fields[1].split()]
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
-        return bxtomin
+        return bxtomxs
 
     @staticmethod
-    def count_molecules_per_bx(moltomin):
+    def count_molecules_per_bx(moltomxs):
         "Iterate over minimizers dictionary, track # molecules per barcode"
         mol_counts = Counter()
         bx_match = re.compile(r'^(\S+)_(\d+)$')
-        for bx_mol in moltomin:
+        for bx_mol in moltomxs:
             bx_mol_match = re.search(bx_match, bx_mol)
             if bx_mol_match:
                 mol_counts[bx_mol_match.group(1)] = max(mol_counts[bx_mol_match.group(1)],
@@ -322,18 +322,18 @@ class Physlr:
         return mol_counts
 
     @staticmethod
-    def construct_minimizers_to_barcodes(bxtomin):
+    def construct_minimizers_to_barcodes(bxtomxs):
         "Construct a dictionary of minimizers to barcodes."
-        mintobx = {}
-        for bx, minimizers in progress(bxtomin.items()):
-            for x in minimizers:
-                if x not in mintobx:
-                    mintobx[x] = set()
-                mintobx[x].add(bx)
+        mxtobxs = {}
+        for bx, mxs in progress(bxtomxs.items()):
+            for mx in mxs:
+                if mx not in mxtobxs:
+                    mxtobxs[mx] = set()
+                mxtobxs[mx].add(bx)
         print(
             int(timeit.default_timer() - t0),
-            "Indexed", len(mintobx), "minimizers", file=sys.stderr)
-        return mintobx
+            "Indexed", len(mxtobxs), "minimizers", file=sys.stderr)
+        return mxtobxs
 
     @staticmethod
     def triconnected_components(g):
@@ -475,7 +475,7 @@ class Physlr:
                     n = g[neighbour][k]["n"]
                     if n > max_n:
                         (max_n, max_index) = (n, i)
-                # Put R or L of node with most shared markers?
+                # Put R or L of node with most shared minimizers?
                 if max_index == 0:
                     insert_index = max_index
                 elif max_index == len(backbone) - 1:
@@ -559,8 +559,8 @@ class Physlr:
 
     def physlr_count_minimizers(self):
         "Count the frequency of each minimizer."
-        bxtomin = self.read_minimizers(self.args.FILES)
-        mx_counts = Counter(mx for mxs in progress(bxtomin.values()) for mx in mxs)
+        bxtomxs = self.read_minimizers(self.args.FILES)
+        mx_counts = Counter(mx for mxs in progress(bxtomxs.values()) for mx in mxs)
         print(
             int(timeit.default_timer() - t0),
             "Counted", len(mx_counts), "minimizers", file=sys.stderr)
@@ -577,53 +577,53 @@ class Physlr:
         "Print the minimizers in the intersection of each pair of barcodes."
         if self.args.n == 0:
             self.args.n = 1
-        bxtomin = self.read_minimizers(self.args.FILES)
-        mintobx = self.construct_minimizers_to_barcodes(bxtomin)
+        bxtomxs = self.read_minimizers(self.args.FILES)
+        mxtobxs = self.construct_minimizers_to_barcodes(bxtomxs)
         if self.args.v:
             pairs = itertools.combinations(self.args.v.split(), 2)
         else:
-            pairs = {(u, v) for bxs in mintobx.values() for u, v in itertools.combinations(bxs, 2)}
+            pairs = {(u, v) for bxs in mxtobxs.values() for u, v in itertools.combinations(bxs, 2)}
         for u, v in pairs:
-            common = bxtomin[u] & bxtomin[v]
+            common = bxtomxs[u] & bxtomxs[v]
             if len(common) >= self.args.n:
                 print(u, v, "", sep="\t", end="")
                 print(*common)
 
     @staticmethod
-    def remove_singleton_markers(bxtomin):
+    def remove_singleton_minimizers(bxtomxs):
         """
-        Remove markers that occur only once.
-        Return the counts of markers after removing singletons.
+        Remove minimizers that occur only once.
+        Return the counts of minimizers after removing singletons.
         """
-        marker_counts = Counter(x for markers in progress(bxtomin.values()) for x in markers)
+        mx_counts = Counter(mx for mxs in progress(bxtomxs.values()) for mx in mxs)
         print(
             int(timeit.default_timer() - t0),
-            "Counted", len(marker_counts), "minimizers", file=sys.stderr)
+            "Counted", len(mx_counts), "minimizers", file=sys.stderr)
 
-        singletons = {x for x, n in progress(marker_counts.items()) if n < 2}
-        for markers in progress(bxtomin.values()):
-            markers -= singletons
+        singletons = {mx for mx, n in progress(mx_counts.items()) if n < 2}
+        for mxs in progress(bxtomxs.values()):
+            mxs -= singletons
         print(
             int(timeit.default_timer() - t0),
-            "Removed", len(singletons), "minimizers that occur only once of", len(marker_counts),
-            f"({round(100 * len(singletons) / len(marker_counts), 2)}%)", file=sys.stderr)
-        for marker in singletons:
-            del marker_counts[marker]
-        return marker_counts
+            "Removed", len(singletons), "minimizers that occur only once of", len(mx_counts),
+            f"({round(100 * len(singletons) / len(mx_counts), 2)}%)", file=sys.stderr)
+        for mx in singletons:
+            del mx_counts[mx]
+        return mx_counts
 
     def physlr_filter_barcodes(self):
         """
-        Filter barcodes by number of markers.
+        Filter barcodes by number of minimizers.
         Read a TSV file of barcodes to minimizers.
-        Remove markers that occur only once.
-        Remove barkers with too few or too many markers.
+        Remove minimizers that occur only once.
+        Remove barkers with too few or too many minimizers.
         Write a TSV file of barcodes to minimizers.
         """
-        bxtomin = self.read_minimizers(self.args.FILES)
-        Physlr.remove_singleton_markers(bxtomin)
+        bxtomxs = self.read_minimizers(self.args.FILES)
+        Physlr.remove_singleton_minimizers(bxtomxs)
 
         q0, q1, q2, q3, q4 = quantile(
-            [0, 0.25, 0.5, 0.75, 1], (len(markers) for markers in bxtomin.values()))
+            [0, 0.25, 0.5, 0.75, 1], (len(mxs) for mxs in bxtomxs.values()))
         low_whisker = int(q1 - self.args.coef * (q3 - q1))
         high_whisker = int(q3 + self.args.coef * (q3 - q1))
         if self.args.n == 0:
@@ -632,38 +632,38 @@ class Physlr:
             self.args.N = min(1 + q4, high_whisker)
 
         print(
-            int(timeit.default_timer() - t0), " Counted markers per barcode\n",
+            int(timeit.default_timer() - t0), " Counted minimizers per barcode\n",
             f"    Markers per barcode: Q0={q0} Q1={q1} Q2={q2} Q3={q3} Q4={q4} Q3-Q1={q3 - q1}\n",
             f"    Q3-{self.args.coef}*(Q3-Q1)={low_whisker} n={self.args.n}\n",
             f"    Q3+{self.args.coef}*(Q3-Q1)={high_whisker} N={self.args.N}",
             sep="", file=sys.stderr)
 
         too_few, too_many = 0, 0
-        for bx, markers in progress(bxtomin.items()):
-            if len(markers) < self.args.n:
+        for bx, mxs in progress(bxtomxs.items()):
+            if len(mxs) < self.args.n:
                 too_few += 1
-            elif len(markers) >= self.args.N:
+            elif len(mxs) >= self.args.N:
                 too_many += 1
             else:
                 print(bx, "\t", sep="", end="")
-                print(*markers)
+                print(*mxs)
         print(
-            "    Discarded", too_few, "barcodes with too few markers of", len(bxtomin),
-            f"({round(100 * too_few / len(bxtomin), 2)}%)", file=sys.stderr)
+            "    Discarded", too_few, "barcodes with too few minimizers of", len(bxtomxs),
+            f"({round(100 * too_few / len(bxtomxs), 2)}%)", file=sys.stderr)
         print(
-            "    Discarded", too_many, "barcodes with too many markers of", len(bxtomin),
-            f"({round(100 * too_many / len(bxtomin), 2)}%)", file=sys.stderr)
+            "    Discarded", too_many, "barcodes with too many minimizers of", len(bxtomxs),
+            f"({round(100 * too_many / len(bxtomxs), 2)}%)", file=sys.stderr)
         print(
             int(timeit.default_timer() - t0),
-            "Wrote", len(bxtomin) - too_few - too_many, "barcodes", file=sys.stderr)
+            "Wrote", len(bxtomxs) - too_few - too_many, "barcodes", file=sys.stderr)
 
     def physlr_filter_minimizers(self):
         "Filter minimizers by depth of coverage. Remove repetitive minimizers."
-        bxtomin = self.read_minimizers(self.args.FILES)
-        marker_counts = Physlr.remove_singleton_markers(bxtomin)
+        bxtomxs = self.read_minimizers(self.args.FILES)
+        mx_counts = Physlr.remove_singleton_minimizers(bxtomxs)
 
-        # Identify frequent markers.
-        q1, q2, q3 = quantile([0.25, 0.5, 0.75], marker_counts.values())
+        # Identify frequent minimizers.
+        q1, q2, q3 = quantile([0.25, 0.5, 0.75], mx_counts.values())
         low_whisker = int(q1 - self.args.coef * (q3 - q1))
         high_whisker = int(q3 + self.args.coef * (q3 - q1))
         if self.args.C is None:
@@ -675,46 +675,46 @@ class Physlr:
             " Q3+", self.args.coef, "*(Q3-Q1)=", high_whisker,
             " C=", self.args.C, sep="", file=sys.stderr)
 
-        # Remove frequent markers.
-        frequent_markers = {x for x, count in marker_counts.items() if count >= self.args.C}
+        # Remove frequent minimizers.
+        frequent_mxs = {mx for mx, count in mx_counts.items() if count >= self.args.C}
         num_empty_barcodes = 0
-        for bx, markers in progress(bxtomin.items()):
-            markers -= frequent_markers
-            if not markers:
+        for bx, mxs in progress(bxtomxs.items()):
+            mxs -= frequent_mxs
+            if not mxs:
                 num_empty_barcodes += 1
                 continue
             print(bx, "\t", sep="", end="")
-            print(*markers)
+            print(*mxs)
 
         print(
             int(timeit.default_timer() - t0),
-            "Removed", len(frequent_markers), "most frequent minimizers of", len(marker_counts),
-            f"({round(100 * len(frequent_markers) / len(marker_counts), 2)}%)", file=sys.stderr)
+            "Removed", len(frequent_mxs), "most frequent minimizers of", len(mx_counts),
+            f"({round(100 * len(frequent_mxs) / len(mx_counts), 2)}%)", file=sys.stderr)
         print(
             int(timeit.default_timer() - t0),
-            "Removed", num_empty_barcodes, "empty barcodes of", len(bxtomin),
-            f"({round(100 * num_empty_barcodes / len(bxtomin), 2)}%)", file=sys.stderr)
+            "Removed", num_empty_barcodes, "empty barcodes of", len(bxtomxs),
+            f"({round(100 * num_empty_barcodes / len(bxtomxs), 2)}%)", file=sys.stderr)
         print(
             int(timeit.default_timer() - t0),
-            "Wrote", len(bxtomin) - num_empty_barcodes, "barcodes", file=sys.stderr)
+            "Wrote", len(bxtomxs) - num_empty_barcodes, "barcodes", file=sys.stderr)
 
-    def remove_repetitive_minimizers(self, bxtomin, mintobx):
+    def remove_repetitive_minimizers(self, bxtomxs, mxtobxs):
         "Remove repetitive minimizers."
 
-        # Remove markers that occur only once.
-        num_markers = len(mintobx)
-        singletons = {x for x, bxs in progress(mintobx.items()) if len(bxs) < 2}
-        for x in singletons:
-            del mintobx[x]
-        for markers in progress(bxtomin.values()):
-            markers -= singletons
+        # Remove minimizers that occur only once.
+        num_mxs = len(mxtobxs)
+        singletons = {mx for mx, bxs in progress(mxtobxs.items()) if len(bxs) < 2}
+        for mx in singletons:
+            del mxtobxs[mx]
+        for mxs in progress(bxtomxs.values()):
+            mxs -= singletons
         print(
             int(timeit.default_timer() - t0),
-            "Removed", len(singletons), "minimizers that occur only once of", num_markers,
-            f"({round(100 * len(singletons) / num_markers, 2)}%)", file=sys.stderr)
+            "Removed", len(singletons), "minimizers that occur only once of", num_mxs,
+            f"({round(100 * len(singletons) / num_mxs, 2)}%)", file=sys.stderr)
 
-        # Identify repetitive markers.
-        q1, q2, q3 = quantile([0.25, 0.5, 0.75], (len(bxs) for bxs in mintobx.values()))
+        # Identify repetitive minimizers.
+        q1, q2, q3 = quantile([0.25, 0.5, 0.75], (len(bxs) for bxs in mxtobxs.values()))
         whisker = int(q3 + self.args.coef * (q3 - q1))
         if self.args.C is None:
             self.args.C = whisker
@@ -725,35 +725,35 @@ class Physlr:
             " C=", self.args.C, sep="", file=sys.stderr)
 
         # Remove frequent (likely repetitive) minimizers.
-        num_markers = len(mintobx)
-        repetitive = {x for x, bxs in mintobx.items() if len(bxs) >= self.args.C}
-        for x in repetitive:
-            del mintobx[x]
-        for xs in progress(bxtomin.values()):
+        num_mxs = len(mxtobxs)
+        repetitive = {mx for mx, bxs in mxtobxs.items() if len(bxs) >= self.args.C}
+        for mx in repetitive:
+            del mxtobxs[mx]
+        for xs in progress(bxtomxs.values()):
             xs -= repetitive
         print(
             int(timeit.default_timer() - t0),
-            "Removed", len(repetitive), "most frequent minimizers of", num_markers,
-            f"({round(100 * len(repetitive) / num_markers, 2)}%)", file=sys.stderr)
+            "Removed", len(repetitive), "most frequent minimizers of", num_mxs,
+            f"({round(100 * len(repetitive) / num_mxs, 2)}%)", file=sys.stderr)
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
 
-        bxtomin = self.read_minimizers(self.args.FILES)
-        mintobx = self.construct_minimizers_to_barcodes(bxtomin)
+        bxtomxs = self.read_minimizers(self.args.FILES)
+        mxtobxs = self.construct_minimizers_to_barcodes(bxtomxs)
 
         # Add the vertices.
         g = nx.Graph()
-        for u, minimizers in sorted(progress(bxtomin.items())):
-            if len(minimizers) >= self.args.n:
-                g.add_node(u, n=len(minimizers))
+        for u, mxs in sorted(progress(bxtomxs.items())):
+            if len(mxs) >= self.args.n:
+                g.add_node(u, n=len(mxs))
         print(
             int(timeit.default_timer() - t0),
             "Added", g.number_of_nodes(), "barcodes to the graph", file=sys.stderr)
 
         # Add the overlap edges.
         edges = Counter(
-            (u, v) for bxs in progress(mintobx.values()) for u, v in itertools.combinations(bxs, 2))
+            (u, v) for bxs in progress(mxtobxs.values()) for u, v in itertools.combinations(bxs, 2))
         print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
 
         for (u, v), n in progress(edges.items()):
@@ -763,7 +763,7 @@ class Physlr:
         print(
             int(timeit.default_timer() - t0),
             "Removed", num_removed, "edges with fewer than", self.args.n,
-            "common markers of", len(edges),
+            "common minimizers of", len(edges),
             f"({round(100 * num_removed / len(edges), 2)}%)", file=sys.stderr)
 
         num_singletons = Physlr.remove_singletons(g)
@@ -837,22 +837,22 @@ class Physlr:
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
     @staticmethod
-    def split_minimizers_bx(bx, g, bxtomin):
+    def split_minimizers_bx(bx, g, bxtomxs):
         "Partition the minimizers of the given barcode"
         bx_match = re.compile(r'^(\S+)_\d+$')
-        bx_min = bxtomin[bx]
+        mxs = bxtomxs[bx]
         mol = 0
         mol_list = []
         while g.has_node(bx + "_" + str(mol)):
             bxmol = bx + "_" + str(mol)
-            neighbour_minimizers_list = [bxtomin[re.search(bx_match, v).group(1)] \
+            neighbour_mxs_list = [bxtomxs[re.search(bx_match, v).group(1)] \
                                          for v in g.neighbors(bxmol) \
-                                         if re.search(bx_match, v).group(1) in bxtomin]
-            if not neighbour_minimizers_list:
-                neighbour_minimizers_list = [set()]
-            neighbour_minimizers_set = set.union(*neighbour_minimizers_list)
-            molec_minimizers = set.intersection(bx_min, neighbour_minimizers_set)
-            mol_list.append((bxmol, molec_minimizers))
+                                         if re.search(bx_match, v).group(1) in bxtomxs]
+            if not neighbour_mxs_list:
+                neighbour_mxs_list = [set()]
+            neighbour_mxs_set = set.union(*neighbour_mxs_list)
+            molec_mxs = set.intersection(mxs, neighbour_mxs_set)
+            mol_list.append((bxmol, molec_mxs))
             mol += 1
         return mol_list
 
@@ -862,48 +862,48 @@ class Physlr:
         Partition the minimizers of this barcode.
         The Graph and bx->min dictionary are passed as class variables.
         """
-        return Physlr.split_minimizers_bx(bx, Physlr.graph, Physlr.bxtomin)
+        return Physlr.split_minimizers_bx(bx, Physlr.graph, Physlr.bxtomxs)
 
     def physlr_split_minimizers(self):
         "Given the molecule overlap graph, split the minimizers into molecules"
         if len(self.args.FILES) < 2:
             exit("physlr split-minimizers: error: graph file and bx to minimizer inputs required")
         g = self.read_graph([self.args.FILES[0]])
-        bxtomin = self.read_minimizers([self.args.FILES[1]])
+        bxtomxs = self.read_minimizers([self.args.FILES[1]])
 
         if self.args.threads == 1:
-            moltomin = [self.split_minimizers_bx(bx, g, bxtomin) for bx in progress(bxtomin)]
-            moltomin = dict(x for l in moltomin for x in l)
+            moltomxs = [self.split_minimizers_bx(bx, g, bxtomxs) for bx in progress(bxtomxs)]
+            moltomxs = dict(x for l in moltomxs for x in l)
 
         else:
             Physlr.graph = g
-            Physlr.bxtomin = bxtomin
+            Physlr.bxtomxs = bxtomxs
             with multiprocessing.Pool(self.args.threads) as pool:
-                moltomin = dict(x for l in pool.map(self.split_minimizers_bx_process,
-                                                    progress(bxtomin), chunksize=100) for x in l)
+                moltomxs = dict(x for l in pool.map(self.split_minimizers_bx_process,
+                                                    progress(bxtomxs), chunksize=100) for x in l)
             Physlr.graph = None
-            Physlr.bxtomin = None
+            Physlr.bxtomxs = None
 
         empty_ct = 0
-        for mol in moltomin:
-            if not moltomin[mol]:
+        for mol in moltomxs:
+            if not moltomxs[mol]:
                 empty_ct += 1
                 print("%s\t%s" % (mol, ""), file=sys.stdout)
                 print("Warning:", mol, "has no associated minimizers", file=sys.stderr)
             else:
-                print("%s\t%s" % (mol, " ".join(map(str, moltomin[mol]))), file=sys.stdout)
+                print("%s\t%s" % (mol, " ".join(map(str, moltomxs[mol]))), file=sys.stdout)
 
     def physlr_split_reads_molecules(self):
         "Given the molecule -> minimizers table and the reads, partition reads into molecules"
         if len(self.args.FILES) < 3:
             exit("physlr split-reads-molecules: error: molecule minimizers,\
             bx minimizers, reads inputs required")
-        moltomin = self.read_minimizers([self.args.FILES[0]])
-        mol_counts = self.count_molecules_per_bx(moltomin)
-        bxtomin = self.args.FILES[1]
-        num_pairs, num_valid_pairs, num_no_min, num_equal_min, num_no_int_min = 0, 0, 0, 0, 0
+        moltomxs = self.read_minimizers([self.args.FILES[0]])
+        mol_counts = self.count_molecules_per_bx(moltomxs)
+        bxtomxs_filename = self.args.FILES[1]
+        num_pairs, num_valid_pairs, num_no_mx, num_equal_mx, num_no_int_mx = 0, 0, 0, 0, 0
 
-        readmin = open(bxtomin, 'r')
+        bxtomxs_file = open(bxtomxs_filename, 'r')
 
         read_count = 0
         for readfile in self.args.FILES[2:]:
@@ -914,20 +914,20 @@ class Physlr:
                         read_count += 1
                     else:
                         num_pairs += 1
-                        (min_info1, min_info2) = (readmin.readline().strip(),
-                                                  readmin.readline().strip())
+                        mx_info1 = bxtomxs_file.readline().strip()
+                        mx_info2 = bxtomxs_file.readline().strip()
                         if self.is_valid_pair(bx1, bx, name1, name) and bx in mol_counts:
-                            (bx1_mol, minimizers1) = self.parse_minimizer_line(min_info1)
-                            (bx2_mol, minimizers2) = self.parse_minimizer_line(min_info2)
+                            (bx1_mol, mxs1) = self.parse_minimizer_line(mx_info1)
+                            (bx2_mol, mxs2) = self.parse_minimizer_line(mx_info2)
                             if bx1_mol != bx2_mol or bx1_mol != bx1:
                                 print("Should match: ", bx1_mol, bx2_mol, bx1, file=sys.stderr)
                                 exit("Error: Minimizer TSV order doesn't match reads fq file")
 
-                            (mol, inc_no_int_min, inc_equal_min) = self.assign_read_molecule(
-                                set.union(minimizers1, minimizers2), moltomin, mol_counts, bx1)
+                            (mol, inc_no_int_mx, inc_equal_mx) = self.assign_read_molecule(
+                                set.union(mxs1, mxs2), moltomxs, mol_counts, bx1)
                             bx_mol = bx1 + mol
-                            num_no_int_min += inc_no_int_min
-                            num_equal_min += inc_equal_min
+                            num_no_int_mx += inc_no_int_mx
+                            num_equal_mx += inc_equal_mx
                             self.print_read(name1 + " BX:Z:" + bx_mol, seq1, qual1)
                             self.print_read(name + " BX:Z:" + bx_mol, seq, qual)
                             num_valid_pairs += 1
@@ -935,7 +935,7 @@ class Physlr:
                                 not self.args.molecules_bx_only:
                             self.print_read(name1 + " BX:Z:" + bx1, seq1, qual1)
                             self.print_read(name + " BX:Z:" + bx, seq, qual)
-                            num_no_min += 1
+                            num_no_mx += 1
                         elif not self.args.molecules_bx_only:
                             self.print_read(name1, seq1, qual1)
                             self.print_read(name, seq, qual)
@@ -943,11 +943,11 @@ class Physlr:
 
         print("Saw", num_pairs, "read pairs, saw",
               num_valid_pairs, "valid read pairs with associated barcodes.",
-              num_no_min, "read pairs' barcodes had no split minimizers.",
-              num_no_int_min, "read pairs' barcodes had no intersecting minimizers",
-              num_equal_min, "read pairs had multiple molecule assignments",
+              num_no_mx, "read pairs' barcodes had no split minimizers.",
+              num_no_int_mx, "read pairs' barcodes had no intersecting minimizers",
+              num_equal_mx, "read pairs had multiple molecule assignments",
               file=sys.stderr)
-        readmin.close()
+        bxtomxs_file.close()
 
     @staticmethod
     def print_read(name, seq, qual):
@@ -963,10 +963,10 @@ class Physlr:
         return (min_line[0], set())
 
     @staticmethod
-    def assign_read_molecule(minimizers, moltomin, mol_counts, bx):
+    def assign_read_molecule(mxs, moltomxs, mol_counts, bx):
         "Given the minimizers of a read and the barcode, assign to a molecule"
-        intersections = {mol: len(set.intersection(minimizers, moltomin[bx + "_" + str(mol)]))
-                         for mol in range(0, mol_counts[bx]) if bx + "_" + str(mol) in moltomin}
+        intersections = {mol: len(set.intersection(mxs, moltomxs[bx + "_" + str(mol)]))
+                         for mol in range(0, mol_counts[bx]) if bx + "_" + str(mol) in moltomxs}
         if not intersections.values():
             return "", 1, 0
         max_intersection = max(intersections.values())
@@ -1041,19 +1041,19 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
     @staticmethod
-    def index_markers_in_backbones(backbones, bxtomin):
-        "Index the positions of the markers in the backbones."
-        markertopos = {}
+    def index_minimizers_in_backbones(backbones, bxtomxs):
+        "Index the positions of the minimizers in the backbones."
+        mxtopos = {}
         for tid, path in enumerate(progress(backbones)):
             for pos, (u, v) in enumerate(zip(path, path[1:])):
                 u = u.split("_", 1)[0]
                 v = u.split("_", 1)[0]
-                for marker in bxtomin[u] & bxtomin[v]:
-                    markertopos.setdefault(marker, set()).add((tid, pos))
+                for mx in bxtomxs[u] & bxtomxs[v]:
+                    mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
             int(timeit.default_timer() - t0),
-            "Indexed", len(markertopos), "markers", file=sys.stderr)
-        return markertopos
+            "Indexed", len(mxtopos), "minimizers", file=sys.stderr)
+        return mxtopos
 
     @staticmethod
     def determine_orientation(x, y, z):
@@ -1071,12 +1071,12 @@ class Physlr:
         Removes repeats from minimizers and outputs result to stdout
         """
         target_filenames = [self.args.FILES[0]]
-        bxtomin = self.read_minimizers(target_filenames)
-        mintobx = self.construct_minimizers_to_barcodes(bxtomin)
-        self.remove_repetitive_minimizers(bxtomin, mintobx)
-        for bx, markers in progress(bxtomin.items()):
+        bxtomxs = self.read_minimizers(target_filenames)
+        mxtobxs = self.construct_minimizers_to_barcodes(bxtomxs)
+        self.remove_repetitive_minimizers(bxtomxs, mxtobxs)
+        for bx, mxs in progress(bxtomxs.items()):
             print(bx, "\t", sep="", end="")
-            print(*markers)
+            print(*mxs)
 
     def physlr_map_mkt(self):
         """
@@ -1093,23 +1093,23 @@ class Physlr:
         query_filenames = self.args.FILES[2:]
 
         g = self.read_graph(graph_filenames)
-        bxtomin = self.read_minimizers(target_filenames)
-        query_markers = self.read_minimizers_list(query_filenames)
+        bxtomxs = self.read_minimizers(target_filenames)
+        query_mxs = self.read_minimizers_list(query_filenames)
 
-        # Index the positions of the markers in the backbone.
+        # Index the positions of the minimizers in the backbone.
         backbones = Physlr.determine_backbones(g)
-        markertopos = Physlr.index_markers_in_backbones(backbones, bxtomin)
+        mxtopos = Physlr.index_minimizers_in_backbones(backbones, bxtomxs)
 
         # Map the query sequences to the physical map.
         num_mapped = 0
-        for qid, markers in progress(query_markers.items()):
-            # Count the number of markers mapped to each target position.
-            tidpos_to_n = Counter(pos for marker in markers for pos in markertopos.get(marker, ()))
+        for qid, mxs in progress(query_mxs.items()):
+            # Count the number of minimizers mapped to each target position.
+            tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
             # Map each target position to a query position.
             #tid->tpos->qpos_list
             tid_to_qpos = {}
-            for qpos, marker in enumerate(markers):
-                for (tid, tpos) in markertopos.get(marker, ()):
+            for qpos, mx in enumerate(mxs):
+                for (tid, tpos) in mxtopos.get(mx, ()):
                     if not tid in tid_to_qpos:
                         tid_to_qpos[tid] = {}
                     if not tpos in tid_to_qpos[tid]:
@@ -1150,8 +1150,8 @@ class Physlr:
                 num_mapped += 1
         print(
             int(timeit.default_timer() - t0),
-            "Mapped", num_mapped, "sequences of", len(query_markers),
-            f"({round(100 * num_mapped / len(query_markers), 2)}%)", file=sys.stderr)
+            "Mapped", num_mapped, "sequences of", len(query_mxs),
+            f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
 
     def physlr_map(self):
         """
@@ -1166,27 +1166,27 @@ class Physlr:
         query_filenames = self.args.FILES[2:]
 
         g = self.read_graph(graph_filenames)
-        bxtomin = self.read_minimizers(target_filenames)
-        query_markers = bxtomin if target_filenames == query_filenames else \
+        bxtomxs = self.read_minimizers(target_filenames)
+        query_mxs = bxtomxs if target_filenames == query_filenames else \
             self.read_minimizers(query_filenames)
 
-        # Index the positions of the markers in the backbone.
+        # Index the positions of the minimizers in the backbone.
         backbones = Physlr.determine_backbones(g)
-        markertopos = Physlr.index_markers_in_backbones(backbones, bxtomin)
+        mxtopos = Physlr.index_minimizers_in_backbones(backbones, bxtomxs)
 
         # Map the query sequences to the physical map.
         num_mapped = 0
-        for qid, markers in progress(query_markers.items()):
+        for qid, mxs in progress(query_mxs.items()):
             # Map each target position to a query position.
             tidpos_to_qpos = {}
-            for qpos, marker in enumerate(markers):
-                for tidpos in markertopos.get(marker, ()):
+            for qpos, mx in enumerate(mxs):
+                for tidpos in mxtopos.get(mx, ()):
                     tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
             for tidpos, qpos in tidpos_to_qpos.items():
                 tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
 
-            # Count the number of markers mapped to each target position.
-            tidpos_to_n = Counter(pos for marker in markers for pos in markertopos.get(marker, ()))
+            # Count the number of minimizers mapped to each target position.
+            tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
 
             mapped = False
             for (tid, tpos), score in tidpos_to_n.items():
@@ -1201,8 +1201,8 @@ class Physlr:
                 num_mapped += 1
         print(
             int(timeit.default_timer() - t0),
-            "Mapped", num_mapped, "sequences of", len(query_markers),
-            f"({round(100 * num_mapped / len(query_markers), 2)}%)", file=sys.stderr)
+            "Mapped", num_mapped, "sequences of", len(query_mxs),
+            f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
 
     def physlr_bed_to_path(self):
         """
@@ -1362,22 +1362,22 @@ class Physlr:
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
             "--coef", action="store", dest="coef", type=float, default=1.5,
-            help="ignore markers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
+            help="ignore minimizers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
         argparser.add_argument(
             "-c", "--min-count", action="store", dest="c", type=int, default=2,
-            help="ignore markers that occur in less than c barcodes [2]")
+            help="ignore minimizers that occur in less than c barcodes [2]")
         argparser.add_argument(
             "-C", "--max-count", action="store", dest="C", type=int,
-            help="ignore markers that occur in C or more barcodes [None]")
+            help="ignore minimizers that occur in C or more barcodes [None]")
         argparser.add_argument(
             "-M", "--max-molecules", action="store", dest="M", type=int,
             help="remove barcodes with M or more molecules [None]")
         argparser.add_argument(
             "-n", "--min-n", action="store", dest="n", type=int, default=0,
-            help="remove edges with fewer than n shared markers [0]")
+            help="remove edges with fewer than n shared minimizers [0]")
         argparser.add_argument(
             "-N", "--max-n", action="store", dest="N", type=int, default=None,
-            help="remove edges with at least N shared markers [None]")
+            help="remove edges with at least N shared minimizers [None]")
         argparser.add_argument(
             "--min-length", action="store", dest="min_length", type=int, default=0,
             help="remove sequences with length less than N bp [0]")
