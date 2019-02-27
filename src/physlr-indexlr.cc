@@ -258,8 +258,9 @@ int main(int argc, char *argv[])
     std::ofstream ofs(outfile);
     assert_good(ofs, outfile);
     for (auto &infile : infiles) {
-        if (infile == "-")
+        if (infile == "-") {
             infile = "/dev/stdin";
+        }
         std::ifstream ifs(infile);
         assert_good(ifs, infile);
         minimizeReads(ifs, infile, ofs, outfile, k, w, verbose);
