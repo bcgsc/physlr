@@ -130,14 +130,7 @@ class Physlr:
         else:
             print("Unknown graph format:", graph_format, file=sys.stderr)
             exit(1)
-
-    @staticmethod
-    def write_subgraphs_stats(g, fout):
-        "Write statistics of the subgraphs."
-        print("Barcode\tNodes\tEdges\tDensity", file=fout)
-        for i in progress(g):
-            print(i, g[i][0], g[i][1], g[i][2], sep="\t", file=fout)
-
+            
     @staticmethod
     def read_tsv(g, filename):
         "Read a graph in TSV format."
@@ -1046,6 +1039,13 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
     @staticmethod
+    def write_subgraphs_stats(g, fout):
+        "Write statistics of the subgraphs."
+        print("Barcode\tNodes\tEdges\tDensity", file=fout)
+        for i in progress(g):
+            print(i, g[i][0], g[i][1], g[i][2], sep="\t", file=fout)
+
+    @staticmethod
     def subgraph_stats(g, u):
         "Extract the statistics of the vertex-induced subgraph with the vertex being u."
         sub_graph = g.subgraph(g.neighbors(u))
@@ -1053,7 +1053,7 @@ class Physlr:
         edges_count = sub_graph.number_of_edges()
         if nodes_count < 2:
             return u, [nodes_count, edges_count, 0.0]
-        return u, [nodes_count, edges_count, edges_count*2.0/(nodes_count*(nodes_count-1))]
+        return u, (nodes_count, edges_count, edges_count*2.0/(nodes_count*(nodes_count-1)))
 
     @staticmethod
     def subgraph_stats_process(u):
