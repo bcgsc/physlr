@@ -13,7 +13,7 @@ jobs:
     displayName: Install Python packages
   - script: pylint physlr
     displayName: Run pylint
-  - script: make -C indexlr
-    displayName: Build physlr-indexlr
-  - script: make -C indexlr check
-    displayName: Test physlr-indexlr
+  - script: make -C src all
+    displayName: Compile C++ source code
+  - script: make -C src check
+    displayName: Test C++ programs
