@@ -137,6 +137,7 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Assemble a physical map of fish.
+# ref=z11 lr=fish draft=fish.supernova n=35
 fish: \
 	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
 	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
@@ -145,6 +146,7 @@ fish: \
 	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
 
 # Assemble a physical map of fish using physlr-indexlr (native implementation).
+# ref=z11 lr=fish draft=fish.supernova n=35
 fish-indexlr: \
 	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
 	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
