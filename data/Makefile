@@ -414,7 +414,7 @@ minsize=2000
 # Index linked reads using physlr-indexlr (native implementation).
 %.indexlr.physlr.tsv: %.fq.gz
 	gunzip -c $< | paste - - - - - - - - | grep "BX:Z:" | tr '\t' '\n' \
-	| $(time) ../indexlr/physlr-indexlr -k$k -w$w -o $@ -
+	| $(time) ../src/physlr-indexlr -k$k -w$w -o $@ -
 
 # Count the frequency of the markers.
 %.physlr.markers.tsv: %.physlr.tsv
