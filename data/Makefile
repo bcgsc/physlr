@@ -72,12 +72,12 @@ f1chr2R: f1chr2R.physlr.stamp
 
 # Assemble a physical map of the fly genome.
 f1: \
-	f1.n100-2000.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
-	f1.n100-2000.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.pdf \
-	f1.n100-2000.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1.n100-2000.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.pdf \
-	f1.n100-2000.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.fly.paf.pdf \
-	f1.n100-2000.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
+	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.pdf \
+	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.pdf \
+	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.fly.paf.pdf \
+	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 
 # Download the fly genome from NCBI.
 fly/fly.all.fa:
@@ -579,11 +579,13 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 
 # Assemble a physical map.
 %.physlr.stamp: \
-		%.n100-2000.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
-		%.n100-2000.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
-		%.n100-2000.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-		%.n100-2000.physlr.overlap.n$n.mol.backbone.fleshed.path.$(ref).molecule.bed.pdf \
-		%.n100-2000.physlr.overlap.n$n.mol.backbone.fleshed.path.$(ref).molecule.split.bed.pdf
+		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
+		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.fleshed.path.$(ref).molecule.bed.pdf \
+		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.fleshed.path.$(ref).molecule.split.bed.pdf \
+		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).paf.pdf
 	touch $@
 
 ################################################################################
@@ -605,7 +607,7 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 %.quast.tsv: \
 		%.supernova.scaftigs.quast.tsv \
 		%.supernova.quast.tsv \
-		%.n100-2000.physlr.overlap.n$n.mol.backbone.map.$(name).supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(name).supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 ################################################################################
