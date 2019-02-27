@@ -125,11 +125,9 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
             exit(EXIT_FAILURE);
     }
     size_t nread = 0, nline = 0;
-    while (true) {
-        std::string id, barcode, sequence;
-        is >> id >> std::ws;
-        if (is.eof()) {
-            break;
+    for (std::string id, barcode, sequence; is >> id;) {
+        while (is.peek() == ' ') {
+            is.ignore();
         }
         if (!getline(is, barcode)) {
             std::cerr << "physlr-indexlr: error: Failed to read header on line " << nline + 1 << '\n';
@@ -139,17 +137,31 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
             std::cerr << "physlr-indexlr: error: Failed to read sequence on line " << nline + 2 << '\n';
             exit(EXIT_FAILURE);
         }
-        is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        // At this point four lines have been read; equivalent to one read and its associated information.
-        nline += 4;
-        nread += 1;
-        if (!startsWith(barcode, "BX:Z:")) {
-            std::cerr << "physlr-indexlr: error: Expected BX:Z:... and saw " << barcode << " at line "
-                      << nline - 3 << "\n";
+        assert(!id.empty());
+        if (id[0] == '@') {
+            // Skip the FASTQ quality.
+            if (is.peek() != '+') {
+                std::cerr << "physlr-indexlr: error: " << nline + 3 << ": Expected + and saw: " << id << '\n';
+                exit(EXIT_FAILURE);
+            }
+            is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            nline += 2;
+        } else if (id[0] != '>') {
+            std::cerr << "physlr-indexlr: error: " << nline + 1 << ": Expected > or @ and saw: " << id << '\n';
             exit(EXIT_FAILURE);
         }
-        barcode = barcode.erase(0, 5);
+        nline += 2;
+        nread += 1;
+        if (startsWith(barcode, "BX:Z:")) {
+            auto pos = barcode.find(' ');
+            if (pos != std::string::npos) {
+                barcode.erase(pos);
+            }
+            barcode.erase(0, 5);
+        } else {
+            barcode = "NA";
+        }
         // Validate parameters.
         if (k > sequence.size()) {
             if (verbose) {
