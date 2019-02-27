@@ -603,11 +603,8 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 
 # Aggregate QUAST metrics.
 %.quast.tsv: \
-		%.abyss.scaftigs.quast.tsv \
-		%.abyss.quast.tsv \
 		%.supernova.scaftigs.quast.tsv \
 		%.supernova.quast.tsv \
-		%.n100-2000.physlr.overlap.n$n.mol.backbone.map.$(name).abyss.n10.sort.best.bed.path.quast.tsv \
 		%.n100-2000.physlr.overlap.n$n.mol.backbone.map.$(name).supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
