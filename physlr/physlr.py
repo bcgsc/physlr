@@ -1276,8 +1276,8 @@ class Physlr:
             seq = "NNNNNNNNNN".join(Physlr.get_oriented_sequence(seqs, name) for name in path)
             if len(seq) < self.args.min_length:
                 continue
-            print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
             num_scaffolds += 1
+            print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
             num_contigs += len(path)
             num_bases += len(seq)
         print(
