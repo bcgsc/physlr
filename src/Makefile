@@ -6,7 +6,7 @@ all: physlr-indexlr
 lint:
 	clang-tidy -warnings-as-errors='*' *.cc -- -std=c++11
 
-check:
+check: all
 	./physlr-indexlr -k100 -w5 data/tiny.fq | diff -q - data/tiny.physlr.tsv.good
 
 clean:
