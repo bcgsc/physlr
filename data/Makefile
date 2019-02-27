@@ -425,23 +425,23 @@ minsize=2000
 %.physlr.depth.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr count-minimizers $< >$@
 	
-# Identify the overlapping markers of each pair of barcodes.
+# Identify the overlapping minimizers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr intersect $< >$@
 
-# Filter barcodes by number of markers.
+# Filter barcodes by number of minimizers.
 %.n100-1000.physlr.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr filter-barcodes -n100 -N1000 $< >$@
 
-# Filter barcodes by number of markers.
+# Filter barcodes by number of minimizers.
 %.n100-2000.physlr.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr filter-barcodes -n100 -N2000 $< >$@
 
-# Filter barcodes by number of markers.
+# Filter barcodes by number of minimizers.
 %.n100-5000.physlr.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr filter-barcodes -n100 -N5000 $< >$@
 
-# Filter markers by their frequency.
+# Filter minimizers by their frequency.
 %.c2-x.physlr.tsv: %.physlr.tsv
 	$(time) $(python) $(bin)/physlr filter-minimizers $< >$@
 
