@@ -1,6 +1,6 @@
 CXXFLAGS=-g -O3 -Wall -Werror -std=c++11
 
-all: physlr-indexlr
+all: physlr-filter-barcodes physlr-indexlr
 
 # Check the C++ source code for errors with clang-tidy.
 lint:
