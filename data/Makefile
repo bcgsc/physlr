@@ -419,8 +419,7 @@ minsize=2000
 
 # Index linked reads using physlr-indexlr (native implementation).
 %.indexlr.physlr.tsv: %.fq.gz
-	gunzip -c $< | paste - - - - - - - - | grep "BX:Z:" | tr '\t' '\n' \
-	| $(time) ../src/physlr-indexlr -k$k -w$w -o $@ -
+	gunzip -c $< | $(time) ../src/physlr-indexlr -k$k -w$w -o $@ -
 
 # Count the frequency of the minimizers.
 %.physlr.depth.tsv: %.physlr.tsv
