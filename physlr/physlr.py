@@ -130,7 +130,7 @@ class Physlr:
         else:
             print("Unknown graph format:", graph_format, file=sys.stderr)
             exit(1)
-            
+
     @staticmethod
     def read_tsv(g, filename):
         "Read a graph in TSV format."
