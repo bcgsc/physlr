@@ -644,6 +644,10 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 ################################################################################
 # RMarkdown reports
 
+# Plot depth of coverage.
+%.depth.tsv.pdf: %.depth.tsv
+	Rscript -e 'rmarkdown::render("plot-depth.rmd", "html_document", "$*.depth.tsv.html", params = list(input_tsv="$<"))'
+
 # Compare assembly metrics.
 %.quast.html: %.quast.tsv
 	Rscript -e 'rmarkdown::render("quast.rmd", "html_document", "$*.quast.html", params = list(input_tsv="$<", output_tsv="$*.quast.table.tsv"))'
