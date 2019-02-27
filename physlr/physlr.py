@@ -1053,7 +1053,7 @@ class Physlr:
         edges_count = sub_graph.number_of_edges()
         if nodes_count < 2:
             return u, [nodes_count, edges_count, 0.0]
-        return u, (nodes_count, edges_count, edges_count*2.0/(nodes_count*(nodes_count-1)))
+        return u, (nodes_count, edges_count, (edges_count*2.0/(nodes_count*(nodes_count-1))))
 
     @staticmethod
     def subgraph_stats_process(u):
