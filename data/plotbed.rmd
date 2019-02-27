@@ -50,7 +50,7 @@ ggplot(bed) +
 	aes(xmin = Start, xmax = End, ymin = Index, ymax = Index + 1, fill = Rname) +
 	geom_rect() +
 	scale_x_continuous(name = "Position", labels = x_labels) +
-	scale_fill_brewer(type = "qual", palette = "Set1", direction = -1)
+	scale_fill_brewer(type = "qual", palette = "Set1")
 ```
 
 ```{r save-plot}
