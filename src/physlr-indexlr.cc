@@ -108,6 +108,9 @@ static void writeMinimizedRead(std::ostream &os, const std::string &opath, const
 {
     os << barcode;
     char sep = '\t';
+    if (minimizers.empty()) {
+        os << sep;
+    }
     for (auto &m : minimizers) {
         os << sep << m;
         sep = ' ';
@@ -160,7 +163,8 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
             }
             barcode.erase(0, 5);
         } else {
-            barcode = "NA";
+            // No barcode tag is present. For FASTA, use the sequence ID. For FASTQ, use NA.
+            barcode = id[0] == '>' ? id.erase(0, 1) : "NA";
         }
         // Validate parameters.
         if (k > sequence.size()) {
@@ -169,7 +173,6 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
                           << "; k > read length "
                           << "(k = " << k << ", read length = " << sequence.size() << ")\n";
             }
-            continue;
         }
         // Hash the kmers.
         // NOTE: The predicate P(#kmers != #hashes) will be true when reads contains Ns, so check with the number
@@ -180,7 +183,6 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
                 std::cerr << "physlr-indexlr: warning: Skip read " << nread << " on line " << nline - 2
                           << "; window size > #hashes (w = " << w << ", #hashes = " << hashes.size() << ")\n";
             }
-            continue;
         }
         writeMinimizedRead(os, opath, barcode, getMinimizers(hashes, w));
     }
