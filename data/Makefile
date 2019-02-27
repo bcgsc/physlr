@@ -138,7 +138,6 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 
 # Assemble a physical map of fish.
 fish: \
-	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
 	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
 	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
 	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
@@ -147,21 +146,20 @@ fish: \
 
 # Assemble a physical map of fish using physlr-indexlr (native implementation).
 fish-indexlr: \
-	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
 	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
 	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.pdf \
-	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.z11.paf.pdf \
-	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
+	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.paf.pdf \
+	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
 
 # Assemble a physical map of fish chromosome 25.
+# ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=35
 fishchr25: \
-	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.z11.cov.tsv \
-	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
+	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11chr25.molecule.bed.pdf \
 	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.pdf \
-	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.z11.paf.pdf \
-	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.pdf \
+	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.z11chr25.paf.pdf \
+	fishchr25.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.quast.tsv
 
 # Download the zebrafish genome from NCBI.
 fish/z11.ncbi.fa:
@@ -184,6 +182,10 @@ fish/z11chr25.fa: fish/z11.fa
 # Download the Supernova assembly of the linked reads from 10x Genomics.
 fish.supernova.fa:
 	curl http://cf.10xgenomics.com/samples/assembly/2.1.0/fish/fish_pseudohap.fasta.gz | gunzip -c >$@
+
+# Extract chromosome 25 from the Supernova fish assembly.
+fish.supernova.chr25.fa: fish.supernova.z11.chr25.sam.fa
+	ln -s $< $@
 
 # Download the fish linked reads from 10x Genomics.
 fish/fish.tar:
@@ -248,21 +250,28 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 %.$(ref).paf.gz: $(name)/$(ref).fa %.fa
 	$(time) minimap2 -t$t -xasm10 $^ | $(gzip) >$@
 
-################################################################################
-# miniasm
+# Align a FASTA file to the reference genome and produce a SAM file.
+%.$(ref).sam.gz: $(name)/$(ref).fa %.fa
+	$(time) minimap2 -t$t -xasm10 -a $^ | $(gzip) >$@
 
-# Extract the scaftigs that map to chromosome 25.
+################################################################################
+# Filter alignments
+
+# Extract the sequences that map to chromosome 25.
 %.chr25.paf.gz: %.paf.gz
 	gunzip -c $< | awk '$$6 == "25"' | $(gzip) >$@
 
+# Extract the sequences that map to chromosome 25.
+%.chr25.sam.gz: %.sort.bam %.sort.bam.bai
+	samtools view -h $< 25 | $(gzip) >$@
+
+################################################################################
+# miniasm
+
 # Draw a dot plot of a PAF file.
 # Skip alignments to non-chromosomal sequences.
-%.paf.ps: %.paf.gz
-	gunzip -c $< | grep -v NW_ | minidot /dev/stdin >$@
-
-# Convert Postscript to PDF
-%.pdf: %.ps
-	ps2pdf $< $@
+%.paf.pdf: %.paf.gz
+	gunzip -c $< | grep -v NW_ | minidot /dev/stdin | ps2pdf - $@
 
 ################################################################################
 # samtools
@@ -270,6 +279,10 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 # Index a FASTA file.
 %.fa.fai: %.fa
 	samtools faidx $<
+
+# Sort a SAM file by position.
+%.sort.bam: %.sam.gz
+	samtools sort -@$t -T$$(mktemp -u -t $(@F).XXXXXX) -o $@ $<
 
 # Sort a BAM file by position.
 %.sort.bam: %.sortn.bam
@@ -290,6 +303,10 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 # Convert a BAM file to FASTQ.
 %.sortbxn.fq.gz: %.sortbxn.bam
 	samtools fastq -@$t -TBX $< | $(gzip) >$@
+
+# Convert a SAM file to FASTA.
+%.sam.fa: %.sam.gz
+	samtools fasta -@$t -F0x904 $< >$@
 
 ################################################################################
 # seqtk
