@@ -31,6 +31,9 @@ static bool startsWith(const std::string& s, const char (&prefix)[N])
 static std::vector<uint64_t> hashKmers(const std::string &readstr, const size_t k)
 {
     std::vector<uint64_t> hashes;
+    if (readstr.size() < k) {
+        return hashes;
+    }
     hashes.reserve(readstr.size() - k + 1);
     for (ntHashIterator iter(readstr, 1, k); iter != ntHashIterator::end(); ++iter) {
         hashes.push_back((*iter)[0]);
@@ -72,7 +75,10 @@ for each window of v bounded by [l, r]
 static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, const unsigned w)
 {
     std::vector<uint64_t> minimizers;
-    minimizers.reserve(hashes.size() / w);
+    if (hashes.size() < w) {
+        return minimizers;
+    }
+    minimizers.reserve(2 * hashes.size() / w);
     int i = -1, prev = -1;
     auto firstIt = hashes.begin();
     auto minIt   = hashes.end();
@@ -167,13 +173,12 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
             barcode = id[0] == '>' ? id.erase(0, 1) : "NA";
         }
         // Validate parameters.
-        if (k > sequence.size()) {
+        if (sequence.size() < k) {
             if (verbose) {
                 std::cerr << "physlr-indexlr: warning: Skip read " << nread << " on line " << nline - 2
                           << "; k > read length "
                           << "(k = " << k << ", read length = " << sequence.size() << ")\n";
             }
-            continue;
         }
         // Hash the kmers.
         // NOTE: The predicate P(#kmers != #hashes) will be true when reads contains Ns, so check with the number
@@ -184,7 +189,6 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
                 std::cerr << "physlr-indexlr: warning: Skip read " << nread << " on line " << nline - 2
                           << "; window size > #hashes (w = " << w << ", #hashes = " << hashes.size() << ")\n";
             }
-            continue;
         }
         writeMinimizedRead(os, opath, barcode, getMinimizers(hashes, w));
     }
