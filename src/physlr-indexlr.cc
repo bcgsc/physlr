@@ -173,6 +173,7 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
                           << "; k > read length "
                           << "(k = " << k << ", read length = " << sequence.size() << ")\n";
             }
+            continue;
         }
         // Hash the kmers.
         // NOTE: The predicate P(#kmers != #hashes) will be true when reads contains Ns, so check with the number
@@ -183,6 +184,7 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
                 std::cerr << "physlr-indexlr: warning: Skip read " << nread << " on line " << nline - 2
                           << "; window size > #hashes (w = " << w << ", #hashes = " << hashes.size() << ")\n";
             }
+            continue;
         }
         writeMinimizedRead(os, opath, barcode, getMinimizers(hashes, w));
     }
