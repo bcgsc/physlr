@@ -183,7 +183,7 @@ fish/z11chr25.fa: fish/z11.fa
 
 # Download the Supernova assembly of the linked reads from 10x Genomics.
 fish.supernova.fa:
-	curl http://cf.10xgenomics.com/samples/assembly/2.1.0/fish/fish_pseudohap.fasta.gz | gunzip -c >$@
+	curl http://cf.10xgenomics.com/samples/assembly/2.1.0/fish/fish_pseudohap.fasta.gz | seqtk seq >$@
 
 # Extract chromosome 25 from the Supernova fish assembly.
 fish.supernova.chr25.fa: fish.supernova.z11.chr25.sam.fa
