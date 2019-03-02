@@ -89,7 +89,7 @@ class Physlr:
         return seqs
 
     @staticmethod
-    def read_path(filenames):
+    def read_paths(filenames):
         "Read path files."
         paths = []
         for filename in filenames:
@@ -453,7 +453,7 @@ class Physlr:
     def physlr_flesh_backbone(self):
         "Flesh out the barcodes in the backbone paths"
         g = self.read_graph([self.args.FILES[0]])
-        backbones_raw = self.read_path([self.args.FILES[1]])
+        backbones_raw = self.read_paths([self.args.FILES[1]])
         backbones = [b for b in backbones_raw if len(b) >= self.args.min_component_size]
         print(
             int(timeit.default_timer() - t0),
@@ -1250,7 +1250,7 @@ class Physlr:
         fasta_filenames = self.args.FILES[0:1]
         path_filenames = self.args.FILES[1:]
         seqs = Physlr.read_fastas(fasta_filenames)
-        paths = Physlr.read_path(path_filenames)
+        paths = Physlr.read_paths(path_filenames)
 
         num_scaffolds = 0
         num_contigs = 0
@@ -1298,7 +1298,7 @@ class Physlr:
         num_beds = 0
         num_too_small = 0
         num_missing = 0
-        for i, path in enumerate(progress(Physlr.read_path(path_filenames))):
+        for i, path in enumerate(progress(Physlr.read_paths(path_filenames))):
             path = [x for subpath in path for x in subpath.strip("()").split(",")]
             if len(path) < self.args.min_component_size:
                 num_too_small += 1
@@ -1335,6 +1335,31 @@ class Physlr:
             file=sys.stderr)
 
     @staticmethod
+    def compute_ngxx(xs, g, proportion):
+        "Compute the NGxx metric. xs must be sorted from largest to smallest."
+        target = g * proportion
+        running_sum = 0
+        for x in xs:
+            running_sum += x
+            if running_sum >= target:
+                return x
+        return 0
+
+    def physlr_path_metrics(self):
+        "Report assembly metrics of a path file."
+        if self.args.g is None:
+            exit("physlr path-metrics: error: You must specify -g, --expected-molecules")
+        print("Max\tNG25\tNG50\tNG75\tMin\tPaths\tNodes\tFile")
+        for filename in self.args.FILES:
+            paths = self.read_paths([filename])
+            xs = [len(path) for path in paths if len(path) >= self.args.min_component_size]
+            xs.sort(reverse=True)
+            ng25 = Physlr.compute_ngxx(xs, self.args.g, 0.25)
+            ng50 = Physlr.compute_ngxx(xs, self.args.g, 0.50)
+            ng75 = Physlr.compute_ngxx(xs, self.args.g, 0.75)
+            print(max(xs), ng25, ng50, ng75, min(xs), len(xs), sum(xs), filename, sep="\t")
+
+    @staticmethod
     def parse_arguments():
         "Parse the command line arguments."
         argparser = argparse.ArgumentParser()
@@ -1357,6 +1382,9 @@ class Physlr:
         argparser.add_argument(
             "-C", "--max-count", action="store", dest="C", type=int,
             help="ignore minimizers that occur in C or more barcodes [None]")
+        argparser.add_argument(
+            "-g", "--expected-molecules", action="store", dest="g", type=int,
+            help="the expected number of molecules in the assembly, for computing NGxx [None]")
         argparser.add_argument(
             "-M", "--max-molecules", action="store", dest="M", type=int,
             help="remove barcodes with M or more molecules [None]")
