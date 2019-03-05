@@ -1138,6 +1138,7 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
     @staticmethod
+<<<<<<< HEAD
     def write_subgraphs_stats(g, fout):
         "Write statistics of the subgraphs."
         print("Barcode\tNodes\tEdges\tDensity", file=fout)
@@ -1185,10 +1186,8 @@ class Physlr:
         "Index the positions of the minimizers in the backbones."
         mxtopos = {}
         for tid, path in enumerate(progress(backbones)):
-            for pos, (u, v) in enumerate(zip(path, path[1:])):
-                u = u.split("_", 1)[0]
-                v = v.split("_", 1)[0]
-                for mx in bxtomxs[u] & bxtomxs[v]:
+            for pos, u in enumerate(path):
+                for mx in bxtomxs[u]:
                     mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
             int(timeit.default_timer() - t0),
@@ -1284,15 +1283,16 @@ class Physlr:
     def physlr_map(self):
         """
         Map sequences to a physical map.
-        Usage: physlr map TGRAPH.tsv TMARKERS.tsv QMARKERS.tsv... >MAP.bed
+        Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
         """
 
         if len(self.args.FILES) < 3:
             exit("physlr map: error: at least three file arguments are required")
-        graph_filenames = [self.args.FILES[0]]
+        path_filenames = [self.args.FILES[0]]
         target_filenames = [self.args.FILES[1]]
         query_filenames = self.args.FILES[2:]
 
+<<<<<<< HEAD
         g = self.read_graph(graph_filenames)
         bxtomxs = self.read_minimizers(target_filenames)
         query_mxs = bxtomxs if target_filenames == query_filenames else \
@@ -1301,6 +1301,22 @@ class Physlr:
         # Index the positions of the minimizers in the backbone.
         backbones = Physlr.determine_backbones(g)
         mxtopos = Physlr.index_minimizers_in_backbones(backbones, bxtomxs)
+=======
+        #g = self.read_graph(graph_filenames)
+        moltomin = self.read_minimizers(target_filenames)
+        query_markers = moltomin if target_filenames == query_filenames else \
+            self.read_minimizers(query_filenames)
+
+        # Remove repetitive minimizers
+        mintomol = self.construct_minimizers_to_barcodes(moltomin)
+        self.remove_repetitive_minimizers(moltomin, mintomol)
+
+        # Index the positions of the markers in the backbone.
+        backbones = Physlr.read_path(path_filenames)
+        backbones = [backbone for backbone in backbones
+                     if len(backbone) >= self.args.min_component_size]
+        markertopos = Physlr.index_markers_in_backbones(backbones, moltomin)
+>>>>>>> physlr-map: do mappings based on split minimizers
 
         # Map the query sequences to the physical map.
         num_mapped = 0
