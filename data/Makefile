@@ -618,6 +618,10 @@ endif
 ################################################################################
 # GraphViz
 
+# Extract the largest component.
+%.comp1.gv: %.gv
+	ccomps -z -X'#0' $< >$@ || true
+
 # Label the edges with edge weight.
 %.label.gv: %.gv
 	gvpr -c 'E { label = n }' $< >$@
