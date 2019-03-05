@@ -643,6 +643,12 @@ endif
 	gvpr 'E[n >= 50]' $< >$@
 
 # Layout and render an undirected graph to PDF.
+# Do not prevent overlapping vertices.
+%.gv.squish.pdf: %.gv
+	neato -Gsize=100,100 -Tpdf -o $@ $<
+
+# Layout and render an undirected graph to PDF.
+# Prevent overlapping vertices by scaling the layout.
 %.gv.pdf: %.gv
 	neato -Goverlap=scale -Gsize=100,100 -Tpdf -o $@ $<
 
