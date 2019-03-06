@@ -498,6 +498,11 @@ endif
 %.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).physlr.tsv
 	$(time) $(python) $(bin)/physlr map-mkt -n10 $^ >$@
 
+# Annotate a graph with a BED file of mappings.
+# Filter out small components.
+%.map.$(draft).n10.sort.best.ann.gv: %.tsv %.map.$(draft).n10.sort.best.bed
+	$(python) $(bin)/physlr annotate-graph --min-component-size=$(min_component_size) -Ogv $^ >$@
+
 # Filter a BED file by score.
 %.n100.bed: %.n10.bed
 	awk '$$5 >= 100' $< >$@
