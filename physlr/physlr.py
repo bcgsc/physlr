@@ -1087,7 +1087,6 @@ class Physlr:
     def index_minimizers_in_backbones(backbones, bxtomxs):
         "Index the positions of the minimizers in the backbones."
         mxtopos = {}
-
         for tid, path in enumerate(progress(backbones)):
             for pos, (u, v) in enumerate(zip(path, path[1:])):
                 u = u.split("_", 1)[0]
