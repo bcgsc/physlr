@@ -1047,6 +1047,49 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
     @staticmethod
+    def write_subgraphs_stats(g, fout):
+        "Write statistics of the subgraphs."
+        print("Barcode\tNodes\tEdges\tDensity", file=fout)
+        for i in progress(g):
+            print(i, g[i][0], g[i][1], g[i][2], sep="\t", file=fout)
+
+    @staticmethod
+    def subgraph_stats(g, u):
+        "Extract the statistics of the vertex-induced subgraph with the vertex being u."
+        sub_graph = g.subgraph(g.neighbors(u))
+        nodes_count = sub_graph.number_of_nodes()
+        edges_count = sub_graph.number_of_edges()
+        if nodes_count < 2:
+            return u, [nodes_count, edges_count, 0.0]
+        return u, (nodes_count, edges_count, (edges_count*2.0/(nodes_count*(nodes_count-1))))
+
+    @staticmethod
+    def subgraph_stats_process(u):
+        """
+        Extract the statistics of the subgraph of neighbours of this vertex.
+        The graph is passed in the class variable Physlr.graph.
+        """
+        return Physlr.subgraph_stats(Physlr.graph, u)
+
+    def physlr_subgraphs_stats(self):
+        "Retrieve subgraphs' stats."
+        gin = self.read_graph(self.args.FILES)
+        Physlr.filter_edges(gin, self.args.n)
+        print(
+            int(timeit.default_timer() - t0),
+            "Computing statistics of the subgraphs...", file=sys.stderr)
+        if self.args.threads == 1:
+            stats = dict(self.subgraph_stats(gin, u) for u in progress(gin))
+        else:
+            Physlr.graph = gin
+            with multiprocessing.Pool(self.args.threads) as pool:
+                stats = dict(pool.map(
+                    self.subgraph_stats_process, progress(gin), chunksize=100))
+            Physlr.graph = None
+        print(int(timeit.default_timer() - t0), "Extracted subgraphs' statistics.", file=sys.stderr)
+        self.write_subgraphs_stats(stats, sys.stdout)
+
+    @staticmethod
     def index_minimizers_in_backbones(backbones, bxtomxs):
         "Index the positions of the minimizers in the backbones."
         mxtopos = {}

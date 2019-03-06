@@ -547,6 +547,10 @@ endif
 %.subgraphs: %.tsv
 	$(python) $(bin)/physlr subgraphs -v$v -d$d -o $*.subgraphs $<
 
+# Extract statistics of the subgraphs
+%.subgraphs-stats.tsv: %.tsv
+	$(python) $(bin)/physlr subgraphs-stats -t$t $< >$@
+
 # Convert a graph from TSV to GraphViz.
 # Filter out small components.
 %.gv: %.tsv
