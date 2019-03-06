@@ -189,35 +189,35 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-//	cout << "U\tn\n";
-//	string bufferString = "";
-//	//print out vertexes + counts
-//#pragma omp parallel
-//	for (google::dense_hash_map<string,BarcodeID>::const_iterator itr =
-//			barcodes.begin(); itr != barcodes.end();
-//			itr++) {
-//		bufferString.clear();
-//		bufferString += itr->first;
-//		bufferString += "\t";
-//		bufferString += barcodeCount[itr->second].size();
-//		bufferString += "\n";
-//		cout << bufferString;
-//	}
-//
-//	cout << "U\tV\tn\n";
-//#pragma omp parallel
-//	for (SimMat::const_iterator itr =
-//			barcodes.begin(); itr != barcodes.end();
-//			itr++) {
-//		bufferString.clear();
-//		bufferString += itr->first.first;
-//		bufferString += "\t";
-//		bufferString += itr->first.second;
-//		bufferString += "\t";
-//		bufferString += itr->second;
-//		bufferString += "\n";
-//		cout << bufferString;
-//	}
+	cout << "U\tn\n";
+	string bufferString = "";
+	//print out vertexes + counts
+#pragma omp parallel
+	for (google::dense_hash_map<string,BarcodeID>::const_iterator itr =
+			barcodes.begin(); itr != barcodes.end();
+			itr++) {
+		bufferString.clear();
+		bufferString += itr->first;
+		bufferString += "\t";
+		bufferString += barcodeCount[itr->second].size();
+		bufferString += "\n";
+		cout << bufferString;
+	}
+
+	cout << "U\tV\tn\n";
+#pragma omp parallel
+	for (SimMat::const_iterator itr =
+			barcodes.begin(); itr != barcodes.end();
+			itr++) {
+		bufferString.clear();
+		bufferString += itr->first.first;
+		bufferString += "\t";
+		bufferString += itr->first.second;
+		bufferString += "\t";
+		bufferString += itr->second;
+		bufferString += "\n";
+		cout << bufferString;
+	}
 	return 0;
 }
 
