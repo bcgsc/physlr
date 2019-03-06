@@ -27,9 +27,11 @@
 *.ps
 *.png
 *.quast/
+*.sam.gz
 *.sh
 *.stamp
 *.tar
+*.time
 *.tsv
 *.txt
 !f1.quast.tsv

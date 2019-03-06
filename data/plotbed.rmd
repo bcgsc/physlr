@@ -10,6 +10,7 @@ params:
 
 ```{r setup, message=FALSE}
 library(dplyr)
+library(forcats)
 library(ggplot2)
 library(readr)
 library(scales)
@@ -26,26 +27,30 @@ input_bed
 bed_orig <- read_tsv(input_bed,
 	col_names = c("Rname", "Start", "End", "BX", "Score", "Orientation"),
 	col_types = "ciicic")
+
 bed <- bed_orig %>%
 	replace_na(list(
 		Rname = "Contig boundary",
 		Start = 0, End = max(bed_orig$End, na.rm = TRUE),
 		BX = NA, Reads = 0, Orientation = ".")) %>%
-	filter(
-		!startsWith(Rname, "NW_"),
-		replace_na(suppressWarnings(as.numeric(Rname)) < 50, TRUE)) %>%
+	filter(!startsWith(Rname, "NW_")) %>%
+	mutate(Rname = as.character(fct_lump(Rname, n = 7))) %>%
+	filter(Rname != "Other" | is.na(BX)) %>%
 	mutate(
+		Rname = if_else(is.na(BX), "Contig boundary", Rname),
 		BX = if_else(is.na(BX), as.character(cumsum(is.na(BX))), BX),
 		Index = as.numeric(factor(BX, levels = unique(BX))))
 ```
 
 # Plot the BED file
 ```{r plot-bed, fig.height=6, fig.width=6}
+x_labels <- if (max(bed$End) < 1e6) comma_format() else unit_format(unit = "Mbp", scale = 1e-6)
+
 ggplot(bed) +
 	aes(xmin = Start, xmax = End, ymin = Index, ymax = Index + 1, fill = Rname) +
 	geom_rect() +
-	scale_x_continuous(name = "Position", labels = unit_format(unit = "Mbp", scale = 1e-6)) +
-	scale_fill_brewer(type = "qual", palette = "Set1", direction = -1)
+	scale_x_continuous(name = "Position", labels = x_labels) +
+	scale_fill_brewer(type = "qual", palette = "Dark2")
 ```
 
 ```{r save-plot}

@@ -31,6 +31,9 @@ static bool startsWith(const std::string& s, const char (&prefix)[N])
 static std::vector<uint64_t> hashKmers(const std::string &readstr, const size_t k)
 {
     std::vector<uint64_t> hashes;
+    if (readstr.size() < k) {
+        return hashes;
+    }
     hashes.reserve(readstr.size() - k + 1);
     for (ntHashIterator iter(readstr, 1, k); iter != ntHashIterator::end(); ++iter) {
         hashes.push_back((*iter)[0]);
@@ -72,7 +75,10 @@ for each window of v bounded by [l, r]
 static std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, const unsigned w)
 {
     std::vector<uint64_t> minimizers;
-    minimizers.reserve(hashes.size() / w);
+    if (hashes.size() < w) {
+        return minimizers;
+    }
+    minimizers.reserve(2 * hashes.size() / w);
     int i = -1, prev = -1;
     auto firstIt = hashes.begin();
     auto minIt   = hashes.end();
@@ -108,6 +114,9 @@ static void writeMinimizedRead(std::ostream &os, const std::string &opath, const
 {
     os << barcode;
     char sep = '\t';
+    if (minimizers.empty()) {
+        os << sep;
+    }
     for (auto &m : minimizers) {
         os << sep << m;
         sep = ' ';
@@ -125,11 +134,9 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
             exit(EXIT_FAILURE);
     }
     size_t nread = 0, nline = 0;
-    while (true) {
-        std::string id, barcode, sequence;
-        is >> id >> std::ws;
-        if (is.eof()) {
-            break;
+    for (std::string id, barcode, sequence; is >> id;) {
+        while (is.peek() == ' ') {
+            is.ignore();
         }
         if (!getline(is, barcode)) {
             std::cerr << "physlr-indexlr: error: Failed to read header on line " << nline + 1 << '\n';
@@ -139,25 +146,39 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
             std::cerr << "physlr-indexlr: error: Failed to read sequence on line " << nline + 2 << '\n';
             exit(EXIT_FAILURE);
         }
-        is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        // At this point four lines have been read; equivalent to one read and its associated information.
-        nline += 4;
-        nread += 1;
-        if (!startsWith(barcode, "BX:Z:")) {
-            std::cerr << "physlr-indexlr: error: Expected BX:Z:... and saw " << barcode << " at line "
-                      << nline - 3 << "\n";
+        assert(!id.empty());
+        if (id[0] == '@') {
+            // Skip the FASTQ quality.
+            if (is.peek() != '+') {
+                std::cerr << "physlr-indexlr: error: " << nline + 3 << ": Expected + and saw: " << id << '\n';
+                exit(EXIT_FAILURE);
+            }
+            is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            is.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            nline += 2;
+        } else if (id[0] != '>') {
+            std::cerr << "physlr-indexlr: error: " << nline + 1 << ": Expected > or @ and saw: " << id << '\n';
             exit(EXIT_FAILURE);
         }
-        barcode = barcode.erase(0, 5);
+        nline += 2;
+        nread += 1;
+        if (startsWith(barcode, "BX:Z:")) {
+            auto pos = barcode.find(' ');
+            if (pos != std::string::npos) {
+                barcode.erase(pos);
+            }
+            barcode.erase(0, 5);
+        } else {
+            // No barcode tag is present. For FASTA, use the sequence ID. For FASTQ, use NA.
+            barcode = id[0] == '>' ? id.erase(0, 1) : "NA";
+        }
         // Validate parameters.
-        if (k > sequence.size()) {
+        if (sequence.size() < k) {
             if (verbose) {
                 std::cerr << "physlr-indexlr: warning: Skip read " << nread << " on line " << nline - 2
                           << "; k > read length "
                           << "(k = " << k << ", read length = " << sequence.size() << ")\n";
             }
-            continue;
         }
         // Hash the kmers.
         // NOTE: The predicate P(#kmers != #hashes) will be true when reads contains Ns, so check with the number
@@ -168,7 +189,6 @@ static void minimizeReads(std::istream &is, const std::string &ipath, std::ostre
                 std::cerr << "physlr-indexlr: warning: Skip read " << nread << " on line " << nline - 2
                           << "; window size > #hashes (w = " << w << ", #hashes = " << hashes.size() << ")\n";
             }
-            continue;
         }
         writeMinimizedRead(os, opath, barcode, getMinimizers(hashes, w));
     }
@@ -258,8 +278,9 @@ int main(int argc, char *argv[])
     std::ofstream ofs(outfile);
     assert_good(ofs, outfile);
     for (auto &infile : infiles) {
-        if (infile == "-")
+        if (infile == "-") {
             infile = "/dev/stdin";
+        }
         std::ifstream ifs(infile);
         assert_good(ifs, infile);
         minimizeReads(ifs, infile, ofs, outfile, k, w, verbose);
