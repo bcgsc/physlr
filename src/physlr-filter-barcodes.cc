@@ -33,9 +33,7 @@ static void printErrorMsg(const std::string& progname, const std::string& msg)
 static void printUsage(const std::string& progname)
 {
 	std::cout << "Usage:  " << progname
-		<< "  -k K -w W [-v] [-o file] file...\n\n"
-		"  -k K       use K as k-mer size\n"
-		"  -w W       use W as sliding-window size\n"
+		<< "  -n n -N N [-s] [-o file] file...\n\n"
 		"  -s         silent; disable verbose output\n"
 		"  -o file    write output to file, default is stdout\n"
 		"  -n         minimum number of minimizers per barcode\n"
@@ -44,11 +42,6 @@ static void printUsage(const std::string& progname)
 		"  file       space separated list of FASTQ files\n";
 }
 
-/*typedef uint64_t Mx;
-typedef std::unordered_set<Mx> Mxs;
-typedef std::string Bx;
-typedef std::unordered_map<Bx, Mxs> BxtoMxs;
-*/
 using Mx = uint64_t;
 using Mxs = std::unordered_set<Mx>;
 using Bx = std::string;
@@ -172,14 +165,10 @@ int main(int argc, char *argv[])
 	int c;
 	int optindex = 0;
 	static int help = 0;
-	unsigned k = 0;
-	unsigned w = 0;
 	unsigned n = 0;
 	unsigned N = 0;
 	bool silent = false;
 	bool failed = false;
-	bool w_set = false;
-	bool k_set = false;
 	bool n_set = false;
 	bool N_set = false;
 	char* end = nullptr;
@@ -188,14 +177,6 @@ int main(int argc, char *argv[])
 	while ((c = getopt_long(argc, argv, "k:w:o:s:n:N:", longopts, &optindex)) != -1) {
 		switch (c) {
 		case 0:
-			break;
-		case 'k':
-			k_set = true;
-			k = strtoul(optarg, &end, 10);
-			break;
-		case 'w':
-			w_set = true;
-			w = strtoul(optarg, &end, 10);
 			break;
 		case 'o':
 			outfile.assign(optarg);
@@ -224,37 +205,21 @@ int main(int argc, char *argv[])
 		printUsage(progname);
 		exit(EXIT_SUCCESS);
 	}
-	else if (!k_set) {
-		printErrorMsg(progname, "missing option -- 'k'");
-		failed = true;
-	}
-	else if (!w_set) {
-		printErrorMsg(progname, "missing option -- 'w'");
-		failed = true;
-	}
-	else if (!n_set) {
+	if (!n_set) {
 		n = 1;
 	}
-	else if (!N_set) {
+	if (!N_set) {
 		N = INT_MAX;
 	}
-	else if (k == 0) {
-		printErrorMsg(progname, "option has incorrect argument -- 'k'");
-		failed = true;
-	}
-	else if (w == 0) {
-		printErrorMsg(progname, "option has incorrect argument -- 'w'");
-		failed = true;
-	}
-	else if (n == 0) {
+	if (n == 0) {
 		printErrorMsg(progname, "option has incorrect argument -- 'n'");
 		failed = true;
 	}
-	else if (N == 0) {
+	if (N == 0) {
 		printErrorMsg(progname, "option has incorrect argument -- 'N'");
 		failed = true;
 	}
-	else if (infiles.empty()) {
+	if (infiles.empty()) {
 		printErrorMsg(progname, "missing file operand");
 		failed = true;
 	}
