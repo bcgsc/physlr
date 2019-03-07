@@ -1,0 +1,47 @@
+---
+title: "Plot the distribution of markers per barcode"
+author: "Shaun Jackmn"
+params:
+  input_tsv:
+    label: "Input TSV file"
+    value: "physlr.mxperbx.tsv"
+    input: text
+---
+
+```{r setup}
+library(readr)
+library(ggplot2)
+
+knit_print.data.frame <- function(x, ...) kable(x) %>% paste(collapse = "\n") %>% asis_output
+input_tsv <- params$input_tsv
+
+input_tsv
+```
+
+# Read data
+```{r read}
+mxperbx <- read_table(input_tsv, col_types = "i")
+```
+
+# Boxplot statistics
+```{r boxplot-statistics}
+quartiles <- boxplot.stats(mxperbx$Minimizers)$stats
+upper_whisker <- quartiles[5]
+
+quartiles
+```
+
+# Plot histogram
+```{r minimizers-histogram}
+ggplot(mxperbx) +
+	aes(x = Minimizers) +
+	geom_histogram(binwidth = 100, boundary = 0) +
+	geom_vline(xintercept = quartiles, colour = "grey", linetype = "dashed") +
+	coord_cartesian(x = c(0, 1.2 * upper_whisker)) +
+	theme_bw() +
+	labs(caption = paste(quartiles, collapse = " "))
+```
+
+```{r save-plot}
+ggsave(paste0(input_tsv, ".pdf"))
+```
