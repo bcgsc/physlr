@@ -445,6 +445,10 @@ minsize=2000
 %.c2-x.physlr.tsv: %.physlr.tsv
 	$(time) $(python) $(bin)/physlr filter-minimizers $< >$@
 
+# Count the number of minimizers per barcode.
+%.c2-x.physlr.mxperbx.tsv: %.c2-x.physlr.tsv
+	awk 'BEGIN { print "Minimizers" } { print NF - 1 }' $< >$@
+
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
 	$(time) $(python) $(bin)/physlr overlap -n10 $< >$@
@@ -667,6 +671,10 @@ endif
 
 ################################################################################
 # RMarkdown reports
+
+# Plot number of markers per barcode.
+%.mxperbx.tsv.pdf: %.mxperbx.tsv
+	Rscript -e 'rmarkdown::render("plot-mxperbx.rmd", "html_document", "$*.mxperbx.tsv.html", params = list(input_tsv="$<"))'
 
 # Plot depth of coverage.
 %.depth.tsv.pdf: %.depth.tsv
