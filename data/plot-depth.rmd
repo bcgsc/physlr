@@ -1,5 +1,5 @@
 ---
-title: "Plot the distribution of marker depth"
+title: "Plot the distribution of minimizer depth"
 author: "Shaun Jackmn"
 params:
   input_tsv:
