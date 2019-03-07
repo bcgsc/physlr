@@ -1446,6 +1446,9 @@ class Physlr:
         for filename in self.args.FILES:
             paths = self.read_paths([filename])
             xs = [len(path) for path in paths if len(path) >= self.args.min_component_size]
+            if not xs:
+                print(f"0\t0\t0\t0\t0\t0\t0\t{filename}")
+                continue
             xs.sort(reverse=True)
             ng25 = Physlr.compute_ngxx(xs, self.args.g, 0.25)
             ng50 = Physlr.compute_ngxx(xs, self.args.g, 0.50)
