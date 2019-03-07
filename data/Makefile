@@ -146,13 +146,13 @@ fish: \
 	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
 
 # Assemble a physical map of fish using physlr-indexlr (native implementation).
-# ref=z11 lr=fish draft=fish.supernova indexlr=1 n=100 min_component_size=200
+# ref=z11 lr=fish draft=fish.supernova indexlr=1 n=50 min_component_size=200
 fish-indexlr: \
-	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
-	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
-	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.paf.pdf \
-	fish.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.paf.pdf \
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
 
 # Assemble a physical map of fish chromosome 25.
 # ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 indexlr=1 n=40
