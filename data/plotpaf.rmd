@@ -12,6 +12,7 @@ params:
 library(dplyr)
 library(forcats)
 library(ggplot2)
+library(Polychrome)
 library(readr)
 library(scales)
 library(tidyr)
@@ -42,7 +43,7 @@ paf <- paf_orig %>%
 		Tname = NA, Reads = 0, Orientation = ".")) %>%
 	filter(!startsWith(Qname, "NW_"), Tlength >= tlength_threshold, Mapq >= mapq_threshold) %>%
 	mutate(
-		Qname = as.character(fct_lump(Qname, n = 7)),
+		Qname = as.character(fct_lump(Qname, n = 25)),
 		Index = as.numeric(Tname)) %>%
 	filter(Qname != "Other")
 ```
@@ -55,7 +56,7 @@ ggplot(paf) +
 	aes(xmin = Qstart, xmax = Qend, ymin = Index, ymax = Index + 1, fill = Qname, alpha = Mapq) +
 	geom_rect() +
 	scale_x_continuous(name = "Position", labels = x_labels) +
-	scale_fill_brewer(type = "qual", palette = "Dark2")
+	scale_fill_manual(values = as.vector(alphabet.colors(26)))
 ```
 
 ```{r save-plot}
