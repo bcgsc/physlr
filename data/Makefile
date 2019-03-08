@@ -65,7 +65,7 @@ all: f1chr4 f1chr2R f1 fishchr25 fish
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Assemble a physical map of fly chromosome 4.
-# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs indexlr=1 n=50
+# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs n=50
 f1chr4: \
 	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
 	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
@@ -73,7 +73,7 @@ f1chr4: \
 	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).paf.pdf
 
 # Assemble a physical map of fly chromosome 2R.
-# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs indexlr=1 n=50
+# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs n=50
 f1chr2R: \
 	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
 	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
@@ -81,7 +81,7 @@ f1chr2R: \
 	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).paf.pdf
 
 # Assemble a physical map of the fly genome.
-# ref=fly lr=f1 draft=f1.supernova.scaftigs indexlr=1 n=100
+# ref=fly lr=f1 draft=f1.supernova.scaftigs n=100
 f1: \
 	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.pdf \
 	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
@@ -146,18 +146,9 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 # See https://support.10xgenomics.com/de-novo-assembly/datasets/2.1.0/fish
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
-# Assemble a physical map of fish.
-# ref=z11 lr=fish draft=fish.supernova n=35
-fish: \
-	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
-	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
-	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.paf.pdf \
-	fish.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
-
 # Assemble a physical map of fish using physlr-indexlr (native implementation).
-# ref=z11 lr=fish draft=fish.supernova indexlr=1 n=50 min_component_size=200
-fish-indexlr: \
+# ref=z11 lr=fish draft=fish.supernova n=50 min_component_size=200
+fish: \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
@@ -165,7 +156,7 @@ fish-indexlr: \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
 
 # Assemble a physical map of fish chromosome 25.
-# ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 indexlr=1 n=40
+# ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=40
 fishchr25: \
 	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11chr25.molecule.bed.pdf \
 	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
@@ -505,11 +496,7 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 	$(time) $(python) $(bin)/physlr map -n10 $^ $(lr).n100-2000.physlr.tsv >$@
 
 # Map the draft assembly to the backbone graph.
-ifneq ($(indexlr),)
 %.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).indexlr.physlr.tsv
-else
-%.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).physlr.tsv
-endif
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph using physlr map-mkt.
