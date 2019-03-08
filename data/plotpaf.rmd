@@ -24,7 +24,7 @@ input_paf
 
 # Read the PAF file
 ```{r read-data}
-mapq_threshold <- 10
+mapq_threshold <- 1
 tlength_threshold <- 100
 
 paf_orig <- read_tsv(input_paf,
