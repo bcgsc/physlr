@@ -1,0 +1,63 @@
+---
+title: Plot a PAF file
+author: Shaun Jackman
+params:
+  input_paf:
+    label: "Input PAF file"
+    value: "map.paf.gz"
+    input: text
+---
+
+```{r setup, message=FALSE}
+library(dplyr)
+library(forcats)
+library(ggplot2)
+library(readr)
+library(scales)
+library(tidyr)
+
+knit_print.data.frame <- function(x, ...) kable(x) %>% paste(collapse = "\n") %>% asis_output
+input_paf <- params$input_paf
+
+input_paf
+```
+
+# Read the PAF file
+```{r read-data}
+mapq_threshold <- 10
+tname_threshold <- 100
+
+paf_orig <- read_tsv(input_paf,
+	col_names = c(
+		"Qname", "Qlength", "Qstart", "Qend",
+		"Orientation",
+		"Tname", "Tlength", "Tstart", "Tend",
+		"Matches", "Length", "Mapq"),
+	col_types = "ciiicciiiiii")
+
+paf <- paf_orig %>%
+	replace_na(list(
+		Qname = "Contig boundary",
+		Qstart = 0, Qend = max(paf_orig$Qend, na.rm = TRUE),
+		Tname = NA, Reads = 0, Orientation = ".")) %>%
+	filter(!startsWith(Qname, "NW_"), Tname < tname_threshold, Mapq >= mapq_threshold) %>%
+	mutate(
+		Qname = as.character(fct_lump(Qname, n = 7)),
+		Index = as.numeric(Tname)) %>%
+	filter(Qname != "Other")
+```
+
+# Plot the PAF file
+```{r plot-paf, fig.height=6, fig.width=6}
+x_labels <- if (max(paf$Qend) < 1e6) comma_format() else unit_format(unit = "Mbp", scale = 1e-6)
+
+ggplot(paf) +
+	aes(xmin = Qstart, xmax = Qend, ymin = Index, ymax = Index + 1, fill = Qname, alpha = Mapq) +
+	geom_rect() +
+	scale_x_continuous(name = "Position", labels = x_labels) +
+	scale_fill_brewer(type = "qual", palette = "Dark2")
+```
+
+```{r save-plot}
+ggsave(paste0(input_paf, ".pdf"))
+```
