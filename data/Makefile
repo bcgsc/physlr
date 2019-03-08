@@ -63,6 +63,7 @@ endif
 .DELETE_ON_ERROR:
 .SECONDARY:
 
+.PHONY: f1chr4 f1chr2R f1 fishchr25 fish
 all: f1chr4 f1chr2R f1 fishchr25 fish
 
 ################################################################################
@@ -164,19 +165,21 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 # Assemble a physical map of fish using physlr-indexlr (native implementation).
 # ref=z11 lr=fish draft=fish.supernova n=50 min_component_size=200
 fish: \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11.molecule.bed.pdf \
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.z11.n10.paf.gz.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.paf.pdf \
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.minidot.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
 
 # Assemble a physical map of fish chromosome 25.
 # ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=40
 fishchr25: \
-	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11chr25.molecule.bed.pdf \
 	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11chr25.molecule.bed.pdf \
+	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.paf.gz.pdf \
 	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.pdf \
-	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.z11chr25.paf.pdf \
+	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.z11chr25.minidot.pdf \
 	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.quast.tsv
 
 # Download the zebrafish genome from NCBI.
