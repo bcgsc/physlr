@@ -84,13 +84,13 @@ f1chr4: \
 # Assemble a physical map of fly chromosome 2R.
 # ref=fly lr=f1chr2R draft=f1.supernova.scaftigs n=50
 f1chr2R: \
-	f1chr2R.indexlr.n100-2000.physlr.mxperbx.tsv.pdf \
-	f1chr2R.indexlr.n100-2000.physlr.depth.tsv.pdf \
-	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
-	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
-	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf
+	f1chr2R.indexlr.n100-1000.physlr.mxperbx.tsv.pdf \
+	f1chr2R.indexlr.n100-1000.physlr.depth.tsv.pdf \
+	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
+	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf
 
 # Assemble a physical map of the fly genome.
 # ref=fly lr=f1 draft=f1.supernova.scaftigs n=100
