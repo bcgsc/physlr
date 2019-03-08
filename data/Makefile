@@ -73,26 +73,34 @@ all: f1chr4 f1chr2R f1 fishchr25 fish
 # Assemble a physical map of fly chromosome 4.
 # ref=fly lr=f1chr4 draft=f1.supernova.scaftigs n=50
 f1chr4: \
-	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr4.indexlr.n100-1000.physlr.mxperbx.tsv.pdf \
+	f1chr4.indexlr.n100-1000.physlr.depth.tsv.pdf \
 	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
 	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).paf.pdf
+	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf
 
 # Assemble a physical map of fly chromosome 2R.
-# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs n=50
+# ref=fly lr=f1chr2R draft=f1.supernova.scaftigs n=50
 f1chr2R: \
-	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr2R.indexlr.n100-2000.physlr.mxperbx.tsv.pdf \
+	f1chr2R.indexlr.n100-2000.physlr.depth.tsv.pdf \
 	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
 	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).paf.pdf
+	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf
 
 # Assemble a physical map of the fly genome.
 # ref=fly lr=f1 draft=f1.supernova.scaftigs n=100
 f1: \
-	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.pdf \
+	f1.indexlr.n100-2000.physlr.mxperbx.tsv.pdf \
+	f1.indexlr.n100-2000.physlr.depth.tsv.pdf \
 	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.pdf \
 	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.fly.paf.pdf \
+	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.fly.minidot.pdf \
 	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv
 
 # Download the fly genome from NCBI.
@@ -279,7 +287,7 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 
 # Draw a dot plot of a PAF file.
 # Skip alignments to non-chromosomal sequences.
-%.paf.pdf: %.paf.gz
+%.minidot.pdf: %.paf.gz
 	$(zcat) $< | grep -v NW_ | minidot /dev/stdin | ps2pdf - $@
 
 ################################################################################
@@ -457,7 +465,7 @@ minsize=2000
 	$(time) $(python) $(bin)/physlr filter-minimizers $< >$@
 
 # Count the number of minimizers per barcode.
-%.c2-x.physlr.mxperbx.tsv: %.c2-x.physlr.tsv
+%.physlr.mxperbx.tsv: %.physlr.tsv
 	awk 'BEGIN { print "Minimizers" } { print NF - 1 }' $< >$@
 
 # Determine overlaps and output the graph in TSV.
@@ -497,21 +505,29 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 %.backbone.tiling.tsv: %.backbone.tsv
 	$(python) $(bin)/physlr tiling-graph $< >$@
 
-# Map the barcodes to the backbone graph.
+# Map the barcodes to the backbone graph and output BED.
 %.backbone.map.$(lr).n100-2000.n10.bed: %.backbone.tsv $(lr).n100-2000.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -n10 $^ $(lr).n100-2000.physlr.tsv >$@
 
-# Map the draft assembly to the backbone graph.
+# Map the draft assembly to the backbone graph and output BED.
 %.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
-# Map the draft assembly to the backbone graph using physlr map-mkt.
+# Map the reference assembly to the backbone graph and output BED.
+%.overlap.n$n.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(name)/$(ref).indexlr.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
+
+# Map the draft assembly to the backbone graph using physlr map-mkt and output BED.
 %.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).physlr.tsv
 	$(time) $(python) $(bin)/physlr map-mkt -n10 $^ >$@
 
+# Map the reference to the backbone graph and output PAF.
+%.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.backbone.tsv %.tsv $(name)/$(ref).indexlr.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-paf -n10 $^ | $(gzip) >$@
+
 # Annotate a graph with a BED file of mappings.
 # Filter out small components.
-%.map.$(draft).n10.sort.best.ann.gv: %.tsv %.map.$(draft).n10.sort.best.bed
+%.map.$(ref).n10.sort.best.ann.gv: %.tsv %.map.$(ref).n10.sort.best.bed
 	$(python) $(bin)/physlr annotate-graph --min-component-size=$(min_component_size) -Ogv $^ >$@
 
 # Filter a BED file by score.
@@ -598,9 +614,17 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 %.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
 	$(time) $(python) $(bin)/physlr path-to-fasta --min-length 100000 $^ >$@
 
+# Convert a PAF file to a BED file.
+%.paf.bed: %.paf.gz
+	gunzip -c $< | awk -F'\t' -vOFS='\t' '{ print $$1, $$3, $$4, $$6 "_" $$8, $$10, $$5}' >$@
+
 # Plot a BED file.
 %.bed.pdf: %.bed
 	Rscript -e 'rmarkdown::render("plotbed.rmd", "html_document", "$*.plotbed.html", params = list(input_bed="$<"))'
+
+# Plot a PAF file.
+%.paf.gz.pdf: %.paf.gz
+	Rscript -e 'rmarkdown::render("plotpaf.rmd", "html_document", "$*.plotpaf.html", params = list(input_paf="$<"))'
 
 ################################################################################
 # Bedtools
