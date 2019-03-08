@@ -65,19 +65,29 @@ all: f1chr4 f1chr2R f1 fishchr25 fish
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Assemble a physical map of fly chromosome 4.
-f1chr4: f1chr4.physlr.stamp
+# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs indexlr=1 n=50
+f1chr4: \
+	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).paf.pdf
 
 # Assemble a physical map of fly chromosome 2R.
-f1chr2R: f1chr2R.physlr.stamp
+# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs indexlr=1 n=50
+f1chr2R: \
+	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1chr2R.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).paf.pdf
 
 # Assemble a physical map of the fly genome.
+# ref=fly lr=f1 draft=f1.supernova.scaftigs indexlr=1 n=100
 f1: \
-	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.fly.cov.tsv \
-	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.pdf \
-	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.pdf \
-	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.fly.paf.pdf \
-	f1.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.pdf \
+	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.fly.paf.pdf \
+	f1.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv
 
 # Download the fly genome from NCBI.
 fly/fly.all.fa:
@@ -598,17 +608,6 @@ endif
 # Plot a BED file.
 %.bed.pdf: %.bed
 	Rscript -e 'rmarkdown::render("plotbed.rmd", "html_document", "$*.plotbed.html", params = list(input_bed="$<"))'
-
-# Assemble a physical map.
-%.physlr.stamp: \
-		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.$(ref).cov.tsv \
-		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
-		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.fleshed.path.$(ref).molecule.bed.pdf \
-		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.fleshed.path.$(ref).molecule.split.bed.pdf \
-		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).paf.pdf
-	touch $@
 
 ################################################################################
 # Bedtools
