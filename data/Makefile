@@ -8,7 +8,13 @@ w=32
 t=16
 
 # Compress in parallel.
+ifneq ($(shell command -v pigz),)
 gzip=pigz -p$t
+zcat=pigz -p$t -cd
+else
+gzip=gzip
+zcat=gunzip -c
+endif
 
 # Path to the Physlr executable.
 bin=../bin
@@ -101,11 +107,11 @@ fly/fly.fa: fly/fly.all.fa
 # Download the fly annotation from NCBI.
 fly/fly.gff:
 	mkdir -p $(@D)
-	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.gff.gz | gunzip -c >$@
+	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.gff.gz | $(zcat) >$@
 
 # Download the Supernova assembly of the linked reads from 10x Genomics.
 f1.supernova.fa:
-	curl http://cf.10xgenomics.com/samples/assembly/2.1.0/fly/fly_pseudohap.fasta.gz | gunzip -c >$@
+	curl http://cf.10xgenomics.com/samples/assembly/2.1.0/fly/fly_pseudohap.fasta.gz | $(zcat) >$@
 
 # Download the fly linked reads from 10x Genomics.
 fly/f1.tar:
@@ -239,7 +245,7 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 # Map linked reads to the draft genome using EMA.
 # Filter out reads without barcodes.
 %.$(lr).ema.sortn.bam: $(lr).fq.gz %.fa.bwt
-	gunzip -c $< | paste - - - - - - - - | grep "BX:Z:" | tr '\t' '\n' \
+	$(zcat) $< | paste - - - - - - - - | grep "BX:Z:" | tr '\t' '\n' \
 	| $(time) ema align -t$t -r $*.fa -1 /dev/stdin | samtools view -@$t -h -F4 -o $@
 
 ################################################################################
@@ -262,7 +268,7 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 
 # Extract the sequences that map to chromosome 25.
 %.chr25.paf.gz: %.paf.gz
-	gunzip -c $< | awk '$$6 == "25"' | $(gzip) >$@
+	$(zcat) $< | awk '$$6 == "25"' | $(gzip) >$@
 
 # Extract the sequences that map to chromosome 25.
 %.chr25.sam.gz: %.sort.bam %.sort.bam.bai
@@ -274,7 +280,7 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 # Draw a dot plot of a PAF file.
 # Skip alignments to non-chromosomal sequences.
 %.paf.pdf: %.paf.gz
-	gunzip -c $< | grep -v NW_ | minidot /dev/stdin | ps2pdf - $@
+	$(zcat) $< | grep -v NW_ | minidot /dev/stdin | ps2pdf - $@
 
 ################################################################################
 # samtools
@@ -347,7 +353,7 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 
 # Extract the barcode to BX:Z tag using ema preproc.
 %.bx.fq.gz: %.fq.gz %.ema-ncnt
-	gunzip -c $< | ema preproc -t$t -b -n1 -w 4M-with-alts-february-2016.txt -o $*.ema $*.ema-ncnt
+	$(zcat) $< | ema preproc -t$t -b -n1 -w 4M-with-alts-february-2016.txt -o $*.ema $*.ema-ncnt
 	$(gzip) <$*.ema/ema-bin-000 >$@
 	rm -rf $*.ema
 
@@ -416,11 +422,11 @@ minsize=2000
 
 # Index linked reads.
 %.physlr.tsv: %.fq.gz
-	gunzip -c $< | $(python) $(bin)/physlr indexlr -k$k -w$w - >$@
+	$(zcat) $< | $(python) $(bin)/physlr indexlr -k$k -w$w - >$@
 
 # Index linked reads using physlr-indexlr (native implementation).
 %.indexlr.physlr.tsv: %.fq.gz
-	gunzip -c $< | $(time) ../src/physlr-indexlr -k$k -w$w -o $@ -
+	$(zcat) $< | $(time) ../src/physlr-indexlr -k$k -w$w -o $@ -
 
 # Count the frequency of the minimizers.
 %.physlr.depth.tsv: %.physlr.tsv
@@ -484,8 +490,8 @@ minsize=2000
 
 # Split the reads into molecules
 $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.physlr.overlap.n$n.mol.split.tsv $(lr).physlr.tsv
-	gunzip -c $< | $(python) $(bin)/physlr split-reads-molecules $(lr).n100-2000.physlr.overlap.n$n.mol.split.tsv \
-		$(lr).physlr.tsv - |gzip >$@
+	$(zcat) $< | $(python) $(bin)/physlr split-reads-molecules $(lr).n100-2000.physlr.overlap.n$n.mol.split.tsv \
+		$(lr).physlr.tsv - | $(gzip) >$@
 
 # Determine the minimum tiling graph of the backbone graph.
 %.backbone.tiling.tsv: %.backbone.tsv
