@@ -30,7 +30,7 @@ endif
 draft=$(name).supernova.scaftigs
 
 # Minimum number of overlapping minimizsers
-n=100
+n=50
 
 # Minimum component size for backbones
 min_component_size=50
@@ -173,7 +173,7 @@ fish: \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
 
 # Assemble a physical map of fish chromosome 25.
-# ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=40
+# ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=50
 fishchr25: \
 	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
 	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11chr25.molecule.bed.pdf \
