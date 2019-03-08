@@ -25,7 +25,7 @@ input_paf
 # Read the PAF file
 ```{r read-data}
 mapq_threshold <- 10
-tname_threshold <- 100
+tlength_threshold <- 100
 
 paf_orig <- read_tsv(input_paf,
 	col_names = c(
@@ -40,7 +40,7 @@ paf <- paf_orig %>%
 		Qname = "Contig boundary",
 		Qstart = 0, Qend = max(paf_orig$Qend, na.rm = TRUE),
 		Tname = NA, Reads = 0, Orientation = ".")) %>%
-	filter(!startsWith(Qname, "NW_"), Tname < tname_threshold, Mapq >= mapq_threshold) %>%
+	filter(!startsWith(Qname, "NW_"), Tlength >= tlength_threshold, Mapq >= mapq_threshold) %>%
 	mutate(
 		Qname = as.character(fct_lump(Qname, n = 7)),
 		Index = as.numeric(Tname)) %>%
