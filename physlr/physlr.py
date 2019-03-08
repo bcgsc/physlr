@@ -1241,6 +1241,69 @@ class Physlr:
             "Mapped", num_mapped, "sequences of", len(query_mxs),
             f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
 
+    def physlr_map_paf(self):
+        """
+        Map sequences to a physical map and output a PAF file.
+        Usage: physlr map TGRAPH.tsv TMARKERS.tsv QMARKERS.tsv... >MAP.paf
+        """
+
+        if len(self.args.FILES) < 3:
+            exit("physlr map: error: at least three file arguments are required")
+        graph_filenames = [self.args.FILES[0]]
+        target_filenames = [self.args.FILES[1]]
+        query_filenames = self.args.FILES[2:]
+
+        g = self.read_graph(graph_filenames)
+        bxtomxs = self.read_minimizers(target_filenames)
+        query_mxs = bxtomxs if target_filenames == query_filenames else \
+            self.read_minimizers_list(query_filenames)
+
+        # Index the positions of the minimizers in the backbone.
+        backbones = Physlr.determine_backbones(g)
+        mxtopos = Physlr.index_minimizers_in_backbones(backbones, bxtomxs)
+
+        # Map the query sequences to the physical map.
+        num_mapped = 0
+        for qid, mxs in progress(query_mxs.items()):
+            # Map each target position to a query position.
+            tidpos_to_qpos = {}
+            for qpos, mx in enumerate(mxs):
+                for tidpos in mxtopos.get(mx, ()):
+                    tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
+            for tidpos, qpos in tidpos_to_qpos.items():
+                q0, q1, q2, q3, q4 = quantile([0, 0.25, 0.5, 0.75, 1], qpos)
+                low_whisker = max(q0, int(q1 - self.args.coef * (q3 - q1)))
+                high_whisker = min(q4, int(q3 + self.args.coef * (q3 - q1)))
+                tidpos_to_qpos[tidpos] = (low_whisker, q2, high_whisker)
+
+            # Count the number of minimizers mapped to each target position.
+            tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
+
+            mapped = False
+            for (tid, tpos), score in tidpos_to_n.items():
+                if score >= self.args.n:
+                    mapped = True
+                    # The qpos tuple is (low_whisker, median, high_whisker).
+                    qmedian_before = tidpos_to_qpos.get((tid, tpos - 1), (None, None, None))[1]
+                    qstart, qmedian, qend = tidpos_to_qpos[tid, tpos]
+                    qmedian_after = tidpos_to_qpos.get((tid, tpos + 1), (None, None, None))[1]
+                    orientation = Physlr.determine_orientation(
+                        qmedian_before, qmedian, qmedian_after)
+                    qlength = len(mxs)
+                    tlength = len(backbones[tid])
+                    mapq = int(100 * score / (qend - qstart))
+                    print(
+                        qid, qlength, qstart, qend,
+                        orientation,
+                        tid, tlength, tpos, tpos + 1,
+                        score, qend - qstart, mapq, sep="\t")
+            if mapped:
+                num_mapped += 1
+        print(
+            int(timeit.default_timer() - t0),
+            "Mapped", num_mapped, "sequences of", len(query_mxs),
+            f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
+
     def physlr_annotate_graph(self):
         """
         Annotate a graph with a BED file of mappings.
