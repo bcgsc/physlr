@@ -25,8 +25,8 @@ input_paf
 
 # Read the PAF file
 ```{r read-data}
-mapq_threshold <- 1
-tlength_threshold <- 100
+mapq_threshold <- 0
+tlength_threshold <- 200
 
 paf_orig <- read_tsv(input_paf,
 	col_names = c(
@@ -37,25 +37,21 @@ paf_orig <- read_tsv(input_paf,
 	col_types = "ciiicciiiiii")
 
 paf <- paf_orig %>%
-	replace_na(list(
-		Qname = "Contig boundary",
-		Qstart = 0, Qend = max(paf_orig$Qend, na.rm = TRUE),
-		Tname = NA, Reads = 0, Orientation = ".")) %>%
 	filter(!startsWith(Qname, "NW_"), Tlength >= tlength_threshold, Mapq >= mapq_threshold) %>%
 	mutate(
 		Qname = as.character(fct_lump(Qname, n = 25)),
 		Index = as.numeric(Tname)) %>%
-	filter(Qname != "Other")
+	filter(Qname != "Other") %>%
+	arrange(Tname, Tstart, desc(Matches)) %>%
+	distinct(Tname, Tstart, .keep_all = TRUE)
 ```
 
 # Plot the PAF file
 ```{r plot-paf, fig.height=6, fig.width=6}
-x_labels <- if (max(paf$Qend) < 1e6) comma_format() else unit_format(unit = "Mbp", scale = 1e-6)
-
 ggplot(paf) +
-	aes(xmin = Qstart, xmax = Qend, ymin = Index, ymax = Index + 1, fill = Qname, alpha = Mapq) +
+	aes(xmin = Tstart, xmax = Tend, ymin = Index, ymax = Index + 1, fill = Qname) +
 	geom_rect() +
-	scale_x_continuous(name = "Position", labels = x_labels) +
+	scale_x_continuous(name = "Position", labels = comma_format()) +
 	scale_fill_manual(values = as.vector(alphabet.colors(26)))
 ```
 
