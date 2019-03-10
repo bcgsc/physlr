@@ -26,7 +26,7 @@ input_paf
 # Read the PAF file
 ```{r read-data}
 mapq_threshold <- 0
-tlength_threshold <- 200
+tlength_threshold <- 100
 
 paf_orig <- read_tsv(input_paf,
 	col_names = c(
@@ -53,6 +53,39 @@ ggplot(paf) +
 	geom_rect() +
 	scale_x_continuous(name = "Position", labels = comma_format()) +
 	scale_fill_manual(values = as.vector(alphabet.colors(26)))
+```
+
+# Plot the PAF file
+```{r plot-pafq, fig.height=6, fig.width=6}
+pafq <- paf %>%
+	filter(Mapq >= 1) %>%
+	mutate(
+		Qname = as.numeric(as.character(Qname)),
+		Tname = as.character(fct_lump(Tname, n = 25)))
+
+ggplot(pafq) +
+	aes(xmin = Qstart, xmax = Qend, ymin = Qname, ymax = Qname + 1, fill = Tname) +
+	geom_rect() +
+	scale_x_continuous(name = "Position", labels = comma_format()) +
+	scale_fill_manual(values = as.vector(alphabet.colors(26)))
+```
+
+# Dot plot
+```{r plot-pafm, fig.height=6, fig.width=6}
+pafm <- paf %>%
+	filter(Tlength >= 500, Mapq >= 1) %>%
+	mutate(Index = row_number())
+
+boundaries <- pafm %>%
+	filter(Tname != lead(Tname))
+
+ggplot(pafm) +
+	aes(xmin = Qstart, xmax = Qend, ymin = Index, ymax = Index + 1, fill = Qname) +
+	geom_rect() +
+	geom_hline(aes(yintercept = Index), data = boundaries) +
+	scale_x_continuous(name = "Position", labels = comma_format()) +
+	scale_fill_manual(values = as.vector(alphabet.colors(26))) +
+	theme_bw()
 ```
 
 ```{r save-plot}
