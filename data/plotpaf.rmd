@@ -25,8 +25,7 @@ input_paf
 
 # Read the PAF file
 ```{r read-data}
-mapq_threshold <- 0
-tlength_threshold <- 200
+tlength_threshold <- 100
 
 paf_orig <- read_tsv(input_paf,
 	col_names = c(
@@ -37,24 +36,70 @@ paf_orig <- read_tsv(input_paf,
 	col_types = "ciiicciiiiii")
 
 paf <- paf_orig %>%
-	filter(!startsWith(Qname, "NW_"), Tlength >= tlength_threshold, Mapq >= mapq_threshold) %>%
-	mutate(
-		Qname = as.character(fct_lump(Qname, n = 25)),
-		Index = as.numeric(Tname)) %>%
-	filter(Qname != "Other") %>%
-	arrange(Tname, Tstart, desc(Matches)) %>%
+	filter(
+		Tlength >= tlength_threshold,
+		!startsWith(Qname, "NW_")) %>%
+	arrange(desc(Tlength), Tname, Tstart, desc(Matches)) %>%
 	distinct(Tname, Tstart, .keep_all = TRUE)
 ```
 
-# Plot the PAF file
+# Backbone coverage
 ```{r plot-paf, fig.height=6, fig.width=6}
-ggplot(paf) +
-	aes(xmin = Tstart, xmax = Tend, ymin = Index, ymax = Index + 1, fill = Qname) +
+paft <- paf %>% mutate(Tname = as.numeric(Tname))
+
+ggplot(paft) +
+	aes(xmin = Tstart, xmax = Tend, ymin = Tname, ymax = Tname + 1, fill = Qname) +
 	geom_rect() +
 	scale_x_continuous(name = "Position", labels = comma_format()) +
-	scale_fill_manual(values = as.vector(alphabet.colors(26)))
+	scale_y_reverse(name = "Backbone (Target)", minor_breaks = seq(0, max(paft$Tname), 10)) +
+	scale_fill_manual(name = "Chromosome (Query)", values = as.vector(alphabet.colors(26)))
 ```
 
 ```{r save-plot}
-ggsave(paste0(input_paf, ".pdf"))
+pdf_filename <- paste0(input_paf, ".pdf")
+ggsave(pdf_filename)
+paste0(input_paf, ".pdf")
+```
+
+# Reference coverage
+```{r plot-pafq, fig.height=6, fig.width=6}
+mapq_threshold <- 1
+
+pafq <- paf %>%
+	filter(Mapq >= mapq_threshold) %>%
+	mutate(
+		Qname = as.numeric(Qname),
+		Tname = fct_inorder(fct_lump(Tname, n = 25, ties.method = "first"))) %>%
+	arrange(Qname, Qstart, Matches)
+
+ggplot(pafq) +
+	aes(xmin = Qstart, xmax = Qend, ymin = Qname, ymax = Qname + 1, fill = Tname) +
+	geom_rect() +
+	scale_x_continuous(name = "Position", labels = unit_format(unit = "M", scale = 1e-6)) +
+	scale_y_reverse(name = "Chromosome (Query)") +
+	scale_fill_manual(values = as.vector(alphabet.colors(26)))
+```
+
+# Dot plot
+```{r plot-pafm, fig.width=4, fig.height=24}
+tlength_threshold <- 200
+mapq_threshold <- 1
+
+pafdot <- paf %>%
+	filter(Tlength >= tlength_threshold, Mapq >= mapq_threshold) %>%
+	mutate(
+		Index = row_number(),
+		Qname = fct_inseq(Qname))
+
+boundaries <- pafdot %>% filter(Tname != lag(Tname, default = "NA"))
+
+ggplot(pafdot) +
+	aes(xmin = Qstart, xmax = Qend, ymin = Index, ymax = Index + 1, fill = Qname) +
+	geom_rect() +
+	scale_x_continuous(name = "Chromosome (Query) Position", labels = unit_format(unit = "M", scale = 1e-6)) +
+	scale_y_reverse(name = "Backbone (Target) Position", minor_breaks = NULL,
+		breaks = boundaries$Index, labels = boundaries$Tname) +
+	scale_fill_manual(name = "Chromosome", values = as.vector(alphabet.colors(26))) +
+	theme_bw() +
+	guides(fill = guide_legend(ncol = 1))
 ```
