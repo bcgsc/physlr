@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <climits>
 #include <cstdlib>
 #include <cstring>
@@ -17,6 +18,8 @@
 #include <unordered_set> 
 #include <vector>
 
+static std::chrono::time_point<std::chrono::steady_clock> t0; //NOLINT(cert-err58-cpp)
+
 static inline void assert_good(const std::ios& stream, const std::string& path)
 {
 	if (!stream.good()) {
@@ -27,7 +30,7 @@ static inline void assert_good(const std::ios& stream, const std::string& path)
 
 static void printErrorMsg(const std::string& progname, const std::string& msg)
 {
-	std::cerr << progname << ": " << msg << "\nTry 'physlr-indexlr --help' for more information.\n";
+	std::cerr << progname << ": " << msg << "\nTry 'physlr-filter-barcodes --help' for more information.\n";
 }
 
 static void printUsage(const std::string& progname)
@@ -47,7 +50,7 @@ using Mxs = std::unordered_set<Mx>;
 using Bx = std::string;
 using BxtoMxs = std::unordered_map<Bx, Mxs>;
 
-static Mxs splitMinimizers(const std::string& mx_line) {
+static Mxs splitMxs(const std::string& mx_line) {
 	Mxs mx_set;
 	std::istringstream iss(mx_line);
 	std::string mx;
@@ -57,7 +60,7 @@ static Mxs splitMinimizers(const std::string& mx_line) {
 	return mx_set;
 }
 
-static BxtoMxs read_minimizers(std::istream &is, const std::string &ipath) {
+static BxtoMxs readMxs(std::istream &is, const std::string &ipath, bool silent) {
 	if (is.peek() == std::ifstream::traits_type::eof()) {
 		std::cerr << "physlr-filterbarcodes: error: Empty input file: " << ipath << '\n';
 		exit(EXIT_FAILURE);
@@ -66,13 +69,18 @@ static BxtoMxs read_minimizers(std::istream &is, const std::string &ipath) {
 	Bx bx;
 	std::string mx_line;
 	while ((is >> bx) && (getline(is, mx_line))) {
-		auto mxs = splitMinimizers(mx_line);
+		auto mxs = splitMxs(mx_line);
 		bxtomxs[bx].insert(mxs.begin(), mxs.end());
+	}
+	auto t = std::chrono::steady_clock::now();
+	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0);
+	if (!silent) {
+		std::cerr << "Time at readMxs (ms): " << diff.count() << '\n';
 	}
 	return bxtomxs;
 }
 
-static void write(BxtoMxs bxtomxs, std::ostream& os, const std::string& opath) {
+static void writeMxs(BxtoMxs bxtomxs, std::ostream& os, const std::string& opath, bool silent) {
 	for (const auto& item : bxtomxs) {
 		const auto& bx = item.first;
 		const auto& mxs = item.second;
@@ -85,9 +93,14 @@ static void write(BxtoMxs bxtomxs, std::ostream& os, const std::string& opath) {
 		os << '\n';
 		assert_good(os, opath);
 	}
+	auto t = std::chrono::steady_clock::now();
+	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0);
+	if (!silent) {
+		std::cerr << "Time at writeMxs (ms): " << diff.count() << '\n';
+	}
 }
 
-static std::unordered_map<Mx, unsigned> counterForRemove(const BxtoMxs& bxtomxs) {
+static std::unordered_map<Mx, unsigned> countMxs(const BxtoMxs& bxtomxs, bool silent) {
 	std::unordered_map<Mx, unsigned> counts;
 	for (const auto& item : bxtomxs)
 	{
@@ -100,11 +113,16 @@ static std::unordered_map<Mx, unsigned> counterForRemove(const BxtoMxs& bxtomxs)
 			}
 		}
 	}
+	auto t = std::chrono::steady_clock::now();
+	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0);
+	if (!silent) {
+		std::cerr << "Time at countMxs (ms): " << diff.count() << '\n';
+	}
 	return counts;
 }
 
-static void remove_singleton_minimizers(BxtoMxs& bxtomxs, bool silent) {
-	std::unordered_map<Mx, unsigned> counts = counterForRemove(bxtomxs); 
+static void removeSingletonMxs(BxtoMxs& bxtomxs, bool silent) {
+	std::unordered_map<Mx, unsigned> counts = countMxs(bxtomxs, silent); 
 	Mxs singletons;
 	for (const auto& item : counts) {
 		if (item.second < 2) {
@@ -123,7 +141,10 @@ static void remove_singleton_minimizers(BxtoMxs& bxtomxs, bool silent) {
 		}
 		bxtomxs[item.first] = std::move(not_singletons);
 	}
+	auto t = std::chrono::steady_clock::now();
+	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0);
 	if (!silent) {
+		std::cerr << "Time at removeSingletonMxs (ms): " << diff.count() << '\n';
 		std::cerr << "Removed " << singletons.size() << " minimizers that occur once of " << uniqueMxs.size() << " (" << std::setprecision(1) << std::fixed << 100.0 * singletons.size() / uniqueMxs.size() << "%)\n";
 	}
 }
@@ -133,9 +154,9 @@ static void physlr_filterbarcodes(std::istream& is, const std::string& ipath, st
 		std::cerr << "physlr-filterbarcodes: error: Empty input file: " << ipath << '\n';
 		exit(EXIT_FAILURE);
 	}
-	BxtoMxs bxtomxs = read_minimizers(is, ipath);
+	BxtoMxs bxtomxs = readMxs(is, ipath, silent);
 	unsigned initial_size = bxtomxs.size();
-	remove_singleton_minimizers(bxtomxs, silent);
+	removeSingletonMxs(bxtomxs, silent);
 	unsigned too_few = 0, too_many = 0;
 	for (auto it = bxtomxs.begin(); it != bxtomxs.end(); ) {
 		auto& mxs = it->second;
@@ -151,16 +172,20 @@ static void physlr_filterbarcodes(std::istream& is, const std::string& ipath, st
 			++it;
 		}
 	}
+	auto t = std::chrono::steady_clock::now();
+	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0);
 	if (!silent) {
+		std::cerr << "Time at filterbarcodes (ms): " << diff.count() << '\n';
 		std::cerr << "Discarded " << too_few << " barcodes with too few minimizers of " << initial_size << " (" << std::setprecision(1) << std::fixed << 100.0 * too_few / initial_size << "%)\n";
 		std::cerr << "Discarded " << too_many << " barcodes with too many minimizers of " << initial_size << " (" << std::setprecision(1) << std::fixed << 100.0 * too_many / initial_size << "%)\n";
 		std::cerr << "Wrote " << initial_size - too_few - too_many << " barcodes\n";
 	}
-	write(bxtomxs, os, opath);
+	writeMxs(bxtomxs, os, opath, silent);
 }
 
 int main(int argc, char *argv[])
 {
+	t0 = std::chrono::steady_clock::now();
 	auto progname = "physlr-filterbarcodes";
 	int c;
 	int optindex = 0;
@@ -174,7 +199,7 @@ int main(int argc, char *argv[])
 	char* end = nullptr;
 	std::string outfile("/dev/stdout");
 	static const struct option longopts[] = { { "help", no_argument, &help, 1 },{ nullptr, 0, nullptr, 0 } };
-	while ((c = getopt_long(argc, argv, "k:w:o:s:n:N:", longopts, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, "o:s:n:N:", longopts, &optindex)) != -1) {
 		switch (c) {
 		case 0:
 			break;

@@ -16,8 +16,8 @@ check-physlr-index-fastq: all
 	./physlr-indexlr -t16 -k100 -w5 data/tiny.fq | diff -q - data/tiny.physlr.tsv.good
 
 check-physlr-filter-barcodes: all
-	./physlr-filter-barcodes head50.tsv -o cpp.head50.n150-900.tsv -n150 -N900
-	./checkMx.sh cpp.head50.n150-900.tsv py.head50.n150-900.tsv 
-
+	./physlr-filter-barcodes data/f1chr4-head50.tsv -o data/f1chr4-head50.n100-1000.tsv -n100 -N1000
+	./data/checkMx.sh data/f1chr4-head50.n100-1000.good.tsv data/f1chr4-head50.n100-1000.tsv 
+	
 clean:
 	rm -f physlr-indexlr physlr-filter-barcodes
