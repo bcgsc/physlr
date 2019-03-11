@@ -94,7 +94,7 @@ f1chr2R: \
 	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf
 
 # Assemble a physical map of the fly genome.
-# ref=fly lr=f1 draft=f1.supernova.scaftigs n=50
+# ref=fly lr=f1 draft=f1.supernova.scaftigs n=47
 f1: \
 	f1.indexlr.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1.indexlr.n100-1000.physlr.depth.tsv.pdf \
