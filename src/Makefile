@@ -18,6 +18,5 @@ check-physlr-index-fastq: all
 check-physlr-filter-barcodes: all
 	./physlr-filter-barcodes data/f1chr4-head50.tsv -o data/f1chr4-head50.n100-1000.tsv -n100 -N1000
 	./data/checkMx.sh data/f1chr4-head50.n100-1000.good.tsv data/f1chr4-head50.n100-1000.tsv 
-	
 clean:
 	rm -f physlr-indexlr physlr-filter-barcodes
