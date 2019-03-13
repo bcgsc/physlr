@@ -569,7 +569,7 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 # Separate barcodes into molecules.
 mol_strategy=1
 %.mol.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr molecules -t$t --separation-strategy=${strategy} $< >$@
+	$(time) $(python) $(bin)/physlr molecules -t$t --separation-strategy=$(mol_strategy) $< >$@
 
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv
