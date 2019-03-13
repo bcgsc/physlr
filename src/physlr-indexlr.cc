@@ -51,7 +51,7 @@ static void printUsage(const std::string &progname)
             "  -w W       use W as sliding-window size\n"
             "  -v         enable verbose output\n"
             "  -o FILE    write output to FILE, default is stdout\n"
-            "  -t N       use N number of threads (max 5)"
+            "  -t N       use N number of threads (default 1, max 5)\n"
             "  --help     display this help and exit\n"
             "  FILE       space separated list of FASTQ files\n";
 }
