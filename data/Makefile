@@ -430,7 +430,7 @@ minsize=2000
 
 # Index a FASTA file using physlr-indexlr (native implementation).
 %.indexlr.physlr.tsv: %.fa
-	$(time) parallel -j$t --pipe -k -L2 ../src/physlr-indexlr -k$k -w$w - <$< >$@
+	$(time) ../src/physlr-indexlr -t$t -k$k -w$w -o $@ $<
 
 # Index linked reads.
 %.physlr.tsv: %.fq.gz
@@ -438,7 +438,7 @@ minsize=2000
 
 # Index linked reads using physlr-indexlr (native implementation).
 %.indexlr.physlr.tsv: %.fq.gz
-	$(zcat) $< | $(time) ../src/physlr-indexlr -k$k -w$w -o $@ -
+	$(zcat) $< | $(time) ../src/physlr-indexlr -t$t -k$k -w$w -o $@ -
 
 # Count the frequency of the minimizers.
 %.physlr.depth.tsv: %.physlr.tsv
