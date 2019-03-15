@@ -1033,7 +1033,8 @@ class Physlr:
 
         # Parition the neighbouring vertices of each barcode into molecules.
         if self.args.threads == 1:
-            molecules = dict(self.determine_molecules(gin, u, self.args.strategy) for u in progress(gin))
+            molecules = dict(
+                self.determine_molecules(gin, u, self.args.strategy) for u in progress(gin))
         else:
             Physlr.graph = gin
             Physlr.args = self.args
