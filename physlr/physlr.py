@@ -1010,11 +1010,9 @@ class Physlr:
         "Assign the neighbours of this vertex to molecules."
         if strategy == 1:
             return Physlr.determine_molecules_biconnected_components(g, u)
-        else:
-            if strategy == 2:
-                return Physlr.determine_molecules_k_clique_communities(g, u)
-            else:
-                exit("physlr determine-molecules: wrong input argument: --separation-strategy.")
+        if strategy == 2:
+            return Physlr.determine_molecules_k_clique_communities(g, u)
+        exit("physlr determine-molecules: wrong input argument: --separation-strategy.")
 
 
     @staticmethod
