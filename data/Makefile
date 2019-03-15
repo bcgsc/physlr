@@ -450,19 +450,19 @@ minsize=2000
 
 # Filter barcodes by number of minimizers.
 %.n100-1000.physlr.tsv: %.physlr.tsv
-	$(time) ../src/physlr-filter-barcodes -k$k -w$w -n100 -N1000 $< >$@
+	$(time) ../src/physlr-filter-barcodes -n100 -N1000 $< >$@
 
 # Filter barcodes by number of minimizers.
 %.n100-2000.physlr.tsv: %.physlr.tsv
-	$(time) ../src/physlr-filter-barcodes -k$k -w$w -n100 -N2000 $< >$@
+	$(time) ../src/physlr-filter-barcodes -n100 -N2000 $< >$@
 
 # Filter barcodes by number of minimizers.
 %.n100-5000.physlr.tsv: %.physlr.tsv
-	$(time) ../src/physlr-filter-barcodes -k$k -w$w -n100 -N5000 $< >$@
+	$(time) ../src/physlr-filter-barcodes -n100 -N5000 $< >$@
 
 # Filter barcodes by number of minimizers.
 %.n100-10000.physlr.tsv: %.physlr.tsv
-	$(time) ../src/physlr-filter-barcodes -k$k -w$w -n100 -N10000 $< >$@
+	$(time) ../src/physlr-filter-barcodes -n100 -N10000 $< >$@
 
 # Filter minimizers by their frequency.
 %.c2-x.physlr.tsv: %.physlr.tsv
