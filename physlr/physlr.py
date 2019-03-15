@@ -1002,7 +1002,7 @@ class Physlr:
         for comp in components:
             if len(comp) > 1:
                 communities += list(nxcommunity.k_clique_communities(g.subgraph(comp), 3))
-        return u, {v: i for i, vs in enumerate(communities) if len(list(vs)) > 1 for v in list(vs)}
+        return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
 
     @staticmethod
