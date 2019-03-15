@@ -1012,7 +1012,7 @@ class Physlr:
             return Physlr.determine_molecules_biconnected_components(g, u)
         else:
             if strategy == 2:
-                Physlr.determine_molecules_k_clique_communities(g, u)
+                return Physlr.determine_molecules_k_clique_communities(g, u)
             else:
                 exit("physlr determine-molecules: wrong input argument: --separation-strategy.")
 
