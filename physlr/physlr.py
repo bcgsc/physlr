@@ -985,27 +985,36 @@ class Physlr:
         return "_" + str(random.choice(max_hits)), 0, 1
 
     @staticmethod
+    def determine_molecules_biconnected_components(g, u):
+        "Separate bi-connected components."
+        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
+        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
+        components.sort(key=len, reverse=True)
+        return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs}
+
+    @staticmethod
+    def determine_molecules_k_clique_communities(g, u):
+        "Apply k-clique community detection algorithm after extracting bi-connected components."
+        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
+        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
+        components.sort(key=len, reverse=True)
+        communities = []
+        for comp in components:
+            if len(comp) > 1:
+                communities += list(nxcommunity.k_clique_communities(g.subgraph(comp), 3))
+        return u, {v: i for i, vs in enumerate(communities) if len(list(vs)) > 1 for v in list(vs)}
+
+
+    @staticmethod
     def determine_molecules(g, u, strategy):
         "Assign the neighbours of this vertex to molecules."
         if strategy == 1:
-            # Biconnected components
-            cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
-            components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
-            components.sort(key=len, reverse=True)
-            return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs}
-
-        if strategy == 2:
-            # Biconnected components + k-clique community detection (based on Palla's paper 2004)
-            cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
-            components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
-            components.sort(key=len, reverse=True)
-            communities = []
-            for comp in components:
-                if len(comp) > 1:
-                    communities = communities + list(nxcommunity.k_clique_communities(g.subgraph(comp), 3))
-            return u, {v: i for i, vs in enumerate(communities) if len(list(vs)) > 1 for v in list(vs)}
-
-        exit("physlr determine-molecules: wrong input argument: --separation-strategy.")
+            return Physlr.determine_molecules_biconnected_components(g, u)
+        else:
+            if strategy == 2:
+                Physlr.determine_molecules_k_clique_communities(g, u)
+            else:
+                exit("physlr determine-molecules: wrong input argument: --separation-strategy.")
 
 
     @staticmethod
