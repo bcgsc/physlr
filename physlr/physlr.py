@@ -1033,7 +1033,8 @@ class Physlr:
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
                                   "\033[93m"+"Warning: Wrong input argument: --separation-strategy!"
-                                  "\n- Set to default strategy: Bi-connected components separation."+"\033[0m"),
+                                  "\n- Set to default strategy: Bi-connected components separation."
+                                  "\033[0m"),
             file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
