@@ -1025,14 +1025,14 @@ class Physlr:
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
         strategy_switcher = {
-            1: "Strategy: Bi-connected components separation",
-            2: "Strategy: K-clique community detection (after separating bi-connected components)"
+            1: "\nStrategy: Bi-connected components separation",
+            2: "\nStrategy: K-clique community detection (after separating bi-connected components)"
         }
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
-                                  "\033[93m"+"\nWarning: Wrong input argument: --separation-strategy!"
+                                  "\033[93m"+"Warning: Wrong input argument: --separation-strategy!"
                                   "\n- Set to default strategy: Bi-connected components separation."+"\033[0m"),
             file=sys.stderr)
 
