@@ -1004,16 +1004,13 @@ class Physlr:
                 communities += list(nxcommunity.k_clique_communities(g.subgraph(comp), 3))
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
-
     @staticmethod
     def determine_molecules(g, u, strategy):
         "Assign the neighbours of this vertex to molecules."
-        if strategy == 1:
-            return Physlr.determine_molecules_biconnected_components(g, u)
         if strategy == 2:
             return Physlr.determine_molecules_k_clique_communities(g, u)
-        exit("physlr determine-molecules: wrong input argument: --separation-strategy.")
-
+        # strategy == 1 or none of the previous strategies
+        return Physlr.determine_molecules_biconnected_components(g, u)
 
     @staticmethod
     def determine_molecules_process(u):
@@ -1027,11 +1024,19 @@ class Physlr:
         "Separate barcodes into molecules."
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
+        strategy_switcher = {
+            1: "Strategy: Bi-connected components separation",
+            2: "Strategy: K-clique community detection (after separating bi-connected components)"
+        }
         print(
             int(timeit.default_timer() - t0),
-            "Separating barcodes into molecules", file=sys.stderr)
+            "Separating barcodes into molecules\n",
+            strategy_switcher.get(self.args.strategy,
+                                  "Warning: Wrong input argument: --separation-strategy!\n"
+                                  " - Set to default strategy: Bi-connected components separation."),
+            file=sys.stderr)
 
-        # Parition the neighbouring vertices of each barcode into molecules.
+        # Partition the neighbouring vertices of each barcode into molecules.
         if self.args.threads == 1:
             molecules = dict(
                 self.determine_molecules(gin, u, self.args.strategy) for u in progress(gin))
@@ -1042,6 +1047,7 @@ class Physlr:
                 molecules = dict(pool.map(
                     self.determine_molecules_process, progress(gin), chunksize=100))
             Physlr.graph = None
+            Physlr.args = None
         print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
 
         # Add vertices.
