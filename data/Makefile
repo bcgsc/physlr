@@ -232,14 +232,17 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 ################################################################################
 # Human (HG004)
 
-# Assemble a physical map of hg004 using physlr-indexlr (native implementation).
+# Assemble a physical map of hg004.
 # ref=grch38 lr=hg004 draft=hg004.supernova n=50 min_component_size=200
 hg004: \
-	hg004.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.hg004.supernova.n10.sort.best.bed.pdf \
-	hg004.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.grch38.minidot.pdf \
-	hg004.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.quast.tsv \
-	hg004.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.grch38.n10.paf.gz.pdf \
-	hg004.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf
+	hg004.indexlr.n100-5000.physlr.mxperbx.tsv.pdf \
+	hg004.indexlr.n100-5000.physlr.depth.tsv.pdf \
+	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path \
+	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.hg004.supernova.n10.sort.best.bed.pdf \
+	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.grch38.minidot.pdf \
+	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.quast.tsv \
+	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.grch38.n10.paf.gz.pdf \
+	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf
 
 # Download the human genome from NCBI.
 grch38/grch38.all.fa:
