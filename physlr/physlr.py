@@ -16,6 +16,7 @@ from collections import Counter
 
 
 import networkx as nx
+from networkx.algorithms import community as nxcommunity
 import tqdm
 
 from physlr.minimerize import minimerize
@@ -984,12 +985,32 @@ class Physlr:
         return "_" + str(random.choice(max_hits)), 0, 1
 
     @staticmethod
-    def determine_molecules(g, u):
-        "Assign the neighbours of this vertex to molecules."
+    def determine_molecules_biconnected_components(g, u):
+        "Separate bi-connected components."
         cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
         components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
         components.sort(key=len, reverse=True)
         return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs}
+
+    @staticmethod
+    def determine_molecules_k_clique_communities(g, u):
+        "Apply k-clique community detection algorithm after extracting bi-connected components."
+        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
+        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
+        components.sort(key=len, reverse=True)
+        communities = []
+        for comp in components:
+            if len(comp) > 1:
+                communities += list(nxcommunity.k_clique_communities(g.subgraph(comp), 3))
+        return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
+
+    @staticmethod
+    def determine_molecules(g, u, strategy):
+        "Assign the neighbours of this vertex to molecules."
+        if strategy == 2:
+            return Physlr.determine_molecules_k_clique_communities(g, u)
+        # strategy == 1 or none of the previous strategies
+        return Physlr.determine_molecules_biconnected_components(g, u)
 
     @staticmethod
     def determine_molecules_process(u):
@@ -997,25 +1018,37 @@ class Physlr:
         Assign the neighbours of this vertex to molecules.
         The graph is passed in the class variable Physlr.graph.
         """
-        return Physlr.determine_molecules(Physlr.graph, u)
+        return Physlr.determine_molecules(Physlr.graph, u, Physlr.args.strategy)
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
+        strategy_switcher = {
+            1: "\nStrategy: Bi-connected components separation",
+            2: "\nStrategy: K-clique community detection (after separating bi-connected components)"
+        }
         print(
             int(timeit.default_timer() - t0),
-            "Separating barcodes into molecules", file=sys.stderr)
+            "Separating barcodes into molecules",
+            strategy_switcher.get(self.args.strategy,
+                                  "\033[93m"+"Warning: Wrong input argument: --separation-strategy!"
+                                  "\n- Set to default strategy: Bi-connected components separation."
+                                  "\033[0m"),
+            file=sys.stderr)
 
-        # Parition the neighbouring vertices of each barcode into molecules.
+        # Partition the neighbouring vertices of each barcode into molecules.
         if self.args.threads == 1:
-            molecules = dict(self.determine_molecules(gin, u) for u in progress(gin))
+            molecules = dict(
+                self.determine_molecules(gin, u, self.args.strategy) for u in progress(gin))
         else:
             Physlr.graph = gin
+            Physlr.args = self.args
             with multiprocessing.Pool(self.args.threads) as pool:
                 molecules = dict(pool.map(
                     self.determine_molecules_process, progress(gin), chunksize=100))
             Physlr.graph = None
+            Physlr.args = None
         print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
 
         # Add vertices.
@@ -1532,6 +1565,9 @@ class Physlr:
         argparser.add_argument(
             "-w", "--window", action="store", dest="w", type=int,
             help="number of k-mers in a window of size k + w - 1 bp")
+        argparser.add_argument(
+            "--separation-strategy", action="store", dest="strategy", type=int, default=1,
+            help="strategy id, for barcode to molecule separation [1]")
         argparser.add_argument(
             "--coef", action="store", dest="coef", type=float, default=1.5,
             help="ignore minimizers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
