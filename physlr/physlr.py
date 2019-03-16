@@ -17,6 +17,7 @@ from collections import Counter
 
 import networkx as nx
 from networkx.algorithms import community as nxcommunity
+import community as louvian
 import tqdm
 
 from physlr.minimerize import minimerize
@@ -1005,10 +1006,30 @@ class Physlr:
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
+    def determine_molecules_louvian(g, u):
+        sub_graph = g.subgraph(g.neighbors(u))
+        nodes_count = len(sub_graph)
+        if nodes_count == 0:  # or edges_count == 0:
+            components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)))))
+            return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs}
+        partition = louvian.best_partition(sub_graph)
+        if len(partition) == 0:
+            return u, {}
+        multinode_partitions_set = {}
+        for com in set(partition.values()):
+            list_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
+            if len(list_nodes) > 1:
+                multinode_partition = {v: com for v in list_nodes}
+                multinode_partitions_set.update(multinode_partition)
+        return u, multinode_partitions_set
+
+    @staticmethod
     def determine_molecules(g, u, strategy):
         "Assign the neighbours of this vertex to molecules."
         if strategy == 2:
             return Physlr.determine_molecules_k_clique_communities(g, u)
+        if strategy == 3:
+            return Physlr.determine_molecules_louvian(g, u)
         # strategy == 1 or none of the previous strategies
         return Physlr.determine_molecules_biconnected_components(g, u)
 
@@ -1026,7 +1047,8 @@ class Physlr:
         Physlr.filter_edges(gin, self.args.n)
         strategy_switcher = {
             1: "\nStrategy: Bi-connected components separation",
-            2: "\nStrategy: K-clique community detection (after separating bi-connected components)"
+            2: "\nStrategy: K-clique community detection (after separating bi-connected components)",
+            3: "\nStrategy: Louvian community detection"
         }
         print(
             int(timeit.default_timer() - t0),
