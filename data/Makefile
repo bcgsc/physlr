@@ -230,6 +230,32 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 	ln -sf $< $@
 
 ################################################################################
+# Human (HG004)
+
+# Assemble a physical map of hg004 using physlr-indexlr (native implementation).
+# ref=grch38 lr=hg004 draft=hg004.supernova n=50 min_component_size=200
+hg004: \
+	hg004.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.hg004.supernova.n10.sort.best.bed.pdf \
+	hg004.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.grch38.minidot.pdf \
+	hg004.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.quast.tsv \
+	hg004.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.grch38.n10.paf.gz.pdf \
+	hg004.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf
+
+# Download the human genome from NCBI.
+grch38/grch38.all.fa:
+	mkdir -p $(@D)
+	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz \
+		| seqtk seq >$@
+
+# Filter out the unplaced contigs from the reference genome.
+grch38/grch38.fa: grch38/grch38.all.fa
+	paste - - <$< | egrep -v 'chrEBV|chrUn|random' | tr '\t' '\n' >$@
+
+# Symlink the reads.
+hg004.fq.gz: hg004.lrbasic.trimadap.fq.gz
+	ln -s $< $@
+
+################################################################################
 # Trimadap
 
 # Trim adapter sequences using trimadap.
