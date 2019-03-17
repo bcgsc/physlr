@@ -1007,6 +1007,21 @@ class Physlr:
 
     @staticmethod
     def determine_molecules_louvian(g, u):
+        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
+        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
+        components.sort(key=len, reverse=True)
+        communities = []
+        for comp in components:
+            if len(comp) > 1:
+                partition = louvian.best_partition(g.subgraph(comp))
+                for com in set(partition.values()):
+                    list_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
+                    if len(list_nodes) > 1:
+                        communities += list_nodes
+        return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
+
+    @staticmethod
+    def determine_molecules_just_louvian(g, u):
         sub_graph = g.subgraph(g.neighbors(u))
         nodes_count = len(sub_graph)
         if nodes_count == 0:  # or edges_count == 0:
@@ -1046,16 +1061,16 @@ class Physlr:
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
         strategy_switcher = {
-            1: "\nStrategy: Bi-connected components separation",
-            2: "\nStrategy: K-clique community detection (after separating bi-connected components)",
-            3: "\nStrategy: Louvian community detection"
+            1: "\n\tStrategy: Bi-connected components separation",
+            2: "\n\tStrategy: K-clique community detection (after separating bi-connected components)",
+            3: "\n\tStrategy: Louvian community detection (after separating bi-connected components)"
         }
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
-                                  "\033[93m"+"Warning: Wrong input argument: --separation-strategy!"
-                                  "\n- Set to default strategy: Bi-connected components separation."
+                                  "\033[93m"+"\n\tWarning: Wrong input argument: --separation-strategy!"
+                                  "\n\t- Set to default strategy: Bi-connected components separation."
                                   "\033[0m"),
             file=sys.stderr)
 
