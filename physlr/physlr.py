@@ -1045,6 +1045,7 @@ class Physlr:
             return Physlr.determine_molecules_k_clique_communities(g, u)
         if strategy == 3:
             return Physlr.determine_molecules_louvian(g, u)
+
         # strategy == 1 or none of the previous strategies
         return Physlr.determine_molecules_biconnected_components(g, u)
 
@@ -1069,6 +1070,7 @@ class Physlr:
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
+
                                   "\033[93m"+"\n\tWarning: Wrong input argument: --separation-strategy!"
                                   "\n\t- Set to default strategy: Bi-connected components separation."
                                   "\033[0m"),
