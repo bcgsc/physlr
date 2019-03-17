@@ -1070,7 +1070,6 @@ class Physlr:
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
-
                                   "\033[93m"+"\n\tWarning: Wrong input argument: --separation-strategy!"
                                   "\n\t- Set to default strategy: Bi-connected components separation."
                                   "\033[0m"),
