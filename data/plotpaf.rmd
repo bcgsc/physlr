@@ -39,19 +39,21 @@ paf <- paf_orig %>%
 	filter(
 		Tlength >= tlength_threshold,
 		!startsWith(Qname, "NW_")) %>%
+	arrange(desc(Qlength), Qname, Qstart, desc(Matches)) %>%
+	mutate(Qname = fct_inorder(Qname), Qindex = as.numeric(Qname),
+		Tindex = as.numeric(Tname)) %>%
 	arrange(desc(Tlength), Tname, Tstart, desc(Matches)) %>%
 	distinct(Tname, Tstart, .keep_all = TRUE)
 ```
 
 # Backbone coverage
 ```{r plot-paf, fig.height=6, fig.width=6}
-paft <- paf %>% mutate(Tname = as.numeric(Tname))
-
-ggplot(paft) +
-	aes(xmin = Tstart, xmax = Tend, ymin = Tname, ymax = Tname + 1, fill = Qname) +
+ggplot(paf) +
+	aes(xmin = Tstart, xmax = Tend, ymin = Tindex, ymax = Tindex + 1, fill = Qname) +
 	geom_rect() +
 	scale_x_continuous(name = "Position", labels = comma_format()) +
-	scale_y_reverse(name = "Backbone (Target)", minor_breaks = seq(0, max(paft$Tname), 10)) +
+	scale_y_reverse(name = "Backbone (Target)",
+		minor_breaks = seq(0, max(paf$Tindex), 10)) +
 	scale_fill_manual(name = "Chromosome (Query)", values = as.vector(alphabet.colors(26)))
 ```
 
@@ -67,16 +69,20 @@ mapq_threshold <- 1
 
 pafq <- paf %>%
 	filter(Mapq >= mapq_threshold) %>%
-	mutate(
-		Qname = as.numeric(Qname),
-		Tname = fct_inorder(fct_lump(Tname, n = 25, ties.method = "first"))) %>%
-	arrange(Qname, Qstart, Matches)
+	mutate(Tname = fct_inorder(fct_lump(Tname, n = 25, ties.method = "first"))) %>%
+	arrange(desc(Qlength), Qname, Qstart, Matches)
 
 ggplot(pafq) +
-	aes(xmin = Qstart, xmax = Qend, ymin = Qname, ymax = Qname + 1, fill = Tname) +
-	geom_rect() +
+	geom_rect(aes(
+		xmin = Qstart, xmax = Qend,
+		ymin = Qindex, ymax = Qindex + 1,
+		fill = Tname)) +
+	geom_point(aes(x = Qlength, y = 0.5 + Qindex),
+		data = distinct(pafq, Qlength, Qindex)) +
 	scale_x_continuous(name = "Position", labels = unit_format(unit = "M", scale = 1e-6)) +
-	scale_y_reverse(name = "Chromosome (Query)") +
+	scale_y_reverse(name = "Chromosome (Query)",
+		breaks = 0.5 + seq_len(max(pafq$Qindex)),
+		labels = levels(pafq$Qname)) +
 	scale_fill_manual(values = as.vector(alphabet.colors(26)))
 ```
 
@@ -87,9 +93,7 @@ mapq_threshold <- 1
 
 pafdot <- paf %>%
 	filter(Tlength >= tlength_threshold, Mapq >= mapq_threshold) %>%
-	mutate(
-		Index = row_number(),
-		Qname = fct_inseq(Qname))
+	mutate(Index = row_number())
 
 boundaries <- pafdot %>% filter(Tname != lag(Tname, default = "NA"))
 
