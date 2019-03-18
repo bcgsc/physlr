@@ -18,6 +18,7 @@ from collections import Counter
 import networkx as nx
 from networkx.algorithms import community as nxcommunity
 import tqdm
+import community as louvain
 
 from physlr.minimerize import minimerize
 from physlr.read_fasta import read_fasta
@@ -1005,10 +1006,48 @@ class Physlr:
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
+    def determine_molecules_louvain(g, u):
+        "Apply louvain community detection algorithm after extracting bi-connected components."
+        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
+        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
+        components.sort(key=len, reverse=True)
+        communities = []
+        for comp in components:
+            if len(comp) > 1:
+                partition = louvain.best_partition(g.subgraph(comp))
+                for com in set(partition.values()):
+                    list_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
+                    if len(list_nodes) > 1:
+                        communities.append(list_nodes)
+        return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
+
+    @staticmethod
+    def determine_molecules_just_louvain(g, u):
+        "Apply louvain community detection without bi-connected separation."
+        sub_graph = g.subgraph(g.neighbors(u))
+        nodes_count = len(sub_graph)
+        if nodes_count == 0:  # or edges_count == 0:
+            components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)))))
+            return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs}
+        partition = louvain.best_partition(sub_graph)
+        if not partition:
+            return u, {}
+        multinode_partitions_set = {}
+        for com in set(partition.values()):
+            list_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
+            if len(list_nodes) > 1:
+                multinode_partition = {v: com for v in list_nodes}
+                multinode_partitions_set.update(multinode_partition)
+        return u, multinode_partitions_set
+
+    @staticmethod
     def determine_molecules(g, u, strategy):
         "Assign the neighbours of this vertex to molecules."
         if strategy == 2:
             return Physlr.determine_molecules_k_clique_communities(g, u)
+        if strategy == 3:
+            return Physlr.determine_molecules_louvain(g, u)
+
         # strategy == 1 or none of the previous strategies
         return Physlr.determine_molecules_biconnected_components(g, u)
 
@@ -1025,15 +1064,21 @@ class Physlr:
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
         strategy_switcher = {
-            1: "\nStrategy: Bi-connected components separation",
-            2: "\nStrategy: K-clique community detection (after separating bi-connected components)"
+            1: "\n\tStrategy: "
+               "Bi-connected components separation",
+            2: "\n\tStrategy: "
+               "K-clique community detection (after separating bi-connected components)",
+            3: "\n\tStrategy: "
+               "Louvain community detection (after separating bi-connected components)"
         }
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
-                                  "\033[93m"+"Warning: Wrong input argument: --separation-strategy!"
-                                  "\n- Set to default strategy: Bi-connected components separation."
+                                  "\033[93m"+"\n\tWarning:"
+                                             " Wrong input argument: --separation-strategy!"
+                                  "\n\t- Set to default strategy:"
+                                  " Bi-connected components separation."
                                   "\033[0m"),
             file=sys.stderr)
 
