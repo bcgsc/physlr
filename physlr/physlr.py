@@ -17,8 +17,9 @@ from collections import Counter
 
 import networkx as nx
 from networkx.algorithms import community as nxcommunity
-import community as louvian
 import tqdm
+import community as louvian
+
 
 from physlr.minimerize import minimerize
 from physlr.read_fasta import read_fasta
@@ -1007,6 +1008,7 @@ class Physlr:
 
     @staticmethod
     def determine_molecules_louvian(g, u):
+        "Apply louvian community detection algorithm after extracting bi-connected components."
         cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
         components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
         components.sort(key=len, reverse=True)
@@ -1022,13 +1024,14 @@ class Physlr:
 
     @staticmethod
     def determine_molecules_just_louvian(g, u):
+        "Apply louvian community detection without bi-connected separation."
         sub_graph = g.subgraph(g.neighbors(u))
         nodes_count = len(sub_graph)
         if nodes_count == 0:  # or edges_count == 0:
             components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)))))
             return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs}
         partition = louvian.best_partition(sub_graph)
-        if len(partition) == 0:
+        if not partition:
             return u, {}
         multinode_partitions_set = {}
         for com in set(partition.values()):
@@ -1062,16 +1065,21 @@ class Physlr:
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
         strategy_switcher = {
-            1: "\n\tStrategy: Bi-connected components separation",
-            2: "\n\tStrategy: K-clique community detection (after separating bi-connected components)",
-            3: "\n\tStrategy: Louvian community detection (after separating bi-connected components)"
+            1: "\n\tStrategy: "
+               "Bi-connected components separation",
+            2: "\n\tStrategy: "
+               "K-clique community detection (after separating bi-connected components)",
+            3: "\n\tStrategy: "
+               "Louvian community detection (after separating bi-connected components)"
         }
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
-                                  "\033[93m"+"\n\tWarning: Wrong input argument: --separation-strategy!"
-                                  "\n\t- Set to default strategy: Bi-connected components separation."
+                                  "\033[93m"+"\n\tWarning:"
+                                             " Wrong input argument: --separation-strategy!"
+                                  "\n\t- Set to default strategy:"
+                                  " Bi-connected components separation."
                                   "\033[0m"),
             file=sys.stderr)
 
