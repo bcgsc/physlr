@@ -18,7 +18,7 @@ from collections import Counter
 import networkx as nx
 from networkx.algorithms import community as nxcommunity
 import tqdm
-import community as louvian
+import community as louvain
 
 
 from physlr.minimerize import minimerize
@@ -1007,15 +1007,15 @@ class Physlr:
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
-    def determine_molecules_louvian(g, u):
-        "Apply louvian community detection algorithm after extracting bi-connected components."
+    def determine_molecules_louvain(g, u):
+        "Apply louvain community detection algorithm after extracting bi-connected components."
         cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
         components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
         components.sort(key=len, reverse=True)
         communities = []
         for comp in components:
             if len(comp) > 1:
-                partition = louvian.best_partition(g.subgraph(comp))
+                partition = louvain.best_partition(g.subgraph(comp))
                 for com in set(partition.values()):
                     list_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
                     if len(list_nodes) > 1:
@@ -1023,14 +1023,14 @@ class Physlr:
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
-    def determine_molecules_just_louvian(g, u):
-        "Apply louvian community detection without bi-connected separation."
+    def determine_molecules_just_louvain(g, u):
+        "Apply louvain community detection without bi-connected separation."
         sub_graph = g.subgraph(g.neighbors(u))
         nodes_count = len(sub_graph)
         if nodes_count == 0:  # or edges_count == 0:
             components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)))))
             return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs}
-        partition = louvian.best_partition(sub_graph)
+        partition = louvain.best_partition(sub_graph)
         if not partition:
             return u, {}
         multinode_partitions_set = {}
@@ -1047,7 +1047,7 @@ class Physlr:
         if strategy == 2:
             return Physlr.determine_molecules_k_clique_communities(g, u)
         if strategy == 3:
-            return Physlr.determine_molecules_louvian(g, u)
+            return Physlr.determine_molecules_louvain(g, u)
 
         # strategy == 1 or none of the previous strategies
         return Physlr.determine_molecules_biconnected_components(g, u)
@@ -1070,7 +1070,7 @@ class Physlr:
             2: "\n\tStrategy: "
                "K-clique community detection (after separating bi-connected components)",
             3: "\n\tStrategy: "
-               "Louvian community detection (after separating bi-connected components)"
+               "Louvain community detection (after separating bi-connected components)"
         }
         print(
             int(timeit.default_timer() - t0),
