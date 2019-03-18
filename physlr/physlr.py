@@ -20,7 +20,6 @@ from networkx.algorithms import community as nxcommunity
 import tqdm
 import community as louvain
 
-
 from physlr.minimerize import minimerize
 from physlr.read_fasta import read_fasta
 
