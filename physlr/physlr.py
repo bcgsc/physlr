@@ -1017,7 +1017,7 @@ class Physlr:
                 for com in set(partition.values()):
                     list_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
                     if len(list_nodes) > 1:
-                        communities += list_nodes
+                        communities.append(list_nodes)
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
@@ -1070,7 +1070,6 @@ class Physlr:
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
-
                                   "\033[93m"+"\n\tWarning: Wrong input argument: --separation-strategy!"
                                   "\n\t- Set to default strategy: Bi-connected components separation."
                                   "\033[0m"),
