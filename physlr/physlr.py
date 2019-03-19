@@ -1028,6 +1028,8 @@ class Physlr:
     @staticmethod
     def determine_molecules_just_louvain(g, u):
         "Apply louvain community detection without bi-connected separation."
+        import community as louvain
+
         sub_graph = g.subgraph(g.neighbors(u))
         nodes_count = len(sub_graph)
         if nodes_count == 0:  # or edges_count == 0:
