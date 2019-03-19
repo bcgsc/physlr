@@ -1670,7 +1670,7 @@ class Physlr:
             "-p", "--min_p_val", action="store", dest="p", type=float, default=0.01,
             help="Minimum significance threshold (FPR) for Mann-Kendall Test")
         argparser.add_argument(
-            "--verbose", action="store", dest="verbose", type=int, default="2",
+            "-V", "--verbose", action="store", dest="verbose", type=int, default="2",
             help="the level of verbosity: 0:silent, 1:periodic, 2:progress, 3:verbose [2]")
         argparser.add_argument(
             "--version", action="version", version="physlr 0.1.0")
