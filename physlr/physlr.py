@@ -18,11 +18,11 @@ from collections import Counter
 import networkx as nx
 from networkx.algorithms import community as nxcommunity
 import tqdm
-import community as louvain
 
 from physlr.minimerize import minimerize
 from physlr.read_fasta import read_fasta
 
+# The time at which execution started.
 t0 = timeit.default_timer()
 
 def quantile(quantiles, xs):
@@ -1008,6 +1008,8 @@ class Physlr:
     @staticmethod
     def determine_molecules_louvain(g, u):
         "Apply louvain community detection algorithm after extracting bi-connected components."
+        import community as louvain
+
         cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
         components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
         components.sort(key=len, reverse=True)
