@@ -601,11 +601,11 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 	$(python) $(bin)/physlr tiling-graph $< >$@
 
 # Map the barcodes to the backbone graph and output BED.
-%.backbone.map.$(lr).n100-2000.n10.bed: %.backbone.tsv $(lr).n100-2000.physlr.tsv
+%.backbone.map.$(lr).n100-2000.n10.bed: %.backbone.path $(lr).n100-2000.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -n10 $^ $(lr).n100-2000.physlr.tsv >$@
 
 # Map the draft assembly to the backbone graph and output BED.
-%.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).indexlr.physlr.tsv
+%.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(draft).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
 # Map the reference assembly to the backbone graph and output BED.
