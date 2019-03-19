@@ -1367,7 +1367,6 @@ class Physlr:
                         qmedian_before, qmedian, qmedian_after)
                     qlength = len(mxs)
                     tlength = len(backbones[tid])
-                    print(qstart, qend, sep="\t", file=sys.stderr)
                     mapq = int(100 * score / (qend - qstart))
                     print(
                         qid, qlength, qstart, qend,
