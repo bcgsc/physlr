@@ -1204,7 +1204,6 @@ class Physlr:
             return "+" if y < z else "-" if y > z else "."
         return "."
 
-    @staticmethod
     def map_indexing(self):
         "Load data structures and indexes required for mapping."
         if len(self.args.FILES) < 3:
@@ -1238,7 +1237,7 @@ class Physlr:
         import physlr.mkt
         import numpy
 
-        query_mxs, mxtopos, backbones = self.map_indexing(self)
+        query_mxs, mxtopos, _backbones = self.map_indexing()
 
         # Map the query sequences to the physical map.
         num_mapped = 0
@@ -1299,7 +1298,7 @@ class Physlr:
         Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
         """
 
-        query_mxs, mxtopos, backbones = self.map_indexing(self)
+        query_mxs, mxtopos, _backbones = self.map_indexing()
 
         # Map the query sequences to the physical map.
         num_mapped = 0
@@ -1337,7 +1336,7 @@ class Physlr:
         Usage: physlr map TGRAPH.path TMARKERS.tsv QMARKERS.tsv... >MAP.paf
         """
 
-        query_mxs, mxtopos, backbones = self.map_indexing(self)
+        query_mxs, mxtopos, backbones = self.map_indexing()
 
         # Map the query sequences to the physical map.
         num_mapped = 0
