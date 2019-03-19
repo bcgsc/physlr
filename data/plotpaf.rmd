@@ -54,7 +54,8 @@ ggplot(paf) +
 	scale_x_continuous(name = "Position", labels = comma_format()) +
 	scale_y_reverse(name = "Backbone (Target)",
 		minor_breaks = seq(0, max(paf$Tindex), 10)) +
-	scale_fill_manual(name = "Chromosome (Query)", values = as.vector(alphabet.colors(26)))
+	scale_fill_manual(name = "Chromosome (Query)", values = as.vector(alphabet.colors(26))) +
+	theme_bw()
 ```
 
 ```{r save-plot}
@@ -83,7 +84,8 @@ ggplot(pafq) +
 	scale_y_reverse(name = "Chromosome (Query)",
 		breaks = 0.5 + seq_len(max(pafq$Qindex)),
 		labels = levels(pafq$Qname)) +
-	scale_fill_manual(values = as.vector(alphabet.colors(26)))
+	scale_fill_manual(values = as.vector(alphabet.colors(26))) +
+	theme_bw()
 ```
 
 # Dot plot
