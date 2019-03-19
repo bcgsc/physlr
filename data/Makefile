@@ -789,6 +789,10 @@ mol_strategy=2
 %.mxperbx.tsv.pdf: %.mxperbx.tsv
 	Rscript -e 'rmarkdown::render("plot-mxperbx.rmd", "html_document", "$*.mxperbx.tsv.html", params = list(input_tsv="$<"))'
 
+# Plot vertex degree.
+%.deg.tsv.pdf: %.deg.tsv
+	Rscript -e 'rmarkdown::render("plot-degree.rmd", "html_document", "$*.deg.tsv.html", params = list(input_tsv="$<"))'
+
 # Plot depth of coverage.
 %.depth.tsv.pdf: %.depth.tsv
 	Rscript -e 'rmarkdown::render("plot-depth.rmd", "html_document", "$*.depth.tsv.html", params = list(input_tsv="$<"))'
