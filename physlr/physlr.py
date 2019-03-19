@@ -1204,27 +1204,41 @@ class Physlr:
             return "+" if y < z else "-" if y > z else "."
         return "."
 
+    @staticmethod
+    def map_indexing(self):
+        "Load data structures and indexes required for mapping."
+        if len(self.args.FILES) < 3:
+            exit("physlr map: error: at least three file arguments are required")
+        path_filenames = [self.args.FILES[0]]
+        target_filenames = [self.args.FILES[1]]
+        query_filenames = self.args.FILES[2:]
+
+        # Index the positions of the minimizers in the backbone.
+        moltomxs = Physlr.read_minimizers(target_filenames)
+        query_mxs = moltomxs if target_filenames == query_filenames else \
+            Physlr.read_minimizers(query_filenames)
+
+        # Remove repetitive minimizers
+        mxstomol = Physlr.construct_minimizers_to_barcodes(moltomxs)
+        self.remove_repetitive_minimizers(moltomxs, mxstomol)
+
+        # Index the positions of the markers in the backbone.
+        backbones = Physlr.read_paths(path_filenames)
+        backbones = [backbone for backbone in backbones
+                     if len(backbone) >= self.args.min_component_size]
+        mxtopos = Physlr.index_minimizers_in_backbones(backbones, moltomxs)
+
+        return query_mxs, mxtopos, backbones
+
     def physlr_map_mkt(self):
         """
         Map sequences to a physical map.
-        Usage: physlr map TGRAPH.tsv TMARKERS.tsv QMARKERS.tsv... >MAP.bed
+        Usage: physlr map TGRAPH.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
         """
         import physlr.mkt
         import numpy
 
-        if len(self.args.FILES) < 3:
-            exit("physlr map: error: at least three file arguments are required")
-        graph_filenames = [self.args.FILES[0]]
-        target_filenames = [self.args.FILES[1]]
-        query_filenames = self.args.FILES[2:]
-
-        g = self.read_graph(graph_filenames)
-        bxtomxs = self.read_minimizers(target_filenames)
-        query_mxs = self.read_minimizers_list(query_filenames)
-
-        # Index the positions of the minimizers in the backbone.
-        backbones = Physlr.determine_backbones(g)
-        mxtopos = Physlr.index_minimizers_in_backbones(backbones, bxtomxs)
+        query_mxs, mxtopos, backbones = self.map_indexing(self)
 
         # Map the query sequences to the physical map.
         num_mapped = 0
@@ -1285,26 +1299,7 @@ class Physlr:
         Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
         """
 
-        if len(self.args.FILES) < 3:
-            exit("physlr map: error: at least three file arguments are required")
-        path_filenames = [self.args.FILES[0]]
-        target_filenames = [self.args.FILES[1]]
-        query_filenames = self.args.FILES[2:]
-
-        # Index the positions of the minimizers in the backbone.
-        moltomxs = self.read_minimizers(target_filenames)
-        query_mxs = moltomxs if target_filenames == query_filenames else \
-            self.read_minimizers(query_filenames)
-
-        # Remove repetitive minimizers
-        mxstomol = self.construct_minimizers_to_barcodes(moltomxs)
-        self.remove_repetitive_minimizers(moltomxs, mxstomol)
-
-        # Index the positions of the markers in the backbone.
-        backbones = Physlr.read_path(path_filenames)
-        backbones = [backbone for backbone in backbones
-                     if len(backbone) >= self.args.min_component_size]
-        mxtopos = Physlr.index_markers_in_backbones(backbones, moltomxs)
+        query_mxs, mxtopos, backbones = self.map_indexing(self)
 
         # Map the query sequences to the physical map.
         num_mapped = 0
@@ -1339,23 +1334,10 @@ class Physlr:
     def physlr_map_paf(self):
         """
         Map sequences to a physical map and output a PAF file.
-        Usage: physlr map TGRAPH.tsv TMARKERS.tsv QMARKERS.tsv... >MAP.paf
+        Usage: physlr map TGRAPH.path TMARKERS.tsv QMARKERS.tsv... >MAP.paf
         """
 
-        if len(self.args.FILES) < 3:
-            exit("physlr map: error: at least three file arguments are required")
-        graph_filenames = [self.args.FILES[0]]
-        target_filenames = [self.args.FILES[1]]
-        query_filenames = self.args.FILES[2:]
-
-        g = self.read_graph(graph_filenames)
-        bxtomxs = self.read_minimizers(target_filenames)
-        query_mxs = bxtomxs if target_filenames == query_filenames else \
-            self.read_minimizers_list(query_filenames)
-
-        # Index the positions of the minimizers in the backbone.
-        backbones = Physlr.determine_backbones(g)
-        mxtopos = Physlr.index_minimizers_in_backbones(backbones, bxtomxs)
+        query_mxs, mxtopos, backbones = self.map_indexing(self)
 
         # Map the query sequences to the physical map.
         num_mapped = 0
@@ -1386,6 +1368,7 @@ class Physlr:
                         qmedian_before, qmedian, qmedian_after)
                     qlength = len(mxs)
                     tlength = len(backbones[tid])
+                    print(qstart, qend, sep="\t", file=sys.stderr)
                     mapq = int(100 * score / (qend - qstart))
                     print(
                         qid, qlength, qstart, qend,
