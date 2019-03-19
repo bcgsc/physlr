@@ -713,11 +713,11 @@ mol_strategy=2
 
 # Plot a BED file.
 %.bed.pdf: %.bed
-	Rscript -e 'rmarkdown::render("plotbed.rmd", "html_document", "$*.plotbed.html", params = list(input_bed="$<"))'
+	Rscript -e 'rmarkdown::render("plotbed.rmd", "html_document", "$*.bed.html", params = list(input_bed="$<"))'
 
 # Plot a PAF file.
 %.paf.gz.pdf: %.paf.gz
-	Rscript -e 'rmarkdown::render("plotpaf.rmd", "html_document", "$*.plotpaf.html", params = list(input_paf="$<"))'
+	Rscript -e 'rmarkdown::render("plotpaf.rmd", "html_document", "$*.paf.gz.html", params = list(input_paf="$<"))'
 
 ################################################################################
 # Bedtools
