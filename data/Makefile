@@ -35,6 +35,13 @@ n=50
 # Minimum component size for backbones
 min_component_size=50
 
+# Level of verbosity
+# 0: silent
+# 1: periodic messages
+# 2: progress bar
+# 3: verbose messages
+V=2
+
 SHELL=bash -e -o pipefail
 ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
 # Set pipefail to ensure that all commands of a pipe succeed.
@@ -513,7 +520,7 @@ minsize=2000
 
 # Filter minimizers by their frequency.
 %.c2-x.physlr.tsv: %.physlr.tsv
-	$(time) $(python) $(bin)/physlr filter-minimizers $< >$@
+	$(time) $(python) $(bin)/physlr filter-minimizers -V$V $< >$@
 
 # Count the number of minimizers per barcode.
 %.physlr.mxperbx.tsv: %.physlr.tsv
@@ -616,7 +623,7 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 # Separate barcodes into molecules.
 mol_strategy=2
 %.mol.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr molecules -t$t --separation-strategy=$(mol_strategy) $< >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) $< >$@
 
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv
