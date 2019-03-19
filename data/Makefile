@@ -284,6 +284,36 @@ redcedar.fq.gz: redcedar.lrbasic.trimadap.fq.gz
 	ln -s $< $@
 
 ################################################################################
+# White spruce (Picea glauca genotype WS77111)
+
+# Assemble a physical map of white spruce.
+# lr=ws77111 draft=ws77111.abyss n=50 min_component_size=200
+ws77111: \
+	ws77111.indexlr.n100-5000.physlr.mxperbx.tsv.pdf \
+	ws77111.indexlr.n100-5000.physlr.depth.tsv.pdf \
+	ws77111.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path \
+	ws77111.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.ws77111.abyss.n10.sort.best.bed.path.fa \
+	ws77111.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.ws77111.abyss.n10.sort.best.bed.pdf
+
+# Trim adapter sequences using trimadap.
+ws77111.lrbasic.trimadap.fq.gz: path=/projects/spruceup/pglauca/WS77111/data/reads/DNA/fastq/chromium
+ws77111.lrbasic.trimadap.fq.gz:
+	( \
+		seqtk mergepe $(path)/A64454_first.fastq.gz $(path)/A64454_second.fastq.gz; \
+		seqtk mergepe $(path)/A64454-2_first.fastq.gz $(path)/A64454-2_second.fastq.gz; \
+		seqtk mergepe $(path)/A64455_first.fastq.gz $(path)/A64455_second.fastq.gz; \
+		seqtk mergepe $(path)/A64455-2_first.fastq.gz $(path)/A64455-2_second.fastq.gz; \
+		seqtk mergepe $(path)/A64456_first.fastq.gz $(path)/A64456_second.fastq.gz; \
+		seqtk mergepe $(path)/A64456-2_first.fastq.gz $(path)/A64456-2_second.fastq.gz; \
+		seqtk mergepe $(path)/A64457_first.fastq.gz $(path)/A64457_second.fastq.gz; \
+		seqtk mergepe $(path)/A64457-2_first.fastq.gz $(path)/A64457-2_second.fastq.gz \
+	) | trimadap-mt -p$t -t1 - | sed 's/^X$$/N/' | $(gzip) >$@
+
+# Symlink the linked reads.
+ws77111.fq.gz: ws77111.lrbasic.trimadap.fq.gz
+	ln -s $< $@
+
+################################################################################
 # Trimadap
 
 # Trim adapter sequences using trimadap.
