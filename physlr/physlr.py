@@ -1654,7 +1654,7 @@ class Physlr:
             "-v", "--vertices", action="store", dest="v",
             help="list of vertices [None]")
         argparser.add_argument(
-            "-V", "--exclude-vertices", action="store", dest="exclude_vertices", default="",
+            "--exclude-vertices", action="store", dest="exclude_vertices", default="",
             help="list of vertices to exclude [None]")
         argparser.add_argument(
             "--exclude-source", action="store", dest="exclude_source", type=int, default=1,
