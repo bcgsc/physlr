@@ -39,6 +39,8 @@ def progress_bar_for_file(fin):
 
 def progress(iterator):
     "Return an iterator that displays a progress bar."
+    if Physlr.args.verbose < 2:
+        return iterator
     return tqdm.tqdm(
         iterator, mininterval=1, smoothing=0.1,
         bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
@@ -1090,12 +1092,10 @@ class Physlr:
                 self.determine_molecules(gin, u, self.args.strategy) for u in progress(gin))
         else:
             Physlr.graph = gin
-            Physlr.args = self.args
             with multiprocessing.Pool(self.args.threads) as pool:
                 molecules = dict(pool.map(
                     self.determine_molecules_process, progress(gin), chunksize=100))
             Physlr.graph = None
-            Physlr.args = None
         print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
 
         # Add vertices.
@@ -1549,7 +1549,7 @@ class Physlr:
                     bx = u.split("_", 1)[0]
                 if bx not in bxtobeds:
                     num_missing += 1
-                    if self.args.verbose >= 1:
+                    if self.args.verbose >= 3:
                         print("warning:", bx, "not found in BED", *bed_filenames, file=sys.stderr)
                     continue
                 beds = bxtobeds[bx]
@@ -1670,8 +1670,8 @@ class Physlr:
             "-p", "--min_p_val", action="store", dest="p", type=float, default=0.01,
             help="Minimum significance threshold (FPR) for Mann-Kendall Test")
         argparser.add_argument(
-            "--verbose", action="store", dest="verbose", type=int, default="0",
-            help="the level of verbosity [0]")
+            "--verbose", action="store", dest="verbose", type=int, default="2",
+            help="the level of verbosity: 0:silent, 1:periodic, 2:progress, 3:verbose [2]")
         argparser.add_argument(
             "--version", action="version", version="physlr 0.1.0")
         argparser.add_argument(
@@ -1685,6 +1685,7 @@ class Physlr:
     def __init__(self):
         "Create a new instance of Physlr."
         self.args = self.parse_arguments()
+        Physlr.args = self.args
         self.args.FILES = ["/dev/stdin" if s == "-" else s for s in self.args.FILES]
 
     def main(self):
