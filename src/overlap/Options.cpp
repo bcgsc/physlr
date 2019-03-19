@@ -10,4 +10,4 @@
 namespace opt {
 	unsigned minN = 10;
 	unsigned threads = 1;
-}
+} // namespace opt

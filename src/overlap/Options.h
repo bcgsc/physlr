@@ -8,12 +8,11 @@
 #ifndef OPTIONS_H_
 #define OPTIONS_H_
 
-#include <string>
 #include <stdint.h>
 
-typedef uint32_t BarcodeID;
-typedef uint64_t Minimizer;
-typedef uint32_t Count;
+using BarcodeID = uint32_t;
+using Minimizer = uint64_t;
+using Count = uint16_t;
 
 /**
  * Global variables that are mostly constant for the duration of the
