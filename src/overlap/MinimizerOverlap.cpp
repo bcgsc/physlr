@@ -8,12 +8,12 @@
 #include "config.h"
 #include "Options.cpp"
 #include "tsl/robin_map.h"
+#include "tsl/robin_set.h"
 #include <cstdlib>
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
 #include <omp.h>
-#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 	tsl::robin_map<std::string, BarcodeID> barcodes;
 
 	//vector of barcodes
-	tsl::robin_map<Minimizer, std::set<BarcodeID>> minimizerToBarcode;
+	tsl::robin_map<Minimizer, tsl::robin_set<BarcodeID>> minimizerToBarcode;
 	std::vector<std::string> barcodeToStr;
 
 	double sTime = omp_get_wtime();
@@ -189,13 +189,11 @@ int main(int argc, char *argv[]) {
 	std::cerr << "Total Minimizers: " << minimizerToBarcode.size() << std::endl;
 	std::cerr << "Total Barcodes: " << barcodes.size() << std::endl;
 
-//	11706234 edges, 68904 barcodes, 2615306 minimizers
-	//todo some how parallelize this
 	for (const auto &itr : minimizerToBarcode) {
 		for (auto barcode_i = itr.second.begin(); barcode_i != itr.second.end();
 				barcode_i++) {
 			barcodeCount[*barcode_i]++;
-			auto barcode_j = std::set<BarcodeID>::const_iterator(barcode_i);
+			auto barcode_j = tsl::robin_set<BarcodeID>::const_iterator(barcode_i);
 			for (barcode_j++; barcode_j != itr.second.end(); barcode_j++) {
 				barcodeSimMat[static_cast<size_t>(*barcode_i) << 32u | *barcode_j]++;
 			}
