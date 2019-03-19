@@ -659,6 +659,10 @@ mol_strategy=1
 %.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) $< >$@
 
+# Separate barcodes into molecules using K3-clique community detection.
+%.k3.mol.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=2 $< >$@
+
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv
 	$(python) $(bin)/physlr subgraph -v$v -d$d $< >$@
