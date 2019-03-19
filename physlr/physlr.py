@@ -787,6 +787,15 @@ class Physlr:
         self.write_tsv(g, sys.stdout)
         print(int(timeit.default_timer() - t0), "Wrote the graph", file=sys.stderr)
 
+    def physlr_degree(self):
+        "Print the degree of each vertex."
+        g = self.read_graph(self.args.FILES)
+        Physlr.filter_edges(g, self.args.n)
+        print("U\tn\tDegree")
+        for u, prop in progress(g.nodes.items()):
+            print(u, prop["n"], g.degree(u), sep="\t")
+        print(int(timeit.default_timer() - t0), "Wrote degrees of vertices", file=sys.stderr)
+
     def physlr_mst(self):
         "Determine the maximum spanning tree."
         g = self.read_graph(self.args.FILES)

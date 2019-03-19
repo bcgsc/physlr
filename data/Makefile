@@ -560,6 +560,10 @@ minsize=2000
 %.physlr.overlap.tsv: %.physlr.tsv
 	$(time) $(python) $(bin)/physlr overlap -n10 $< >$@
 
+# Determine the degree of each vertex.
+%.deg.tsv: %.tsv
+	$(python) $(bin)/physlr degree $< >$@
+
 # Determine the maximum spanning tree.
 %.physlr.overlap.mst.tsv: %.physlr.overlap.tsv
 	$(python) $(bin)/physlr mst $< >$@
