@@ -586,12 +586,12 @@ minsize=2000
 
 # Split the minimizers to molecules
 %.overlap.n$n.mol.split.tsv: %.overlap.n$n.mol.tsv %.tsv
-	$(python) $(bin)/physlr split-minimizers -t$t $< $(lr).n100-2000.physlr.tsv >$@
+	$(python) $(bin)/physlr split-minimizers -t$t $< $*.tsv >$@
 
 # Split the reads into molecules
-$(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.physlr.overlap.n$n.mol.split.tsv $(lr).physlr.tsv
-	$(zcat) $< | $(python) $(bin)/physlr split-reads-molecules $(lr).n100-2000.physlr.overlap.n$n.mol.split.tsv \
-		$(lr).physlr.tsv - | $(gzip) >$@
+%.split.fq.gz: $(lr).fq.gz %.split.tsv $(lr).indexlr.physlr.tsv
+	$(zcat) $< | $(python) $(bin)/physlr split-reads-molecules $*.split.tsv \
+		$(lr).indexlr.physlr.tsv - | $(gzip) >$@
 
 # Determine the minimum tiling graph of the backbone graph.
 %.backbone.tiling.tsv: %.backbone.tsv
