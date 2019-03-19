@@ -259,6 +259,24 @@ hg004.fq.gz: hg004.lrbasic.trimadap.fq.gz
 	ln -s $< $@
 
 ################################################################################
+# Western redcedar (Thuja plicata)
+# See https://github.com/sjackman/redcedar
+# and https://github.com/sjackman/thesis/blob/master/redcedar.md
+
+# Assemble a physical map of western redcedar.
+# lr=redcedar draft=redcedar.abyss n=50 min_component_size=200
+redcedar: \
+	redcedar.indexlr.n100-5000.physlr.mxperbx.tsv.pdf \
+	redcedar.indexlr.n100-5000.physlr.depth.tsv.pdf \
+	redcedar.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path \
+	redcedar.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.redcedar.abyss.n10.sort.best.bed.path.fa \
+	redcedar.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.redcedar.abyss.n10.sort.best.bed.pdf
+
+# Symlink the linked reads.
+redcedar.fq.gz: redcedar.lrbasic.trimadap.fq.gz
+	ln -s $< $@
+
+################################################################################
 # Trimadap
 
 # Trim adapter sequences using trimadap.
