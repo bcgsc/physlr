@@ -606,15 +606,15 @@ $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz: $(lr).fq.gz $(lr).n100-2000.phys
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
 # Map the reference assembly to the backbone graph and output BED.
-%.overlap.n$n.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(name)/$(ref).indexlr.physlr.tsv
+%.overlap.n$n.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph using physlr map-mkt and output BED.
-%.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.mol.backbone.tsv %.tsv $(draft).indexlr.physlr.tsv
+%.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(draft).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-mkt -n10 $^ >$@
 
 # Map the reference to the backbone graph and output PAF.
-%.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.backbone.tsv %.tsv $(name)/$(ref).indexlr.physlr.tsv
+%.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -n10 $^ | $(gzip) >$@
 
 # Annotate a graph with a BED file of mappings.
