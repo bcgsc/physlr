@@ -1,0 +1,51 @@
+---
+title: "Plot the distribution of shared minimizers"
+author: "Shaun Jackmn"
+params:
+  input_tsv:
+    label: "Input TSV file"
+    value: "physlr.overlap.mol.tsv"
+    input: text
+---
+
+```{r setup}
+library(ggplot2)
+library(readr)
+
+knit_print.data.frame <- function(x, ...) kable(x) %>% paste(collapse = "\n") %>% asis_output
+input_tsv <- params$input_tsv
+
+cat(input_tsv)
+```
+
+# Read graph
+```{r read}
+# Skip the vertices. Read the edges.
+num_vertices <- as.numeric(sub(":", "", system2("grep", c("-n", "-m1", "^$", input_tsv), stdout = TRUE))) - 2
+edges <- read_tsv(input_tsv, col_types = "--i", skip = 1 + num_vertices)
+```
+
+# Boxplot statistics
+```{r boxplot-statistics}
+quartiles <- boxplot.stats(edges$n)$stats
+upper_whisker <- quartiles[5]
+
+cat(quartiles)
+```
+
+# Plot histogram
+```{r histogram-n}
+ggplot(edges) +
+	aes(x = n) +
+	geom_histogram(binwidth = 1, boundary = 0) +
+	geom_vline(xintercept = quartiles, colour = "grey", linetype = "dashed") +
+	coord_cartesian(x = c(0, 1.2 * upper_whisker)) +
+	theme_bw() +
+	labs(caption = paste(paste(quartiles, collapse = " "), input_tsv, sep = "\n"))
+```
+
+```{r save-plot}
+pdf_file <- paste0(input_tsv, ".n.pdf")
+cat(pdf_file)
+ggsave(pdf_file)
+```
