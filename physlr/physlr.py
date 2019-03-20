@@ -1219,10 +1219,6 @@ class Physlr:
         query_mxs = moltomxs if target_filenames == query_filenames else \
             Physlr.read_minimizers(query_filenames)
 
-        # Remove repetitive minimizers
-        mxstomol = Physlr.construct_minimizers_to_barcodes(moltomxs)
-        self.remove_repetitive_minimizers(moltomxs, mxstomol)
-
         # Index the positions of the markers in the backbone.
         backbones = Physlr.read_paths(path_filenames)
         backbones = [backbone for backbone in backbones
