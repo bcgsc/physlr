@@ -55,7 +55,8 @@ ggplot(paf) +
 	scale_y_reverse(name = "Backbone (Target)",
 		minor_breaks = seq(0, max(paf$Tindex), 10)) +
 	scale_fill_manual(name = "Chromosome (Query)", values = as.vector(alphabet.colors(26))) +
-	theme_bw()
+	theme_bw() +
+	labs(caption = input_paf)
 ```
 
 ```{r save-plot}
@@ -86,7 +87,8 @@ ggplot(pafq) +
 		breaks = 0.5 + seq_len(max(pafq$Qindex)),
 		labels = levels(pafq$Qname)) +
 	scale_fill_manual(values = as.vector(alphabet.colors(26))) +
-	theme_bw()
+	theme_bw() +
+	labs(caption = input_paf)
 ```
 
 # Dot plot
@@ -108,5 +110,6 @@ ggplot(pafdot) +
 		breaks = boundaries$Index, labels = boundaries$Tname) +
 	scale_fill_manual(name = "Chromosome", values = as.vector(alphabet.colors(26))) +
 	theme_bw() +
-	guides(fill = guide_legend(ncol = 1))
+	guides(fill = guide_legend(ncol = 1)) +
+	labs(caption = input_paf)
 ```
