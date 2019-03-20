@@ -7,8 +7,11 @@ w=32
 # Number of threads.
 t=16
 
+# Path to the Physlr project.
+physlr_path=..
+
 # Path to the Physlr executable.
-bin=../bin
+bin=$(physlr_path)/bin
 
 # Python interpreter.
 python=env PYTHONPATH=.. pypy3
@@ -514,7 +517,7 @@ minsize=2000
 
 # Index a FASTA file using physlr-indexlr (native implementation).
 %.indexlr.physlr.tsv: %.fa
-	$(time) ../src/physlr-indexlr -t$t -k$k -w$w -o $@ $<
+	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -o $@ $<
 
 # Index linked reads.
 %.physlr.tsv: %.fq.gz
@@ -522,7 +525,7 @@ minsize=2000
 
 # Index linked reads using physlr-indexlr (native implementation).
 %.indexlr.physlr.tsv: %.fq.gz
-	$(zcat) $< | $(time) ../src/physlr-indexlr -t$t -k$k -w$w -o $@ -
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -o $@ -
 
 # Count the frequency of the minimizers.
 %.physlr.depth.tsv: %.physlr.tsv
@@ -534,19 +537,19 @@ minsize=2000
 
 # Filter barcodes by number of minimizers.
 %.n100-1000.physlr.tsv: %.physlr.tsv
-	$(time) ../src/physlr-filter-barcodes -n100 -N1000 $< >$@
+	$(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N1000 $< >$@
 
 # Filter barcodes by number of minimizers.
 %.n100-2000.physlr.tsv: %.physlr.tsv
-	$(time) ../src/physlr-filter-barcodes -n100 -N2000 $< >$@
+	$(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N2000 $< >$@
 
 # Filter barcodes by number of minimizers.
 %.n100-5000.physlr.tsv: %.physlr.tsv
-	$(time) ../src/physlr-filter-barcodes -n100 -N5000 $< >$@
+	$(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N5000 $< >$@
 
 # Filter barcodes by number of minimizers.
 %.n100-10000.physlr.tsv: %.physlr.tsv
-	$(time) ../src/physlr-filter-barcodes -n100 -N10000 $< >$@
+	$(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N10000 $< >$@
 
 # Filter minimizers by their frequency.
 %.c2-x.physlr.tsv: %.physlr.tsv
