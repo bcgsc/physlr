@@ -243,7 +243,7 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 # Human (HG004)
 
 # Assemble a physical map of hg004.
-# ref=grch38 lr=hg004 draft=hg004.supernova n=50 min_component_size=200
+# ref=grch38 lr=hg004 draft=hg004.supernova n=100 min_component_size=200
 hg004: \
 	hg004.indexlr.n100-5000.physlr.mxperbx.tsv.pdf \
 	hg004.indexlr.n100-5000.physlr.depth.tsv.pdf \
