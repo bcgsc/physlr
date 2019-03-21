@@ -72,7 +72,6 @@ mapq_threshold <- 1
 
 pafq <- paf %>%
 	filter(Mapq >= mapq_threshold) %>%
-	droplevels() %>%
 	mutate(Tname = fct_inorder(fct_lump(Tname, n = 25, ties.method = "first"))) %>%
 	arrange(desc(Qlength), Qname, Qstart, Matches)
 
