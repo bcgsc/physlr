@@ -14,7 +14,7 @@ physlr_path=..
 bin=$(physlr_path)/bin
 
 # Python interpreter.
-python=env PYTHONPATH=.. pypy3
+python=env PYTHONPATH=$(physlr_path) pypy3
 
 # Reference genome.
 ref=fly
