@@ -621,7 +621,7 @@ minsize=2000
 	$(time) $(python) $(bin)/physlr map-paf -n10 $^ | $(gzip) >$@
 
 # Map the reference to the backbone graph and output PAF.
-%.overlap.n$n.k3.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.backbone.tsv %.tsv $(name)/$(ref).indexlr.physlr.tsv
+%.overlap.n$n.k3.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -n10 $^ | $(gzip) >$@
 
 # Annotate a graph with a BED file of mappings.
