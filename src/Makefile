@@ -1,4 +1,4 @@
-CXXFLAGS=-g -O3 -Wall -Werror -std=c++11 -pthread -I./include -I./vendor
+CXXFLAGS=-g -O3 -Wall -Werror -Wno-error=unknown-pragmas -std=c++11 -pthread -I./include -I./vendor
 LDLIBS=-lz
 
 all: physlr-filter-barcodes physlr-indexlr physlr-overlap
