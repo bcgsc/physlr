@@ -33,7 +33,8 @@ namespace opt {
 #define PACKAGE_NAME "physlr"
 #define GIT_REVISION "pre-autotools"
 
-void printVersion() {
+static void printVersion()
+{
 	const char VERSION_MESSAGE[] =
 	PROGRAM " (" PACKAGE_NAME ") " GIT_REVISION
 	"\n"
@@ -44,7 +45,8 @@ void printVersion() {
 	exit(EXIT_SUCCESS);
 }
 
-void printHelpDialog() {
+static void printHelpDialog()
+{
 	static const char dialog[] =
 			"Usage: physlr-overlap [OPTION]... [MINIZERS.tsv]\n"
 					"Read a sketch of linked reads and find overlapping barcodes.\n"
@@ -71,7 +73,8 @@ struct fastHash {
 };
 
 //returns memory of program in kb
-int memory_usage() {
+static int memory_usage()
+{
 	int mem = 0;
 	std::ifstream proc("/proc/self/status");
 	std::string s;
@@ -88,7 +91,8 @@ int memory_usage() {
 	return mem;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	using BarcodeID = uint32_t;
 	using Minimizer = uint64_t;
 	using Count = uint16_t;
