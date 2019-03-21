@@ -12,10 +12,13 @@
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
-#include <omp.h>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#if _OPENMP
+# include <omp.h>
+#endif
 
 #define PROGRAM "physlr-overlap"
 #define PACKAGE_NAME "physlr"
@@ -120,7 +123,10 @@ int main(int argc, char *argv[]) {
 		}
 		}
 	}
+
+#if _OPENMP
 	omp_set_num_threads(opt::threads);
+#endif
 
 	//Stores fasta input file names
 	std::vector<std::string> inputFiles;
@@ -148,7 +154,9 @@ int main(int argc, char *argv[]) {
 	tsl::robin_map<Minimizer, tsl::robin_set<BarcodeID>> minimizerToBarcode;
 	std::vector<std::string> barcodeToStr;
 
+#if _OPENMP
 	double sTime = omp_get_wtime();
+#endif
 	std::string barcodeBuffer;
 	Minimizer minimizerBuffer;
 
@@ -179,11 +187,13 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+#if _OPENMP
 	std::cerr << "Finished constructing minimizerToBarcodes in sec: "
 			<< omp_get_wtime() - sTime << std::endl;
+	sTime = omp_get_wtime();
+#endif
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576)
 			<< "GB" << std::endl;
-	sTime = omp_get_wtime();
 
 	//store into 2d matrix / hash table
 	//todo revisit Counts? -> can be smaller
@@ -208,8 +218,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+#if _OPENMP
 	std::cerr << "Finished computing overlaps in sec: "
 			<< omp_get_wtime() - sTime << std::endl;
+#endif
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576)
 			<< "GB" << std::endl;
 	std::cerr << "Total number of unfiltered edges: " << barcodeSimMat.size()
