@@ -5,9 +5,9 @@
  *      Author: cjustin
  */
 
-#include "Options.cpp"
 #include "tsl/robin_map.h"
 #include "tsl/robin_set.h"
+#include <cstdint>
 #include <cstdlib>
 #include <fstream>
 #include <getopt.h>
@@ -19,6 +19,15 @@
 #if _OPENMP
 # include <omp.h>
 #endif
+
+/**
+ * Global variables that are mostly constant for the duration of the
+ * execution of the program.
+ */
+namespace opt {
+	static unsigned minN = 10;
+	static unsigned threads = 1;
+}
 
 #define PROGRAM "physlr-overlap"
 #define PACKAGE_NAME "physlr"
@@ -80,6 +89,10 @@ int memory_usage() {
 }
 
 int main(int argc, char *argv[]) {
+	using BarcodeID = uint32_t;
+	using Minimizer = uint64_t;
+	using Count = uint16_t;
+
 	bool die = false;
 
 	//switch statement variable
