@@ -718,14 +718,6 @@ mol_strategy=1
 %.paf.bed: %.paf.gz
 	gunzip -c $< | awk -F'\t' -vOFS='\t' '{ print $$1, $$3, $$4, $$6 "_" $$8, $$10, $$5}' >$@
 
-# Plot a BED file.
-%.bed.pdf: %.bed
-	Rscript -e 'rmarkdown::render("plotbed.rmd", "html_document", "$*.bed.html", params = list(input_bed="$<"))'
-
-# Plot a PAF file.
-%.paf.gz.pdf: %.paf.gz
-	Rscript -e 'rmarkdown::render("plotpaf.rmd", "html_document", "$*.paf.gz.html", params = list(input_paf="$<"))'
-
 ################################################################################
 # Bedtools
 
@@ -794,20 +786,28 @@ mol_strategy=1
 
 # Plot number of markers per barcode.
 %.mxperbx.tsv.pdf: %.mxperbx.tsv
-	Rscript -e 'rmarkdown::render("plot-mxperbx.rmd", "html_document", "$*.mxperbx.tsv.html", params = list(input_tsv="$<"))'
-
-# Plot vertex degree.
-%.deg.tsv.pdf: %.deg.tsv
-	Rscript -e 'rmarkdown::render("plot-degree.rmd", "html_document", "$*.deg.tsv.html", params = list(input_tsv="$<"))'
-
-# Plot edge property n.
-%.tsv.n.pdf: %.tsv
-	Rscript -e 'rmarkdown::render("plot-edge-n.rmd", "html_document", "$*.tsv.n.html", params = list(input_tsv="$<"))'
+	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plot-mxperbx.rmd", "html_document", "$*.mxperbx.tsv.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_tsv="$<"))'
 
 # Plot depth of coverage.
 %.depth.tsv.pdf: %.depth.tsv
-	Rscript -e 'rmarkdown::render("plot-depth.rmd", "html_document", "$*.depth.tsv.html", params = list(input_tsv="$<"))'
+	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plot-depth.rmd", "html_document", "$*.depth.tsv.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_tsv="$<"))'
+
+# Plot edge property n.
+%.tsv.n.pdf: %.tsv
+	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plot-edge-n.rmd", "html_document", "$*.tsv.n.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_tsv="$<"))'
+
+# Plot vertex degree.
+%.deg.tsv.pdf: %.deg.tsv
+	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plot-degree.rmd", "html_document", "$*.deg.tsv.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_tsv="$<"))'
+
+# Plot a BED file.
+%.bed.pdf: %.bed
+	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plotbed.rmd", "html_document", "$*.bed.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_bed="$<"))'
+
+# Plot a PAF file.
+%.paf.gz.pdf: %.paf.gz
+	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plotpaf.rmd", "html_document", "$*.paf.gz.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_paf="$<"))'
 
 # Compare assembly metrics.
 %.quast.html: %.quast.tsv
-	Rscript -e 'rmarkdown::render("quast.rmd", "html_document", "$*.quast.html", params = list(input_tsv="$<", output_tsv="$*.quast.table.tsv"))'
+	Rscript -e 'rmarkdown::render("$(physlr_path)/data/quast.rmd", "html_document", "$*.quast.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_tsv="$<", output_tsv="$*.quast.table.tsv"))'
