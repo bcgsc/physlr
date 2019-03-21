@@ -27,7 +27,7 @@
 namespace opt {
 	static unsigned minN = 10;
 	static unsigned threads = 1;
-}
+} // namespace opt
 
 #define PROGRAM "physlr-overlap"
 #define PACKAGE_NAME "physlr"
