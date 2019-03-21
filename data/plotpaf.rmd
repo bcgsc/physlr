@@ -60,7 +60,7 @@ ggplot(paf) +
 	labs(caption = input_paf)
 ```
 
-```{r save-plot}
+```{r save-plot-t}
 pdf_filename <- paste0(input_paf, ".pdf")
 ggsave(pdf_filename, width = 8, height = 10, units = "in")
 cat(pdf_filename)
@@ -93,6 +93,12 @@ ggplot(pafq) +
 	labs(caption = input_paf)
 ```
 
+```{r save-plot-q}
+pdf_filename <- paste0(input_paf, ".q.pdf")
+ggsave(pdf_filename, width = 8, height = 10, units = "in")
+cat(pdf_filename)
+```
+
 # Dot plot
 ```{r plot-pafm, fig.width=6, fig.height=24}
 tlength_threshold <- 200
@@ -114,4 +120,10 @@ ggplot(pafdot) +
 	theme_bw() +
 	guides(fill = guide_legend(ncol = 1)) +
 	labs(caption = input_paf)
+```
+
+```{r save-plot-dot}
+pdf_filename <- paste0(input_paf, ".dot.pdf")
+ggsave(pdf_filename, width = 6, height = 24, units = "in")
+cat(pdf_filename)
 ```
