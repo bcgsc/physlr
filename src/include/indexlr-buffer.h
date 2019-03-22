@@ -121,7 +121,7 @@ public:
         target.data = std::move(data);
         target.occupied = true;
         target.lastTenant = num;
-        target.occupancyChanged.notify_one();
+        target.occupancyChanged.notify_all();
         ++(this->elementCount);
     }
 
@@ -133,7 +133,7 @@ public:
         ++(this->readCounter);
         data = std::move(target.data);
         target.occupied = false;
-        target.occupancyChanged.notify_one();
+        target.occupancyChanged.notify_all();
         --(this->elementCount);
     }
 
