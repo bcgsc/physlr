@@ -608,8 +608,16 @@ minsize=2000
 %.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(draft).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
+# Map the draft assembly to the backbone graph and output BED (K3-cliques).
+%.overlap.n$n.k3.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.k3.mol.backbone.path %.tsv $(draft).indexlr.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
+
 # Map the reference assembly to the backbone graph and output BED.
 %.overlap.n$n.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
+
+# Map the reference assembly to the backbone graph and output BED (K3-cliques).
+%.overlap.n$n.k3.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.k3.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph using physlr map-mkt and output BED.
@@ -620,7 +628,7 @@ minsize=2000
 %.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -n10 $^ | $(gzip) >$@
 
-# Map the reference to the backbone graph and output PAF.
+# Map the reference to the backbone graph and output PAF (K3-cliques).
 %.overlap.n$n.k3.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -n10 $^ | $(gzip) >$@
 
