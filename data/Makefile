@@ -8,7 +8,7 @@ w=32
 t=16
 
 # Path to the Physlr project.
-physlr_path=..
+physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 
 # Path to the Physlr executable.
 bin=$(physlr_path)/bin
