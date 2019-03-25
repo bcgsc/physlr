@@ -6,3 +6,8 @@ max-module-lines=2000
 max-public-methods=100
 [MASTER]
 ignore=mkt.py
+[TYPECHECK]
+# modules
+ignored-modules=numpy
+# classes
+ignored-classes=numpy
