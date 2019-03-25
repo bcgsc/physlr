@@ -16,6 +16,9 @@ from collections import Counter
 
 
 import networkx as nx
+import numpy as np
+import scipy as sp
+from sklearn.metrics.pairwise import cosine_similarity
 from networkx.algorithms import community as nxcommunity
 import tqdm
 
@@ -1068,12 +1071,39 @@ class Physlr:
         return u, multinode_partitions_set
 
     @staticmethod
+    def determine_molecules_cosine_of_squared(g, u):
+        "Square the adjacency matrix and then use cosine similarity to detect communities."
+        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
+        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
+        components.sort(key=len, reverse=True)
+        communities = []
+        for comp in components:
+            if len(comp) > 1:
+                sub_graph = g.subgraph(comp)
+                adj_array = nx.adjacency_matrix(sub_graph).toarray()
+                new_adj = np.multiply(
+                    cosine_similarity(sp.linalg.blas.sgemm(1.0, adj_array, adj_array)) >= 0.75, adj_array)
+                edges_to_remove = np.argwhere(new_adj != adj_array)
+                barcode_dict = dict(zip(range(len(sub_graph)), list(sub_graph.nodes)))
+                edges_to_remove_barcode = [(barcode_dict[i], barcode_dict[j]) for i, j in edges_to_remove]
+                sub_graph_copy = nx.Graph(sub_graph)
+                sub_graph_copy.remove_edges_from(edges_to_remove_barcode)
+                cos_components = list(nx.connected_components(sub_graph_copy))
+                cos_components.sort(key=len, reverse=True)
+                for com in cos_components:
+                    if len(com) > 1:
+                        communities.append(com)
+        return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
+
+    @staticmethod
     def determine_molecules(g, u, strategy):
         "Assign the neighbours of this vertex to molecules."
         if strategy == 2:
             return Physlr.determine_molecules_k_clique_communities(g, u)
         if strategy == 3:
             return Physlr.determine_molecules_louvain(g, u)
+        if strategy == 4:
+            return Physlr.determine_molecules_cosine_squared(g, u)
 
         # strategy == 1 or none of the previous strategies
         return Physlr.determine_molecules_biconnected_components(g, u)
