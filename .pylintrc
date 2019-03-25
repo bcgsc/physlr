@@ -8,5 +8,3 @@ max-public-methods=100
 ignore=mkt.py
 [TYPECHECK]
 generated-members=numpy.*
-ignored-modules=numpy
-ignored-classes=numpy
