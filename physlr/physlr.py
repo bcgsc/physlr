@@ -16,9 +16,6 @@ from collections import Counter
 
 
 import networkx as nx
-import numpy as np
-import scipy as sp
-from sklearn.metrics.pairwise import cosine_similarity
 from networkx.algorithms import community as nxcommunity
 import tqdm
 
@@ -1073,6 +1070,10 @@ class Physlr:
     @staticmethod
     def determine_molecules_cosine_of_squared(g, u):
         "Square the adjacency matrix and then use cosine similarity to detect communities."
+        import numpy as np
+        import scipy as sp
+        from sklearn.metrics.pairwise import cosine_similarity
+
         cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
         components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
         components.sort(key=len, reverse=True)
