@@ -1070,8 +1070,8 @@ class Physlr:
     @staticmethod
     def determine_molecules_cosine_of_squared(g, u):
         "Square the adjacency matrix and then use cosine similarity to detect communities."
-        import numpy as np
         import scipy as sp
+        import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity
 
         cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
