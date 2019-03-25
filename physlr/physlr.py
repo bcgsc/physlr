@@ -1083,10 +1083,12 @@ class Physlr:
                 sub_graph = g.subgraph(comp)
                 adj_array = nx.adjacency_matrix(sub_graph).toarray()
                 new_adj = np.multiply(
-                    cosine_similarity(sp.linalg.blas.sgemm(1.0, adj_array, adj_array)) >= 0.75, adj_array)
+                    cosine_similarity(
+                        sp.linalg.blas.sgemm(1.0, adj_array, adj_array)) >= 0.75, adj_array)
                 edges_to_remove = np.argwhere(new_adj != adj_array)
                 barcode_dict = dict(zip(range(len(sub_graph)), list(sub_graph.nodes)))
-                edges_to_remove_barcode = [(barcode_dict[i], barcode_dict[j]) for i, j in edges_to_remove]
+                edges_to_remove_barcode = [(barcode_dict[i], barcode_dict[j])
+                                           for i, j in edges_to_remove]
                 sub_graph_copy = nx.Graph(sub_graph)
                 sub_graph_copy.remove_edges_from(edges_to_remove_barcode)
                 cos_components = list(nx.connected_components(sub_graph_copy))
@@ -1104,7 +1106,7 @@ class Physlr:
         if strategy == 3:
             return Physlr.determine_molecules_louvain(g, u)
         if strategy == 4:
-            return Physlr.determine_molecules_cosine_squared(g, u)
+            return Physlr.determine_molecules_cosine_of_squared(g, u)
 
         # strategy == 1 or none of the previous strategies
         return Physlr.determine_molecules_biconnected_components(g, u)
