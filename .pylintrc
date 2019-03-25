@@ -8,3 +8,4 @@ max-public-methods=100
 ignore=mkt.py
 [TYPECHECK]
 generated-members=numpy.*
+generated-members=numpy.linalg
