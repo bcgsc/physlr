@@ -529,7 +529,7 @@ minsize=2000
 
 # Count the frequency of the minimizers.
 %.physlr.depth.tsv: %.physlr.tsv
-	$(python) $(bin)/physlr count-minimizers $< >$@
+	$(time) $(python) $(bin)/physlr count-minimizers -V$V $< >$@
 	
 # Identify the overlapping minimizers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv
