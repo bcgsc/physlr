@@ -19,6 +19,8 @@
 #include <unordered_map>
 #include <unordered_set> 
 #include <vector>
+#include "tsl/robin_map.h"
+#include "tsl/robin_set.h"
 
 static std::chrono::time_point<std::chrono::steady_clock> t0; //NOLINT(cert-err58-cpp)
 
@@ -119,7 +121,6 @@ static MxtoCounts countMxs(const BxtoMxs& bxtomxs, bool silent) {
 
 static void removeSingletonMxs(BxtoMxs& bxtomxs, bool silent) {
 	MxtoCounts counts = countMxs(bxtomxs, silent); 
-	std::cerr << "Counted " << counts.size() << " minimizers." << '\n';
 	Mxs uniqueMxs;
 	uint64_t singletons = 0;
 	tsl::robin_map<Mx, bool> counted;
