@@ -17,6 +17,8 @@
 #include <unordered_map>
 #include <unordered_set> 
 #include <vector>
+#include "tsl/robin_map.h"
+#include "tsl/robin_set.h"
 
 static std::chrono::time_point<std::chrono::steady_clock> t0; //NOLINT(cert-err58-cpp)
 
@@ -46,19 +48,9 @@ static void printUsage(const std::string& progname)
 }
 
 using Mx = uint64_t;
-using Mxs = std::unordered_set<Mx>;
+using Mxs = tsl::robin_set<Mx>;
 using Bx = std::string;
-using BxtoMxs = std::unordered_map<Bx, Mxs>;
-
-static Mxs splitMxs(const std::string& mx_line) {
-	Mxs mx_set;
-	std::istringstream iss(mx_line);
-	std::string mx;
-	while (iss >> mx) {
-		mx_set.insert(strtoull(mx.c_str(), nullptr, 0));
-	}
-	return mx_set;
-}
+using BxtoMxs = tsl::robin_map<Bx, Mxs>;
 
 static BxtoMxs readMxs(std::istream &is, const std::string &ipath, bool silent) {
 	if (is.peek() == std::ifstream::traits_type::eof()) {
@@ -67,10 +59,13 @@ static BxtoMxs readMxs(std::istream &is, const std::string &ipath, bool silent) 
 	}
 	BxtoMxs bxtomxs;
 	Bx bx;
+	std::string mx;
 	std::string mx_line;
 	while ((is >> bx) && (getline(is, mx_line))) {
-		auto mxs = splitMxs(mx_line);
-		bxtomxs[bx].insert(mxs.begin(), mxs.end());
+		std::istringstream iss(mx_line);
+		while (iss >> mx) {
+			bxtomxs[bx].insert(strtoull(mx.c_str(), nullptr, 0));
+		}
 	}
 	auto t = std::chrono::steady_clock::now();
 	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0);
@@ -100,8 +95,8 @@ static void writeMxs(BxtoMxs bxtomxs, std::ostream& os, const std::string& opath
 	}
 }
 
-static std::unordered_map<Mx, unsigned> countMxs(const BxtoMxs& bxtomxs, bool silent) {
-	std::unordered_map<Mx, unsigned> counts;
+static tsl::robin_map<Mx, unsigned> countMxs(const BxtoMxs& bxtomxs, bool silent) {
+	tsl::robin_map<Mx, unsigned> counts;
 	for (const auto& item : bxtomxs)
 	{
 		const auto& mxs = item.second;
@@ -122,30 +117,28 @@ static std::unordered_map<Mx, unsigned> countMxs(const BxtoMxs& bxtomxs, bool si
 }
 
 static void removeSingletonMxs(BxtoMxs& bxtomxs, bool silent) {
-	std::unordered_map<Mx, unsigned> counts = countMxs(bxtomxs, silent); 
-	Mxs singletons;
-	for (const auto& item : counts) {
-		if (item.second < 2) {
-			singletons.insert(item.first);
-		}
-	}
+	tsl::robin_map<Mx, unsigned> counts = countMxs(bxtomxs, silent); 
 	Mxs uniqueMxs;
+	uint64_t singletons = 0;
+	tsl::robin_map<Mx, bool> counted;
 	for (const auto& item : bxtomxs) {
-		const auto& mxs = item.second;
 		Mxs not_singletons;
-		for (const auto& mx : mxs) {
-			uniqueMxs.insert(mx);
-			if (singletons.find(mx) == singletons.end()) {
+		not_singletons.reserve(item.second.size());
+		for (const auto& mx : item.second) {
+			if (counts[mx] >= 2) {
 				not_singletons.insert(mx);
+			} else {
+				++singletons;
 			}
 		}
+		uniqueMxs.insert(item.second.begin(), item.second.end()); //need to do before removing!
 		bxtomxs[item.first] = std::move(not_singletons);
 	}
 	auto t = std::chrono::steady_clock::now();
 	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0);
 	if (!silent) {
 		std::cerr << "Time at removeSingletonMxs (ms): " << diff.count() << '\n';
-		std::cerr << "Removed " << singletons.size() << " minimizers that occur once of " << uniqueMxs.size() << " (" << std::setprecision(1) << std::fixed << 100.0 * singletons.size() / uniqueMxs.size() << "%)\n";
+		std::cerr << "Removed " << singletons << " minimizers that occur once of " << uniqueMxs.size() << " (" << std::setprecision(1) << std::fixed << 100.0 * singletons / uniqueMxs.size() << "%)\n";
 	}
 }
 
