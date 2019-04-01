@@ -17,10 +17,10 @@ bin=$(physlr_path)/bin
 python=env PYTHONPATH=$(physlr_path) pypy3
 
 # Reference genome.
-ref=fly
+ref=Error_missing_parameter_ref
 
 # Linked reads.
-lr=f1
+lr=Error_missing_parameter_lr
 
 # Name of the dataset.
 ifneq ($(filter z11%, $(ref)),)
