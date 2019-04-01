@@ -115,6 +115,13 @@ f1: \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.fly.minidot.pdf \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv
 
+# Aggregate QUAST metrics.
+f1.quast.tsv: \
+		f1.supernova.scaftigs.quast.tsv \
+		f1.supernova.quast.tsv \
+		f1.indexlr.n100-1000.c2-x.physlr.overlap.n47.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
+
 # Download the fly genome from NCBI.
 fly/fly.all.fa:
 	mkdir -p $(@D)
@@ -181,6 +188,14 @@ fish: \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.minidot.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.sort.best.ann.gv.squish.pdf
+
+# Aggregate QUAST metrics.
+fish.quast.tsv: \
+		fish.supernova.scaftigs.quast.tsv \
+		fish.supernova.quast.tsv \
+		fish.indexlr.n100-2000.c2-x.physlr.overlap.n50.k3.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		fish.indexlr.n100-2000.c2-x.physlr.overlap.n50.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
+	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 # Assemble a physical map of fish chromosome 25.
 # ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=50
@@ -267,6 +282,14 @@ grch38/grch38.fa: grch38/grch38.all.fa
 # Symlink the reads.
 hg004.fq.gz: hg004.lrbasic.trimadap.fq.gz
 	ln -s $< $@
+
+# Aggregate QUAST metrics.
+hg004.quast.tsv: \
+		hg004.supernova.scaftigs.quast.tsv \
+		hg004.supernova.quast.tsv \
+		hg004.indexlr.n100-5000.c2-x.physlr.overlap.n90.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		hg004.indexlr.n100-5000.c2-x.physlr.overlap.n90.k3.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.quast.tsv
+	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 ################################################################################
 # Western redcedar (Thuja plicata)
