@@ -277,9 +277,11 @@ class Physlr:
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
             with open(filename) as fin:
-                progressbar = progress_bar_for_file(fin)
+                if Physlr.args.verbose >= 2:
+                    progressbar = progress_bar_for_file(fin)
                 for line in fin:
-                    progressbar.update(len(line))
+                    if Physlr.args.verbose >= 2:
+                        progressbar.update(len(line))
                     fields = line.split(None, 1)
                     if len(fields) < 2:
                         continue
@@ -287,7 +289,8 @@ class Physlr:
                     if bx not in bxtomxs:
                         bxtomxs[bx] = set()
                     bxtomxs[bx].update(int(mx) for mx in fields[1].split())
-                progressbar.close()
+                if Physlr.args.verbose >= 2:
+                    progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return bxtomxs
 
