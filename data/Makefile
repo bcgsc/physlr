@@ -635,6 +635,10 @@ minsize=2000
 %.overlap.n$n.k3.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.k3.mol.backbone.path %.tsv $(draft).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
+# Map the draft assembly to the Louvain backbone graph and output BED.
+%.overlap.n$n.louvain.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(draft).indexlr.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
+
 # Map the reference assembly to the backbone graph and output BED.
 %.overlap.n$n.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
@@ -643,8 +647,20 @@ minsize=2000
 %.overlap.n$n.k3.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.k3.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
 
+# Map the reference assembly to the Louvain backbone graph and output BED.
+%.overlap.n$n.louvain.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -n10 $^ >$@
+
 # Map the draft assembly to the backbone graph using physlr map-mkt and output BED.
 %.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(draft).indexlr.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-mkt -n10 $^ >$@
+
+# Map the draft assembly to the k3-cliques backbone graph using physlr map-mkt and output BED.
+%.overlap.n$n.k3.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.k3.mol.backbone.path %.tsv $(draft).indexlr.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-mkt -n10 $^ >$@
+
+# Map the draft assembly to the Louvain backbone graph using physlr map-mkt and output BED.
+%.overlap.n$n.louvain.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(draft).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-mkt -n10 $^ >$@
 
 # Map the reference to the backbone graph and output PAF.
@@ -653,6 +669,10 @@ minsize=2000
 
 # Map the reference to the backbone graph and output PAF (K3-cliques).
 %.overlap.n$n.k3.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-paf -n10 $^ | $(gzip) >$@
+
+# Map the reference to the backbone graph and output PAF (K3-cliques).
+%.overlap.n$n.louvain.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -n10 $^ | $(gzip) >$@
 
 # Annotate a graph with a BED file of mappings.
@@ -700,6 +720,10 @@ mol_strategy=1
 # Separate barcodes into molecules using K3-clique community detection.
 %.k3.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=2 $< >$@
+
+# Separate barcodes into molecules using Louvain community detection.
+%.louvain.mol.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=3 $< >$@
 
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv
