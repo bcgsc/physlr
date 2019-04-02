@@ -43,7 +43,7 @@ min_component_size=50
 # 1: periodic messages
 # 2: progress bar
 # 3: verbose messages
-V=2
+V=1
 
 SHELL=bash -e -o pipefail
 ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
