@@ -99,11 +99,14 @@ class Physlr:
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
             with open(filename) as fin:
-                progressbar = progress_bar_for_file(fin)
+                if Physlr.args.verbose >= 2:
+                    progressbar = progress_bar_for_file(fin)
                 for line in fin:
-                    progressbar.update(len(line))
+                    if Physlr.args.verbose >= 2:
+                        progressbar.update(len(line))
                     paths.append(line.split())
-                progressbar.close()
+                if Physlr.args.verbose >= 2:
+                    progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return paths
 
@@ -139,25 +142,30 @@ class Physlr:
     def read_tsv(g, filename):
         "Read a graph in TSV format."
         with open(filename) as fin:
-            progressbar = progress_bar_for_file(fin)
+            if Physlr.args.verbose >= 2:
+                progressbar = progress_bar_for_file(fin)
             line = fin.readline()
-            progressbar.update(len(line))
+            if Physlr.args.verbose >= 2:
+                progressbar.update(len(line))
             if line not in ["U\tn\n", "U\tn\tm\n"]:
                 print("Unexpected header:", line, file=sys.stderr)
                 exit(1)
             reading_vertices = True
             for line in fin:
-                progressbar.update(len(line))
+                if Physlr.args.verbose >= 2:
+                    progressbar.update(len(line))
                 if line == "\n":
                     line = fin.readline()
-                    progressbar.update(len(line))
+                    if Physlr.args.verbose >= 2:
+                        progressbar.update(len(line))
                     if line == "U\tV\tn\n":
                         reading_vertices = False
                     else:
                         print("Unexpected header:", line, file=sys.stderr)
                         exit(1)
                     line = fin.readline()
-                    progressbar.update(len(line))
+                    if Physlr.args.verbose >= 2:
+                        progressbar.update(len(line))
                 xs = line.split()
                 if reading_vertices:
                     if len(xs) == 2:
@@ -173,7 +181,8 @@ class Physlr:
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
                         exit(1)
-        progressbar.close()
+        if Physlr.args.verbose >= 2:
+            progressbar.close()
         return g
 
     @staticmethod
