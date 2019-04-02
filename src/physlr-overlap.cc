@@ -230,7 +230,10 @@ int main(int argc, char *argv[])
 			barcodeCount[*barcode_i]++;
 			auto barcode_j = tsl::robin_set<BarcodeID>::const_iterator(barcode_i);
 			for (barcode_j++; barcode_j != itr.second.end(); barcode_j++) {
-				barcodeSimMat[static_cast<size_t>(*barcode_i) << 32u | *barcode_j]++;
+				//assign "canonical edge"
+				barcodeSimMat[*barcode_i > *barcode_j ?
+						(static_cast<size_t>(*barcode_i) << 32u | *barcode_j) :
+						(static_cast<size_t>(*barcode_j) << 32u | *barcode_i)]++;
 			}
 		}
 	}
