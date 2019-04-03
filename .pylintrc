@@ -7,4 +7,5 @@ max-public-methods=100
 [MASTER]
 ignore=mkt.py
 [TYPECHECK]
-generated-members=numpy.linalg
+ignored-modules="numpy.linalg"
+ignored-modules=numpy.linalg
