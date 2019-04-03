@@ -1280,7 +1280,7 @@ class Physlr:
                             timepoints.append(tpos)
                             measurements.append(qpos)
                         num_tpos += 1
-                if num_tpos > self.args.i or len(timepoints) > 60000:
+                if num_tpos > self.args.mkt_median_threshold or len(timepoints) > 50000:
 #                     print("Warning ", len(timepoints), " minimizers positions in ", \
 #                           num_tpos, " backbone positions seen for scaffold ", qid, \
 #                           " to backbone ", tid, file=sys.stderr)
