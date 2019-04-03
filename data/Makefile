@@ -113,13 +113,15 @@ f1: \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.fly.minidot.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv
+	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
+	f1.quast.tsv
 
 # Aggregate QUAST metrics.
 f1.quast.tsv: \
 		f1.supernova.scaftigs.quast.tsv \
 		f1.supernova.quast.tsv \
-		f1.indexlr.n100-1000.c2-x.physlr.overlap.n47.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+		f1.indexlr.n100-1000.c2-x.physlr.overlap.n47.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		f1.indexlr.n100-1000.c2-x.physlr.overlap.n47.mol.backbone.map-mkt.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 # Download the fly genome from NCBI.
