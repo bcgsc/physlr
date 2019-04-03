@@ -1271,16 +1271,28 @@ class Physlr:
                 #build array containing the measurements corresponding to entries of time
                 timepoints = []
                 measurements = []
+                num_tpos = 0
                 for (tpos, qpos_list) in tpos_to_qpos.items():
                     #do not use islands (noise?)
+                    #determine count of non-island sequences
                     if tpos + 1 in tpos_to_qpos or tpos - 1 in tpos_to_qpos:
                         for qpos in qpos_list:
                             timepoints.append(tpos)
                             measurements.append(qpos)
-                if timepoints:
-                    tid_to_mkt[tid] = physlr.mkt.test(numpy.array(timepoints), \
-                                                      numpy.array(measurements), \
-                                                      1, self.args.p, "upordown")
+                        num_tpos += 1
+                if num_tpos > self.args.i or len(timepoints) > 60000:
+#                     print("Warning ", len(timepoints), " minimizers positions in ", \
+#                           num_tpos, " backbone positions seen for scaffold ", qid, \
+#                           " to backbone ", tid, file=sys.stderr)
+                    timepoints = []
+                    measurements = []
+                    for (tpos, qpos_list) in tpos_to_qpos.items():
+                        if tpos + 1 in tpos_to_qpos or tpos - 1 in tpos_to_qpos:
+                            timepoints.append(tpos)
+                            measurements.append(statistics.median_low(qpos_list))
+                tid_to_mkt[tid] = physlr.mkt.test(numpy.array(timepoints), \
+                                                  numpy.array(measurements), \
+                                                  1, self.args.p, "upordown")
             mapped = False
             for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
@@ -1675,6 +1687,9 @@ class Physlr:
         argparser.add_argument(
             "-p", "--min_p_val", action="store", dest="p", type=float, default=0.01,
             help="Minimum significance threshold (FPR) for Mann-Kendall Test")
+        argparser.add_argument(
+            "-i", "--maxBackboneCount", action="store", dest="i", type=float, default=50,
+            help="Max number of backbones before using only medians in Mann-Kendall Test")
         argparser.add_argument(
             "-V", "--verbose", action="store", dest="verbose", type=int, default="2",
             help="the level of verbosity: 0:silent, 1:periodic, 2:progress, 3:verbose [2]")
