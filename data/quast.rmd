@@ -19,6 +19,7 @@ params:
 library(dplyr)
 library(ggplot2)
 library(ggrepel)
+library(glue)
 library(knitr)
 library(readr)
 library(scales)
@@ -45,13 +46,17 @@ metrics <- quast_orig %>%
 		Scaffold_NGA50 = NGA50) %>%
 	mutate(
 		Assembly = Assembly %>%
+			str_replace_all("_", "-") %>%
 			str_replace("abyss", "ABySS-LR") %>%
 			str_replace("supernova", "Supernova") %>%
 			str_replace("physlr", "Physlr") %>%
+			str_replace("physlr", "Physlr") %>%
 			str_replace(".scaftigs", " scaftigs"),
 		Assembler = str_extract(Assembly, "(ABySS-LR|Supernova)( scaftigs)?"),
-		Scaffolder = str_extract(Assembly, "Physlr"),
-		Tools = ifelse(!is.na(Scaffolder), Scaffolder, Assembler))
+		Physlr = str_extract(Assembly, "Physlr"),
+		Physlr_map = str_extract(Assembly, "mkt"),
+		Scaffolder = glue("{Physlr} {Physlr_map}", .na = "") %>% str_replace("  *$", ""),
+		Tools = ifelse(Scaffolder != "", Scaffolder, Assembler))
 ```
 
 # Plot NGA50 and Misassemblies
