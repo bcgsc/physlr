@@ -7,11 +7,11 @@ output:
 params:
   input_tsv:
     label: "Input TSV file of QUAST metrics"
-    value: "f1.quast.tsv"
+    value: "assembly.quast.tsv"
     input: text
   output_tsv:
     label: "Output table of QUAST metrics"
-    value: "f1.quast.table.tsv"
+    value: "assembly.quast.table.tsv"
     input: text
 ---
 
@@ -45,6 +45,8 @@ metrics <- quast_orig %>%
 		Scaffold_NG50 = NG50,
 		Scaffold_NGA50 = NGA50) %>%
 	mutate(
+		Mismatches = `# mismatches per 100 kbp` / 100e3,
+		Genome_fraction = `Genome fraction (%)` / 100,
 		Assembly = Assembly %>%
 			str_replace_all("_", "-") %>%
 			str_replace("abyss", "ABySS-LR") %>%
@@ -68,8 +70,8 @@ ggplot(metrics) +
 	scale_x_continuous(name = "QUAST Misassemblies", labels = comma) +
 	scale_y_continuous(name = "Scaffold NGA50", labels = unit_format(unit = "kbp", scale = 1e-3)) +
 	scale_colour_brewer(palette = "Dark2", guide = FALSE) +
-	expand_limits(x = c(0, 500)) +
-	expand_limits(y = c(0, 1e6)) +
+	expand_limits(x = c(0, NA)) +
+	expand_limits(y = c(0, NA)) +
 	theme_minimal(base_size = 14) +
 	theme(legend.position = "bottom", legend.title = element_blank())
 ```
@@ -83,8 +85,23 @@ ggplot(metrics) +
 	scale_x_continuous(name = "QUAST Misassemblies", labels = comma) +
 	scale_y_continuous(name = "Scaffold NG50", labels = unit_format(unit = "Mbp", scale = 1e-6)) +
 	scale_colour_brewer(palette = "Dark2", guide = FALSE) +
-	expand_limits(x = c(0, 500)) +
-	expand_limits(y = c(0, 25e6)) +
+	expand_limits(x = c(0, NA)) +
+	expand_limits(y = c(0, NA)) +
+	theme_minimal(base_size = 14) +
+	theme(legend.position = "bottom", legend.title = element_blank())
+```
+
+# Plot genome fraction and mismatches
+```{r genome-fraction}
+ggplot(metrics) +
+	aes(x = Mismatches, y = Genome_fraction, label = Tools, shape = Assembler, colour = Assembler) +
+	geom_point(colour = "black") +
+	geom_text_repel(segment.alpha = 0.5) +
+	scale_x_continuous(labels = percent_format()) +
+	scale_y_continuous(name = "Genome fraction", labels = percent_format()) +
+	scale_colour_brewer(palette = "Dark2", guide = FALSE) +
+	expand_limits(x = c(0, NA)) +
+	expand_limits(y = c(0, NA)) +
 	theme_minimal(base_size = 14) +
 	theme(legend.position = "bottom", legend.title = element_blank())
 ```
@@ -97,7 +114,9 @@ metrics_table <- metrics %>%
 		Scaffolder,
 		`NG50 (Mbp)` = round(Scaffold_NG50 / 1e6, 2),
 		`NGA50 (Mbp)` = round(Scaffold_NGA50 / 1e6, 2),
-		Misassemblies = comma(Misassemblies))
+		Misassemblies = comma(Misassemblies),
+		`Genome fraction` = percent(Genome_fraction),
+		Mismatches = percent(Mismatches))
 
 metrics_table
 write_tsv(metrics_table, output_tsv)
