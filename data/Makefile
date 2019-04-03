@@ -189,13 +189,13 @@ fish: \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.minidot.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.sort.best.ann.gv.squish.pdf
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.sort.best.ann.gv.squish.pdf \
+	fish.quast.tsv
 
 # Aggregate QUAST metrics.
 fish.quast.tsv: \
 		fish.supernova.scaftigs.quast.tsv \
 		fish.supernova.quast.tsv \
-		fish.indexlr.n100-2000.c2-x.physlr.overlap.n50.k3.mol.backbone.map.fish.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
 		fish.indexlr.n100-2000.c2-x.physlr.overlap.n50.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
