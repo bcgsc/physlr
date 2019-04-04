@@ -1688,7 +1688,7 @@ class Physlr:
             "-p", "--min_p_val", action="store", dest="p", type=float, default=0.01,
             help="Minimum significance threshold (FPR) for Mann-Kendall Test")
         argparser.add_argument(
-            "--mkt-median-threshold", action="store", dest="mkt_median_threshold", 
+            "--mkt-median-threshold", action="store", dest="mkt_median_threshold",
             type=int, default=50,
             help="Max number of backbones before using only medians in Mann-Kendall Test")
         argparser.add_argument(
