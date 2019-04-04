@@ -1219,8 +1219,7 @@ class Physlr:
             return Physlr.determine_molecules_louvain(g, u)
         if strategy == 4:
             return Physlr.determine_molecules_cosine_of_squared(g, u)
-        if strategy == 5:  # {Split, Cluster, Mix}
-
+        # if strategy == 5:  # {Split, Cluster, Mix}
 
         # strategy == 1 or none of the previous strategies
         return Physlr.determine_molecules_biconnected_components(g, u)
