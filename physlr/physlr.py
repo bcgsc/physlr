@@ -16,7 +16,6 @@ from collections import Counter
 
 
 import networkx as nx
-from networkx.algorithms import community as nxcommunity
 import tqdm
 
 from physlr.minimerize import minimerize
@@ -1031,6 +1030,8 @@ class Physlr:
     @staticmethod
     def determine_molecules_k_clique_communities(g, u):
         "Apply k-clique community detection algorithm after extracting bi-connected components."
+        from networkx.algorithms import community as nxcommunity
+
         cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
         components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
         components.sort(key=len, reverse=True)
@@ -1111,6 +1112,105 @@ class Physlr:
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
+    def split_subgraph_into_chunks_randomly(node_set):
+        "Split the subgraph into chunks for faster processing. Return chunks."
+        chunks_count = 1
+        if len(node_set) > 200:
+            chunks_count = 1 + int(len(node_set)/200)
+        ys = list(node_set)
+        random.shuffle(ys)
+        size, leftover = divmod(len(node_set), chunks_count)
+        chunks = [ys[0 + size * i: size * (i + 1)] for i in list(range(chunks_count))]
+        edge = size * chunks_count
+        for i in list(range(leftover)):
+            chunks[i % chunks_count].append(ys[edge + i])
+        chunk_sets = [set() for _ in range(len(chunks))]
+        for i, c in zip(range(len(chunks)), chunks):
+            chunk_sets[i].update(set(c))
+        return chunk_sets
+
+    @staticmethod
+    def community_detection_biconnected_components(g, node_set):
+        """Separate bi-connected components. Return components."""
+        cut_vertices = set(nx.articulation_points(g.subgraph(node_set)))
+        components = list(nx.connected_components(g.subgraph(node_set - cut_vertices)))
+        components.sort(key=len, reverse=True)
+        return components
+
+    @staticmethod
+    def community_detection_k_clique(g, node_set, k=3):
+        """Apply k-clique community detection. Return communities."""
+        from networkx.algorithms import community as nxcommunity
+
+        if len(node_set) > 1:
+            return list(nxcommunity.k_clique_communities(g.subgraph(node_set), k))
+        return []
+
+    @staticmethod
+    def community_detection_louvain(g, node_set, init_communities=False):
+        """Apply Louvain community detection on a single component. Return communities."""
+        import community as louvain
+
+        communities = []
+        if len(node_set) > 1:
+            if not init_communities:
+                partition = louvain.best_partition(g.subgraph(node_set))
+            else:
+                partition = louvain.best_partition(g.subgraph(node_set), init_communities)
+            for com in set(partition.values()):
+                community_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
+                if len(community_nodes) > 1:
+                    communities.append(community_nodes)
+        return communities
+
+    @staticmethod
+    def community_detection_cosine_of_squared(g, node_set):
+        """Square the adjacency matrix and then use cosine similarity to detect communities. Return communities."""
+        import scipy as sp
+        import numpy as np
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        communities = []
+        if len(node_set) > 1:
+            adj_array = nx.adjacency_matrix(g.subgraph(node_set)).toarray()
+            new_adj = np.multiply(
+                cosine_similarity(
+                    sp.linalg.blas.sgemm(1.0, adj_array, adj_array)) >= 0.75, adj_array)
+            edges_to_remove = np.argwhere(new_adj != adj_array)
+            barcode_dict = dict(zip(range(len(node_set)), list(node_set)))
+            edges_to_remove_barcode = [(barcode_dict[i], barcode_dict[j])
+                                       for i, j in edges_to_remove]
+            sub_graph_copy = nx.Graph(g.subgraph(node_set))
+            sub_graph_copy.remove_edges_from(edges_to_remove_barcode)
+            cos_components = list(nx.connected_components(sub_graph_copy))
+            cos_components.sort(key=len, reverse=True)
+            for com in cos_components:
+                if len(com) > 1:
+                    communities.append(com)
+        return communities
+
+    @staticmethod
+    def merge_communities(g, communities, node_set=0, strategy=1):
+        """Split the subgraph into chunks for faster processing. Return chunks."""
+        if strategy == 1:  # Merge ad-hoc
+            merge_list = []
+            remove_list = []
+            for i, com1 in enumerate(communities):
+                for j, com2 in enumerate(communities):
+                    if i < j:
+                        if nx.number_of_edges(
+                                g.subgraph(com1.union(com2))) - nx.number_of_edges(g.subgraph(com1)) - \
+                                nx.number_of_edges(g.subgraph(com2)) > 10:
+                            merge_list.append(com1.union(com2))
+                            remove_list.append(com1)
+                            remove_list.append(com2)
+                        else:
+                            merge_list.append(com1)
+            return [com for com in merge_list if com not in remove_list]
+        else:  # Merge by Initializing Louvain with the communities
+            return Physlr.community_detection_louvain(g, node_set, communities)
+
+    @staticmethod
     def determine_molecules(g, u, strategy):
         "Assign the neighbours of this vertex to molecules."
         if strategy == 2:
@@ -1119,6 +1219,8 @@ class Physlr:
             return Physlr.determine_molecules_louvain(g, u)
         if strategy == 4:
             return Physlr.determine_molecules_cosine_of_squared(g, u)
+        if strategy == 5:  # {Split, Cluster, Mix}
+
 
         # strategy == 1 or none of the previous strategies
         return Physlr.determine_molecules_biconnected_components(g, u)
@@ -1256,6 +1358,7 @@ class Physlr:
     def determine_orientation(x, y, z):
         "Determine the orientation of an alignment."
         if x is not None and z is not None:
+            return "." if x == y == z else "+" if x <= y <= z else "-" if x >= y >= z else "."
             return "." if x == y == z else "+" if x <= y <= z else "-" if x >= y >= z else "."
         if x is not None:
             return "+" if x < y else "-" if x > y else "."
