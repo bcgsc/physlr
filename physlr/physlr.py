@@ -1025,13 +1025,13 @@ class Physlr:
         chunks_count = 1
         if len(node_set) > max_size:
             chunks_count = 1 + int(len(node_set)/200)
-        ys = list(node_set)
-        random.shuffle(ys)
+        node_list = list(node_set)
+        random.shuffle(node_list)
         size, leftover = divmod(len(node_set), chunks_count)
-        chunks = [ys[0 + size * i: size * (i + 1)] for i in list(range(chunks_count))]
+        chunks = [node_list[0 + size * i: size * (i + 1)] for i in list(range(chunks_count))]
         edge = size * chunks_count
         for i in list(range(leftover)):
-            chunks[i % chunks_count].append(ys[edge + i])
+            chunks[i % chunks_count].append(node_list[edge + i])
         chunk_sets = [set() for _ in range(len(chunks))]
         for i, c in zip(range(len(chunks)), chunks):
             chunk_sets[i].update(set(c))
@@ -1070,11 +1070,14 @@ class Physlr:
         #         if len(community_nodes) > 1:
         #             communities.append(community_nodes)
         # return communities
-        return [{nodes for nodes in partition.keys() if partition[nodes] == com} for com in set(partition.values())]
+            return [{nodes for nodes in partition.keys() if partition[nodes] == com}
+                    for com in set(partition.values())]
+        return []
 
     @staticmethod
     def community_detection_cosine_of_squared(g, node_set):
-        """Square the adjacency matrix and then use cosine similarity to detect communities. Return communities."""
+        """Square the adjacency matrix and then use cosine similarity to detect communities.
+        Return communities."""
         import scipy as sp
         import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity
@@ -1105,10 +1108,11 @@ class Physlr:
             merge_list = []
             remove_list = []
             for i, com1 in enumerate(communities):
-                for j, com2 in enumerate(communities):
-                    if i < j:
+                for k, com2 in enumerate(communities):
+                    if i < k:
                         if nx.number_of_edges(
-                                g.subgraph(com1.union(com2))) - nx.number_of_edges(g.subgraph(com1)) - \
+                                g.subgraph(com1.union(com2))) -\
+                                nx.number_of_edges(g.subgraph(com1)) - \
                                 nx.number_of_edges(g.subgraph(com2)) > 10:
                             merge_list.append(com1.union(com2))
                             remove_list.append(com1)
@@ -1116,41 +1120,53 @@ class Physlr:
                         else:
                             merge_list.append(com1)
             return [com for com in merge_list if com not in remove_list]
-        else:  # Merge by Initializing Louvain with the communities
-            return Physlr.community_detection_louvain(g, node_set, communities)
+        # Merge by Initializing Louvain with the communities
+        return Physlr.community_detection_louvain(g, node_set, communities)
 
     @staticmethod
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
         communities = []
         if strategy not in {2, 3, 4, 5}:  # default strategy in case of wrong parameter.
-            communities = Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+            communities =\
+                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+
         if strategy == 2:
-            # return Physlr.determine_molecules_k_clique_communities(g, u)
-            bi_connected_components = Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+            bi_connected_components = \
+                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
             for bi_connected_component in bi_connected_components:
-                communities.append(Physlr.determine_molecules_k_clique_communities(g, bi_connected_component))
+                for community in Physlr.community_detection_k_clique(g, bi_connected_component):
+                    communities.append(community)
+
         if strategy == 3:
-            # return Physlr.determine_molecules_louvain(g, u)
-            bi_connected_components = Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+            bi_connected_components = \
+                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
             for bi_connected_component in bi_connected_components:
-                communities.append(Physlr.determine_molecules_louvain(g, bi_connected_component))
+                for community in Physlr.community_detection_louvain(g, bi_connected_component):
+                    communities.append(community)
+
         if strategy == 4:
-            # return Physlr.determine_molecules_cosine_of_squared(g, u)
-            bi_connected_components = Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+            bi_connected_components = \
+                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
             for bi_connected_component in bi_connected_components:
-                communities.append(Physlr.determine_molecules_cosine_of_squared(g, bi_connected_component))
+                for community in Physlr.community_detection_cosine_of_squared(g, bi_connected_component):
+                    communities.append(community)
+
         if strategy == 5:  # {Split, Cluster, Mix}
-            bi_connected_components = Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+            bi_connected_components = \
+                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
             communities = []
             for bi_connected_component in bi_connected_components:
-                chunks = Physlr.split_subgraph_into_chunks_randomly(bi_connected_component, max_size=200)
+                chunks = \
+                    Physlr.split_subgraph_into_chunks_randomly(bi_connected_component, max_size=100)
                 sub_communities = []
                 for chunk in chunks:
                     chunk_communities = Physlr.community_detection_k_clique(g, chunk, 3)
                     for chunk_community in chunk_communities:
                         sub_communities.append(chunk_community)
-                communities.append(Physlr.merge_communities(g, sub_communities, bi_connected_component, strategy=1))
+                for community in Physlr.merge_communities(
+                    g, sub_communities, bi_connected_component, strategy=1):
+                    communities.append(community)
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
 
@@ -1170,11 +1186,14 @@ class Physlr:
             1: "\n\tStrategy: "
                "Bi-connected components separation",
             2: "\n\tStrategy: "
-               "K-clique community detection (after separating bi-connected components)",
+               "K-clique community detection "
+               "(after separating bi-connected components)",
             3: "\n\tStrategy: "
-               "Louvain community detection (after separating bi-connected components)",
+               "Louvain community detection "
+               "(after separating bi-connected components)",
             4: "\n\tStrategy: "
-               "Clustering by cosine similarity of squared adj matrix (after separating bi-connected components)",
+               "Clustering by cosine similarity of squared adj matrix"
+               "(after separating bi-connected components)",
             5: "\n\tStrategy: "
                "Split, Cluster, Mix. (after separating bi-connected components)"
         }
