@@ -1232,8 +1232,8 @@ class Physlr:
                         sub_communities.append(chunk_community)
                 communities.append(Physlr.merge_communities(g, sub_communities, biconnected_component, strategy=1))
             return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
-        # strategy == 1 or none of the previous strategies
 
+        # strategy == 1 or none of the previous strategies
         return Physlr.determine_molecules_biconnected_components(g, u)
 
     @staticmethod
