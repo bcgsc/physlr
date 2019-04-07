@@ -1112,10 +1112,10 @@ class Physlr:
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
-    def split_subgraph_into_chunks_randomly(node_set):
+    def split_subgraph_into_chunks_randomly(node_set, max_size=200):
         "Split the subgraph into chunks for faster processing. Return chunks."
         chunks_count = 1
-        if len(node_set) > 200:
+        if len(node_set) > max_size:
             chunks_count = 1 + int(len(node_set)/200)
         ys = list(node_set)
         random.shuffle(ys)
@@ -1143,7 +1143,7 @@ class Physlr:
         from networkx.algorithms import community as nxcommunity
 
         if len(node_set) > 1:
-            return list(nxcommunity.k_clique_communities(g.subgraph(node_set), k))
+            return [set(i) for i in nxcommunity.k_clique_communities(g.subgraph(node_set), k)]
         return []
 
     @staticmethod
@@ -1151,17 +1151,18 @@ class Physlr:
         """Apply Louvain community detection on a single component. Return communities."""
         import community as louvain
 
-        communities = []
         if len(node_set) > 1:
             if not init_communities:
                 partition = louvain.best_partition(g.subgraph(node_set))
             else:
                 partition = louvain.best_partition(g.subgraph(node_set), init_communities)
-            for com in set(partition.values()):
-                community_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
-                if len(community_nodes) > 1:
-                    communities.append(community_nodes)
-        return communities
+        #     communities = []
+        #     for com in set(partition.values()):
+        #         community_nodes = {nodes for nodes in partition.keys() if partition[nodes] == com}
+        #         if len(community_nodes) > 1:
+        #             communities.append(community_nodes)
+        # return communities
+        return [{nodes for nodes in partition.keys() if partition[nodes] == com} for com in set(partition.values())]
 
     @staticmethod
     def community_detection_cosine_of_squared(g, node_set):
@@ -1185,13 +1186,13 @@ class Physlr:
             cos_components = list(nx.connected_components(sub_graph_copy))
             cos_components.sort(key=len, reverse=True)
             for com in cos_components:
-                if len(com) > 1:
-                    communities.append(com)
+                # if len(com) > 1:
+                communities.append(com)
         return communities
 
     @staticmethod
     def merge_communities(g, communities, node_set=0, strategy=1):
-        """Split the subgraph into chunks for faster processing. Return chunks."""
+        """Merge communities if appropriate."""
         if strategy == 1:  # Merge ad-hoc
             merge_list = []
             remove_list = []
@@ -1212,16 +1213,27 @@ class Physlr:
 
     @staticmethod
     def determine_molecules(g, u, strategy):
-        "Assign the neighbours of this vertex to molecules."
+        """Assign the neighbours of this vertex to molecules."""
         if strategy == 2:
             return Physlr.determine_molecules_k_clique_communities(g, u)
         if strategy == 3:
             return Physlr.determine_molecules_louvain(g, u)
         if strategy == 4:
             return Physlr.determine_molecules_cosine_of_squared(g, u)
-        # if strategy == 5:  # {Split, Cluster, Mix}
-
+        if strategy == 5:  # {Split, Cluster, Mix}
+            biconnected_components = Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+            communities = []
+            for biconnected_component in biconnected_components:
+                chunks = Physlr.split_subgraph_into_chunks_randomly(biconnected_component, max_size=200)
+                sub_communities = []
+                for chunk in chunks:
+                    chunk_communities = Physlr.community_detection_k_clique(g, chunk, 3)
+                    for chunk_community in chunk_communities:
+                        sub_communities.append(chunk_community)
+                communities.append(Physlr.merge_communities(g, sub_communities, biconnected_component, strategy=1))
+            return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
         # strategy == 1 or none of the previous strategies
+
         return Physlr.determine_molecules_biconnected_components(g, u)
 
     @staticmethod
@@ -1233,7 +1245,7 @@ class Physlr:
         return Physlr.determine_molecules(Physlr.graph, u, Physlr.args.strategy)
 
     def physlr_molecules(self):
-        "Separate barcodes into molecules."
+        """Separate barcodes into molecules."""
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
         strategy_switcher = {
