@@ -1134,21 +1134,21 @@ class Physlr:
             communities =\
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
 
-        if strategy == 2:
+        if strategy == 2:  # bi-connected + k-clique
             bi_connected_components = \
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
             for bi_connected_component in bi_connected_components:
                 for community in Physlr.community_detection_k_clique(g, bi_connected_component):
                     communities.append(community)
 
-        if strategy == 3:
+        if strategy == 3:  # bi-connected + Louvain
             bi_connected_components = \
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
             for bi_connected_component in bi_connected_components:
                 for community in Physlr.community_detection_louvain(g, bi_connected_component):
                     communities.append(community)
 
-        if strategy == 4:
+        if strategy == 4:  # bi-connected + sqCos
             bi_connected_components = \
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
             for bi_connected_component in bi_connected_components:
