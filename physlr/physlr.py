@@ -1104,6 +1104,8 @@ class Physlr:
     @staticmethod
     def merge_communities(g, communities, node_set=0, strategy=1):
         """Merge communities if appropriate."""
+        if len(communities) == 1:
+            return communities
         if strategy == 1:  # Merge ad-hoc
             merge_list = []
             remove_list = []
@@ -1119,6 +1121,7 @@ class Physlr:
                             remove_list.append(com2)
                         else:
                             merge_list.append(com1)
+                            merge_list.append(com2)
             return [com for com in merge_list if com not in remove_list]
         # Merge by Initializing Louvain with the communities
         return Physlr.community_detection_louvain(g, node_set, communities)
@@ -1155,10 +1158,9 @@ class Physlr:
         if strategy == 5:  # {Split, Cluster, Mix}
             bi_connected_components = \
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-            communities = []
             for bi_connected_component in bi_connected_components:
                 chunks = \
-                    Physlr.split_subgraph_into_chunks_randomly(bi_connected_component, max_size=100)
+                    Physlr.split_subgraph_into_chunks_randomly(bi_connected_component, max_size=200)
                 sub_communities = []
                 for chunk in chunks:
                     chunk_communities = Physlr.community_detection_k_clique(g, chunk, 3)
