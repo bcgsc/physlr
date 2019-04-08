@@ -1442,7 +1442,7 @@ class Physlr:
         """
 
         if len(self.args.FILES) < 2:
-            exit("physlr bed-to-gv: error: at least two file arguments are required")
+            exit("physlr annotate-graph: error: at least two file arguments are required")
         graph_filenames = [self.args.FILES[0]]
         bed_filenames = self.args.FILES[1:]
 
