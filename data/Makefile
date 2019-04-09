@@ -303,7 +303,7 @@ hg004.quast.tsv: \
 # and https://github.com/sjackman/thesis/blob/master/redcedar.md
 
 # Assemble a physical map of western redcedar.
-# lr=redcedar draft=redcedar.abyss n=50 min_component_size=200
+# lr=redcedar draft=redcedar.abyss n=10 min_component_size=200
 redcedar: \
 	redcedar.indexlr.n100-5000.physlr.mxperbx.tsv.pdf \
 	redcedar.indexlr.n100-5000.physlr.depth.tsv.pdf \
