@@ -59,7 +59,7 @@ class Physlr:
 
     @staticmethod
     def read_bed(filenames):
-        "Read BED files. Also able to read PAF files."
+        "Read BED files. Also able to read PAF files (columns 1, 5, 6, 8, 9, 10)."
         bed = []
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
@@ -1462,20 +1462,18 @@ class Physlr:
     def physlr_annotate_graph(self):
         """
         Annotate a graph with a BED or PAF file of mappings.
-        Usage: physlr annotate-graph GRAPH BED_OR_PAF... >ANNOTATED-GRAPHVIZ
+        Usage: physlr annotate-graph GRAPH PATH BED_OR_PAF... >ANNOTATED-GRAPHVIZ
         """
 
         if len(self.args.FILES) < 2:
             exit("physlr annotate-graph: error: at least two file arguments are required")
         graph_filenames = [self.args.FILES[0]]
-        bed_filenames = self.args.FILES[1:]
+        path_filenames = [self.args.FILES[1]]
+        bed_filenames = self.args.FILES[2:]
 
         g = self.read_graph(graph_filenames)
-        if self.args.input_path:
-            backbones = Physlr.read_paths([self.args.input_path])
-        else:
-            backbones = Physlr.determine_backbones(g)
         Physlr.remove_small_components(g, self.args.min_component_size)
+        backbones = Physlr.read_paths(path_filenames)
 
         # Associate vertices with mapped query names.
         utomapping = {}
@@ -1757,9 +1755,6 @@ class Physlr:
             "--mkt-median-threshold", action="store", dest="mkt_median_threshold",
             type=int, default=50,
             help="Max number of backbones before using only medians in Mann-Kendall Test")
-        argparser.add_argument(
-            "--input-path", action="store", dest="input_path", type=str, default=None,
-            help="Specify an input path file for annotate-graph")
         argparser.add_argument(
             "-V", "--verbose", action="store", dest="verbose", type=int, default="2",
             help="the level of verbosity: 0:silent, 1:periodic, 2:progress, 3:verbose [2]")
