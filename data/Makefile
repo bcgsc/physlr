@@ -86,34 +86,37 @@ all: f1chr4 f1chr2R f1 fishchr25 fish
 f1chr4: \
 	f1chr4.indexlr.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1chr4.indexlr.n100-1000.physlr.depth.tsv.pdf \
-	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
 	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
 	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
 	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf
+	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
+	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Assemble a physical map of fly chromosome 2R.
 # ref=fly lr=f1chr2R draft=f1.supernova.scaftigs n=50
 f1chr2R: \
 	f1chr2R.indexlr.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1chr2R.indexlr.n100-1000.physlr.depth.tsv.pdf \
-	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
 	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
 	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
 	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf
+	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
+	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Assemble a physical map of the fly genome.
 # ref=fly lr=f1 draft=f1.supernova.scaftigs n=47
 f1: \
 	f1.indexlr.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1.indexlr.n100-1000.physlr.depth.tsv.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.fly.molecule.bed.pdf \
+	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.fly.minidot.pdf \
+	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
+	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf \
 	f1.quast.tsv
 
 # Aggregate QUAST metrics.
@@ -189,7 +192,7 @@ fish: \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.minidot.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.sort.best.ann.gv.squish.pdf \
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.ann.gv.squish.pdf \
 	fish.quast.tsv
 
 # Aggregate QUAST metrics.
@@ -207,7 +210,8 @@ fishchr25: \
 	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.paf.gz.pdf \
 	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.pdf \
 	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.z11chr25.minidot.pdf \
-	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.quast.tsv
+	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.quast.tsv \
+	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.ann.gv.squish.pdf
 
 # Download the zebrafish genome from NCBI.
 fish/z11.ncbi.fa:
@@ -593,8 +597,8 @@ minsize=2000
 	$(python) $(bin)/physlr degree $< >$@
 
 # Determine the maximum spanning tree.
-%.physlr.overlap.mst.tsv: %.physlr.overlap.tsv
-	$(python) $(bin)/physlr mst $< >$@
+%.mol.mst.tsv: %.mol.tsv
+	$(python) $(bin)/physlr mst -V$V $< >$@
 
 # Separate a graph into its biconnected components by removing its cut vertices.
 %.bic.tsv: %.tsv
@@ -677,10 +681,20 @@ minsize=2000
 %.overlap.n$n.louvain.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
-# Annotate a graph with a BED file of mappings.
+# Annotate a backbone graph with a BED file of mappings.
 # Filter out small components.
-%.map.$(ref).n10.sort.best.ann.gv: %.tsv %.map.$(ref).n10.sort.best.bed
+%.map.$(ref).n10.sort.best.ann.gv: %.tsv %.path %.map.$(ref).n10.sort.best.bed
 	$(python) $(bin)/physlr annotate-graph --min-component-size=$(min_component_size) -Ogv $^ >$@
+
+# Annotate a backbone graph with a PAF file of mappings.
+# Filter out small components.
+%.backbone.map.$(ref).n10.ann.gv: %.backbone.map.$(ref).n10.paf.gz %.backbone.tsv %.backbone.path
+	gunzip -c $< | $(python) $(bin)/physlr annotate-graph -V$V --min-component-size=$(min_component_size) -Ogv $*.backbone.tsv $*.backbone.path - >$@
+
+# Annotate a MST graph with a PAF file of mappings.
+# Filter out small components.
+%.mst.map.$(ref).n10.ann.gv: %.backbone.map.$(ref).n10.paf.gz %.mst.tsv %.backbone.path
+	gunzip -c $< | $(python) $(bin)/physlr annotate-graph -V$V --min-component-size=$(min_component_size) -Ogv $*.mst.tsv $*.backbone.path - >$@
 
 # Filter a BED file by score.
 %.n100.bed: %.n10.bed
