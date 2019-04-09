@@ -59,22 +59,34 @@ class Physlr:
 
     @staticmethod
     def read_bed(filenames):
-        "Read BED files."
+        "Read BED files. Also able to read PAF files."
         bed = []
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
             with open(filename) as fin:
-                progressbar = progress_bar_for_file(fin)
+                if Physlr.args.verbose >= 2:
+                    progressbar = progress_bar_for_file(fin)
                 for line in fin:
-                    progressbar.update(len(line))
+                    if Physlr.args.verbose >= 2:
+                        progressbar.update(len(line))
                     fields = line.rstrip("\n").split("\t")
-                    if len(fields) < 5:
-                        print("physlr: expected five or more BED fields:", line, file=sys.stderr)
+                    if len(fields) == 5:
+                        # BED format, five columns
+                        tname, tstart, tend, qname, score = fields[0:5]
+                        orientation = "."
+                    elif len(fields) == 6:
+                        # BED format, six columns
+                        tname, tstart, tend, qname, score, orientation = fields[0:6]
+                    elif len(fields) >= 12:
+                        # PAF format
+                        qname, _, _, _, orientation, tname, _, tstart, tend, score = fields[0:10]
+                    else:
+                        print("physlr: expected 5 or 6 BED fields, or 12 or more PAF fields:",
+                              line, file=sys.stderr)
                         exit(1)
-                    tname, tstart, tend, qname, score = fields[0:5]
-                    orientation = fields[5] if len(fields) >= 6 else "."
                     bed.append((tname, int(tstart), int(tend), qname, int(score), orientation))
-                progressbar.close()
+                if Physlr.args.verbose >= 2:
+                    progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return bed
 
@@ -1435,10 +1447,22 @@ class Physlr:
             "Mapped", num_mapped, "sequences of", len(query_mxs),
             f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
 
+    @staticmethod
+    def chr_isdecimal(x):
+        "Return true if this string contains only decimal digits, ignoring a prefix of chr."
+        return str.isdecimal(x[3:]) if x.startswith("chr") else str.isdecimal(x)
+
+    @staticmethod
+    def chr_int(x):
+        "Convert this string to an integer, ignoring a prefix of chr."
+        if not Physlr.chr_isdecimal(x):
+            return None
+        return int(x[3:]) if x.startswith("chr") else int(x)
+
     def physlr_annotate_graph(self):
         """
-        Annotate a graph with a BED file of mappings.
-        Usage: physlr annotate-graph GRAPH BED... >ANNOTATED-GRAPHVIZ
+        Annotate a graph with a BED or PAF file of mappings.
+        Usage: physlr annotate-graph GRAPH BED_OR_PAF... >ANNOTATED-GRAPHVIZ
         """
 
         if len(self.args.FILES) < 2:
@@ -1447,7 +1471,10 @@ class Physlr:
         bed_filenames = self.args.FILES[1:]
 
         g = self.read_graph(graph_filenames)
-        backbones = Physlr.determine_backbones(g)
+        if self.args.input_path:
+            backbones = Physlr.read_paths([self.args.input_path])
+        else:
+            backbones = Physlr.determine_backbones(g)
         Physlr.remove_small_components(g, self.args.min_component_size)
 
         # Associate vertices with mapped query names.
@@ -1459,17 +1486,23 @@ class Physlr:
             tname = int(tname)
             tstart = int(tstart)
             u = backbones[tname][tstart]
-            utomapping[u] = (tname, tstart, qname)
+            if u not in utomapping or score > utomapping[u][3]:
+                utomapping[u] = (tname, tstart, qname, score)
 
-        # Determine the maximum reference name (must be an integer).
-        max_qname = max(int(qname) for _, _, qname in utomapping.values())
+        # Map reference names to integers.
+        qnames = list({qname for _, _, qname, _ in utomapping.values()})
+        qnames.sort(key=lambda s: (
+            not Physlr.chr_isdecimal(s),
+            Physlr.chr_int(s) if Physlr.chr_isdecimal(s) else s))
+        qnametoindex = {s: i for i, s in enumerate(qnames)}
+        qnames = None
 
         # Output the annotated graph in GraphViz format.
         print("strict graph {\nnode [style=filled width=1 height=1]\nedge [color=lightgrey]")
         for u, prop in g.nodes.items():
             if u in utomapping:
-                tname, tstart, qname = utomapping[u]
-                hue = int(qname) / max_qname
+                tname, tstart, qname, _ = utomapping[u]
+                hue = round(qnametoindex[qname] / len(qnametoindex), 3)
                 print(f'"{u}" [label="{tname}_{tstart}" color="{hue},1,1"]')
             else:
                 print(f'"{u}"')
@@ -1724,6 +1757,9 @@ class Physlr:
             "--mkt-median-threshold", action="store", dest="mkt_median_threshold",
             type=int, default=50,
             help="Max number of backbones before using only medians in Mann-Kendall Test")
+        argparser.add_argument(
+            "--input-path", action="store", dest="input_path", type=str, default=None,
+            help="Specify an input path file for annotate-graph")
         argparser.add_argument(
             "-V", "--verbose", action="store", dest="verbose", type=int, default="2",
             help="the level of verbosity: 0:silent, 1:periodic, 2:progress, 3:verbose [2]")
