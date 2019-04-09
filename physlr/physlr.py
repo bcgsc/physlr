@@ -1107,8 +1107,9 @@ class Physlr:
         if len(communities) == 1:
             return communities
         if strategy == 1:  # Merge ad-hoc
-            merge_list = []
-            remove_list = []
+            merge_network = nx.Graph()
+            for i, j in enumerate(communities):
+                merge_network.add_node(i)
             for i, com1 in enumerate(communities):
                 for k, com2 in enumerate(communities):
                     if i < k:
@@ -1116,13 +1117,17 @@ class Physlr:
                                 g.subgraph(com1.union(com2))) -\
                                 nx.number_of_edges(g.subgraph(com1)) - \
                                 nx.number_of_edges(g.subgraph(com2)) > 10:
-                            merge_list.append(com1.union(com2))
-                            remove_list.append(com1)
-                            remove_list.append(com2)
-                        else:
-                            merge_list.append(com1)
-                            merge_list.append(com2)
-            return [com for com in merge_list if com not in remove_list]
+                            merge_network.add_edge(i, k)
+            res = []
+            for i in list(nx.connected_components(merge_network)):
+                subset = set()
+                for j in list(i):
+                    for barcode in list(communities[j]):
+                        subset.add(barcode)
+                res.append(subset)
+            return res
+            # return [{barcode for barcode in list(communities[j])
+            # for j in list(i)} for i in list(nx.connected_components(merge_network))]
         # Merge by Initializing Louvain with the communities
         return Physlr.community_detection_louvain(g, node_set, communities)
 
