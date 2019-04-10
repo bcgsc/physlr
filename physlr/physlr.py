@@ -1127,7 +1127,7 @@ class Physlr:
                                     nx.number_of_edges(g.subgraph(com1)) - \
                                     nx.number_of_edges(g.subgraph(com2)) > 10:
                                 merge_network.add_edge(i, k)
-                        else:  # joint input communities.
+                        else:  # overlapping input communities.
                             if nx.number_of_edges(
                                     g.subgraph(com1.union(com2))) - \
                                     len(set(g.subgraph(com1).edges()).union(
