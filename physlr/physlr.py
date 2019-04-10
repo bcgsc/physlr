@@ -1102,8 +1102,8 @@ class Physlr:
         return communities
 
     @staticmethod
-    def merge_communities(g, communities, node_set=0, strategy=1):
-        """Merge communities if appropriate."""
+    def merge_communities(g, communities, node_set=0, strategy=1, mode=1):
+        """Merge communities if appropriate. """
         if len(communities) == 1:
             return communities
         if strategy == 1:  # Merge ad-hoc
@@ -1113,21 +1113,29 @@ class Physlr:
             for i, com1 in enumerate(communities):
                 for k, com2 in enumerate(communities):
                     if i < k:
-                        if nx.number_of_edges(
-                                g.subgraph(com1.union(com2))) -\
-                                nx.number_of_edges(g.subgraph(com1)) - \
-                                nx.number_of_edges(g.subgraph(com2)) > 10:
-                            merge_network.add_edge(i, k)
-            res = []
-            for i in list(nx.connected_components(merge_network)):
-                subset = set()
-                for j in list(i):
-                    for barcode in list(communities[j]):
-                        subset.add(barcode)
-                res.append(subset)
-            return res
-            # return [{barcode for barcode in list(communities[j])
-            # for j in list(i)} for i in list(nx.connected_components(merge_network))]
+                        if mode == 1:  # disjoint input communities.
+                            if nx.number_of_edges(
+                                    g.subgraph(com1.union(com2))) - \
+                                    nx.number_of_edges(g.subgraph(com1)) - \
+                                    nx.number_of_edges(g.subgraph(com2)) > 10:
+                                merge_network.add_edge(i, k)
+                        else:  # joint input communities.
+                            if nx.number_of_edges(
+                                    g.subgraph(com1.union(com2))) - \
+                                    len(set(g.subgraph(com1).edges()).union(
+                                        set(g.subgraph(com2).edges()))) \
+                                    > 10:
+                                merge_network.add_edge(i, k)
+            # res = []
+            # for i in list(nx.connected_components(merge_network)):
+            #     subset = set()
+            #     for j in list(i):
+            #         for barcode in list(communities[j]):
+            #             subset.add(barcode)
+            #     res.append(subset)
+            # return res
+            return [{barcode for j in i for barcode in communities[j]}
+                    for i in nx.connected_components(merge_network)]
         # Merge by Initializing Louvain with the communities
         return Physlr.community_detection_louvain(g, node_set, communities)
 
@@ -1135,16 +1143,23 @@ class Physlr:
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
         communities = []
-        if strategy not in {2, 3, 4, 5}:  # default strategy in case of wrong parameter.
+        if strategy not in {2, 3, 4, 5, 6}:  # default strategy in case of wrong parameter.
             communities =\
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
 
         if strategy == 2:  # bi-connected + k-clique
-            bi_connected_components = \
-                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-            for bi_connected_component in bi_connected_components:
-                for community in Physlr.community_detection_k_clique(g, bi_connected_component):
-                    communities.append(community)
+            # bi_connected_components = \
+            #     Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+            # for bi_connected_component in bi_connected_components:
+            #     communities +=  Physlr.community_detection_k_clique(g, bi_connected_component)
+            #     for community in Physlr.community_detection_k_clique(g, bi_connected_component):
+            #         communities.append(community)
+            communities = \
+                [community
+                 for bi_connected_component in
+                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                 for community in
+                 Physlr.community_detection_k_clique(g, bi_connected_component)]
 
         if strategy == 3:  # bi-connected + Louvain
             bi_connected_components = \
@@ -1161,19 +1176,16 @@ class Physlr:
                     communities.append(community)
 
         if strategy == 5:  # {Split, Cluster, Mix}
-            bi_connected_components = \
-                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-            for bi_connected_component in bi_connected_components:
-                chunks = \
-                    Physlr.split_subgraph_into_chunks_randomly(bi_connected_component, max_size=200)
+            for bi_connected_component in Physlr.community_detection_biconnected_components(g, set(g.neighbors(u))):
                 sub_communities = []
-                for chunk in chunks:
-                    chunk_communities = Physlr.community_detection_k_clique(g, chunk, 3)
-                    for chunk_community in chunk_communities:
-                        sub_communities.append(chunk_community)
-                for community in Physlr.merge_communities(
-                    g, sub_communities, bi_connected_component, strategy=1):
-                    communities.append(community)
+                for chunk in Physlr.split_subgraph_into_chunks_randomly(bi_connected_component, max_size=200):
+                    sub_communities += Physlr.community_detection_k_clique(g, chunk, 3)
+                    # for chunk_community in Physlr.community_detection_k_clique(g, chunk, 3):
+                    #     sub_communities.append(chunk_community)
+                communities += Physlr.merge_communities(g, sub_communities, bi_connected_component, strategy=1)
+                # for community in Physlr.merge_communities(
+                #         g, sub_communities, bi_connected_component, strategy=1):
+                #     communities.append(community)
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
 
