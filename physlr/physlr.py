@@ -1102,6 +1102,14 @@ class Physlr:
         return communities
 
     @staticmethod
+    def community_detection_maximum_spanning_tree(g, node_set):
+        """Find MST. Collect clusters of nodes around a hub. Merge if appropriate. Return communities."""
+        sub_mst = nx.maximum_spanning_tree(g.subgraph(node_set), weight="n")
+        hubs = [i[0] for i in sub_mst.degree() if i[1] > 2]
+        communities = [set(sub_mst.subgraph(set(sub_mst.neighbors(hub)).union({hub})).nodes()) for hub in hubs]
+        return Physlr.merge_communities(g, communities)
+
+    @staticmethod
     def merge_communities(g, communities, node_set=0, strategy=1, mode=1):
         """Merge communities if appropriate. """
         if len(communities) == 1:
@@ -1175,6 +1183,14 @@ class Physlr:
                 for community in Physlr.community_detection_cosine_of_squared(g, bi_connected_component):
                     communities.append(community)
 
+        if strategy == 6:  # MST
+            communities =\
+                [community
+                 for bi_connected_component in
+                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                 for community in
+                 Physlr.community_detection_maximum_spanning_tree(g, bi_connected_component)]
+
         if strategy == 5:  # {Split, Cluster, Mix}
             for bi_connected_component in Physlr.community_detection_biconnected_components(g, set(g.neighbors(u))):
                 sub_communities = []
@@ -1214,7 +1230,9 @@ class Physlr:
                "Clustering by cosine similarity of squared adj matrix"
                "(after separating bi-connected components)",
             5: "\n\tStrategy: "
-               "Split, Cluster, Mix. (after separating bi-connected components)"
+               "Split, Cluster, Mix. (after separating bi-connected components)",
+            6: "\n\tStrategy: "
+               "Max Spanning Tree (after separating bi-connected components)"
         }
         print(
             int(timeit.default_timer() - t0),
