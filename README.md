@@ -1,1 +1,1 @@
-# Physlr: Physical Mapping of Linked Reads
+# Physlr: Construct a Physical Map from Linked Reads
