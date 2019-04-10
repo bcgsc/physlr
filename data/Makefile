@@ -855,6 +855,10 @@ mol_strategy=1
 %.label.gv: %.gv
 	gvpr -c 'E { label = n }' $< >$@
 
+# Remove text labels.
+%.nolabel.gv: %.gv
+	gvpr -c 'BEG_G { setDflt ($$, "N", "shape", "point") } E { label = "" }' $< >$@
+
 # Filter a graph by edge weight.
 %.n5.gv: %.gv
 	gvpr 'E[n >= 5]' $< >$@
