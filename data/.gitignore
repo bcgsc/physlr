@@ -36,3 +36,7 @@
 *.txt
 !f1.quast.tsv
 !f1.quast.table.tsv
+!fish.quast.tsv
+!fish.quast.table.tsv
+!hg004.quast.tsv
+!hg004.quast.table.tsv
