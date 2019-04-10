@@ -1156,12 +1156,6 @@ class Physlr:
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
 
         if strategy == 2:  # bi-connected + k-clique
-            # bi_connected_components = \
-            #     Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-            # for bi_connected_component in bi_connected_components:
-            #     communities +=  Physlr.community_detection_k_clique(g, bi_connected_component)
-            #     for community in Physlr.community_detection_k_clique(g, bi_connected_component):
-            #         communities.append(community)
             communities = \
                 [community
                  for bi_connected_component in
@@ -1170,26 +1164,30 @@ class Physlr:
                  Physlr.community_detection_k_clique(g, bi_connected_component)]
 
         if strategy == 3:  # bi-connected + Louvain
-            bi_connected_components = \
-                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-            for bi_connected_component in bi_connected_components:
-                for community in Physlr.community_detection_louvain(g, bi_connected_component):
-                    communities.append(community)
-
-        if strategy == 4:  # bi-connected + sqCos
-            bi_connected_components = \
-                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-            for bi_connected_component in bi_connected_components:
-                for community in Physlr.community_detection_cosine_of_squared(g, bi_connected_component):
-                    communities.append(community)
-
-        if strategy == 6:  # MST
-            communities =\
+            communities = \
                 [community
                  for bi_connected_component in
                  Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
                  for community in
-                 Physlr.community_detection_maximum_spanning_tree(g, bi_connected_component)]
+                 Physlr.community_detection_louvain(g, bi_connected_component)]
+
+        if strategy == 4:  # bi-connected + sqCos
+            communities = \
+                [community
+                 for bi_connected_component in
+                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                 for community in
+                 Physlr.community_detection_cosine_of_squared(g, bi_connected_component)]
+
+        if strategy == 6:  # MST
+            communities = \
+                [community2
+                 for bi_connected_component in
+                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                 for community in
+                 Physlr.community_detection_maximum_spanning_tree(g, bi_connected_component)
+                 for community2 in
+                 Physlr.community_detection_biconnected_components(g, set(community))]
 
         if strategy == 5:  # {Split, Cluster, Mix}
             for bi_connected_component in Physlr.community_detection_biconnected_components(g, set(g.neighbors(u))):
@@ -1203,7 +1201,6 @@ class Physlr:
                 #         g, sub_communities, bi_connected_component, strategy=1):
                 #     communities.append(community)
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
-
 
     @staticmethod
     def determine_molecules_process(u):
