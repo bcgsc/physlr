@@ -1,0 +1,5 @@
+Assembler	Scaffolder	NG50 (Mbp)	NGA50 (Mbp)	Misassemblies	Genome fraction	Mismatches
+Supernova scaftigs		0.01	0.01	8,282	73.8%	1.489%
+Supernova		4.83	0.12	10,201	75.1%	1.630%
+Supernova	Physlr	8.85	0.12	6,281	57.6%	1.721%
+Supernova	Physlr mkt	9.11	0.12	7,699	59.8%	1.716%
