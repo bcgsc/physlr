@@ -1070,7 +1070,8 @@ class Physlr:
                 partition = louvain.best_partition(g.subgraph(node_set), init_communities)
             #     communities = []
             #     for com in set(partition.values()):
-            #         community_nodes = {nodes for nodes in partition.keys() if partition[nodes] == com}
+            #         community_nodes = \
+            #             {nodes for nodes in partition.keys() if partition[nodes] == com}
             #         if len(community_nodes) > 1:
             #             communities.append(community_nodes)
             # return communities
@@ -1107,41 +1108,46 @@ class Physlr:
 
     @staticmethod
     def community_detection_maximum_spanning_tree(g, node_set):
-        """Find MST. Collect clusters of nodes around a hub. Merge if appropriate. Return communities."""
+        """Find MST. Collect clusters of nodes around a hub.
+        Merge if appropriate. Return communities."""
         sub_mst = nx.maximum_spanning_tree(g.subgraph(node_set), weight="n")
         hubs = [i[0] for i in sub_mst.degree() if i[1] > 2]
-        communities = [set(sub_mst.subgraph(set(sub_mst.neighbors(hub)).union({hub})).nodes()) for hub in hubs]
+        communities = \
+            [set(sub_mst.subgraph(
+                set(sub_mst.neighbors(hub)).union({hub})).nodes())
+             for hub in hubs]
         return Physlr.merge_communities(g, communities)
 
     @staticmethod
-    def merge_communities(g, communities, node_set=0, strategy=1, mode=1, cutoff=8):
-        """Merge communities if appropriate. """
+    def merge_communities(g, communities, node_set=0, strategy=0, cutoff=8):
+        """Merge communities if appropriate."""
+        mode = 1
         if len(communities) == 1 and (node_set == 0 or strategy == 1):
             return communities
-        if strategy == 1:  # Ad-hoc Merge
-            merge_network = nx.Graph()
-            for i, j in enumerate(communities):
-                merge_network.add_node(i)
-            for i, com1 in enumerate(communities):
-                for k, com2 in enumerate(communities):
-                    if i < k:
-                        if mode == 1:  # disjoint input communities.
-                            if nx.number_of_edges(
-                                    g.subgraph(com1.union(com2))) - \
-                                    nx.number_of_edges(g.subgraph(com1)) - \
-                                    nx.number_of_edges(g.subgraph(com2)) > cutoff:
-                                merge_network.add_edge(i, k)
-                        else:  # overlapping input communities.
-                            if nx.number_of_edges(
-                                    g.subgraph(com1.union(com2))) - \
-                                    len(set(g.subgraph(com1).edges()).union(
-                                        set(g.subgraph(com2).edges()))) \
-                                    > cutoff:
-                                merge_network.add_edge(i, k)
-            return [{barcode for j in i for barcode in communities[j]}
-                    for i in nx.connected_components(merge_network)]
-        # Merge by Initializing Louvain with the communities
-        return Physlr.community_detection_louvain(g, node_set, communities)
+        if strategy == 1:  # Merge by Initializing Louvain with the communities
+            return Physlr.community_detection_louvain(g, node_set, communities)
+        # Ad-hoc Merge (default - strategy = 0)
+        merge_network = nx.Graph()
+        for i in range(len(communities)):
+            merge_network.add_node(i)
+        for i, com1 in enumerate(communities):
+            for k, com2 in enumerate(communities):
+                if i < k:
+                    if mode == 1:  # disjoint input communities.
+                        if nx.number_of_edges(
+                                g.subgraph(com1.union(com2))) - \
+                                nx.number_of_edges(g.subgraph(com1)) - \
+                                nx.number_of_edges(g.subgraph(com2)) > cutoff:
+                            merge_network.add_edge(i, k)
+                    else:  # overlapping input communities.
+                        if nx.number_of_edges(
+                                g.subgraph(com1.union(com2))) - \
+                                len(set(g.subgraph(com1).edges()).union(
+                                    set(g.subgraph(com2).edges()))) \
+                                > cutoff:
+                            merge_network.add_edge(i, k)
+        return [{barcode for j in i for barcode in communities[j]}
+                for i in nx.connected_components(merge_network)]
 
     @staticmethod
     def determine_molecules(g, u, strategy):
@@ -1292,13 +1298,14 @@ class Physlr:
 
     @staticmethod
     def subgraph_stats(g, u):
-        "Extract the statistics of the vertex-induced subgraph with the vertex being u."
+        """Extract the statistics of the vertex-induced subgraph with the vertex being u."""
         sub_graph = g.subgraph(g.neighbors(u))
         nodes_count = sub_graph.number_of_nodes()
         edges_count = sub_graph.number_of_edges()
         if nodes_count < 2:
             return u, [nodes_count, edges_count, 0.0]
-        return u, (nodes_count, edges_count, (edges_count * 2.0 / (nodes_count * (nodes_count - 1))))
+        return u, (nodes_count, edges_count,
+                   (edges_count * 2.0 / (nodes_count * (nodes_count - 1))))
 
     @staticmethod
     def subgraph_stats_process(u):
@@ -1415,9 +1422,9 @@ class Physlr:
                             measurements.append(qpos)
                         num_tpos += 1
                 if num_tpos > self.args.mkt_median_threshold or len(timepoints) > 50000:
-                    #                     print("Warning ", len(timepoints), " minimizers positions in ", \
-                    #                           num_tpos, " backbone positions seen for scaffold ", qid, \
-                    #                           " to backbone ", tid, file=sys.stderr)
+                    # print("Warning ", len(timepoints), " minimizers positions in ", \
+                    #       num_tpos, " backbone positions seen for scaffold ", qid, \
+                    #       " to backbone ", tid, file=sys.stderr)
                     timepoints = []
                     measurements = []
                     for (tpos, qpos_list) in tpos_to_qpos.items():
