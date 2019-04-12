@@ -27,7 +27,7 @@ t0 = timeit.default_timer()
 def quantile(quantiles, xs):
     "Return the specified quantiles p of xs."
     sorted_xs = sorted(xs)
-    return [sorted_xs[round(p * (len(sorted_xs)-1))] for p in quantiles]
+    return [sorted_xs[round(p * (len(sorted_xs) - 1))] for p in quantiles]
 
 def progress_bar_for_file(fin):
     "Return a progress bar for a file."
@@ -54,7 +54,7 @@ class Physlr:
         "Print graph stats."
         v = g.number_of_nodes()
         e = g.number_of_edges()
-        print(int(timeit.default_timer() - t0), f"V={v} E={e} E/V={round(e/v, 2)}", file=fout)
+        print(int(timeit.default_timer() - t0), f"V={v} E={e} E/V={round(e / v, 2)}", file=fout)
 
     @staticmethod
     def read_bed(filenames):
@@ -437,7 +437,7 @@ class Physlr:
             if i in backbone_insertions:
                 insertions = ",".join(backbone_insertions[i])
                 print("(" + insertions + ")", file=sys.stdout, end=' ')
-        print(backbone[len(backbone)-1], file=sys.stdout)
+        print(backbone[len(backbone) - 1], file=sys.stdout)
 
     # RE match for read header
     header_prefix_re = re.compile(r'^(\S+?)(\/[1-2])?')
@@ -448,7 +448,7 @@ class Physlr:
         header_prefix_match_r1 = re.search(Physlr.header_prefix_re, name1)
         header_prefix_match_r2 = re.search(Physlr.header_prefix_re, name2)
         return bx1 is not None and bx2 is not None and bx1 == bx2 and \
-            header_prefix_match_r1.group(1) == header_prefix_match_r2.group(1)
+               header_prefix_match_r1.group(1) == header_prefix_match_r2.group(1)
 
     @staticmethod
     def remove_small_components(g, min_component_size):
@@ -514,10 +514,10 @@ class Physlr:
                 elif max_index == len(backbone) - 1:
                     insert_index = max_index - 1
                 else:
-                    r_n = g[neighbour][backbone[max_index+1]]['n'] \
-                        if g.has_edge(neighbour, backbone[max_index+1]) else 0
-                    l_n = g[neighbour][backbone[max_index-1]]['n'] \
-                        if g.has_edge(neighbour, backbone[max_index-1]) else 0
+                    r_n = g[neighbour][backbone[max_index + 1]]['n'] \
+                        if g.has_edge(neighbour, backbone[max_index + 1]) else 0
+                    l_n = g[neighbour][backbone[max_index - 1]]['n'] \
+                        if g.has_edge(neighbour, backbone[max_index - 1]) else 0
                     if l_n > r_n:
                         insert_index = max_index - 1
                     else:
@@ -566,7 +566,7 @@ class Physlr:
             if subgraph.number_of_nodes() == 0:
                 num_empty_subgraphs += 1
             else:
-                fout = open(self.args.output+"/"+u+"."+self.args.graph_format, "w+")
+                fout = open(self.args.output + "/" + u + "." + self.args.graph_format, "w+")
                 self.write_graph(subgraph, fout, self.args.graph_format)
                 fout.close()
         print(int(timeit.default_timer() - t0),
@@ -888,8 +888,8 @@ class Physlr:
         while g.has_node(bx + "_" + str(mol)):
             bxmol = bx + "_" + str(mol)
             neighbour_mxs_list = [bxtomxs[re.search(bx_match, v).group(1)] \
-                                         for v in g.neighbors(bxmol) \
-                                         if re.search(bx_match, v).group(1) in bxtomxs]
+                                  for v in g.neighbors(bxmol) \
+                                  if re.search(bx_match, v).group(1) in bxtomxs]
             if not neighbour_mxs_list:
                 neighbour_mxs_list = [set()]
             neighbour_mxs_set = set.union(*neighbour_mxs_list)
@@ -1020,11 +1020,11 @@ class Physlr:
         return "_" + str(random.choice(max_hits)), 0, 1
 
     @staticmethod
-    def split_subgraph_into_chunks_randomly(node_set, max_size=200):
+    def split_subgraph_into_chunks_randomly(node_set, max_size=50):
         "Split the subgraph into chunks for faster processing. Return chunks."
         chunks_count = 1
         if len(node_set) > max_size:
-            chunks_count = 1 + int(len(node_set)/200)
+            chunks_count = 1 + int(len(node_set) / 200)
         node_list = list(node_set)
         random.shuffle(node_list)
         size, leftover = divmod(len(node_set), chunks_count)
@@ -1064,12 +1064,12 @@ class Physlr:
                 partition = louvain.best_partition(g.subgraph(node_set))
             else:
                 partition = louvain.best_partition(g.subgraph(node_set), init_communities)
-        #     communities = []
-        #     for com in set(partition.values()):
-        #         community_nodes = {nodes for nodes in partition.keys() if partition[nodes] == com}
-        #         if len(community_nodes) > 1:
-        #             communities.append(community_nodes)
-        # return communities
+            #     communities = []
+            #     for com in set(partition.values()):
+            #         community_nodes = {nodes for nodes in partition.keys() if partition[nodes] == com}
+            #         if len(community_nodes) > 1:
+            #             communities.append(community_nodes)
+            # return communities
             return [{nodes for nodes in partition.keys() if partition[nodes] == com}
                     for com in set(partition.values())]
         return []
@@ -1110,11 +1110,11 @@ class Physlr:
         return Physlr.merge_communities(g, communities)
 
     @staticmethod
-    def merge_communities(g, communities, node_set=0, strategy=1, mode=1):
+    def merge_communities(g, communities, node_set=0, strategy=1, mode=1, cutoff=8):
         """Merge communities if appropriate. """
-        if len(communities) == 1:
+        if len(communities) == 1 and (node_set == 0 or strategy == 1):
             return communities
-        if strategy == 1:  # Merge ad-hoc
+        if strategy == 1:  # Ad-hoc Merge
             merge_network = nx.Graph()
             for i, j in enumerate(communities):
                 merge_network.add_node(i)
@@ -1125,23 +1125,15 @@ class Physlr:
                             if nx.number_of_edges(
                                     g.subgraph(com1.union(com2))) - \
                                     nx.number_of_edges(g.subgraph(com1)) - \
-                                    nx.number_of_edges(g.subgraph(com2)) > 10:
+                                    nx.number_of_edges(g.subgraph(com2)) > cutoff:
                                 merge_network.add_edge(i, k)
                         else:  # overlapping input communities.
                             if nx.number_of_edges(
                                     g.subgraph(com1.union(com2))) - \
                                     len(set(g.subgraph(com1).edges()).union(
                                         set(g.subgraph(com2).edges()))) \
-                                    > 10:
+                                    > cutoff:
                                 merge_network.add_edge(i, k)
-            # res = []
-            # for i in list(nx.connected_components(merge_network)):
-            #     subset = set()
-            #     for j in list(i):
-            #         for barcode in list(communities[j]):
-            #             subset.add(barcode)
-            #     res.append(subset)
-            # return res
             return [{barcode for j in i for barcode in communities[j]}
                     for i in nx.connected_components(merge_network)]
         # Merge by Initializing Louvain with the communities
@@ -1151,8 +1143,8 @@ class Physlr:
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
         communities = []
-        if strategy not in {2, 3, 4, 5, 6}:  # default strategy in case of wrong parameter.
-            communities =\
+        if strategy not in {2, 3, 4, 5, 10}:  # default strategy in case of wrong parameter.
+            communities = \
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
 
         if strategy == 2:  # bi-connected + k-clique
@@ -1179,7 +1171,7 @@ class Physlr:
                  for community in
                  Physlr.community_detection_cosine_of_squared(g, bi_connected_component)]
 
-        if strategy == 6:  # MST
+        if strategy == 5:  # bi-connected + MST + bi-connected
             communities = \
                 [community2
                  for bi_connected_component in
@@ -1189,17 +1181,22 @@ class Physlr:
                  for community2 in
                  Physlr.community_detection_biconnected_components(g, set(community))]
 
-        if strategy == 5:  # {Split, Cluster, Mix}
-            for bi_connected_component in Physlr.community_detection_biconnected_components(g, set(g.neighbors(u))):
-                sub_communities = []
-                for chunk in Physlr.split_subgraph_into_chunks_randomly(bi_connected_component, max_size=200):
-                    sub_communities += Physlr.community_detection_k_clique(g, chunk, 3)
-                    # for chunk_community in Physlr.community_detection_k_clique(g, chunk, 3):
-                    #     sub_communities.append(chunk_community)
-                communities += Physlr.merge_communities(g, sub_communities, bi_connected_component, strategy=1)
-                # for community in Physlr.merge_communities(
-                #         g, sub_communities, bi_connected_component, strategy=1):
-                #     communities.append(community)
+        if strategy == 10:  # bi-connected + {Split, Cluster, Mix}
+            communities = \
+                [merged
+                 for bi_connected_component in
+                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                 for merged in
+                 Physlr.merge_communities(g, [cluster
+                                              for chunk in
+                                              Physlr.split_subgraph_into_chunks_randomly(
+                                                  bi_connected_component,
+                                                  max_size=50)
+                                              for cluster in
+                                              Physlr.community_detection_k_clique(g, chunk, 3)],
+                                          bi_connected_component, strategy=1)
+                 ]
+
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
@@ -1227,19 +1224,19 @@ class Physlr:
                "Clustering by cosine similarity of squared adj matrix"
                "(after separating bi-connected components)",
             5: "\n\tStrategy: "
-               "Split, Cluster, Mix. (after separating bi-connected components)",
-            6: "\n\tStrategy: "
-               "Max Spanning Tree (after separating bi-connected components)"
+               "Max Spanning Tree (after separating bi-connected components)",
+            10: "\n\tStrategy: "
+                "Split, Cluster (K-clique), Mix. (after separating bi-connected components)"
         }
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
-                                  "\033[93m"+"\n\tWarning:"
-                                             " Wrong input argument: --separation-strategy!"
-                                  "\n\t- Set to default strategy:"
-                                  " Bi-connected components separation."
-                                  "\033[0m"),
+                                  "\033[93m" + "\n\tWarning:"
+                                               " Wrong input argument: --separation-strategy!"
+                                               "\n\t- Set to default strategy:"
+                                               " Bi-connected components separation."
+                                               "\033[0m"),
             file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
@@ -1297,7 +1294,7 @@ class Physlr:
         edges_count = sub_graph.number_of_edges()
         if nodes_count < 2:
             return u, [nodes_count, edges_count, 0.0]
-        return u, (nodes_count, edges_count, (edges_count*2.0/(nodes_count*(nodes_count-1))))
+        return u, (nodes_count, edges_count, (edges_count * 2.0 / (nodes_count * (nodes_count - 1))))
 
     @staticmethod
     def subgraph_stats_process(u):
@@ -1388,7 +1385,7 @@ class Physlr:
             # Count the number of minimizers mapped to each target position.
             tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
             # Map each target position to a query position.
-            #tid->tpos->qpos_list
+            # tid->tpos->qpos_list
             tid_to_qpos = {}
             for qpos, mx in enumerate(mxs):
                 for (tid, tpos) in mxtopos.get(mx, ()):
@@ -1400,23 +1397,23 @@ class Physlr:
 
             tid_to_mkt = {}
             for (tid, tpos_to_qpos) in tid_to_qpos.items():
-                #build array of the time points of measurements
-                #build array containing the measurements corresponding to entries of time
+                # build array of the time points of measurements
+                # build array containing the measurements corresponding to entries of time
                 timepoints = []
                 measurements = []
                 num_tpos = 0
                 for (tpos, qpos_list) in tpos_to_qpos.items():
-                    #do not use islands (noise?)
-                    #determine count of non-island sequences
+                    # do not use islands (noise?)
+                    # determine count of non-island sequences
                     if tpos + 1 in tpos_to_qpos or tpos - 1 in tpos_to_qpos:
                         for qpos in qpos_list:
                             timepoints.append(tpos)
                             measurements.append(qpos)
                         num_tpos += 1
                 if num_tpos > self.args.mkt_median_threshold or len(timepoints) > 50000:
-#                     print("Warning ", len(timepoints), " minimizers positions in ", \
-#                           num_tpos, " backbone positions seen for scaffold ", qid, \
-#                           " to backbone ", tid, file=sys.stderr)
+                    #                     print("Warning ", len(timepoints), " minimizers positions in ", \
+                    #                           num_tpos, " backbone positions seen for scaffold ", qid, \
+                    #                           " to backbone ", tid, file=sys.stderr)
                     timepoints = []
                     measurements = []
                     for (tpos, qpos_list) in tpos_to_qpos.items():
@@ -1431,10 +1428,10 @@ class Physlr:
                 if score >= self.args.n:
                     orientation = "."
                     if tid in tid_to_mkt:
-                        #mk: string of test result
-                        #m: slope
-                        #c: intercept
-                        #p: significance
+                        # mk: string of test result
+                        # m: slope
+                        # c: intercept
+                        # p: significance
                         result = tid_to_mkt[tid]
                         mapped = True
                         if result[3] < self.args.p and result[1] != 0:
