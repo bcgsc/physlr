@@ -24,10 +24,12 @@ from physlr.read_fasta import read_fasta
 # The time at which execution started.
 t0 = timeit.default_timer()
 
+
 def quantile(quantiles, xs):
     "Return the specified quantiles p of xs."
     sorted_xs = sorted(xs)
     return [sorted_xs[round(p * (len(sorted_xs) - 1))] for p in quantiles]
+
 
 def progress_bar_for_file(fin):
     "Return a progress bar for a file."
@@ -36,6 +38,7 @@ def progress_bar_for_file(fin):
         mininterval=1, smoothing=0.1,
         bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
 
+
 def progress(iterator):
     "Return an iterator that displays a progress bar."
     if Physlr.args.verbose < 2:
@@ -43,6 +46,7 @@ def progress(iterator):
     return tqdm.tqdm(
         iterator, mininterval=1, smoothing=0.1,
         bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
+
 
 class Physlr:
     """
@@ -1867,9 +1871,11 @@ class Physlr:
             exit(1)
         getattr(Physlr, method_name)(self)
 
+
 def main():
     "Run Physlr."
     Physlr().main()
+
 
 if __name__ == "__main__":
     main()
