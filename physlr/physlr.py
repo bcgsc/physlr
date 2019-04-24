@@ -1028,7 +1028,7 @@ class Physlr:
         "Split the subgraph into chunks for faster processing. Return chunks."
         chunks_count = 1
         if len(node_set) > max_size:
-            chunks_count = 1 + int(len(node_set) / 200)
+            chunks_count = 1 + int(len(node_set) / max_size)
         node_list = list(node_set)
         random.shuffle(node_list)
         size, leftover = divmod(len(node_set), chunks_count)
@@ -1122,7 +1122,7 @@ class Physlr:
     def merge_communities(g, communities, node_set=0, strategy=0, cutoff=8):
         """Merge communities if appropriate."""
         mode = 1
-        if len(communities) == 1 and (node_set == 0 or strategy == 1):
+        if len(communities) == 1 and (node_set == 0 or strategy != 1):
             return communities
         if strategy == 1:  # Merge by Initializing Louvain with the communities
             return Physlr.community_detection_louvain(g, node_set, communities)
@@ -1200,11 +1200,10 @@ class Physlr:
                  Physlr.merge_communities(g, [cluster
                                               for chunk in
                                               Physlr.split_subgraph_into_chunks_randomly(
-                                                  bi_connected_component,
-                                                  max_size=50)
+                                                  bi_connected_component)
                                               for cluster in
                                               Physlr.community_detection_k_clique(g, chunk, 3)],
-                                          bi_connected_component, strategy=1)
+                                          bi_connected_component, strategy=0)
                  ]
 
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
