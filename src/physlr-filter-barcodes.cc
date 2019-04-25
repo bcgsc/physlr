@@ -51,6 +51,7 @@ using Mx = uint64_t;
 using Mxs = tsl::robin_set<Mx>;
 using Bx = std::string;
 using BxtoMxs = tsl::robin_map<Bx, Mxs>;
+using MxtoCounts = tsl::robin_map<Mx, unsigned>;
 
 static BxtoMxs readMxs(std::istream &is, const std::string &ipath, bool silent) {
 	if (is.peek() == std::ifstream::traits_type::eof()) {
@@ -95,8 +96,8 @@ static void writeMxs(BxtoMxs bxtomxs, std::ostream& os, const std::string& opath
 	}
 }
 
-static tsl::robin_map<Mx, unsigned> countMxs(const BxtoMxs& bxtomxs, bool silent) {
-	tsl::robin_map<Mx, unsigned> counts;
+static MxtoCounts countMxs(const BxtoMxs& bxtomxs, bool silent) {
+	MxtoCounts counts;
 	for (const auto& item : bxtomxs)
 	{
 		const auto& mxs = item.second;
@@ -117,7 +118,8 @@ static tsl::robin_map<Mx, unsigned> countMxs(const BxtoMxs& bxtomxs, bool silent
 }
 
 static void removeSingletonMxs(BxtoMxs& bxtomxs, bool silent) {
-	tsl::robin_map<Mx, unsigned> counts = countMxs(bxtomxs, silent); 
+	MxtoCounts counts = countMxs(bxtomxs, silent); 
+	std::cerr << "Counted " << counts.size() << " minimizers." << '\n';
 	Mxs uniqueMxs;
 	uint64_t singletons = 0;
 	tsl::robin_map<Mx, bool> counted;
@@ -151,6 +153,7 @@ static void physlr_filterbarcodes(std::istream& is, const std::string& ipath, st
 	unsigned initial_size = bxtomxs.size();
 	removeSingletonMxs(bxtomxs, silent);
 	unsigned too_few = 0, too_many = 0;
+	std::cerr << "There are " << initial_size << " barcodes." << '\n';
 	for (auto it = bxtomxs.begin(); it != bxtomxs.end(); ) {
 		auto& mxs = it->second;
 		if (mxs.size() < n) {

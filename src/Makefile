@@ -1,13 +1,10 @@
 CXXFLAGS=-g -O3 -Wall -Werror -Wno-error=unknown-pragmas -std=c++11 -pthread -I./include -I./vendor -fopenmp
 LDLIBS=-lz
 
-all: physlr-filter-barcodes physlr-indexlr physlr-overlap  
-#all: physlr-filter-barcodes-new parallel
-#all: parallel
+all: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx
 
 clean:
-	rm -f physlr-filter-barcodes physlr-indexlr physlr-overlap
-	#rm -f physlr-filter-barcodes-new
+	rm -f physlr-indexlr physlr-filter-barcodes physlr-filter-bxmx physlr-overlap
 
 # Check the C++ source code for errors with clang-tidy.
 lint:
@@ -24,3 +21,17 @@ check-physlr-index-fastq: all
 check-physlr-filter-barcodes: all
 	./physlr-filter-barcodes data/f1chr4-head50.tsv -o data/f1chr4-head50.n100-1000.tsv -n100 -N1000
 	./data/checkMx.sh data/f1chr4-head50.n100-1000.good.tsv data/f1chr4-head50.n100-1000.tsv
+
+check-physlr-filter-bxmx-first: all
+	./physlr-filter-barcodes data/f1.indexlr.head1000.physlr.tsv -n2 -N10 -o fb-cpp
+	env PYTHONPATH=.. /projects/btl/aafshinfard/virtuEnv/pypy3/bin/pypy3 ../bin/physlr filter-minimizers -C4 fb-cpp > fm-py
+	./physlr-filter-bxmx data/f1.indexlr.head1000.physlr.tsv -o ff-cpp -n2 -N10 -C4
+	./data/checkMx.sh fm-py ff-cpp 
+	rm fb-cpp fm-py ff-cpp
+
+check-physlr-filter-bxmx-second: all
+	./physlr-filter-barcodes data/f1.indexlr.head1000.physlr.tsv -n2 -N10 -o fb-cpp
+	env PYTHONPATH=.. /projects/btl/aafshinfard/virtuEnv/pypy3/bin/pypy3 ../bin/physlr filter-minimizers fb-cpp > fm-py
+	./physlr-filter-bxmx data/f1.indexlr.head1000.physlr.tsv -o ff-cpp -n2 -N10
+	./data/checkMx.sh fm-py ff-cpp
+	rm fb-cpp fm-py ff-cpp
