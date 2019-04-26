@@ -27,7 +27,7 @@ t0 = timeit.default_timer()
 def quantile(quantiles, xs):
     "Return the specified quantiles p of xs."
     sorted_xs = sorted(xs)
-    return [sorted_xs[round(p * (len(sorted_xs) - 1))] for p in quantiles]
+    return [sorted_xs[round(p * (len(sorted_xs)-1))] for p in quantiles]
 
 def progress_bar_for_file(fin):
     "Return a progress bar for a file."
@@ -54,7 +54,7 @@ class Physlr:
         "Print graph stats."
         v = g.number_of_nodes()
         e = g.number_of_edges()
-        print(int(timeit.default_timer() - t0), f"V={v} E={e} E/V={round(e / v, 2)}", file=fout)
+        print(int(timeit.default_timer() - t0), f"V={v} E={e} E/V={round(e/v, 2)}", file=fout)
 
     @staticmethod
     def read_bed(filenames):
@@ -437,7 +437,7 @@ class Physlr:
             if i in backbone_insertions:
                 insertions = ",".join(backbone_insertions[i])
                 print("(" + insertions + ")", file=sys.stdout, end=' ')
-        print(backbone[len(backbone) - 1], file=sys.stdout)
+        print(backbone[len(backbone)-1], file=sys.stdout)
 
     # RE match for read header
     header_prefix_re = re.compile(r'^(\S+?)(\/[1-2])?')
@@ -514,10 +514,10 @@ class Physlr:
                 elif max_index == len(backbone) - 1:
                     insert_index = max_index - 1
                 else:
-                    r_n = g[neighbour][backbone[max_index + 1]]['n'] \
-                        if g.has_edge(neighbour, backbone[max_index + 1]) else 0
-                    l_n = g[neighbour][backbone[max_index - 1]]['n'] \
-                        if g.has_edge(neighbour, backbone[max_index - 1]) else 0
+                    r_n = g[neighbour][backbone[max_index+1]]['n'] \
+                        if g.has_edge(neighbour, backbone[max_index+1]) else 0
+                    l_n = g[neighbour][backbone[max_index-1]]['n'] \
+                        if g.has_edge(neighbour, backbone[max_index-1]) else 0
                     if l_n > r_n:
                         insert_index = max_index - 1
                     else:
@@ -566,7 +566,7 @@ class Physlr:
             if subgraph.number_of_nodes() == 0:
                 num_empty_subgraphs += 1
             else:
-                fout = open(self.args.output + "/" + u + "." + self.args.graph_format, "w+")
+                fout = open(self.args.output+"/"+u+"."+self.args.graph_format, "w+")
                 self.write_graph(subgraph, fout, self.args.graph_format)
                 fout.close()
         print(int(timeit.default_timer() - t0),
@@ -1421,7 +1421,7 @@ class Physlr:
             # Count the number of minimizers mapped to each target position.
             tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
             # Map each target position to a query position.
-            # tid->tpos->qpos_list
+            #tid->tpos->qpos_list
             tid_to_qpos = {}
             for qpos, mx in enumerate(mxs):
                 for (tid, tpos) in mxtopos.get(mx, ()):
@@ -1433,23 +1433,23 @@ class Physlr:
 
             tid_to_mkt = {}
             for (tid, tpos_to_qpos) in tid_to_qpos.items():
-                # build array of the time points of measurements
-                # build array containing the measurements corresponding to entries of time
+                #build array of the time points of measurements
+                #build array containing the measurements corresponding to entries of time
                 timepoints = []
                 measurements = []
                 num_tpos = 0
                 for (tpos, qpos_list) in tpos_to_qpos.items():
-                    # do not use islands (noise?)
-                    # determine count of non-island sequences
+                    #do not use islands (noise?)
+                    #determine count of non-island sequences
                     if tpos + 1 in tpos_to_qpos or tpos - 1 in tpos_to_qpos:
                         for qpos in qpos_list:
                             timepoints.append(tpos)
                             measurements.append(qpos)
                         num_tpos += 1
                 if num_tpos > self.args.mkt_median_threshold or len(timepoints) > 50000:
-                    # print("Warning ", len(timepoints), " minimizers positions in ", \
-                    #       num_tpos, " backbone positions seen for scaffold ", qid, \
-                    #       " to backbone ", tid, file=sys.stderr)
+#                     print("Warning ", len(timepoints), " minimizers positions in ", \
+#                           num_tpos, " backbone positions seen for scaffold ", qid, \
+#                           " to backbone ", tid, file=sys.stderr)
                     timepoints = []
                     measurements = []
                     for (tpos, qpos_list) in tpos_to_qpos.items():
@@ -1464,10 +1464,10 @@ class Physlr:
                 if score >= self.args.n:
                     orientation = "."
                     if tid in tid_to_mkt:
-                        # mk: string of test result
-                        # m: slope
-                        # c: intercept
-                        # p: significance
+                        #mk: string of test result
+                        #m: slope
+                        #c: intercept
+                        #p: significance
                         result = tid_to_mkt[tid]
                         mapped = True
                         if result[3] < self.args.p and result[1] != 0:
@@ -1903,11 +1903,9 @@ class Physlr:
             exit(1)
         getattr(Physlr, method_name)(self)
 
-
 def main():
     "Run Physlr."
     Physlr().main()
-
 
 if __name__ == "__main__":
     main()
