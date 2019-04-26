@@ -1170,7 +1170,7 @@ class Physlr:
     @staticmethod
     def determine_molecules_bc_cosine_of_squared(g, u):
         """Assign the neighbours of this vertex to molecules by
-                        applying cosine of squared of the adjacency matrix for each bi-connected component."""
+        applying cosine of squared of the adjacency matrix for each bi-connected component."""
         return [community
                 for bi_connected_component in
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
@@ -1180,8 +1180,8 @@ class Physlr:
     @staticmethod
     def determine_molecules_bc_mst_bc(g, u):
         """Assign the neighbours of this vertex to molecules by
-                                using maximum spanning tree (mst) of each bi-connected (bc) component.
-                                it applies bc, then mst, then bc again"""
+        using maximum spanning tree (mst) of each bi-connected (bc) component.
+        it applies bc, then mst, then bc again"""
         return [community2
                 for bi_connected_component in
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
@@ -1193,8 +1193,8 @@ class Physlr:
     @staticmethod
     def determine_molecules_partition_split_merge(g, u):
         """Assign the neighbours of this vertex to molecules by
-                                        using maximum spanning tree (mst) of each bi-connected (bc) component.
-                                        Pipeline: bc + partition + bc + k-cliques + merge"""
+        using maximum spanning tree (mst) of each bi-connected (bc) component.
+        Pipeline: bc + partition + bc + k-cliques + merge"""
         return [merged
                 for bi_connected_component in
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
@@ -1212,7 +1212,8 @@ class Physlr:
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
         communities = []
-        if strategy not in {2, 3, 4, 5, 10}:  # default strategy (bi-connected components) in case of wrong parameter.
+        if strategy not in {2, 3, 4, 5, 10}:
+            # default strategy (bi-connected components) in case of wrong parameter.
             communities = \
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
 
