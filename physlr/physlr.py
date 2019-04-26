@@ -1121,6 +1121,8 @@ class Physlr:
     @staticmethod
     def merge_communities(g, communities, node_set=0, strategy=0, cutoff=20):
         """Merge communities if appropriate."""
+        if cutoff == -1:  # no merging
+            return communities
         mode = 1
         if len(communities) == 1 and (node_set == 0 or strategy != 1):
             return communities
