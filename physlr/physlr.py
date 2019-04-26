@@ -449,7 +449,7 @@ class Physlr:
         header_prefix_match_r1 = re.search(Physlr.header_prefix_re, name1)
         header_prefix_match_r2 = re.search(Physlr.header_prefix_re, name2)
         return bx1 is not None and bx2 is not None and bx1 == bx2 and \
-            header_prefix_match_r1.group(1) == header_prefix_match_r2.group(1)
+               header_prefix_match_r1.group(1) == header_prefix_match_r2.group(1)
 
     @staticmethod
     def remove_small_components(g, min_component_size):
@@ -889,8 +889,8 @@ class Physlr:
         while g.has_node(bx + "_" + str(mol)):
             bxmol = bx + "_" + str(mol)
             neighbour_mxs_list = [bxtomxs[re.search(bx_match, v).group(1)] \
-                                         for v in g.neighbors(bxmol) \
-                                         if re.search(bx_match, v).group(1) in bxtomxs]
+                                  for v in g.neighbors(bxmol) \
+                                  if re.search(bx_match, v).group(1) in bxtomxs]
             if not neighbour_mxs_list:
                 neighbour_mxs_list = [set()]
             neighbour_mxs_set = set.union(*neighbour_mxs_list)
@@ -1149,9 +1149,9 @@ class Physlr:
             strategy_switcher.get(self.args.strategy,
                                   "\033[93m"+"\n\tWarning:"
                                              " Wrong input argument: --separation-strategy!"
-                                  "\n\t- Set to default strategy:"
-                                  " Bi-connected components separation."
-                                  "\033[0m"),
+                                             "\n\t- Set to default strategy:"
+                                             " Bi-connected components separation."
+                                             "\033[0m"),
             file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
@@ -1326,9 +1326,9 @@ class Physlr:
                             measurements.append(qpos)
                         num_tpos += 1
                 if num_tpos > self.args.mkt_median_threshold or len(timepoints) > 50000:
-#                     print("Warning ", len(timepoints), " minimizers positions in ", \
-#                           num_tpos, " backbone positions seen for scaffold ", qid, \
-#                           " to backbone ", tid, file=sys.stderr)
+                    #                     print("Warning ", len(timepoints), " minimizers positions in ", \
+                    #                           num_tpos, " backbone positions seen for scaffold ", qid, \
+                    #                           " to backbone ", tid, file=sys.stderr)
                     timepoints = []
                     measurements = []
                     for (tpos, qpos_list) in tpos_to_qpos.items():
