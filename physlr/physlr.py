@@ -24,12 +24,10 @@ from physlr.read_fasta import read_fasta
 # The time at which execution started.
 t0 = timeit.default_timer()
 
-
 def quantile(quantiles, xs):
     "Return the specified quantiles p of xs."
     sorted_xs = sorted(xs)
     return [sorted_xs[round(p * (len(sorted_xs) - 1))] for p in quantiles]
-
 
 def progress_bar_for_file(fin):
     "Return a progress bar for a file."
@@ -38,7 +36,6 @@ def progress_bar_for_file(fin):
         mininterval=1, smoothing=0.1,
         bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
 
-
 def progress(iterator):
     "Return an iterator that displays a progress bar."
     if Physlr.args.verbose < 2:
@@ -46,7 +43,6 @@ def progress(iterator):
     return tqdm.tqdm(
         iterator, mininterval=1, smoothing=0.1,
         bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
-
 
 class Physlr:
     """
@@ -1121,9 +1117,9 @@ class Physlr:
     @staticmethod
     def merge_communities(g, communities, node_set=0, strategy=0, cutoff=20):
         """Merge communities if appropriate."""
+        mode = 1
         if cutoff == -1:  # no merging
             return communities
-        mode = 1
         if len(communities) == 1 and (node_set == 0 or strategy != 1):
             return communities
         if strategy == 1:  # Merge by Initializing Louvain with the communities
@@ -1152,61 +1148,88 @@ class Physlr:
                 for i in nx.connected_components(merge_network)]
 
     @staticmethod
+    def determine_molecules_bc_k_cliques(g, u):
+        """Assign the neighbours of this vertex to molecules by
+                       applying k-cliques community detection for each bi-connected component."""
+        return [community
+                for bi_connected_component in
+                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                for community in
+                Physlr.community_detection_k_clique(g, bi_connected_component)]
+
+    @staticmethod
+    def determine_molecules_bc_louvain(g, u):
+        """Assign the neighbours of this vertex to molecules by
+                applying louvain for each bi-connected component."""
+        return [community
+                for bi_connected_component in
+                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                for community in
+                Physlr.community_detection_louvain(g, bi_connected_component)]
+
+    @staticmethod
+    def determine_molecules_bc_cosine_of_squared(g, u):
+        """Assign the neighbours of this vertex to molecules by
+                        applying cosine of squared of the adjacency matrix for each bi-connected component."""
+        return [community
+                for bi_connected_component in
+                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                for community in
+                Physlr.community_detection_cosine_of_squared(g, bi_connected_component)]
+
+    @staticmethod
+    def determine_molecules_bc_mst_bc(g, u):
+        """Assign the neighbours of this vertex to molecules by
+                                using maximum spanning tree (mst) of each bi-connected (bc) component.
+                                it applies bc, then mst, then bc again"""
+        return [community2
+                for bi_connected_component in
+                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                for community in
+                Physlr.community_detection_maximum_spanning_tree(g, bi_connected_component)
+                for community2 in
+                Physlr.community_detection_biconnected_components(g, set(community))]
+
+    @staticmethod
+    def determine_molecules_partition_split_merge(g, u):
+        """Assign the neighbours of this vertex to molecules by
+                                        using maximum spanning tree (mst) of each bi-connected (bc) component.
+                                        Pipeline: bc + partition + bc + k-cliques + merge"""
+        return [merged
+                for bi_connected_component in
+                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                for merged in
+                Physlr.merge_communities(g, [cluster
+                                             for chunk in
+                                             Physlr.partition_subgraph_into_chunks_randomly(
+                                                 bi_connected_component)
+                                             for cluster in
+                                             Physlr.community_detection_k_clique(g, chunk, 3)],
+                                         bi_connected_component, strategy=0)
+                ]
+
+    @staticmethod
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
         communities = []
-        if strategy not in {2, 3, 4, 5, 10}:  # default strategy in case of wrong parameter.
+        if strategy not in {2, 3, 4, 5, 10}:  # default strategy (bi-connected components) in case of wrong parameter.
             communities = \
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
 
         if strategy == 2:  # bi-connected + k-clique
-            communities = \
-                [community
-                 for bi_connected_component in
-                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-                 for community in
-                 Physlr.community_detection_k_clique(g, bi_connected_component)]
+            communities = Physlr.determine_molecules_bc_k_cliques(g, u)
 
         if strategy == 3:  # bi-connected + Louvain
-            communities = \
-                [community
-                 for bi_connected_component in
-                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-                 for community in
-                 Physlr.community_detection_louvain(g, bi_connected_component)]
+            communities = Physlr.determine_molecules_bc_louvain(g, u)
 
         if strategy == 4:  # bi-connected + sqCos
-            communities = \
-                [community
-                 for bi_connected_component in
-                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-                 for community in
-                 Physlr.community_detection_cosine_of_squared(g, bi_connected_component)]
+            communities = Physlr.determine_molecules_bc_cosine_of_squared(g, u)
 
         if strategy == 5:  # bi-connected + MST + bi-connected
-            communities = \
-                [community2
-                 for bi_connected_component in
-                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-                 for community in
-                 Physlr.community_detection_maximum_spanning_tree(g, bi_connected_component)
-                 for community2 in
-                 Physlr.community_detection_biconnected_components(g, set(community))]
+            communities = Physlr.determine_molecules_bc_mst_bc(g, u)
 
-        if strategy == 10:  # bi-connected + {partition, Cluster, Mix}
-            communities = \
-                [merged
-                 for bi_connected_component in
-                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-                 for merged in
-                 Physlr.merge_communities(g, [cluster
-                                              for chunk in
-                                              Physlr.partition_subgraph_into_chunks_randomly(
-                                                  bi_connected_component)
-                                              for cluster in
-                                              Physlr.community_detection_k_clique(g, chunk, 3)],
-                                          bi_connected_component, strategy=0)
-                 ]
+        if strategy == 10:  # bi-connected + {partition, bi-connected, Cluster, Mix}
+            communities = Physlr.determine_molecules_partition_split_merge(g, u)
 
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
@@ -1237,11 +1260,12 @@ class Physlr:
             5: "\n\tStrategy: "
                "Max Spanning Tree (after separating bi-connected components)",
             10: "\n\tStrategy: "
-                "Partition, Cluster (K-clique), Mix. (after separating bi-connected components)"
+                "Partition, Cluster (K-clique), Merge"
+                "(+separating bi-connected components before and after partitioning)"
         }
         print(
             int(timeit.default_timer() - t0),
-            "Separating barcodes into molecules",
+            "Splitting barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
                                   "\033[93m" + "\n\tWarning:"
                                                " Wrong input argument: --separation-strategy!"
