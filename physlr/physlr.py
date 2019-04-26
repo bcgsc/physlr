@@ -1300,7 +1300,7 @@ class Physlr:
             # Count the number of minimizers mapped to each target position.
             tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
             # Map each target position to a query position.
-            #tid->tpos->qpos_list
+            # tid->tpos->qpos_list
             tid_to_qpos = {}
             for qpos, mx in enumerate(mxs):
                 for (tid, tpos) in mxtopos.get(mx, ()):
@@ -1312,23 +1312,23 @@ class Physlr:
 
             tid_to_mkt = {}
             for (tid, tpos_to_qpos) in tid_to_qpos.items():
-                #build array of the time points of measurements
-                #build array containing the measurements corresponding to entries of time
+                # build array of the time points of measurements
+                # build array containing the measurements corresponding to entries of time
                 timepoints = []
                 measurements = []
                 num_tpos = 0
                 for (tpos, qpos_list) in tpos_to_qpos.items():
-                    #do not use islands (noise?)
-                    #determine count of non-island sequences
+                    # do not use islands (noise?)
+                    # determine count of non-island sequences
                     if tpos + 1 in tpos_to_qpos or tpos - 1 in tpos_to_qpos:
                         for qpos in qpos_list:
                             timepoints.append(tpos)
                             measurements.append(qpos)
                         num_tpos += 1
                 if num_tpos > self.args.mkt_median_threshold or len(timepoints) > 50000:
-                    #                     print("Warning ", len(timepoints), " minimizers positions in ", \
-                    #                           num_tpos, " backbone positions seen for scaffold ", qid, \
-                    #                           " to backbone ", tid, file=sys.stderr)
+                    # print("Warning ", len(timepoints), " minimizers positions in ", \
+                    #       num_tpos, " backbone positions seen for scaffold ", qid, \
+                    #       " to backbone ", tid, file=sys.stderr)
                     timepoints = []
                     measurements = []
                     for (tpos, qpos_list) in tpos_to_qpos.items():
@@ -1343,10 +1343,10 @@ class Physlr:
                 if score >= self.args.n:
                     orientation = "."
                     if tid in tid_to_mkt:
-                        #mk: string of test result
-                        #m: slope
-                        #c: intercept
-                        #p: significance
+                        # mk: string of test result
+                        # m: slope
+                        # c: intercept
+                        # p: significance
                         result = tid_to_mkt[tid]
                         mapped = True
                         if result[3] < self.args.p and result[1] != 0:
