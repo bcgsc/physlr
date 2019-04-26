@@ -1024,8 +1024,8 @@ class Physlr:
         return "_" + str(random.choice(max_hits)), 0, 1
 
     @staticmethod
-    def split_subgraph_into_chunks_randomly(node_set, max_size=50):
-        "Split the subgraph into chunks for faster processing. Return chunks."
+    def partition_subgraph_into_chunks_randomly(node_set, max_size=20):
+        "Prtition the subgraph into chunks for faster processing. Return chunks."
         chunks_count = 1
         if len(node_set) > max_size:
             chunks_count = 1 + int(len(node_set) / max_size)
@@ -1119,7 +1119,7 @@ class Physlr:
         return Physlr.merge_communities(g, communities)
 
     @staticmethod
-    def merge_communities(g, communities, node_set=0, strategy=0, cutoff=8):
+    def merge_communities(g, communities, node_set=0, strategy=0, cutoff=20):
         """Merge communities if appropriate."""
         mode = 1
         if len(communities) == 1 and (node_set == 0 or strategy != 1):
@@ -1191,7 +1191,7 @@ class Physlr:
                  for community2 in
                  Physlr.community_detection_biconnected_components(g, set(community))]
 
-        if strategy == 10:  # bi-connected + {Split, Cluster, Mix}
+        if strategy == 10:  # bi-connected + {partition, Cluster, Mix}
             communities = \
                 [merged
                  for bi_connected_component in
@@ -1199,7 +1199,7 @@ class Physlr:
                  for merged in
                  Physlr.merge_communities(g, [cluster
                                               for chunk in
-                                              Physlr.split_subgraph_into_chunks_randomly(
+                                              Physlr.partition_subgraph_into_chunks_randomly(
                                                   bi_connected_component)
                                               for cluster in
                                               Physlr.community_detection_k_clique(g, chunk, 3)],
@@ -1235,7 +1235,7 @@ class Physlr:
             5: "\n\tStrategy: "
                "Max Spanning Tree (after separating bi-connected components)",
             10: "\n\tStrategy: "
-                "Split, Cluster (K-clique), Mix. (after separating bi-connected components)"
+                "Partition, Cluster (K-clique), Mix. (after separating bi-connected components)"
         }
         print(
             int(timeit.default_timer() - t0),
