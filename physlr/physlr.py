@@ -483,6 +483,37 @@ class Physlr:
         return backbones
 
     @staticmethod
+    def wrap_up_messages_and_pass(mst, messages, sender, receiver):
+        """
+        Wrap up all incoming messages to this node (sender) except the one from receiver;
+        and set (pass) the message from sender to receiver.
+        """
+        neighbors_to_wrap_up = list(set(mst.neighbors(sender)) - {receiver})
+        if not neighbors_to_wrap_up:
+            messages[(receiver, sender)] = 1
+        messages[(receiver, sender)] = 1 + sum([messages[(sender, neighbor)] for neighbor in neighbors_to_wrap_up])
+
+    @staticmethod
+    def determine_reachability_by_message_passing(mst):
+        """
+        Using message passing, determine for each edge of each vertex
+        the number of vertices of the tree reachable from that vertex through that edge.
+        """
+        dfs = list(nx.dfs_edges(mst))
+        if not dfs:
+            return dict()
+        stack = [dfs[0][0]]
+        messages = dict()
+        # Gather
+        for edge in dfs:
+            while stack[-1] != edge[0]:
+                Physlr.wrap_up_messages_and_pass(mst, messages, stack.pop(), stack[-1])
+            stack.append(edge[1])
+        while len(stack) != 1:
+            Physlr.wrap_up_messages_and_pass(mst, messages, stack.pop(), stack[-1])
+        return messages
+
+    @staticmethod
     def print_flesh_path(backbone, backbone_insertions):
         "Print out the backbone path with 'flesh' barcodes added"
         for i, mol in enumerate(backbone):
