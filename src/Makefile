@@ -7,7 +7,7 @@ clean:
 	rm -f physlr-indexlr physlr-filter-barcodes physlr-filter-bxmx physlr-overlap
 
 # Check the C++ source code for errors.
-lint: clang-tidy clang-format
+lint: clang-format clang-tidy
 
 # Check the C++ source code for errors with clang-tidy.
 clang-tidy:
@@ -15,8 +15,13 @@ clang-tidy:
 
 # Check the C++ source code for white-space errors with clang-format.
 clang-format:
-	bash -c 'for file in *.cc *.h; do var=$$(diff -u "$$file" <(clang-format -style Google "$$file")); if [[ $$(echo "$$var" | wc -l) -ne 1 ]]; then echo "$$var" > "$$file".clangformat; fi; done'
-	if ls *.clangformat; then exit 1; fi
+	for i in *.cc; do clang-format -style=file $$i >$$i.fixed; done
+	for i in *.cc; do diff -su $$i $$i.fixed && rm -f $$i.fixed; done
+	if ls *.fixed; then exit 1; fi
+
+# Fix white-space errors with clang-format.
+fix:
+	for i in *.cc; do clang-format -i -style=file $$i; done
 
 check: check-physlr-index-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second
 
