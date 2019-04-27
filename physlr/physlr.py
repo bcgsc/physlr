@@ -1393,12 +1393,12 @@ class Physlr:
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
-            strategy_switcher.get(self.args.strategy,
-                                  "\033[93m\n\tWarning:"
-                                  " Wrong input argument: --separation-strategy!"
-                                  "\n\t- Set to default strategy:"
-                                  " Bi-connected components separation."
-                                  "\033[0m"),
+            strategy_switcher.get(self.args.strategy),
+            "\033[93m\n\tWarning:"
+            " Wrong input argument: --separation-strategy!"
+            "\n\t- Set to default strategy:"
+            " Bi-connected components separation."
+            "\033[0m",
             file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
@@ -1450,13 +1450,14 @@ class Physlr:
 
     @staticmethod
     def subgraph_stats(g, u):
-        "Extract the statistics of the vertex-induced subgraph with the vertex being u."
+        """Extract the statistics of the vertex-induced subgraph with the vertex being u."""
         sub_graph = g.subgraph(g.neighbors(u))
         nodes_count = sub_graph.number_of_nodes()
         edges_count = sub_graph.number_of_edges()
         if nodes_count < 2:
             return u, [nodes_count, edges_count, 0.0]
-        return u, (nodes_count, edges_count, (edges_count*2.0/(nodes_count*(nodes_count-1))))
+        return u, (nodes_count, edges_count,
+                   (edges_count*2.0/(nodes_count*(nodes_count-1))))
 
     @staticmethod
     def subgraph_stats_process(u):
