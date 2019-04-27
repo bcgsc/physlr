@@ -517,6 +517,21 @@ class Physlr:
         return messages
 
     @staticmethod
+    def prune_branches_of_tree(gmst, g, messages, branch_size=50):
+        """"
+        Determine the backbones of the maximum spanning trees
+        and remove branches smaller than branch_size.
+        """
+        g = g.copy()
+        set_of_nodes_for_pruning = {neighbor
+                                    for node in list(g.nodes)
+                                    for neighbor in g.neighbors(node)
+                                    if messages[(node, neighbor)] < branch_size}
+        for node_to_remove in set_of_nodes_for_pruning:
+            gmst.remove_node(node_to_remove)
+        return gmst
+
+    @staticmethod
     def print_flesh_path(backbone, backbone_insertions):
         "Print out the backbone path with 'flesh' barcodes added"
         for i, mol in enumerate(backbone):
