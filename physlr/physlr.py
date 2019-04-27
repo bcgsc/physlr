@@ -923,6 +923,21 @@ class Physlr:
             print(u, prop["n"], g.degree(u), sep="\t")
         print(int(timeit.default_timer() - t0), "Wrote degrees of vertices", file=sys.stderr)
 
+    def physlr_pruned_mst(self):
+        """Determine the maximum spanning tree pruned for small branches."""
+        g = self.read_graph(self.args.FILES)
+        print(int(timeit.default_timer() - t0), "Extracting MST and pruning the branches.", file=sys.stderr)
+        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
+        gmst_copy = gmst.copy()
+        for component in nx.connected_components(gmst):
+            gcomponent = gmst.subgraph(component)
+            if nx.number_of_edges(gcomponent) > 0:
+                messages = Physlr.determine_reachability_by_message_passing(gcomponent)
+                gmst_copy = Physlr.prune_branches_of_tree(gmst_copy, gcomponent, messages)
+        print(int(timeit.default_timer() - t0), "Extracted and pruned MST.", file=sys.stderr)
+        self.write_graph(gmst_copy, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote pruned MST.", file=sys.stderr)
+
     def physlr_mst(self):
         "Determine the maximum spanning tree."
         g = self.read_graph(self.args.FILES)
