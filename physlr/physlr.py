@@ -511,6 +511,9 @@ class Physlr:
             stack.append(edge[1])
         while len(stack) != 1:
             Physlr.wrap_up_messages_and_pass(mst, messages, stack.pop(), stack[-1])
+        # Distribute
+        for edge in dfs:
+            Physlr.wrap_up_messages_and_pass(mst, messages, edge[0], edge[1])
         return messages
 
     @staticmethod
