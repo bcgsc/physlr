@@ -1021,7 +1021,7 @@ class Physlr:
 
     @staticmethod
     def partition_subgraph_into_chunks_randomly(node_set, max_size=20):
-        "Prtition the subgraph into chunks for faster processing. Return chunks."
+        """Prtition the subgraph into chunks for faster processing. Return chunks."""
         chunks_count = 1
         if len(node_set) > max_size:
             chunks_count = 1 + int(len(node_set) / max_size)
@@ -1077,8 +1077,10 @@ class Physlr:
 
     @staticmethod
     def community_detection_cosine_of_squared(g, node_set):
-        """Square the adjacency matrix and then use cosine similarity to detect communities.
-        Return communities."""
+        """
+        Square the adjacency matrix and then use cosine similarity to detect communities.
+        Return communities.
+        """
         import scipy as sp
         import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity
@@ -1104,8 +1106,10 @@ class Physlr:
 
     @staticmethod
     def community_detection_maximum_spanning_tree(g, node_set):
-        """Find MST. Collect clusters of nodes around a hub.
-        Merge if appropriate. Return communities."""
+        """
+        Find MST. Collect clusters of nodes around a hub.
+        Merge if appropriate. Return communities.
+        """
         sub_mst = nx.maximum_spanning_tree(g.subgraph(node_set), weight="n")
         hubs = [i[0] for i in sub_mst.degree() if i[1] > 2]
         communities = \
@@ -1149,8 +1153,10 @@ class Physlr:
 
     @staticmethod
     def determine_molecules_bc_k_cliques(g, u):
-        """Assign the neighbours of this vertex to molecules by
-                       applying k-cliques community detection for each bi-connected component."""
+        """
+        Assign the neighbours of this vertex to molecules by
+        applying k-cliques community detection for each bi-connected component.
+        """
         return [community
                 for bi_connected_component in
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
@@ -1159,8 +1165,10 @@ class Physlr:
 
     @staticmethod
     def determine_molecules_bc_louvain(g, u):
-        """Assign the neighbours of this vertex to molecules by
-                applying louvain for each bi-connected component."""
+        """
+        Assign the neighbours of this vertex to molecules by
+        applying louvain for each bi-connected component.
+        """
         return [community
                 for bi_connected_component in
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
@@ -1169,8 +1177,10 @@ class Physlr:
 
     @staticmethod
     def determine_molecules_bc_cosine_of_squared(g, u):
-        """Assign the neighbours of this vertex to molecules by
-        applying cosine of squared of the adjacency matrix for each bi-connected component."""
+        """
+        Assign the neighbours of this vertex to molecules by
+        applying cosine of squared of the adjacency matrix for each bi-connected component.
+        """
         return [community
                 for bi_connected_component in
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
@@ -1179,9 +1189,11 @@ class Physlr:
 
     @staticmethod
     def determine_molecules_bc_mst_bc(g, u):
-        """Assign the neighbours of this vertex to molecules by
+        """
+        Assign the neighbours of this vertex to molecules by
         using maximum spanning tree (mst) of each bi-connected (bc) component.
-        it applies bc, then mst, then bc again"""
+        it applies bc, then mst, then bc again
+        """
         return [community2
                 for bi_connected_component in
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
@@ -1192,9 +1204,11 @@ class Physlr:
 
     @staticmethod
     def determine_molecules_partition_split_merge(g, u):
-        """Assign the neighbours of this vertex to molecules by
+        """
+        Assign the neighbours of this vertex to molecules by
         using maximum spanning tree (mst) of each bi-connected (bc) component.
-        Pipeline: bc + partition + bc + k-cliques + merge"""
+        Pipeline: bc + partition + bc + k-cliques + merge
+        """
         return [merged
                 for bi_connected_component in
                 Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
