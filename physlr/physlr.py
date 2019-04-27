@@ -491,7 +491,8 @@ class Physlr:
         neighbors_to_wrap_up = list(set(mst.neighbors(sender)) - {receiver})
         if not neighbors_to_wrap_up:
             messages[(receiver, sender)] = 1
-        messages[(receiver, sender)] = 1 + sum([messages[(sender, neighbor)] for neighbor in neighbors_to_wrap_up])
+        messages[(receiver, sender)] = \
+            1 + sum([messages[(sender, neighbor)] for neighbor in neighbors_to_wrap_up])
 
     @staticmethod
     def determine_reachability_by_message_passing(mst):
@@ -926,7 +927,8 @@ class Physlr:
     def physlr_pruned_mst(self):
         """Determine the maximum spanning tree pruned for small branches."""
         g = self.read_graph(self.args.FILES)
-        print(int(timeit.default_timer() - t0), "Extracting MST and pruning the branches.", file=sys.stderr)
+        print(int(timeit.default_timer() - t0),
+              "Extracting MST and pruning the branches.", file=sys.stderr)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         gmst_copy = gmst.copy()
         for component in nx.connected_components(gmst):
