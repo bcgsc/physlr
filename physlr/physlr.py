@@ -449,7 +449,7 @@ class Physlr:
         header_prefix_match_r1 = re.search(Physlr.header_prefix_re, name1)
         header_prefix_match_r2 = re.search(Physlr.header_prefix_re, name2)
         return bx1 is not None and bx2 is not None and bx1 == bx2 and \
-            header_prefix_match_r1.group(1) == header_prefix_match_r2.group(1)
+               header_prefix_match_r1.group(1) == header_prefix_match_r2.group(1)
 
     @staticmethod
     def remove_small_components(g, min_component_size):
@@ -889,8 +889,8 @@ class Physlr:
         while g.has_node(bx + "_" + str(mol)):
             bxmol = bx + "_" + str(mol)
             neighbour_mxs_list = [bxtomxs[re.search(bx_match, v).group(1)] \
-                                         for v in g.neighbors(bxmol) \
-                                         if re.search(bx_match, v).group(1) in bxtomxs]
+                                  for v in g.neighbors(bxmol) \
+                                  if re.search(bx_match, v).group(1) in bxtomxs]
             if not neighbour_mxs_list:
                 neighbour_mxs_list = [set()]
             neighbour_mxs_set = set.union(*neighbour_mxs_list)
@@ -1147,8 +1147,8 @@ class Physlr:
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy,
-                                  "\033[93m"+"\n\tWarning:"
-                                             " Wrong input argument: --separation-strategy!"
+                                  "\033[93m\n\tWarning:"
+                                  " Wrong input argument: --separation-strategy!"
                                   "\n\t- Set to default strategy:"
                                   " Bi-connected components separation."
                                   "\033[0m"),
@@ -1300,7 +1300,7 @@ class Physlr:
             # Count the number of minimizers mapped to each target position.
             tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
             # Map each target position to a query position.
-            #tid->tpos->qpos_list
+            # tid->tpos->qpos_list
             tid_to_qpos = {}
             for qpos, mx in enumerate(mxs):
                 for (tid, tpos) in mxtopos.get(mx, ()):
@@ -1312,23 +1312,23 @@ class Physlr:
 
             tid_to_mkt = {}
             for (tid, tpos_to_qpos) in tid_to_qpos.items():
-                #build array of the time points of measurements
-                #build array containing the measurements corresponding to entries of time
+                # build array of the time points of measurements
+                # build array containing the measurements corresponding to entries of time
                 timepoints = []
                 measurements = []
                 num_tpos = 0
                 for (tpos, qpos_list) in tpos_to_qpos.items():
-                    #do not use islands (noise?)
-                    #determine count of non-island sequences
+                    # do not use islands (noise?)
+                    # determine count of non-island sequences
                     if tpos + 1 in tpos_to_qpos or tpos - 1 in tpos_to_qpos:
                         for qpos in qpos_list:
                             timepoints.append(tpos)
                             measurements.append(qpos)
                         num_tpos += 1
                 if num_tpos > self.args.mkt_median_threshold or len(timepoints) > 50000:
-#                     print("Warning ", len(timepoints), " minimizers positions in ", \
-#                           num_tpos, " backbone positions seen for scaffold ", qid, \
-#                           " to backbone ", tid, file=sys.stderr)
+                    # print("Warning ", len(timepoints), " minimizers positions in ", \
+                    #       num_tpos, " backbone positions seen for scaffold ", qid, \
+                    #       " to backbone ", tid, file=sys.stderr)
                     timepoints = []
                     measurements = []
                     for (tpos, qpos_list) in tpos_to_qpos.items():
@@ -1343,10 +1343,10 @@ class Physlr:
                 if score >= self.args.n:
                     orientation = "."
                     if tid in tid_to_mkt:
-                        #mk: string of test result
-                        #m: slope
-                        #c: intercept
-                        #p: significance
+                        # mk: string of test result
+                        # m: slope
+                        # c: intercept
+                        # p: significance
                         result = tid_to_mkt[tid]
                         mapped = True
                         if result[3] < self.args.p and result[1] != 0:
