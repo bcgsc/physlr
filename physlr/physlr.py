@@ -1381,7 +1381,7 @@ class Physlr:
             2: "\n\tStrategy: "
                "K-clique community detection (after separating bi-connected components)",
             3: "\n\tStrategy: "
-               "Louvain community detection (after separating bi-connected components)"
+               "Louvain community detection (after separating bi-connected components)",
             4: "\n\tStrategy: "
                "Community detection by cosine of squared adjacency matrix"
                "(after separating bi-connected components)"
