@@ -1248,7 +1248,7 @@ class Physlr:
         return "_" + str(random.choice(max_hits)), 0, 1
 
     @staticmethod
-    def community_detection_biconnected_components(g, node_set):
+    def detect_communities_biconnected_components(g, node_set):
         """Separate bi-connected components. Return components."""
         cut_vertices = set(nx.articulation_points(g.subgraph(node_set)))
         components = list(nx.connected_components(g.subgraph(node_set - cut_vertices)))
@@ -1256,7 +1256,7 @@ class Physlr:
         return components
 
     @staticmethod
-    def community_detection_k_clique(g, node_set, k=3):
+    def detect_communities_k_clique(g, node_set, k=3):
         """Apply k-clique community detection. Return communities."""
         from networkx.algorithms import community as nxcommunity
 
@@ -1265,7 +1265,7 @@ class Physlr:
         return []
 
     @staticmethod
-    def community_detection_louvain(g, node_set, init_communities=False):
+    def detect_communities_louvain(g, node_set, init_communities=False):
         """Apply Louvain community detection on a single component. Return communities."""
         import community as louvain
 
@@ -1274,19 +1274,12 @@ class Physlr:
                 partition = louvain.best_partition(g.subgraph(node_set))
             else:
                 partition = louvain.best_partition(g.subgraph(node_set), init_communities)
-            #     communities = []
-            #     for com in set(partition.values()):
-            #         community_nodes = \
-            #             {nodes for nodes in partition.keys() if partition[nodes] == com}
-            #         if len(community_nodes) > 1:
-            #             communities.append(community_nodes)
-            # return communities
             return [{nodes for nodes in partition.keys() if partition[nodes] == com}
                     for com in set(partition.values())]
         return []
 
     @staticmethod
-    def community_detection_cosine_of_squared(g, node_set):
+    def detect_communities_cosine_of_squared(g, node_set):
         """
         Square the adjacency matrix and then use cosine similarity to detect communities.
         Return communities.
@@ -1322,9 +1315,9 @@ class Physlr:
         """
         return [community
                 for bi_connected_component in
-                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
                 for community in
-                Physlr.community_detection_k_clique(g, bi_connected_component)]
+                Physlr.detect_communities_k_clique(g, bi_connected_component)]
 
     @staticmethod
     def determine_molecules_bc_louvain(g, u):
@@ -1334,9 +1327,9 @@ class Physlr:
         """
         return [community
                 for bi_connected_component in
-                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
                 for community in
-                Physlr.community_detection_louvain(g, bi_connected_component)]
+                Physlr.detect_communities_louvain(g, bi_connected_component)]
 
     @staticmethod
     def determine_molecules_bc_cosine_of_squared(g, u):
@@ -1346,27 +1339,25 @@ class Physlr:
         """
         return [community
                 for bi_connected_component in
-                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
                 for community in
-                Physlr.community_detection_cosine_of_squared(g, bi_connected_component)]
+                Physlr.detect_communities_cosine_of_squared(g, bi_connected_component)]
 
     @staticmethod
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
         communities = []
-        if strategy not in {2, 3, 4, 5, 10}:
-            # default strategy (bi-connected components) in case of wrong parameter.
+        if strategy == 1:  # bi-connected
             communities = \
-                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
-
-        if strategy == 2:  # bi-connected + k-clique
+                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+        elif strategy == 2:  # bi-connected + k-clique
             communities = Physlr.determine_molecules_bc_k_cliques(g, u)
-
-        if strategy == 3:  # bi-connected + Louvain
+        elif strategy == 3:  # bi-connected + Louvain
             communities = Physlr.determine_molecules_bc_louvain(g, u)
-
-        if strategy == 4:  # bi-connected + sqCos
+        elif strategy == 4:  # bi-connected + sqCos
             communities = Physlr.determine_molecules_bc_cosine_of_squared(g, u)
+        else:
+            exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
 
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
@@ -1380,6 +1371,8 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
+        if self.args.strategy not in [1, 2, 3, 4]:
+            exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
         strategy_switcher = {
@@ -1389,16 +1382,14 @@ class Physlr:
                "K-clique community detection (after separating bi-connected components)",
             3: "\n\tStrategy: "
                "Louvain community detection (after separating bi-connected components)"
+            4: "\n\tStrategy: "
+               "Community detection by cosine of squared adjacency matrix"
+               "(after separating bi-connected components)"
         }
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
             strategy_switcher.get(self.args.strategy),
-            "\033[93m\n\tWarning:"
-            " Wrong input argument: --separation-strategy!"
-            "\n\t- Set to default strategy:"
-            " Bi-connected components separation."
-            "\033[0m",
             file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
