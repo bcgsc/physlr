@@ -488,11 +488,9 @@ class Physlr:
         Wrap up all incoming messages to this node (sender) except the one from receiver;
         and set (pass) the message from sender to receiver.
         """
-        neighbors_to_wrap_up = list(set(mst.neighbors(sender)) - {receiver})
-        if not neighbors_to_wrap_up:
-            messages[(receiver, sender)] = 1
         messages[(receiver, sender)] = \
-            1 + sum([messages[(sender, neighbor)] for neighbor in neighbors_to_wrap_up])
+            1 + sum([messages[(sender, u)]
+                     for u in mst.neighbors(sender) if u != receiver])
 
     @staticmethod
     def determine_reachability_by_message_passing(mst):
@@ -502,9 +500,9 @@ class Physlr:
         """
         dfs = list(nx.dfs_edges(mst))
         if not dfs:
-            return dict()
+            return {}
         stack = [dfs[0][0]]
-        messages = dict()
+        messages = {}
         # Gather
         for edge in dfs:
             while stack[-1] != edge[0]:
