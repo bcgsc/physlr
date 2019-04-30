@@ -413,14 +413,16 @@ class Physlr:
         return paths
 
     @staticmethod
-    def identify_chimera(g, backbones, d, depth_threshold):
+    def identify_chimera(g, backbones, distance, depth_threshold):
         "Identify chimeric barcodes."
-        print("Tname", "Pos", "U", "V", "W", "Edges", "Depth", sep="\t")
+        if Physlr.args.output:
+            fout = open(Physlr.args.output, "w")
+            print("Tname", "Pos", "U", "V", "W", "Edges", "Depth", sep="\t", file=fout)
         chimera = []
         for tname, backbone in enumerate(backbones):
             for i, v in enumerate(backbone):
-                us = set(backbone[max(0, i - d) : i])
-                ws = set(backbone[i + 1 : i + 1 + d])
+                us = set(backbone[max(0, i - distance) : i])
+                ws = set(backbone[i + 1 : i + 1 + distance])
                 edges = len(list(nx.edge_boundary(g, us, ws)))
                 uneighbors = set()
                 for u in us:
@@ -429,9 +431,14 @@ class Physlr:
                 for w in ws:
                     wneighbors.update(g.neighbors(w))
                 depth = edges + len(uneighbors & wneighbors)
-                print(tname, i, len(us), v, len(ws), edges, depth, sep="\t")
-                if depth < depth_threshold:
+                if fout:
+                    print(tname, i, len(us), v, len(ws), edges, depth, sep="\t", file=fout)
+                if us and ws and depth < depth_threshold:
                     chimera.append(v)
+        if fout:
+            fout.close()
+        if Physlr.args.verbose >= 1:
+            print("Chimera:", chimera, file=sys.stderr)
         print(
             int(timeit.default_timer() - t0),
             "Identified", len(chimera), "chimeric barcodes.", file=sys.stderr)
@@ -444,7 +451,18 @@ class Physlr:
             Physlr.args.d = 2
         g = Physlr.read_graph([Physlr.args.FILES[0]])
         backbones = Physlr.read_paths([Physlr.args.FILES[1]])
-        Physlr.identify_chimera(g, backbones, d=Physlr.args.d, depth_threshold=2)
+        chimera = Physlr.identify_chimera(g, backbones, distance=Physlr.args.d, depth_threshold=2)
+        sep = ""
+        for backbone in backbones:
+            for u in backbone:
+                if u in chimera:
+                    sep = "\n"
+                else:
+                    print(sep, u, sep="", end="")
+                    sep = " "
+            sep = "\n"
+        if sep:
+            print()
 
     @staticmethod
     def determine_backbones(g):
