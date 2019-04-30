@@ -641,6 +641,10 @@ minsize=2000
 %.path: %.tsv
 	$(time) $(python) $(bin)/physlr backbone $< >$@
 
+# Cut chimeric paths to correct misassemblies.
+%.backbone.cut.path: %.tsv %.backbone.path
+	$(time) $(python) $(bin)/physlr -V$V cut-chimera -d2 $^ -o $*.backbone.cut.tsv >$@
+
 # Flesh out the backbone path
 %.backbone.fleshed.path: %.tsv %.backbone.path
 	$(python) $(bin)/physlr flesh-backbone --min-component-size=$(min_component_size) $< $*.backbone.path >$@
@@ -702,12 +706,16 @@ minsize=2000
 %.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
-# Map the reference to the backbone graph and output PAF (K3-cliques).
+# Map the reference to the k3-cliques backbone graph and output PAF.
 %.overlap.n$n.k3.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
-# Map the reference to the backbone graph and output PAF (K3-cliques).
+# Map the reference to the Louvain backbone graph and output PAF.
 %.overlap.n$n.louvain.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
+
+# Map the reference to the corrected backbone graph and output PAF.
+%.overlap.n$n.mol.backbone.cut.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.backbone.cut.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
 # Annotate a backbone graph with a BED file of mappings.
@@ -772,7 +780,7 @@ mol_strategy=1
 
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv
-	$(python) $(bin)/physlr subgraph -v$v -d$d $< >$@
+	$(python) $(bin)/physlr subgraph -v$v --exclude-vertices=$v -d$d $< >$@
 
 # Make multiple vertex-induced subgraphs
 %.subgraphs: %.tsv
