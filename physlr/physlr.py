@@ -413,6 +413,34 @@ class Physlr:
         return paths
 
     @staticmethod
+    def identify_chimera(g, backbones, depth_threshold):
+        "Identify chimeric barcodes."
+        print("Tname", "Pos", "U", "V", "W", "Edge", "Depth", sep="\t")
+        chimera = []
+        for tname, backbone in enumerate(backbones):
+            for i, v in enumerate(backbone):
+                u = backbone[i - 1] if i > 0 else backbone[0]
+                w = backbone[i + 1] if i + 1 < len(backbone) else backbone[-1]
+                depth = len(set(g.neighbors(u)) & set(g.neighbors(w)))
+                has_edge = g.has_edge(u, w)
+                if has_edge:
+                    depth += 1
+                print(tname, i, u, v, w, has_edge, depth, sep="\t")
+                if depth < depth_threshold:
+                    chimera.append(v)
+        print(
+            int(timeit.default_timer() - t0),
+            "Identified", len(chimera), "chimeric barcodes.", file=sys.stderr)
+        return chimera
+
+    @staticmethod
+    def physlr_cut_chimera(g):
+        "Cut chimeric paths to correct misassemblies."
+        g = Physlr.read_graph([Physlr.args.FILES[0]])
+        backbones = Physlr.read_paths([Physlr.args.FILES[1]])
+        Physlr.identify_chimera(g, backbones, depth_threshold=2)
+
+    @staticmethod
     def determine_backbones(g):
         "Determine the backbones of the graph."
         g = g.copy()
