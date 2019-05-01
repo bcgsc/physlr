@@ -413,32 +413,48 @@ class Physlr:
         return paths
 
     @staticmethod
-    def identify_chimera(g, backbones, distance, depth_threshold):
+    def identify_chimera(g, backbones, distance, support_threshold=5):
         "Identify chimeric barcodes."
         if Physlr.args.output:
             fout = open(Physlr.args.output, "w")
-            print("Tname", "Pos", "U", "V", "W", "Edges", "Depth", sep="\t", file=fout)
+            print("Tname", "Pos", "U", "V", "W", "Overlap", "Depth", "Support", sep="\t", file=fout)
         chimera = []
         for tname, backbone in enumerate(backbones):
             for i, v in enumerate(backbone):
                 us = set(backbone[max(0, i - distance) : i])
                 ws = set(backbone[i + 1 : i + 1 + distance])
-                edges = len(list(nx.edge_boundary(g, us, ws)))
-                uneighbors = set()
+                if not us or not ws:
+                    continue
+
+                # Count the number molecules that directly overlap.
+                overlappers = set(u for e in nx.edge_boundary(g, us, ws) for u in e)
+                overlapping = len(overlappers)
+
+                # Count the number molecules that span the position.
+                uneighbors = us.copy()
                 for u in us:
                     uneighbors.update(g.neighbors(u))
-                wneighbors = set()
+                wneighbors = ws.copy()
                 for w in ws:
                     wneighbors.update(g.neighbors(w))
-                depth = edges + len(uneighbors & wneighbors)
+                spanners = (uneighbors & wneighbors) - {v}
+                depth = len(overlappers | spanners)
+
+                # Count the number of pairs of molecules that span the position.
+                udiff = uneighbors - spanners - {v}
+                wdiff = wneighbors - spanners - {v}
+                support = len(overlappers | spanners
+                              | set(u for e in nx.edge_boundary(g, udiff, wdiff) for u in e))
+
                 if fout:
-                    print(tname, i, len(us), v, len(ws), edges, depth, sep="\t", file=fout)
-                if us and ws and depth < depth_threshold:
+                    print(tname, i, len(us), v, len(ws), overlapping, depth, support,
+                          sep="\t", file=fout)
+                if overlapping == 0 and depth == 0 and support < support_threshold:
                     chimera.append(v)
         if fout:
             fout.close()
         if Physlr.args.verbose >= 1:
-            print("Chimera:", chimera, file=sys.stderr)
+            print("Chimera:", *chimera, file=sys.stderr)
         print(
             int(timeit.default_timer() - t0),
             "Identified", len(chimera), "chimeric barcodes.", file=sys.stderr)
@@ -451,7 +467,7 @@ class Physlr:
             Physlr.args.d = 2
         g = Physlr.read_graph([Physlr.args.FILES[0]])
         backbones = Physlr.read_paths([Physlr.args.FILES[1]])
-        chimera = Physlr.identify_chimera(g, backbones, distance=Physlr.args.d, depth_threshold=2)
+        chimera = Physlr.identify_chimera(g, backbones, distance=Physlr.args.d)
         sep = ""
         for backbone in backbones:
             for u in backbone:
