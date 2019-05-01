@@ -483,6 +483,50 @@ class Physlr:
         return backbones
 
     @staticmethod
+    def wrap_up_messages_and_pass(mst, messages, sender, receiver):
+        """
+        Wrap up all incoming messages to this node (sender) except the one from receiver;
+        and set (pass) the message from sender to receiver.
+        """
+        messages[(receiver, sender)] = \
+            1 + sum(messages[(sender, u)] for u in mst.neighbors(sender) if u != receiver)
+
+    @staticmethod
+    def determine_reachability_by_message_passing(mst):
+        """
+        Using message passing, determine for each edge of each vertex
+        the number of vertices of the tree reachable from that vertex through that edge.
+        """
+        dfs = list(nx.dfs_edges(mst))
+        if not dfs:
+            return {}
+        stack = [dfs[0][0]]
+        messages = {}
+        # Gather
+        for edge in dfs:
+            while stack[-1] != edge[0]:
+                Physlr.wrap_up_messages_and_pass(mst, messages, stack.pop(), stack[-1])
+            stack.append(edge[1])
+        while len(stack) != 1:
+            Physlr.wrap_up_messages_and_pass(mst, messages, stack.pop(), stack[-1])
+        # Distribute
+        for edge in dfs:
+            Physlr.wrap_up_messages_and_pass(mst, messages, edge[0], edge[1])
+        return messages
+
+    @staticmethod
+    def prune_branches_of_tree(gmst, g, messages, branch_size=50):
+        """"
+        Determine the backbones of the maximum spanning trees
+        and remove branches smaller than branch_size.
+        """
+        set_of_nodes_for_pruning = [v
+                                    for u, v in g.edges()
+                                    if messages[(u, v)] < branch_size]
+        gmst.remove_nodes_from(set_of_nodes_for_pruning)
+        return gmst
+
+    @staticmethod
     def print_flesh_path(backbone, backbone_insertions):
         "Print out the backbone path with 'flesh' barcodes added"
         for i, mol in enumerate(backbone):
@@ -873,6 +917,22 @@ class Physlr:
         for u, prop in progress(g.nodes.items()):
             print(u, prop["n"], g.degree(u), sep="\t")
         print(int(timeit.default_timer() - t0), "Wrote degrees of vertices", file=sys.stderr)
+
+    def physlr_pruned_mst(self):
+        """Determine the maximum spanning tree pruned for small branches."""
+        g = self.read_graph(self.args.FILES)
+        print(int(timeit.default_timer() - t0),
+              "Extracting MST and pruning the branches.", file=sys.stderr)
+        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
+        gmst_copy = gmst.copy()
+        for component in nx.connected_components(gmst):
+            gcomponent = gmst.subgraph(component)
+            if nx.number_of_edges(gcomponent) > 0:
+                messages = Physlr.determine_reachability_by_message_passing(gcomponent)
+                gmst_copy = Physlr.prune_branches_of_tree(gmst_copy, gcomponent, messages)
+        print(int(timeit.default_timer() - t0), "Extracted and pruned MST.", file=sys.stderr)
+        self.write_graph(gmst_copy, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote pruned MST.", file=sys.stderr)
 
     def physlr_mst(self):
         "Determine the maximum spanning tree."
