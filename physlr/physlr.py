@@ -946,7 +946,8 @@ class Physlr:
                 gcomponent = gmst.subgraph(component)
                 if nx.number_of_edges(gcomponent) > 0:
                     messages = Physlr.determine_reachability_by_message_passing(gcomponent)
-                    gmst_copy = Physlr.prune_branches_of_tree(gmst_copy, gcomponent, messages, self.args.prune)
+                    gmst_copy = Physlr.prune_branches_of_tree(
+                        gmst_copy, gcomponent, messages, self.args.prune)
             print(int(timeit.default_timer() - t0),
                   "Extracted and pruned the MST for branches of size <", self.args.prune, ".",
                   file=sys.stderr)
