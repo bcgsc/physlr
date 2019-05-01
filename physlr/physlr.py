@@ -544,6 +544,9 @@ class Physlr:
 
     @staticmethod
     def prune_mst(gmst, branch_size):
+        """"
+        Prune the branches smaller than branch_size for all the trees in gmst.
+        """
         print(int(timeit.default_timer() - t0), "Prunning the branches.", file=sys.stderr)
         gmst_copy = gmst.copy()
         for component in nx.connected_components(gmst):
