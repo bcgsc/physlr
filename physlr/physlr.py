@@ -489,8 +489,7 @@ class Physlr:
         and set (pass) the message from sender to receiver.
         """
         messages[(receiver, sender)] = \
-            1 + sum([messages[(sender, u)]
-                     for u in mst.neighbors(sender) if u != receiver])
+            1 + sum(messages[(sender, u)] for u in mst.neighbors(sender) if u != receiver)
 
     @staticmethod
     def determine_reachability_by_message_passing(mst):
