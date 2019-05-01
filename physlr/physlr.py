@@ -543,6 +543,21 @@ class Physlr:
         return gmst
 
     @staticmethod
+    def prune_mst(gmst, branch_size):
+        print(int(timeit.default_timer() - t0), "Prunning the branches.", file=sys.stderr)
+        gmst_copy = gmst.copy()
+        for component in nx.connected_components(gmst):
+            gcomponent = gmst.subgraph(component)
+            if nx.number_of_edges(gcomponent) > 0:
+                messages = Physlr.determine_reachability_by_message_passing(gcomponent)
+                gmst_copy = Physlr.prune_branches_of_tree(
+                    gmst_copy, gcomponent, messages, branch_size)
+        print(int(timeit.default_timer() - t0),
+              "Extracted and pruned the MST for branches of size < ", branch_size, ".",
+              file=sys.stderr)
+        return gmst_copy
+
+    @staticmethod
     def print_flesh_path(backbone, backbone_insertions):
         "Print out the backbone path with 'flesh' barcodes added"
         for i, mol in enumerate(backbone):
@@ -940,18 +955,8 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Extracting the MST.", file=sys.stderr)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         if self.args.prune > 0:
-            print(int(timeit.default_timer() - t0), "Prunning the branches.", file=sys.stderr)
-            gmst_copy = gmst.copy()
-            for component in nx.connected_components(gmst):
-                gcomponent = gmst.subgraph(component)
-                if nx.number_of_edges(gcomponent) > 0:
-                    messages = Physlr.determine_reachability_by_message_passing(gcomponent)
-                    gmst_copy = Physlr.prune_branches_of_tree(
-                        gmst_copy, gcomponent, messages, self.args.prune)
-            print(int(timeit.default_timer() - t0),
-                  "Extracted and pruned the MST for branches of size <", self.args.prune, ".",
-                  file=sys.stderr)
-            self.write_graph(gmst_copy, sys.stdout, self.args.graph_format)
+            gmst = Physlr.prune_mst(gmst, self.args.prune)
+            self.write_graph(gmst, sys.stdout, self.args.graph_format)
             print(int(timeit.default_timer() - t0), "Wrote the pruned MST.", file=sys.stderr)
         elif self.args.prune == 0:
             print(int(timeit.default_timer() - t0), "Extracted the MST.", file=sys.stderr)
