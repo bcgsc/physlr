@@ -521,13 +521,10 @@ class Physlr:
         Determine the backbones of the maximum spanning trees
         and remove branches smaller than branch_size.
         """
-        g = g.copy()
-        set_of_nodes_for_pruning = {neighbor
-                                    for node in list(g.nodes)
-                                    for neighbor in g.neighbors(node)
-                                    if messages[(node, neighbor)] < branch_size}
-        for node_to_remove in set_of_nodes_for_pruning:
-            gmst.remove_node(node_to_remove)
+        set_of_nodes_for_pruning = [v
+                                    for u, v in g.edges()
+                                    if messages[(u, v)] < branch_size]
+        gmst.remove_nodes_from(set_of_nodes_for_pruning)
         return gmst
 
     @staticmethod
