@@ -629,10 +629,6 @@ minsize=2000
 %.mol.mst.tsv: %.mol.tsv
 	$(python) $(bin)/physlr mst -V$V $< >$@
 
-# Determine the pruned maximum spanning tree.
-%.mol.pmst.tsv: %.mol.tsv
-	$(python) $(bin)/physlr pruned-mst -V$V $< >$@
-
 # Separate a graph into its biconnected components by removing its cut vertices.
 %.bic.tsv: %.tsv
 	$(python) $(bin)/physlr biconnected-components $< >$@
