@@ -584,8 +584,10 @@ class Physlr:
         "Extract a vertex-induced subgraph."
         if self.args.d not in (0, 1):
             exit("physlr subgraph: error: Only -d0 and -d1 are currently supported.")
-        vertices = set(self.args.v.split())
-        exclude_vertices = set(self.args.exclude_vertices.split())
+        vertices = set(self.args.v.split(","))
+        if not self.args.exclude_vertices and len(vertices) == 1 and self.args.d == 1:
+            self.args.exclude_vertices = self.args.v
+        exclude_vertices = set(self.args.exclude_vertices.split(","))
         g = self.read_graph(self.args.FILES)
         if self.args.d == 1:
             vertices.update(v for u in vertices for v in g.neighbors(u))
@@ -666,7 +668,7 @@ class Physlr:
         bxtomxs = self.read_minimizers(self.args.FILES)
         mxtobxs = self.construct_minimizers_to_barcodes(bxtomxs)
         if self.args.v:
-            pairs = itertools.combinations(self.args.v.split(), 2)
+            pairs = itertools.combinations(self.args.v.split(","))
         else:
             pairs = {(u, v) for bxs in mxtobxs.values() for u, v in itertools.combinations(bxs, 2)}
         for u, v in pairs:

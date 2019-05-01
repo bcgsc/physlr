@@ -780,7 +780,7 @@ mol_strategy=1
 
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv
-	$(python) $(bin)/physlr subgraph -v$v --exclude-vertices=$v -d$d $< >$@
+	$(python) $(bin)/physlr subgraph -v$v -d$d $< >$@
 
 # Make multiple vertex-induced subgraphs
 %.subgraphs: %.tsv
