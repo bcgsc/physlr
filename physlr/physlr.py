@@ -959,14 +959,8 @@ class Physlr:
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         if self.args.prune > 0:
             gmst = Physlr.prune_mst(gmst, self.args.prune)
-            self.write_graph(gmst, sys.stdout, self.args.graph_format)
-            print(int(timeit.default_timer() - t0), "Wrote the pruned MST.", file=sys.stderr)
-        elif self.args.prune == 0:
-            print(int(timeit.default_timer() - t0), "Extracted the MST.", file=sys.stderr)
-            self.write_graph(gmst, sys.stdout, self.args.graph_format)
-            print(int(timeit.default_timer() - t0), "Wrote the MST.", file=sys.stderr)
-        else:
-            exit("physlr mst: error: wrong parameter --prune. It must be a non-negative integer.")
+        self.write_graph(gmst, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote the MST.", file=sys.stderr)
 
     def physlr_backbone(self):
         "Determine the backbone path of the graph."
