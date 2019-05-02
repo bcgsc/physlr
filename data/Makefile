@@ -635,15 +635,23 @@ minsize=2000
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph -s0 $< >$@
+
+# Determine the corrected backbone graph from the overlap TSV.
+%.s5.backbone.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr backbone-graph -s5 $< >$@
+
+# Determine the corrected backbone graph from the overlap TSV.
+%.s10.backbone.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr backbone-graph -s10 $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
 	$(time) $(python) $(bin)/physlr backbone $< >$@
 
 # Cut chimeric paths to correct misassemblies.
-%.backbone.cut.path: %.tsv %.backbone.path
-	$(time) $(python) $(bin)/physlr -V$V cut-chimera -d2 $^ -o $*.backbone.cut.tsv >$@
+%.backbone.s5.path: %.tsv %.backbone.path
+	$(time) $(python) $(bin)/physlr -V$V cut-chimera -s5 $^ -o $*.backbone.s5.tsv >$@
 
 # Flesh out the backbone path
 %.backbone.fleshed.path: %.tsv %.backbone.path
@@ -715,7 +723,7 @@ minsize=2000
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
 # Map the reference to the corrected backbone graph and output PAF.
-%.overlap.n$n.mol.backbone.cut.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.backbone.cut.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
+%.overlap.n$n.mol.s5.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.s5.backbone.path %.tsv $(name)/$(ref).indexlr.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
 # Annotate a backbone graph with a BED file of mappings.
