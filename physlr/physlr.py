@@ -413,10 +413,13 @@ class Physlr:
         return paths
 
     @staticmethod
-    def identify_chimera(g, backbones, distance, support_threshold=5):
+    def identify_chimera(g, backbones, distance, min_support):
         "Identify chimeric barcodes."
-        if Physlr.args.output:
-            fout = open(Physlr.args.output, "w")
+        print(
+            int(timeit.default_timer() - t0),
+            "Identifying chimeric barcodes.", file=sys.stderr, flush=True)
+        fout = open(Physlr.args.output, "w") if Physlr.args.output else None
+        if fout:
             print("Tname", "Pos", "U", "V", "W", "Overlap", "Depth", "Support", sep="\t", file=fout)
         chimera = []
         for tname, backbone in enumerate(backbones):
@@ -429,6 +432,8 @@ class Physlr:
                 # Count the number molecules that directly overlap.
                 overlappers = set(u for e in nx.edge_boundary(g, us, ws) for u in e)
                 overlapping = len(overlappers)
+                if overlapping > 0 and not fout:
+                    continue
 
                 # Count the number molecules that span the position.
                 uneighbors = us.copy()
@@ -439,6 +444,8 @@ class Physlr:
                     wneighbors.update(g.neighbors(w))
                 spanners = (uneighbors & wneighbors) - {v}
                 depth = len(overlappers | spanners)
+                if depth > 0 and not fout:
+                    continue
 
                 # Count the number of pairs of molecules that span the position.
                 udiff = uneighbors - spanners - {v}
@@ -449,7 +456,7 @@ class Physlr:
                 if fout:
                     print(tname, i, len(us), v, len(ws), overlapping, depth, support,
                           sep="\t", file=fout)
-                if overlapping == 0 and depth == 0 and support < support_threshold:
+                if overlapping == 0 and depth == 0 and support < min_support:
                     chimera.append(v)
         if fout:
             fout.close()
@@ -457,8 +464,33 @@ class Physlr:
             print("Chimera:", *chimera, file=sys.stderr)
         print(
             int(timeit.default_timer() - t0),
-            "Identified", len(chimera), "chimeric barcodes.", file=sys.stderr)
+            "Identified", len(chimera), "chimeric barcodes.", file=sys.stderr, flush=True)
         return chimera
+
+    @staticmethod
+    def determine_backbones_and_remove_chimera(g):
+        """Remove chimeric vertices iteratively until none remain."""
+        if Physlr.args.d == 0:
+            Physlr.args.d = 2
+        if Physlr.args.s == 0:
+            return Physlr.determine_backbones(g)
+
+        iterations = 0
+        nchimera = 0
+        chimera = True
+        while chimera:
+            backbones = Physlr.determine_backbones(g)
+            chimera = Physlr.identify_chimera(
+                g, backbones, distance=Physlr.args.d, min_support=Physlr.args.s)
+            g.remove_nodes_from(chimera)
+            if chimera:
+                iterations += 1
+                nchimera += len(chimera)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", nchimera, "chimeric barcodes in", iterations, "iterations.",
+            file=sys.stderr, flush=True)
+        return backbones
 
     @staticmethod
     def physlr_cut_chimera(g):
@@ -467,7 +499,8 @@ class Physlr:
             Physlr.args.d = 2
         g = Physlr.read_graph([Physlr.args.FILES[0]])
         backbones = Physlr.read_paths([Physlr.args.FILES[1]])
-        chimera = Physlr.identify_chimera(g, backbones, distance=Physlr.args.d)
+        chimera = Physlr.identify_chimera(
+            g, backbones, distance=Physlr.args.d, min_support=Physlr.args.s)
         sep = ""
         for backbone in backbones:
             for u in backbone:
@@ -973,7 +1006,7 @@ class Physlr:
         "Determine the backbone-induced subgraph."
         g = self.read_graph(self.args.FILES)
         Physlr.remove_singletons(g)
-        backbones = self.determine_backbones(g)
+        backbones = Physlr.determine_backbones_and_remove_chimera(g)
         backbone = (u for path in backbones for u in path)
         subgraph = self.sort_vertices(g.subgraph(backbone))
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
@@ -1887,6 +1920,9 @@ class Physlr:
         argparser.add_argument(
             "-p", "--min_p_val", action="store", dest="p", type=float, default=0.01,
             help="Minimum significance threshold (FPR) for Mann-Kendall Test")
+        argparser.add_argument(
+            "-s", "--support", action="store", dest="s", type=int, default=5,
+            help="Minimum number of barcodes required to support a position")
         argparser.add_argument(
             "--mkt-median-threshold", action="store", dest="mkt_median_threshold",
             type=int, default=50,
