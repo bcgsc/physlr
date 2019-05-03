@@ -1258,25 +1258,17 @@ class Physlr:
     @staticmethod
     def detect_communities_k_clique(g, node_set, k=3):
         """Apply k-clique community detection. Return communities."""
-        from networkx.algorithms import community as nxcommunity
-
-        if len(node_set) > 1:
-            return [set(i) for i in nxcommunity.k_clique_communities(g.subgraph(node_set), k)]
-        return []
+        return list(nx.community.k_clique_communities(g.subgraph(node_set), k))
 
     @staticmethod
-    def detect_communities_louvain(g, node_set, init_communities=False):
+    def detect_communities_louvain(g, node_set, init_communities=None):
         """Apply Louvain community detection on a single component. Return communities."""
+        if len(node_set) < 2:
+            return []
         import community as louvain
-
-        if len(node_set) > 1:
-            if not init_communities:
-                partition = louvain.best_partition(g.subgraph(node_set))
-            else:
-                partition = louvain.best_partition(g.subgraph(node_set), init_communities)
-            return [{nodes for nodes in partition.keys() if partition[nodes] == com}
-                    for com in set(partition.values())]
-        return []
+        partition = louvain.best_partition(g.subgraph(node_set), init_communities)
+        return [{node for node in partition.keys() if partition[node] == com}
+                for com in set(partition.values())]
 
     @staticmethod
     def detect_communities_cosine_of_squared(g, node_set):
@@ -1303,7 +1295,6 @@ class Physlr:
             cos_components = list(nx.connected_components(sub_graph_copy))
             cos_components.sort(key=len, reverse=True)
             for com in cos_components:
-                # if len(com) > 1:
                 communities.append(com)
         return communities
 
