@@ -406,8 +406,8 @@ class Physlr:
         with more than 2 branches larger than junction_threshold.
         """
         candidate_junctions = {node
-                                for node in list(gcomponent.nodes)
-                                if gcomponent.degree(node) > 2}
+                               for node in list(gcomponent.nodes)
+                               if gcomponent.degree(node) > 2}
         junctions = []
         for candidate in candidate_junctions:
             candidate_messages = [messages[(candidate, neighbor)]
