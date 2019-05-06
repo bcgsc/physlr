@@ -2,7 +2,7 @@
 good-names = bx, c, e, g, i, k, mx, n, q0, q1, q2, q3, q4, t0, u, un, us, vn, v, vs, w, ws, x, xs, y, z
 max-branches=20
 max-locals=50
-max-module-lines=2000
+max-module-lines=5000
 max-public-methods=100
 [MASTER]
 ignore=mkt.py
