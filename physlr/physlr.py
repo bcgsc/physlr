@@ -1258,7 +1258,7 @@ class Physlr:
     @staticmethod
     def detect_communities_k_clique(g, node_set, k=3):
         """Apply k-clique community detection. Return communities."""
-        return list(nx.community.k_clique_communities(g.subgraph(node_set), k))
+        return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
 
     @staticmethod
     def detect_communities_louvain(g, node_set, init_communities=None):
