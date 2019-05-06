@@ -16,7 +16,6 @@ from collections import Counter
 
 
 import networkx as nx
-from networkx.algorithms import community as nxcommunity
 import tqdm
 
 from physlr.minimerize import minimerize
@@ -1205,8 +1204,7 @@ class Physlr:
         components.sort(key=len, reverse=True)
         communities = []
         for comp in components:
-            if len(comp) > 1:
-                communities += list(nxcommunity.k_clique_communities(g.subgraph(comp), 3))
+            communities.extend(nx.algorithms.community.k_clique_communities(g.subgraph(comp), 3))
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
