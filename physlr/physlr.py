@@ -400,14 +400,48 @@ class Physlr:
         return (u, v, diameter)
 
     @staticmethod
-    def determine_backbones_of_trees(g):
-        "Determine the backbones of the maximum spanning trees."
+    def detect_junctions_of_tree(gcomponent, messages, junction_threshold):
+        """"
+        detect the junctions in the tree,
+        with more than 2 branches larger than junction_threshold.
+        """
+        candidate_junctions = {node
+                                for node in list(gcomponent.nodes)
+                                if gcomponent.degree(node) > 2}
+        junctions = []
+        for candidate in candidate_junctions:
+            candidate_messages = [messages[(candidate, neighbor)]
+                                  for neighbor in gcomponent.neighbors(candidate)]
+            candidate_messages.sort()
+            if candidate_messages[-3] > junction_threshold:
+                junctions.append(candidate)
+        return junctions
+
+    @staticmethod
+    def determine_backbones_of_trees(g, junction_threshold=0):
+        """"
+        Determine the backbones of the maximum spanning trees
+        and remove junctions of more than 2 branches larger than junction_threshold.
+        """
         paths = []
-        for component in nx.connected_components(g):
-            gcomponent = g.subgraph(component)
-            u, v, _ = Physlr.diameter_of_tree(gcomponent, weight="n")
-            path = nx.shortest_path(gcomponent, u, v, weight="n")
-            paths.append(path)
+        if junction_threshold > 0:
+            for component in nx.connected_components(g):
+                gcomponent = g.subgraph(component)
+                messages = Physlr.determine_reachability_by_message_passing(gcomponent)
+                nodes_to_remove = \
+                    Physlr.detect_junctions_of_tree(gcomponent, messages, junction_threshold)
+                gcomponents = gcomponent.remove_nodes_from(nodes_to_remove)
+                for component2 in nx.connected_components(gcomponents):
+                    gcomponent2 = g.subgraph(component2)
+                    u, v, _ = Physlr.diameter_of_tree(gcomponent2, weight="n")
+                    path = nx.shortest_path(gcomponent2, u, v, weight="n")
+                    paths.append(path)
+        else:
+            for component in nx.connected_components(g):
+                gcomponent = g.subgraph(component)
+                u, v, _ = Physlr.diameter_of_tree(gcomponent, weight="n")
+                path = nx.shortest_path(gcomponent, u, v, weight="n")
+                paths.append(path)
         paths.sort(key=len, reverse=True)
         return paths
 
@@ -524,13 +558,13 @@ class Physlr:
             print()
 
     @staticmethod
-    def determine_backbones(g):
+    def determine_backbones(g, junction_threshold=0):
         "Determine the backbones of the graph."
         g = g.copy()
         backbones = []
         while not nx.is_empty(g):
             gmst = nx.maximum_spanning_tree(g, weight="n")
-            paths = Physlr.determine_backbones_of_trees(gmst)
+            paths = Physlr.determine_backbones_of_trees(gmst, junction_threshold)
             backbones.extend(paths)
             vertices = [u for path in paths for u in path]
             neighbors = [v for u in vertices for v in g.neighbors(u)]
@@ -1016,6 +1050,7 @@ class Physlr:
         "Determine the backbone-induced subgraph."
         g = self.read_graph(self.args.FILES)
         Physlr.remove_singletons(g)
+        # backbones = self.determine_backbones(g, self.args.junction_threshold)
         backbones = Physlr.determine_backbones_and_remove_chimera(g)
         backbone = (u for path in backbones for u in path)
         subgraph = self.sort_vertices(g.subgraph(backbone))
@@ -1953,6 +1988,10 @@ class Physlr:
         argparser.add_argument(
             "--prune", action="store", dest="prune", type=int, default=100,
             help="size of the branches to be pruned [100]. set to 0 to skip prunning.")
+        argparser.add_argument(
+            "--junct", action="store", dest="junction_threshold", type=int, default=400,
+            help="minimum size of the 3rd largest branch to consider node as junction "
+                 "(misassembly source) [200]. set to 0 to skip junction detection.")
         return argparser.parse_args()
 
     def __init__(self):
