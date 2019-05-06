@@ -449,8 +449,12 @@ class Physlr:
                 # Count the number of pairs of molecules that span the position.
                 udiff = uneighbors - spanners - {v}
                 wdiff = wneighbors - spanners - {v}
-                support = len(overlappers | spanners
-                              | set(u for e in nx.edge_boundary(g, udiff, wdiff) for u in e))
+                uboundary = set()
+                wboundary = set()
+                for u, w in nx.edge_boundary(g, udiff, wdiff):
+                    uboundary.add(u)
+                    wboundary.add(w)
+                support = depth + min(len(uboundary), len(wboundary))
 
                 if fout:
                     print(tname, i, len(us), v, len(ws), overlapping, depth, support,
