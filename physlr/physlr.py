@@ -1990,7 +1990,7 @@ class Physlr:
         argparser.add_argument(
             "--junct", action="store", dest="junction_threshold", type=int, default=400,
             help="minimum size of the 3rd largest branch of a vertex to consider it a junction"
-                 "(misassembly source) [200]. set to 0 to skip junction detection.")
+                 "(misassembly source) [400]. set to 0 to skip junction detection.")
         return argparser.parse_args()
 
     def __init__(self):
