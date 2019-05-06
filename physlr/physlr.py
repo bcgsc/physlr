@@ -512,18 +512,18 @@ class Physlr:
         return chimera
 
     @staticmethod
-    def determine_backbones_and_remove_chimera(g):
+    def determine_backbones_and_remove_chimera(g, junction_threshold):
         """Remove chimeric vertices iteratively until none remain."""
         if Physlr.args.d == 0:
             Physlr.args.d = 2
         if Physlr.args.s == 0:
-            return Physlr.determine_backbones(g)
+            return Physlr.determine_backbones(g, junction_threshold)
 
         iterations = 0
         nchimera = 0
         chimera = True
         while chimera:
-            backbones = Physlr.determine_backbones(g)
+            backbones = Physlr.determine_backbones(g, junction_threshold)
             chimera = Physlr.identify_chimera(
                 g, backbones, distance=Physlr.args.d, min_support=Physlr.args.s)
             g.remove_nodes_from(chimera)
@@ -1050,8 +1050,7 @@ class Physlr:
         "Determine the backbone-induced subgraph."
         g = self.read_graph(self.args.FILES)
         Physlr.remove_singletons(g)
-        # backbones = self.determine_backbones(g, self.args.junction_threshold)
-        backbones = Physlr.determine_backbones_and_remove_chimera(g)
+        backbones = Physlr.determine_backbones_and_remove_chimera(g, self.args.junction_threshold)
         backbone = (u for path in backbones for u in path)
         subgraph = self.sort_vertices(g.subgraph(backbone))
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
