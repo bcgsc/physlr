@@ -1051,7 +1051,8 @@ class Physlr:
         "Determine the backbone-induced subgraph."
         g = self.read_graph(self.args.FILES)
         Physlr.remove_singletons(g)
-        print(int(timeit.default_timer() - t0), "Determining the backbone-induced subgraph.", file=sys.stderr)
+        print(int(timeit.default_timer() - t0),
+              "Determining the backbone-induced subgraph.", file=sys.stderr)
         backbones = Physlr.determine_backbones_and_remove_chimera(g, self.args.junction_threshold)
         backbone = (u for path in backbones for u in path)
         subgraph = self.sort_vertices(g.subgraph(backbone))
