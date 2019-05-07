@@ -449,7 +449,7 @@ class Physlr:
                 wneighbors.difference_update(us, [v], ws)
                 spanners = uneighbors & wneighbors
                 depth = overlapping + len(spanners)
-                if depth > 0 and not fout:
+                if depth >= min_support and not fout:
                     continue
 
                 # Count the number of pairs of molecules that span the position.
@@ -465,7 +465,7 @@ class Physlr:
                 if fout:
                     print(tname, i, len(us), v, len(ws), overlapping, depth, support,
                           sep="\t", file=fout)
-                if overlapping == 0 and depth == 0 and support < min_support:
+                if overlapping == 0 and depth < min_support and support < min_support:
                     chimera.append(v)
         if fout:
             fout.close()
