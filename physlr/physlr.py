@@ -435,23 +435,25 @@ class Physlr:
                     continue
 
                 # Count the number molecules that span the position.
-                uneighbors = us.copy()
+                uneighbors = set()
                 for u in us:
                     uneighbors.update(g.neighbors(u))
-                wneighbors = ws.copy()
+                wneighbors = set()
                 for w in ws:
                     wneighbors.update(g.neighbors(w))
-                spanners = (uneighbors & wneighbors) - {v}
-                depth = len(overlappers | spanners)
+                uneighbors.difference_update(us, [v], ws)
+                wneighbors.difference_update(us, [v], ws)
+                spanners = uneighbors & wneighbors
+                depth = overlapping + len(spanners)
                 if depth > 0 and not fout:
                     continue
 
                 # Count the number of pairs of molecules that span the position.
-                udiff = uneighbors - spanners - {v}
-                wdiff = wneighbors - spanners - {v}
+                uneighbors -= spanners
+                wneighbors -= spanners
                 uboundary = set()
                 wboundary = set()
-                for u, w in nx.edge_boundary(g, udiff, wdiff):
+                for u, w in nx.edge_boundary(g, uneighbors, wneighbors):
                     uboundary.add(u)
                     wboundary.add(w)
                 support = depth + min(len(uboundary), len(wboundary))
