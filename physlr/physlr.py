@@ -422,6 +422,10 @@ class Physlr:
             print("Tname", "Pos", "U", "V", "W", "Overlap", "Depth", "Support", sep="\t", file=fout)
         chimera = []
         for tname, backbone in enumerate(backbones):
+            # Skip small components. Removing poorly supported barcodes can take many iterations.
+            if len(backbone) < Physlr.args.min_path_size:
+                continue
+
             for i, v in enumerate(backbone):
                 us = set(backbone[max(0, i - distance) : i])
                 ws = set(backbone[i + 1 : i + 1 + distance])
@@ -1897,6 +1901,9 @@ class Physlr:
         argparser.add_argument(
             "--min-component-size", action="store", dest="min_component_size", type=int, default=0,
             help="remove components with fewer than N vertices [0]")
+        argparser.add_argument(
+            "--min-path-size", action="store", dest="min_path_size", type=int, default=200,
+            help="skip paths with fewer than N barcodes [200]")
         argparser.add_argument(
             "--molecule-bed", action="store", dest="molecule_bed", type=int, default=0,
             help="Retain molecule splits in filtered BED (0 or 1) [0]")
