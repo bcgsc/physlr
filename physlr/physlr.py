@@ -1362,10 +1362,6 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        if self.args.strategy not in [1, 2, 3, 4]:
-            exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
-        gin = self.read_graph(self.args.FILES)
-        Physlr.filter_edges(gin, self.args.n)
         strategy_switcher = {
             1: "\n\tStrategy: "
                "Bi-connected components separation",
@@ -1377,6 +1373,10 @@ class Physlr:
                "Community detection by cosine of squared adjacency matrix"
                "(after separating bi-connected components)"
         }
+        if self.args.strategy not in strategy_switcher:
+            exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
+        gin = self.read_graph(self.args.FILES)
+        Physlr.filter_edges(gin, self.args.n)
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
