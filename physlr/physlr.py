@@ -1043,7 +1043,7 @@ class Physlr:
     def physlr_backbone(self):
         "Determine the backbone path of the graph."
         g = self.read_graph(self.args.FILES)
-        backbones = self.determine_backbones(g)
+        backbones = self.determine_backbones(g, self.args.junction_threshold)
         for backbone in backbones:
             print(*backbone)
 
