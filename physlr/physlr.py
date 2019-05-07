@@ -413,10 +413,10 @@ class Physlr:
 
     @staticmethod
     def identify_chimera(g, backbones, distance, min_support):
-        "Identify chimeric barcodes."
+        "Identify poorly supported (possibly chimeric) barcodes."
         print(
             int(timeit.default_timer() - t0),
-            "Identifying chimeric barcodes.", file=sys.stderr, flush=True)
+            "Identifying poorly supported barcodes.", file=sys.stderr, flush=True)
         fout = open(Physlr.args.output, "w") if Physlr.args.output else None
         if fout:
             print("Tname", "Pos", "U", "V", "W", "Overlap", "Depth", "Support", sep="\t", file=fout)
@@ -469,7 +469,7 @@ class Physlr:
             print("Chimera:", *chimera, file=sys.stderr)
         print(
             int(timeit.default_timer() - t0),
-            "Identified", len(chimera), "chimeric barcodes.", file=sys.stderr, flush=True)
+            "Identified", len(chimera), "poorly supported barcodes.", file=sys.stderr, flush=True)
         return chimera
 
     @staticmethod
