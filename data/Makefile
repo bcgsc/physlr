@@ -650,8 +650,8 @@ minsize=2000
 	$(time) $(python) $(bin)/physlr backbone $< >$@
 
 # Cut chimeric paths to correct misassemblies.
-%.backbone.s5.path: %.tsv %.backbone.path
-	$(time) $(python) $(bin)/physlr -V$V cut-chimera -s5 $^ -o $*.backbone.s5.tsv >$@
+%.s5.backbone.depth.tsv: %.tsv %.s5.backbone.path
+	$(time) $(python) $(bin)/physlr cut-chimera -V$V -s5 $^ -o $*.s5.backbone.depth.tsv >$*.s5.backbone.s5.path
 
 # Flesh out the backbone path
 %.backbone.fleshed.path: %.tsv %.backbone.path
