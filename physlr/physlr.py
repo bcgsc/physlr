@@ -430,7 +430,8 @@ class Physlr:
                 messages = Physlr.determine_reachability_by_message_passing(gcomponent)
                 nodes_to_remove = \
                     Physlr.detect_junctions_of_tree(gcomponent, messages, junction_threshold)
-                gcomponents = gcomponent.remove_nodes_from(nodes_to_remove)
+                gcomponents = gcomponent.copy()
+                gcomponents.remove_nodes_from(nodes_to_remove)
                 for component2 in nx.connected_components(gcomponents):
                     gcomponent2 = g.subgraph(component2)
                     u, v, _ = Physlr.diameter_of_tree(gcomponent2, weight="n")
@@ -1050,6 +1051,7 @@ class Physlr:
         "Determine the backbone-induced subgraph."
         g = self.read_graph(self.args.FILES)
         Physlr.remove_singletons(g)
+        print(int(timeit.default_timer() - t0), "Determining the backbone-induced subgraph.", file=sys.stderr)
         backbones = Physlr.determine_backbones_and_remove_chimera(g, self.args.junction_threshold)
         backbone = (u for path in backbones for u in path)
         subgraph = self.sort_vertices(g.subgraph(backbone))
@@ -1988,9 +1990,9 @@ class Physlr:
             "--prune", action="store", dest="prune", type=int, default=100,
             help="size of the branches to be pruned [100]. set to 0 to skip prunning.")
         argparser.add_argument(
-            "--junct", action="store", dest="junction_threshold", type=int, default=400,
+            "--junct", action="store", dest="junction_threshold", type=int, default=100,
             help="minimum size of the 3rd largest branch of a vertex to consider it a junction"
-                 "(misassembly source) [400]. set to 0 to skip junction detection.")
+                 "(misassembly source) [100]. set to 0 to skip junction detection.")
         return argparser.parse_args()
 
     def __init__(self):
