@@ -407,7 +407,7 @@ class Physlr:
         """
         candidate_junctions = {node
                                for node in list(gcomponent.nodes)
-                               if gcomponent.degree(node) > 2}
+                               if gcomponent.degree(node) >= 3}
         junctions = []
         for candidate in candidate_junctions:
             candidate_messages = [messages[(candidate, neighbor)]
