@@ -400,13 +400,14 @@ class Physlr:
         return (u, v, diameter)
 
     @staticmethod
-    def detect_junctions_of_tree(gcomponent, messages, min_branch):
+    def detect_junctions_of_tree(gcomponent, min_branch):
         """"
-        Detect the junctions in the tree, with >= 3 branches larger than min_branch.
+        Detect the junctions in the tree, with at least branches larger than min_branch.
         """
-        candidate_junctions = {node
+        messages = Physlr.determine_reachability_by_message_passing(gcomponent)
+        candidate_junctions = [node
                                for node in list(gcomponent.nodes)
-                               if gcomponent.degree(node) >= 3}
+                               if gcomponent.degree(node) >= 3]
         junctions = []
         for candidate_junction in candidate_junctions:
             candidate_messages = [messages[(candidate_junction, neighbor)]
@@ -420,13 +421,12 @@ class Physlr:
     @staticmethod
     def remove_junctions_of_tree(min_branch, gcomponent):
         """"
-        Detect and remove junctions of trees, with >= 3 branches larger than min_branch.
+        Detect and remove junctions of trees, with at least 3 branches larger than min_branch.
         """
         if min_branch == 0:
             return gcomponent
-        messages = Physlr.determine_reachability_by_message_passing(gcomponent)
         nodes_to_remove = \
-            Physlr.detect_junctions_of_tree(gcomponent, messages, min_branch)
+            Physlr.detect_junctions_of_tree(gcomponent, min_branch)
         gcomponents = gcomponent.copy()
         gcomponents.remove_nodes_from(nodes_to_remove)
         return gcomponents
