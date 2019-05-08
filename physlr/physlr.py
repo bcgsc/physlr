@@ -467,6 +467,7 @@ class Physlr:
                           sep="\t", file=fout)
                 if overlapping == 0 and depth < min_support and support < min_support:
                     chimera.append(v)
+                    chimera += spanners
         if fout:
             fout.close()
         if Physlr.args.verbose >= 1:
