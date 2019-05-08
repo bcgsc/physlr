@@ -439,10 +439,10 @@ class Physlr:
         paths = []
         for component in nx.connected_components(g):
             gcomponents = Physlr.remove_junctions_of_tree(min_branch, g.subgraph(component))
-            for component2 in nx.connected_components(gcomponents):
-                gcomponent2 = g.subgraph(component2)
-                u, v, _ = Physlr.diameter_of_tree(gcomponent2, weight="n")
-                path = nx.shortest_path(gcomponent2, u, v, weight="n")
+            for subcomponent in nx.connected_components(gcomponents):
+                gsubcomponent = g.subgraph(subcomponent)
+                u, v, _ = Physlr.diameter_of_tree(gsubcomponent, weight="n")
+                path = nx.shortest_path(gsubcomponent, u, v, weight="n")
                 paths.append(path)
         paths.sort(key=len, reverse=True)
         return paths
