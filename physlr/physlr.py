@@ -413,7 +413,7 @@ class Physlr:
             candidate_messages = [messages[(candidate, neighbor)]
                                   for neighbor in gcomponent.neighbors(candidate)]
             candidate_messages.sort()
-            if candidate_messages[-3] > junction_threshold:
+            if candidate_messages[-3] >= junction_threshold:
                 junctions.append(candidate)
         return junctions
 
