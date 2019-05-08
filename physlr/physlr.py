@@ -1252,7 +1252,6 @@ class Physlr:
         """Separate bi-connected components. Return components."""
         cut_vertices = set(nx.articulation_points(g.subgraph(node_set)))
         components = list(nx.connected_components(g.subgraph(node_set - cut_vertices)))
-        components.sort(key=len, reverse=True)
         return components
 
     @staticmethod
@@ -1293,7 +1292,7 @@ class Physlr:
             sub_graph_copy = nx.Graph(g.subgraph(node_set))
             sub_graph_copy.remove_edges_from(edges_to_remove_barcode)
             cos_components = list(nx.connected_components(sub_graph_copy))
-            cos_components.sort(key=len, reverse=True)
+            # cos_components.sort(key=len, reverse=True)
             for com in cos_components:
                 communities.append(com)
         return communities
@@ -1350,6 +1349,7 @@ class Physlr:
         else:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
 
+        communities.sort(key=len, reverse=True)
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
