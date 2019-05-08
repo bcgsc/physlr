@@ -413,14 +413,17 @@ class Physlr:
                                   for neighbor in gcomponent.neighbors(candidate_junction)]
             candidate_messages.sort()
             if candidate_messages[-3] >= min_branch:
+                # If the 3rd largest branch is considerably large, this node is a junction.
                 junctions.append(candidate_junction)
         return junctions
 
     @staticmethod
-    def remove_junctions_of_tree(g, min_branch, gcomponent):
+    def remove_junctions_of_tree(min_branch, gcomponent):
         """"
         Detect and remove junctions of trees, with >= 3 branches larger than min_branch.
         """
+        if min_branch == 0:
+            return gcomponent
         messages = Physlr.determine_reachability_by_message_passing(gcomponent)
         nodes_to_remove = \
             Physlr.detect_junctions_of_tree(gcomponent, messages, min_branch)
@@ -431,23 +434,15 @@ class Physlr:
     @staticmethod
     def determine_backbones_of_trees(g, min_branch):
         """"
-        Determine the backbones of the maximum spanning trees
-        and remove junctions of more than 2 branches larger than min_branch.
+        Determine backbones of the MSTs. resolve junctions of >=3 branches of size >= min_branch.
         """
         paths = []
-        if min_branch > 0:
-            for component in nx.connected_components(g):
-                gcomponents = Physlr.remove_junctions_of_tree(g, min_branch, g.subgraph(component))
-                for component2 in nx.connected_components(gcomponents):
-                    gcomponent2 = g.subgraph(component2)
-                    u, v, _ = Physlr.diameter_of_tree(gcomponent2, weight="n")
-                    path = nx.shortest_path(gcomponent2, u, v, weight="n")
-                    paths.append(path)
-        else:
-            for component in nx.connected_components(g):
-                gcomponent = g.subgraph(component)
-                u, v, _ = Physlr.diameter_of_tree(gcomponent, weight="n")
-                path = nx.shortest_path(gcomponent, u, v, weight="n")
+        for component in nx.connected_components(g):
+            gcomponents = Physlr.remove_junctions_of_tree(min_branch, g.subgraph(component))
+            for component2 in nx.connected_components(gcomponents):
+                gcomponent2 = g.subgraph(component2)
+                u, v, _ = Physlr.diameter_of_tree(gcomponent2, weight="n")
+                path = nx.shortest_path(gcomponent2, u, v, weight="n")
                 paths.append(path)
         paths.sort(key=len, reverse=True)
         return paths
