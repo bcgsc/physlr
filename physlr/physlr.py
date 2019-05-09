@@ -419,17 +419,24 @@ class Physlr:
         return junctions
 
     @staticmethod
-    def remove_junctions_of_tree(min_branch, gcomponent):
+    def split_junctions_of_tree(min_branch, gin):
         """"
-        Detect and remove junctions of trees, with at least 3 branches larger than min_branch.
+        Detect and split junctions of trees, with at least three branches larger than min_branch.
+        For each junction, keep the two incident edges with the largest weight, and remove the rest.
         """
         if min_branch == 0:
-            return gcomponent
-        nodes_to_remove = \
-            Physlr.detect_junctions_of_tree(gcomponent, min_branch)
-        gcomponents = gcomponent.copy()
-        gcomponents.remove_nodes_from(nodes_to_remove)
-        return gcomponents
+            return gin
+        junctions = Physlr.detect_junctions_of_tree(gin, min_branch)
+        g = gin.copy()
+        for junction in junctions:
+            edges = list(g.edges(junction, data="n"))
+            edges.sort(key=lambda e: e[2], reverse=True)
+            if Physlr.args.verbose >= 3:
+                print("Junction:", junction, "Edges:", *edges, file=sys.stderr)
+            # Keep the two incident edges with the largest weight, and remove the rest.
+            for u, v, _ in edges[2:-1]:
+                g.remove_edge(u, v)
+        return g
 
     @staticmethod
     def determine_backbones_of_trees(g, min_branch):
@@ -438,7 +445,7 @@ class Physlr:
         """
         paths = []
         for component in nx.connected_components(g):
-            gcomponents = Physlr.remove_junctions_of_tree(min_branch, g.subgraph(component))
+            gcomponents = Physlr.split_junctions_of_tree(min_branch, g.subgraph(component))
             for subcomponent in nx.connected_components(gcomponents):
                 gsubcomponent = g.subgraph(subcomponent)
                 u, v, _ = Physlr.diameter_of_tree(gsubcomponent, weight="n")
