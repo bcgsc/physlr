@@ -619,37 +619,32 @@ class Physlr:
         return messages
 
     @staticmethod
-    def prune_branches_of_tree(gmst, g, messages, branch_size):
+    def prune_branches_of_tree(gout, gin, branch_size):
         """"
         Determine the backbones of the maximum spanning trees
         and remove branches smaller than branch_size.
         """
-        set_of_nodes_for_pruning = [v
-                                    for u, v in g.edges()
-                                    if messages[(u, v)] < branch_size]
-        gmst.remove_nodes_from(set_of_nodes_for_pruning)
-        return gmst
+        messages = Physlr.determine_reachability_by_message_passing(gin)
+        gout.remove_nodes_from(v for u, v in gin.edges() if messages[(u, v)] < branch_size)
 
     @staticmethod
-    def prune_mst(gmst, branch_size):
+    def prune_mst(g, branch_size):
         """"
-        Prune the branches smaller than branch_size for all the trees in gmst.
+        Prune the branches smaller than branch_size.
+        Return the number of pruned vertices.
         """
         print(
             int(timeit.default_timer() - t0),
             "Pruning branches shorter than", branch_size, file=sys.stderr)
-        gout = gmst.copy()
-        for component in nx.connected_components(gmst):
-            gcomponent = gmst.subgraph(component)
-            if nx.number_of_edges(gcomponent) > 0:
-                messages = Physlr.determine_reachability_by_message_passing(gcomponent)
-                gout = Physlr.prune_branches_of_tree(gout, gcomponent, messages, branch_size)
-        n = gmst.number_of_nodes()
-        pruned = n - gout.number_of_nodes()
+        g0 = g.copy()
+        for component in nx.connected_components(g0):
+            Physlr.prune_branches_of_tree(g, g0.subgraph(component), branch_size)
+        n = g0.number_of_nodes()
+        pruned = n - g.number_of_nodes()
         print(
             int(timeit.default_timer() - t0),
             "Pruned", pruned, "vertices of", n, f"({round(100 * pruned / n, 2)}%)", file=sys.stderr)
-        return gout
+        return pruned
 
     @staticmethod
     def print_flesh_path(backbone, backbone_insertions):
