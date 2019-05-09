@@ -635,18 +635,21 @@ class Physlr:
         """"
         Prune the branches smaller than branch_size for all the trees in gmst.
         """
-        print(int(timeit.default_timer() - t0), "Prunning the branches.", file=sys.stderr)
-        gmst_copy = gmst.copy()
+        print(
+            int(timeit.default_timer() - t0),
+            "Pruning branches shorter than", branch_size, file=sys.stderr)
+        gout = gmst.copy()
         for component in nx.connected_components(gmst):
             gcomponent = gmst.subgraph(component)
             if nx.number_of_edges(gcomponent) > 0:
                 messages = Physlr.determine_reachability_by_message_passing(gcomponent)
-                gmst_copy = Physlr.prune_branches_of_tree(
-                    gmst_copy, gcomponent, messages, branch_size)
-        print(int(timeit.default_timer() - t0),
-              "Extracted and pruned the MST for branches of size < ", branch_size, ".",
-              file=sys.stderr)
-        return gmst_copy
+                gout = Physlr.prune_branches_of_tree(gout, gcomponent, messages, branch_size)
+        n = gmst.number_of_nodes()
+        pruned = n - gout.number_of_nodes()
+        print(
+            int(timeit.default_timer() - t0),
+            "Pruned", pruned, "vertices of", n, f"({round(100 * pruned / n, 2)}%)", file=sys.stderr)
+        return gout
 
     @staticmethod
     def print_flesh_path(backbone, backbone_insertions):
