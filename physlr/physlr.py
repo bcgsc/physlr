@@ -619,32 +619,49 @@ class Physlr:
         return messages
 
     @staticmethod
-    def prune_branches_of_tree(gout, gin, branch_size):
+    def prune_mst_once(g, branch_size):
         """"
-        Determine the backbones of the maximum spanning trees
-        and remove branches smaller than branch_size.
-        """
-        messages = Physlr.determine_reachability_by_message_passing(gin)
-        gout.remove_nodes_from(v for u, v in gin.edges() if messages[(u, v)] < branch_size)
-
-    @staticmethod
-    def prune_mst(g, branch_size):
-        """"
-        Prune the branches smaller than branch_size.
+        Prune branches smaller than branch_size.
         Return the number of pruned vertices.
         """
         print(
             int(timeit.default_timer() - t0),
-            "Pruning branches shorter than", branch_size, file=sys.stderr)
+            "Pruning branches shorter than", branch_size, file=sys.stderr, flush=True)
         g0 = g.copy()
         for component in nx.connected_components(g0):
-            Physlr.prune_branches_of_tree(g, g0.subgraph(component), branch_size)
+            gcomponent = g0.subgraph(component)
+            messages = Physlr.determine_reachability_by_message_passing(gcomponent)
+            g.remove_nodes_from(v for u, v in gcomponent.edges()
+                                if g0.degree(v) >= 3 and messages[(u, v)] < branch_size)
         n = g0.number_of_nodes()
         pruned = n - g.number_of_nodes()
         print(
             int(timeit.default_timer() - t0),
-            "Pruned", pruned, "vertices of", n, f"({round(100 * pruned / n, 2)}%)", file=sys.stderr)
+            "Pruned", pruned, "vertices of", n, f"({round(100 * pruned / n, 2)}%)",
+            file=sys.stderr, flush=True)
         return pruned
+
+    @staticmethod
+    def prune_mst(g, branch_size):
+        """"
+        Iteratively prune branches smaller than branch_size.
+        First prune branches shorter than branch_size, then iteratively prune very small branches.
+        """
+        n = g.number_of_nodes()
+        iterations = 0
+        total_pruned = 0
+        pruned = True
+        while pruned:
+            pruned = Physlr.prune_mst_once(g, branch_size)
+            branch_size = min(5, branch_size)
+            if pruned:
+                iterations += 1
+                total_pruned += pruned
+        print(
+            int(timeit.default_timer() - t0),
+            "Pruned", total_pruned, "vertices of", n, f"({round(100 * total_pruned / n, 2)}%)",
+            "in", iterations, "iterations.",
+            file=sys.stderr, flush=True)
 
     @staticmethod
     def print_flesh_path(backbone, backbone_insertions):
@@ -1044,7 +1061,7 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Extracting the MST.", file=sys.stderr)
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         if self.args.prune > 0:
-            gmst = Physlr.prune_mst(gmst, self.args.prune)
+            Physlr.prune_mst(gmst, self.args.prune)
         self.write_graph(gmst, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote the MST.", file=sys.stderr)
 
