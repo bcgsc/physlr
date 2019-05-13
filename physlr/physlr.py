@@ -404,16 +404,16 @@ class Physlr:
         """"
         Detect the junctions in the tree, with at least branches larger than min_branch.
         """
-        messages = Physlr.determine_reachability_by_message_passing(gcomponent)
+        branch_lengths = Physlr.measure_branch_length(gcomponent)
         candidate_junctions = [node
                                for node in list(gcomponent.nodes)
                                if gcomponent.degree(node) >= 3]
         junctions = []
         for candidate_junction in candidate_junctions:
-            candidate_messages = [messages[(candidate_junction, neighbor)]
-                                  for neighbor in gcomponent.neighbors(candidate_junction)]
-            candidate_messages.sort()
-            if candidate_messages[-3] >= min_branch:
+            lengths = [branch_lengths[(candidate_junction, neighbor)]
+                       for neighbor in gcomponent.neighbors(candidate_junction)]
+            lengths.sort()
+            if lengths[-3] >= min_branch:
                 # If the 3rd largest branch is considerably large, this node is a junction.
                 junctions.append(candidate_junction)
         return junctions
@@ -592,31 +592,34 @@ class Physlr:
         Wrap up all incoming messages to this node (sender) except the one from receiver;
         and set (pass) the message from sender to receiver.
         """
-        messages[(receiver, sender)] = \
-            1 + sum(messages[(sender, u)] for u in mst.neighbors(sender) if u != receiver)
+        if mst.degree(sender) == 1:
+            length = 0
+        else:
+            length = max(messages[(sender, u)] for u in mst.neighbors(sender) if u != receiver)
+        messages[(receiver, sender)] = 1 + length
 
     @staticmethod
-    def determine_reachability_by_message_passing(mst):
+    def measure_branch_length(mst):
         """
-        Using message passing, determine for each edge of each vertex
-        the number of vertices of the tree reachable from that vertex through that edge.
+        Measure the lengths of branches.
+        The branch length of an edge (u,v) is the longest path from (u,v) to a leaf vertex.
         """
         dfs = list(nx.dfs_edges(mst))
         if not dfs:
             return {}
         stack = [dfs[0][0]]
-        messages = {}
+        branch_lengths = {}
         # Gather
         for edge in dfs:
             while stack[-1] != edge[0]:
-                Physlr.wrap_up_messages_and_pass(mst, messages, stack.pop(), stack[-1])
+                Physlr.wrap_up_messages_and_pass(mst, branch_lengths, stack.pop(), stack[-1])
             stack.append(edge[1])
         while len(stack) != 1:
-            Physlr.wrap_up_messages_and_pass(mst, messages, stack.pop(), stack[-1])
+            Physlr.wrap_up_messages_and_pass(mst, branch_lengths, stack.pop(), stack[-1])
         # Distribute
         for edge in dfs:
-            Physlr.wrap_up_messages_and_pass(mst, messages, edge[0], edge[1])
-        return messages
+            Physlr.wrap_up_messages_and_pass(mst, branch_lengths, edge[0], edge[1])
+        return branch_lengths
 
     @staticmethod
     def prune_mst_once(g, branch_size):
@@ -629,10 +632,9 @@ class Physlr:
             "Pruning branches shorter than", branch_size, file=sys.stderr, flush=True)
         g0 = g.copy()
         for component in nx.connected_components(g0):
-            gcomponent = g0.subgraph(component)
-            messages = Physlr.determine_reachability_by_message_passing(gcomponent)
-            g.remove_nodes_from(v for u, v in gcomponent.edges()
-                                if g0.degree(v) >= 3 and messages[(u, v)] < branch_size)
+            branch_lengths = Physlr.measure_branch_length(g0.subgraph(component))
+            g.remove_nodes_from(v for (u, v), length in branch_lengths.items()
+                                if g0.degree(u) >= 3 and length < branch_size)
         n = g0.number_of_nodes()
         pruned = n - g.number_of_nodes()
         print(
@@ -653,10 +655,9 @@ class Physlr:
         pruned = True
         while pruned:
             pruned = Physlr.prune_mst_once(g, branch_size)
-            branch_size = min(5, branch_size)
+            total_pruned += pruned
             if pruned:
                 iterations += 1
-                total_pruned += pruned
         print(
             int(timeit.default_timer() - t0),
             "Pruned", total_pruned, "vertices of", n, f"({round(100 * total_pruned / n, 2)}%)",
@@ -1062,6 +1063,15 @@ class Physlr:
         gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
         if self.args.prune > 0:
             Physlr.prune_mst(gmst, self.args.prune)
+
+        print(int(timeit.default_timer() - t0), "Measuring branches.", file=sys.stderr, flush=True)
+        for component in nx.connected_components(gmst):
+            gcomponent = gmst.subgraph(component)
+            branch_lengths = Physlr.measure_branch_length(gcomponent)
+            for u, v in branch_lengths:
+                gmst[u][v]["l"] = min(branch_lengths[(u, v)], branch_lengths[(v, u)])
+        print(int(timeit.default_timer() - t0), "Measured branches.", file=sys.stderr, flush=True)
+
         self.write_graph(gmst, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote the MST.", file=sys.stderr)
 
@@ -2014,8 +2024,8 @@ class Physlr:
             "FILES", nargs="+",
             help="FASTA/FASTQ, TSV, or GraphViz format")
         argparser.add_argument(
-            "--prune", action="store", dest="prune", type=int, default=100,
-            help="size of the branches to be pruned [100]. set to 0 to skip prunning.")
+            "--prune", action="store", dest="prune", type=int, default=10,
+            help="size of the branches to be pruned [10]. set to 0 to skip prunning.")
         argparser.add_argument(
             "--min-branch", action="store", dest="min_branch", type=int, default=100,
             help="split a backbone path when the alternative branch is long [100]")
