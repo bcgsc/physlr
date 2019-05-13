@@ -1248,106 +1248,108 @@ class Physlr:
         return "_" + str(random.choice(max_hits)), 0, 1
 
     @staticmethod
-    def determine_molecules_biconnected_components(g, u):
-        "Separate bi-connected components."
-        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
-        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
-        components.sort(key=len, reverse=True)
-        return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs}
+    def detect_communities_biconnected_components(g, node_set):
+        """Separate bi-connected components. Return components."""
+        cut_vertices = set(nx.articulation_points(g.subgraph(node_set)))
+        components = list(nx.connected_components(g.subgraph(node_set - cut_vertices)))
+        return components
 
     @staticmethod
-    def determine_molecules_k_clique_communities(g, u):
-        "Apply k-clique community detection algorithm after extracting bi-connected components."
-        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
-        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
-        components.sort(key=len, reverse=True)
-        communities = []
-        for comp in components:
-            communities.extend(nx.algorithms.community.k_clique_communities(g.subgraph(comp), 3))
-        return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
+    def detect_communities_k_clique(g, node_set, k=3):
+        """Apply k-clique community detection. Return communities."""
+        return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
 
     @staticmethod
-    def determine_molecules_louvain(g, u):
-        "Apply louvain community detection algorithm after extracting bi-connected components."
+    def detect_communities_louvain(g, node_set, init_communities=None):
+        """Apply Louvain community detection on a single component. Return communities."""
+        if len(node_set) < 2:
+            return []
         import community as louvain
-
-        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
-        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
-        components.sort(key=len, reverse=True)
-        communities = []
-        for comp in components:
-            if len(comp) > 1:
-                partition = louvain.best_partition(g.subgraph(comp))
-                for com in set(partition.values()):
-                    list_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
-                    if len(list_nodes) > 1:
-                        communities.append(list_nodes)
-        return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
+        partition = louvain.best_partition(g.subgraph(node_set), init_communities)
+        return [{node for node in partition.keys() if partition[node] == com}
+                for com in set(partition.values())]
 
     @staticmethod
-    def determine_molecules_just_louvain(g, u):
-        "Apply louvain community detection without bi-connected separation."
-        import community as louvain
-
-        sub_graph = g.subgraph(g.neighbors(u))
-        nodes_count = len(sub_graph)
-        if nodes_count == 0:  # or edges_count == 0:
-            components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)))))
-            return u, {v: i for i, vs in enumerate(components) if len(vs) > 1 for v in vs}
-        partition = louvain.best_partition(sub_graph)
-        if not partition:
-            return u, {}
-        multinode_partitions_set = {}
-        for com in set(partition.values()):
-            list_nodes = [nodes for nodes in partition.keys() if partition[nodes] == com]
-            if len(list_nodes) > 1:
-                multinode_partition = {v: com for v in list_nodes}
-                multinode_partitions_set.update(multinode_partition)
-        return u, multinode_partitions_set
-
-    @staticmethod
-    def determine_molecules_cosine_of_squared(g, u):
-        "Square the adjacency matrix and then use cosine similarity to detect communities."
+    def detect_communities_cosine_of_squared(g, node_set):
+        """
+        Square the adjacency matrix and then use cosine similarity to detect communities.
+        Return communities.
+        """
         import scipy as sp
         import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity
 
-        cut_vertices = set(nx.articulation_points(g.subgraph(g.neighbors(u))))
-        components = list(nx.connected_components(g.subgraph(set(g.neighbors(u)) - cut_vertices)))
-        components.sort(key=len, reverse=True)
         communities = []
-        for comp in components:
-            if len(comp) > 1:
-                sub_graph = g.subgraph(comp)
-                adj_array = nx.adjacency_matrix(sub_graph).toarray()
-                new_adj = np.multiply(
-                    cosine_similarity(
-                        sp.linalg.blas.sgemm(1.0, adj_array, adj_array)) >= 0.75, adj_array)
-                edges_to_remove = np.argwhere(new_adj != adj_array)
-                barcode_dict = dict(zip(range(len(sub_graph)), list(sub_graph.nodes)))
-                edges_to_remove_barcode = [(barcode_dict[i], barcode_dict[j])
-                                           for i, j in edges_to_remove]
-                sub_graph_copy = nx.Graph(sub_graph)
-                sub_graph_copy.remove_edges_from(edges_to_remove_barcode)
-                cos_components = list(nx.connected_components(sub_graph_copy))
-                cos_components.sort(key=len, reverse=True)
-                for com in cos_components:
-                    if len(com) > 1:
-                        communities.append(com)
-        return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
+        if len(node_set) > 1:
+            adj_array = nx.adjacency_matrix(g.subgraph(node_set)).toarray()
+            new_adj = np.multiply(
+                cosine_similarity(
+                    sp.linalg.blas.sgemm(1.0, adj_array, adj_array)) >= 0.75, adj_array)
+            edges_to_remove = np.argwhere(new_adj != adj_array)
+            barcode_dict = dict(zip(range(len(node_set)), list(node_set)))
+            edges_to_remove_barcode = [(barcode_dict[i], barcode_dict[j])
+                                       for i, j in edges_to_remove]
+            sub_graph_copy = nx.Graph(g.subgraph(node_set))
+            sub_graph_copy.remove_edges_from(edges_to_remove_barcode)
+            cos_components = list(nx.connected_components(sub_graph_copy))
+            for com in cos_components:
+                communities.append(com)
+        return communities
+
+    @staticmethod
+    def determine_molecules_bc_k_cliques(g, u):
+        """
+        Assign the neighbours of this vertex to molecules by
+        applying k-cliques community detection for each bi-connected component.
+        """
+        return [community
+                for bi_connected_component in
+                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                for community in
+                Physlr.detect_communities_k_clique(g, bi_connected_component)]
+
+    @staticmethod
+    def determine_molecules_bc_louvain(g, u):
+        """
+        Assign the neighbours of this vertex to molecules by
+        applying louvain for each bi-connected component.
+        """
+        return [community
+                for bi_connected_component in
+                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                for community in
+                Physlr.detect_communities_louvain(g, bi_connected_component)]
+
+    @staticmethod
+    def determine_molecules_bc_cosine_of_squared(g, u):
+        """
+        Assign the neighbours of this vertex to molecules by
+        applying cosine of squared of the adjacency matrix for each bi-connected component.
+        """
+        return [community
+                for bi_connected_component in
+                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                for community in
+                Physlr.detect_communities_cosine_of_squared(g, bi_connected_component)]
 
     @staticmethod
     def determine_molecules(g, u, strategy):
-        "Assign the neighbours of this vertex to molecules."
-        if strategy == 2:
-            return Physlr.determine_molecules_k_clique_communities(g, u)
-        if strategy == 3:
-            return Physlr.determine_molecules_louvain(g, u)
-        if strategy == 4:
-            return Physlr.determine_molecules_cosine_of_squared(g, u)
+        """Assign the neighbours of this vertex to molecules."""
+        communities = []
+        if strategy == 1:  # bi-connected
+            communities = \
+                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+        elif strategy == 2:  # bi-connected + k-clique
+            communities = Physlr.determine_molecules_bc_k_cliques(g, u)
+        elif strategy == 3:  # bi-connected + Louvain
+            communities = Physlr.determine_molecules_bc_louvain(g, u)
+        elif strategy == 4:  # bi-connected + sqCos
+            communities = Physlr.determine_molecules_bc_cosine_of_squared(g, u)
+        else:
+            exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
 
-        # strategy == 1 or none of the previous strategies
-        return Physlr.determine_molecules_biconnected_components(g, u)
+        communities.sort(key=len, reverse=True)
+        return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
 
     @staticmethod
     def determine_molecules_process(u):
@@ -1359,25 +1361,25 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        gin = self.read_graph(self.args.FILES)
-        Physlr.filter_edges(gin, self.args.n)
         strategy_switcher = {
             1: "\n\tStrategy: "
                "Bi-connected components separation",
             2: "\n\tStrategy: "
                "K-clique community detection (after separating bi-connected components)",
             3: "\n\tStrategy: "
-               "Louvain community detection (after separating bi-connected components)"
+               "Louvain community detection (after separating bi-connected components)",
+            4: "\n\tStrategy: "
+               "Community detection by cosine of squared adjacency matrix"
+               "(after separating bi-connected components)"
         }
+        if self.args.strategy not in strategy_switcher:
+            exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
+        gin = self.read_graph(self.args.FILES)
+        Physlr.filter_edges(gin, self.args.n)
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules",
-            strategy_switcher.get(self.args.strategy,
-                                  "\033[93m\n\tWarning:"
-                                  " Wrong input argument: --separation-strategy!"
-                                  "\n\t- Set to default strategy:"
-                                  " Bi-connected components separation."
-                                  "\033[0m"),
+            strategy_switcher.get(self.args.strategy),
             file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
@@ -1429,13 +1431,14 @@ class Physlr:
 
     @staticmethod
     def subgraph_stats(g, u):
-        "Extract the statistics of the vertex-induced subgraph with the vertex being u."
+        """Extract the statistics of the vertex-induced subgraph with the vertex being u."""
         sub_graph = g.subgraph(g.neighbors(u))
         nodes_count = sub_graph.number_of_nodes()
         edges_count = sub_graph.number_of_edges()
         if nodes_count < 2:
             return u, [nodes_count, edges_count, 0.0]
-        return u, (nodes_count, edges_count, (edges_count*2.0/(nodes_count*(nodes_count-1))))
+        return u, (nodes_count, edges_count,
+                   (edges_count*2.0/(nodes_count*(nodes_count-1))))
 
     @staticmethod
     def subgraph_stats_process(u):
