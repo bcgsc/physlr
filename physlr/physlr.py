@@ -1292,7 +1292,6 @@ class Physlr:
             sub_graph_copy = nx.Graph(g.subgraph(node_set))
             sub_graph_copy.remove_edges_from(edges_to_remove_barcode)
             cos_components = list(nx.connected_components(sub_graph_copy))
-            # cos_components.sort(key=len, reverse=True)
             for com in cos_components:
                 communities.append(com)
         return communities
