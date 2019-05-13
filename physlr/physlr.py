@@ -1384,7 +1384,7 @@ class Physlr:
         if len(communities) == 1 and (node_set == 0 or strategy != 1):
             return communities
         if strategy == 1:  # Merge by Initializing Louvain with the communities
-            return Physlr.community_detection_louvain(g, node_set, communities)
+            return Physlr.detect_communities_louvain(g, node_set, communities)
         # Ad-hoc Merge (default - strategy = 0)
         merge_network = nx.Graph()
         for i in range(len(communities)):
@@ -1416,14 +1416,14 @@ class Physlr:
         """
         return [merged
                 for bi_connected_component in
-                Physlr.community_detection_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
                 for merged in
                 Physlr.merge_communities(g, [cluster
                                              for chunk in
                                              Physlr.partition_subgraph_into_bins_randomly(
                                                  bi_connected_component)
                                              for cluster in
-                                             Physlr.community_detection_k_clique(g, chunk, 3)],
+                                             Physlr.detect_communities_k_clique(g, chunk, 3)],
                                          bi_connected_component, strategy=0)
                 ]
 
@@ -1469,8 +1469,8 @@ class Physlr:
                "Community detection by cosine of squared adjacency matrix"
                "(after separating bi-connected components)",
             10: "\n\tStrategy: "
-               "Fast Community detection {partition + detect + merge}\n\t"
-               "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)"
+                "Fast Community detection {partition + detect + merge}\n\t"
+                "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)"
         }
         if self.args.strategy not in strategy_switcher:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
