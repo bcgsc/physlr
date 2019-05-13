@@ -901,6 +901,11 @@ mol_strategy=1
 %.gv.squish.pdf: %.gv
 	neato -Gsize=100,100 -Tpdf -o $@ $<
 
+# Layout and render an undirected graph to PDF using sfdp.
+# Prevent overlapping vertices by scaling the layout.
+%.gv.sfdp.pdf: %.gv
+	sfdp -Goverlap=scale -Gsize=100,100 -Tpdf -o $@ $<
+
 # Layout and render an undirected graph to PDF.
 # Prevent overlapping vertices by scaling the layout.
 %.gv.pdf: %.gv
