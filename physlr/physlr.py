@@ -1358,22 +1358,22 @@ class Physlr:
                 Physlr.detect_communities_cosine_of_squared(g, bi_connected_component)]
 
     @staticmethod
-    def partition_subgraph_into_bins_randomly(node_set, max_size=30):
+    def partition_subgraph_into_bins_randomly(node_set, max_size=40):
         """Prtition the subgraph into bins randomly for faster processing. Return bins."""
-        chunks_count = 1
+        bins_count = 1
         if len(node_set) > max_size:
-            chunks_count = 1 + int(len(node_set) / max_size)
+            bins_count = 1 + int(len(node_set) / max_size)
         node_list = list(node_set)
         random.shuffle(node_list)
-        size, leftover = divmod(len(node_set), chunks_count)
-        chunks = [node_list[0 + size * i: size * (i + 1)] for i in list(range(chunks_count))]
-        edge = size * chunks_count
+        size, leftover = divmod(len(node_set), bins_count)
+        bins = [node_list[0 + size * i: size * (i + 1)] for i in list(range(bins_count))]
+        edge = size * bins_count
         for i in list(range(leftover)):
-            chunks[i % chunks_count].append(node_list[edge + i])
-        chunk_sets = [set() for _ in range(len(chunks))]
-        for i, c in zip(range(len(chunks)), chunks):
-            chunk_sets[i].update(set(c))
-        return chunk_sets
+            bins[i % bins_count].append(node_list[edge + i])
+        bin_sets = [set() for _ in range(len(bins))]
+        for i, c in zip(range(len(bins)), bins):
+            bin_sets[i].update(set(c))
+        return bin_sets
 
     @staticmethod
     def merge_communities(g, communities, node_set=0, strategy=0, cutoff=20):
@@ -1419,11 +1419,13 @@ class Physlr:
                 Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
                 for merged in
                 Physlr.merge_communities(g, [cluster
-                                             for chunk in
+                                             for bin_set in
                                              Physlr.partition_subgraph_into_bins_randomly(
                                                  bi_connected_component)
+                                             for bi_con2 in
+                                             Physlr.detect_communities_biconnected_components(g, bin_set)
                                              for cluster in
-                                             Physlr.detect_communities_k_clique(g, chunk, 3)],
+                                             Physlr.detect_communities_k_clique(g, bi_con2, 3)],
                                          bi_connected_component, strategy=0)
                 ]
 
