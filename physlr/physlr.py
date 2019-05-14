@@ -1292,7 +1292,7 @@ class Physlr:
                 for com in set(partition.values())]
 
     @staticmethod
-    def detect_communities_cosine_of_squared(g, node_set, squaring=1):
+    def detect_communities_cosine_of_squared(g, node_set, squaring=True):
         """
         Square the adjacency matrix and then use cosine similarity to detect communities.
         Return communities.
@@ -1304,7 +1304,7 @@ class Physlr:
         communities = []
         if len(node_set) > 1:
             adj_array = nx.adjacency_matrix(g.subgraph(node_set)).toarray()
-            if squaring == 0:
+            if squaring:
                 new_adj = np.multiply(cosine_similarity(adj_array) >= 0.75, adj_array)
             else:
                 new_adj = np.multiply(
