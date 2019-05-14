@@ -1418,15 +1418,16 @@ class Physlr:
                 for bi_connected_component in
                 Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
                 for merged in
-                Physlr.merge_communities(g, [cluster
-                                             for bin_set in
-                                             Physlr.partition_subgraph_into_bins_randomly(
-                                                 bi_connected_component)
-                                             for bi_con2 in
-                                             Physlr.detect_communities_biconnected_components(g, bin_set)
-                                             for cluster in
-                                             Physlr.detect_communities_k_clique(g, bi_con2, 3)],
-                                         bi_connected_component, strategy=0)
+                Physlr.merge_communities(
+                    g, [cluster
+                        for bin_set in
+                        Physlr.partition_subgraph_into_bins_randomly(
+                            bi_connected_component)
+                        for bi_con2 in
+                        Physlr.detect_communities_biconnected_components(g, bin_set)
+                        for cluster in
+                        Physlr.detect_communities_k_clique(g, bi_con2, 3)],
+                    bi_connected_component, strategy=0)
                 ]
 
     @staticmethod
