@@ -1522,7 +1522,7 @@ class Physlr:
         Assign the neighbours of this vertex to molecules
         by Applying a stack of different approaches.
         """
-        return [community3
+        return [community2
                 for bi_connected_component in
                 Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
                 for community in
