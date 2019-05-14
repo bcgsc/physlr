@@ -1292,7 +1292,7 @@ class Physlr:
                 for com in set(partition.values())]
 
     @staticmethod
-    def detect_communities_cosine_of_squared(g, node_set):
+    def detect_communities_cosine_of_squared(g, node_set, squaring=True, threshold=0.75):
         """
         Square the adjacency matrix and then use cosine similarity to detect communities.
         Return communities.
@@ -1304,9 +1304,12 @@ class Physlr:
         communities = []
         if len(node_set) > 1:
             adj_array = nx.adjacency_matrix(g.subgraph(node_set)).toarray()
-            new_adj = np.multiply(
-                cosine_similarity(
-                    sp.linalg.blas.sgemm(1.0, adj_array, adj_array)) >= 0.75, adj_array)
+            if squaring:
+                new_adj = np.multiply(cosine_similarity(adj_array) >= threshold, adj_array)
+            else:
+                new_adj = np.multiply(
+                    cosine_similarity(
+                        sp.linalg.blas.sgemm(1.0, adj_array, adj_array)) >= threshold, adj_array)
             edges_to_remove = np.argwhere(new_adj != adj_array)
             barcode_dict = dict(zip(range(len(node_set)), list(node_set)))
             edges_to_remove_barcode = [(barcode_dict[i], barcode_dict[j])
