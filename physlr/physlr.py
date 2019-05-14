@@ -1519,8 +1519,8 @@ class Physlr:
 
     def determine_molecules_consensus(g, u):
         """
-        Assign the neighbours of this vertex to molecules by
-        applying cosine of squared of the adjacency matrix for each bi-connected component.
+        Assign the neighbours of this vertex to molecules
+        by Applying a stack of different approaches.
         """
         return [community4
                 for bi_connected_component in
