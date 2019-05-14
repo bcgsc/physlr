@@ -1529,8 +1529,8 @@ class Physlr:
                 Physlr.detect_communities_k_clique(g, bi_connected_component)
                 for community2 in
                 Physlr.detect_communities_cosine_of_squared(g, community, squaring=False)
-                for community3 in
-                Physlr.detect_communities_cosine_of_squared(g, community2)
+                # for community3 in
+                # Physlr.detect_communities_cosine_of_squared(g, community2)
                 # for community4 in
                 # Physlr.detect_communities_louvain(g, community3)
                 ]
@@ -1583,7 +1583,7 @@ class Physlr:
                "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)"
             20: "\n\tStrategy: "
                 "Community detection by consensus clustering"
-                "\n\t(bi-connected + k3-clique + cosine similarity + squared- cosine similarity)"
+                "\n\t(bi-connected + k3-clique + cosine similarity)"
         }
         if self.args.strategy not in strategy_switcher:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
