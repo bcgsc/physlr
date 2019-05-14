@@ -1517,6 +1517,24 @@ class Physlr:
                     bi_connected_component, strategy=0)
                 ]
 
+    def determine_molecules_consensus(g, u):
+        """
+        Assign the neighbours of this vertex to molecules by
+        applying cosine of squared of the adjacency matrix for each bi-connected component.
+        """
+        return [community4
+                for bi_connected_component in
+                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                for community in
+                Physlr.detect_communities_k_clique(g, bi_connected_component)
+                for community2 in
+                Physlr.detect_communities_cosine_of_squared(g, community, squaring=False)
+                for community3 in
+                Physlr.detect_communities_cosine_of_squared(g, community2)
+                for community4 in
+                Physlr.detect_communities_louvain(g, community3)
+                ]
+
     @staticmethod
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
@@ -1532,6 +1550,8 @@ class Physlr:
             communities = Physlr.determine_molecules_bc_cosine_of_squared(g, u)
         elif strategy == 5:  # bi-connected + partition + bi-connected + k-cliques + merge
             communities = Physlr.determine_molecules_partition_split_merge(g, u)
+        elif strategy == 20:  # Consensus Clustering
+            communities = Physlr.determine_molecules_consensus(g, u)
         else:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
 
