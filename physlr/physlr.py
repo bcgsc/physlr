@@ -1522,7 +1522,7 @@ class Physlr:
         Assign the neighbours of this vertex to molecules
         by Applying a stack of different approaches.
         """
-        return [community4
+        return [community3
                 for bi_connected_component in
                 Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
                 for community in
@@ -1531,8 +1531,8 @@ class Physlr:
                 Physlr.detect_communities_cosine_of_squared(g, community, squaring=False)
                 for community3 in
                 Physlr.detect_communities_cosine_of_squared(g, community2)
-                for community4 in
-                Physlr.detect_communities_louvain(g, community3)
+                # for community4 in
+                # Physlr.detect_communities_louvain(g, community3)
                 ]
 
     @staticmethod
