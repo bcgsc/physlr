@@ -1305,11 +1305,11 @@ class Physlr:
         if len(node_set) > 1:
             adj_array = nx.adjacency_matrix(g.subgraph(node_set)).toarray()
             if squaring:
-                new_adj = np.multiply(cosine_similarity(adj_array) >= threshold, adj_array)
-            else:
                 new_adj = np.multiply(
                     cosine_similarity(
                         sp.linalg.blas.sgemm(1.0, adj_array, adj_array)) >= threshold, adj_array)
+            else:
+                new_adj = np.multiply(cosine_similarity(adj_array) >= threshold, adj_array)
             edges_to_remove = np.argwhere(new_adj != adj_array)
             barcode_dict = dict(zip(range(len(node_set)), list(node_set)))
             edges_to_remove_barcode = [(barcode_dict[i], barcode_dict[j])
