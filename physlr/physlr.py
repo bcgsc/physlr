@@ -1475,8 +1475,8 @@ class Physlr:
                "Community detection by cosine of squared adjacency matrix"
                "(after separating bi-connected components)",
             5: "\n\tStrategy: "
-                "Fast Community detection {partition + detect + merge}\n\t"
-                "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)"
+               "Fast Community detection {partition + detect + merge}\n\t"
+               "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)"
         }
         if self.args.strategy not in strategy_switcher:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
