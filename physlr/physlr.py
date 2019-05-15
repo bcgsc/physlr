@@ -1380,7 +1380,7 @@ class Physlr:
                 for com in set(partition.values())]
 
     @staticmethod
-    def detect_communities_cosine_of_squared(g, node_set, squaring=True, threshold=0.75):
+    def detect_communities_cosine_of_squared(g, node_set, squaring=True, threshold=0.7):
         """
         Square the adjacency matrix and then use cosine similarity to detect communities.
         Return communities.
@@ -1525,15 +1525,13 @@ class Physlr:
         communities = []
         communities2 = []
         for bi_connected_component in Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u))):
-            for comset in Physlr.detect_communities_k_clique(g, bi_connected_component):
-                communities.extend(comset)
+            communities.extend(Physlr.detect_communities_k_clique(g, bi_connected_component))
         for community in communities:
-            for comset in Physlr.detect_communities_cosine_of_squared(g, community, squaring=False, threshold=0.5):
-                communities2.extend(comset)
+            communities2.extend(
+                Physlr.detect_communities_cosine_of_squared(g, community, squaring=False, threshold=0.4))
         communities = []
         for community2 in communities2:
-            for comset in Physlr.detect_communities_cosine_of_squared(g, community2):
-                communities.extend(comset)
+            communities.extend(Physlr.detect_communities_cosine_of_squared(g, community2))
         return communities
         # communities2 = []
         # for community in communities:
