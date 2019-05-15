@@ -1522,18 +1522,31 @@ class Physlr:
         Assign the neighbours of this vertex to molecules
         by Applying a stack of different approaches.
         """
-        return [community2
-                for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
-                for community in
-                Physlr.detect_communities_k_clique(g, bi_connected_component)
-                for community2 in
-                Physlr.detect_communities_cosine_of_squared(g, community, squaring=False)
-                # for community3 in
-                # Physlr.detect_communities_cosine_of_squared(g, community2)
-                # for community4 in
-                # Physlr.detect_communities_louvain(g, community3)
-                ]
+        communities = []
+        communities2 = []
+        for bi_connected_component in Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u))):
+            communities.extend(Physlr.detect_communities_k_clique(g, bi_connected_component))
+        for community in communities:
+            communities2.extend(Physlr.detect_communities_cosine_of_squared(g, community, squaring=False))
+        communities = []
+        for community2 in communities2:
+            communities.extend(Physlr.detect_communities_cosine_of_squared(g, community2))
+        communities2 = []
+        for community in communities:
+            communities2.extend(Physlr.detect_communities_louvain(g, community))
+        return communities2
+        # return [community2
+        #         for bi_connected_component in
+        #         Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+        #         for community in
+        #         Physlr.detect_communities_k_clique(g, bi_connected_component)
+        #         for community2 in
+        #         Physlr.detect_communities_cosine_of_squared(g, community, squaring=False)
+        #         # for community3 in
+        #         # Physlr.detect_communities_cosine_of_squared(g, community2)
+        #         # for community4 in
+        #         # Physlr.detect_communities_louvain(g, community3)
+        #         ]
 
     @staticmethod
     def determine_molecules(g, u, strategy):
