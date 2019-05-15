@@ -1359,19 +1359,21 @@ class Physlr:
 
     @staticmethod
     def partition_subgraph_into_bins_randomly(node_set, max_size=40):
-        """Prtition the subgraph into bins randomly for faster processing. Return bins."""
-        bins_count = 1
-        if len(node_set) > max_size:
-            bins_count = 1 + int(len(node_set) / max_size)
+        """
+        Partition the subgraph into bins randomly for faster processing. Return bins.
+        Warning: This function is not deterministic.
+        """
+        bins_count = 1 + len(node_set) // max_size
         node_list = list(node_set)
         random.shuffle(node_list)
         size, leftover = divmod(len(node_set), bins_count)
-        bins = [node_list[0 + size * i: size * (i + 1)] for i in list(range(bins_count))]
+        bins = [node_list[0 + size * i: size * (i + 1)] for i in range(bins_count)]
         edge = size * bins_count
-        for i in list(range(leftover)):
+        for i in range(leftover):
             bins[i % bins_count].append(node_list[edge + i])
-        bin_sets = [set() for _ in range(len(bins))]
-        for i, c in zip(range(len(bins)), bins):
+        bin_sets = [set() for _ in bins]
+        for i, c in enumerate(bins):
+            bin_sets[i].update(set(c))
             bin_sets[i].update(set(c))
         return bin_sets
 
@@ -1390,21 +1392,22 @@ class Physlr:
         for i in range(len(communities)):
             merge_network.add_node(i)
         for i, com1 in enumerate(communities):
-            for k, com2 in enumerate(communities):
-                if i < k:
-                    if mode == 1:  # disjoint input communities.
-                        if nx.number_of_edges(
-                                g.subgraph(com1.union(com2))) - \
-                                nx.number_of_edges(g.subgraph(com1)) - \
-                                nx.number_of_edges(g.subgraph(com2)) > cutoff:
-                            merge_network.add_edge(i, k)
-                    else:  # overlapping input communities.
-                        if nx.number_of_edges(
-                                g.subgraph(com1.union(com2))) - \
-                                len(set(g.subgraph(com1).edges()).union(
-                                    set(g.subgraph(com2).edges()))) \
-                                > cutoff:
-                            merge_network.add_edge(i, k)
+            for j, com2 in enumerate(communities):
+                if i >= j:
+                    continue
+                if mode == 1:  # disjoint input communities.
+                    if nx.number_of_edges(
+                            g.subgraph(com1.union(com2))) - \
+                            nx.number_of_edges(g.subgraph(com1)) - \
+                            nx.number_of_edges(g.subgraph(com2)) > cutoff:
+                        merge_network.add_edge(i, j)
+                else:  # overlapping input communities.
+                    if nx.number_of_edges(
+                            g.subgraph(com1.union(com2))) - \
+                            len(set(g.subgraph(com1).edges()).union(
+                                set(g.subgraph(com2).edges()))) \
+                            > cutoff:
+                        merge_network.add_edge(i, j)
         return [{barcode for j in i for barcode in communities[j]}
                 for i in nx.connected_components(merge_network)]
 
@@ -1443,7 +1446,7 @@ class Physlr:
             communities = Physlr.determine_molecules_bc_louvain(g, u)
         elif strategy == 4:  # bi-connected + sqCos
             communities = Physlr.determine_molecules_bc_cosine_of_squared(g, u)
-        elif strategy == 10:  # bi-connected + partition + bi-connected + k-cliques + merge
+        elif strategy == 5:  # bi-connected + partition + bi-connected + k-cliques + merge
             communities = Physlr.determine_molecules_partition_split_merge(g, u)
         else:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
@@ -1471,7 +1474,7 @@ class Physlr:
             4: "\n\tStrategy: "
                "Community detection by cosine of squared adjacency matrix"
                "(after separating bi-connected components)",
-            10: "\n\tStrategy: "
+            5: "\n\tStrategy: "
                 "Fast Community detection {partition + detect + merge}\n\t"
                 "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)"
         }
