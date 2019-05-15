@@ -1373,8 +1373,7 @@ class Physlr:
             bins[i % bins_count].append(node_list[edge + i])
         bin_sets = [set() for _ in bins]
         for i, c in enumerate(bins):
-            bin_sets[i].update(set(c))
-            bin_sets[i].update(set(c))
+            bin_sets[i].update(c)
         return bin_sets
 
     @staticmethod
@@ -1392,22 +1391,22 @@ class Physlr:
         for i in range(len(communities)):
             merge_network.add_node(i)
         for i, com1 in enumerate(communities):
-            for j, com2 in enumerate(communities):
-                if i >= j:
+            for k, com2 in enumerate(communities):
+                if i >= k:
                     continue
                 if mode == 1:  # disjoint input communities.
                     if nx.number_of_edges(
                             g.subgraph(com1.union(com2))) - \
                             nx.number_of_edges(g.subgraph(com1)) - \
                             nx.number_of_edges(g.subgraph(com2)) > cutoff:
-                        merge_network.add_edge(i, j)
+                        merge_network.add_edge(i, k)
                 else:  # overlapping input communities.
                     if nx.number_of_edges(
                             g.subgraph(com1.union(com2))) - \
                             len(set(g.subgraph(com1).edges()).union(
                                 set(g.subgraph(com2).edges()))) \
                             > cutoff:
-                        merge_network.add_edge(i, j)
+                        merge_network.add_edge(i, k)
         return [{barcode for j in i for barcode in communities[j]}
                 for i in nx.connected_components(merge_network)]
 
