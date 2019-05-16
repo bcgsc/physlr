@@ -1358,7 +1358,7 @@ class Physlr:
                 Physlr.detect_communities_cosine_of_squared(g, bi_connected_component)]
 
     @staticmethod
-    def partition_subgraph_into_bins_randomly(node_set, max_size=40):
+    def partition_subgraph_into_bins_randomly(node_set, max_size=50):
         """
         Partition the subgraph into bins randomly for faster processing. Return bins.
         Warning: This function is not deterministic.
