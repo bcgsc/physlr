@@ -1329,7 +1329,7 @@ class Physlr:
         """
         return [community
                 for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, g[u].keys())
                 for community in
                 Physlr.detect_communities_k_clique(g, bi_connected_component)]
 
@@ -1341,7 +1341,7 @@ class Physlr:
         """
         return [community
                 for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, g[u].keys())
                 for community in
                 Physlr.detect_communities_louvain(g, bi_connected_component)]
 
@@ -1353,7 +1353,7 @@ class Physlr:
         """
         return [community
                 for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, g[u].keys())
                 for community in
                 Physlr.detect_communities_cosine_of_squared(g, bi_connected_component)]
 
@@ -1371,10 +1371,7 @@ class Physlr:
         edge = size * bins_count
         for i in range(leftover):
             bins[i % bins_count].append(node_list[edge + i])
-        bin_sets = [set() for _ in bins]
-        for i, c in enumerate(bins):
-            bin_sets[i].update(c)
-        return bin_sets
+        return [set(x) for x in bins]
 
     @staticmethod
     def merge_communities(g, communities, node_set=0, strategy=0, cutoff=20):
@@ -1391,22 +1388,22 @@ class Physlr:
         for i in range(len(communities)):
             merge_network.add_node(i)
         for i, com1 in enumerate(communities):
-            for k, com2 in enumerate(communities):
-                if i >= k:
+            for j, com2 in enumerate(communities):
+                if i >= j:
                     continue
                 if mode == 1:  # disjoint input communities.
                     if nx.number_of_edges(
                             g.subgraph(com1.union(com2))) - \
                             nx.number_of_edges(g.subgraph(com1)) - \
                             nx.number_of_edges(g.subgraph(com2)) > cutoff:
-                        merge_network.add_edge(i, k)
+                        merge_network.add_edge(i, j)
                 else:  # overlapping input communities.
                     if nx.number_of_edges(
                             g.subgraph(com1.union(com2))) - \
                             len(set(g.subgraph(com1).edges()).union(
                                 set(g.subgraph(com2).edges()))) \
                             > cutoff:
-                        merge_network.add_edge(i, k)
+                        merge_network.add_edge(i, j)
         return [{barcode for j in i for barcode in communities[j]}
                 for i in nx.connected_components(merge_network)]
 
@@ -1418,7 +1415,7 @@ class Physlr:
         """
         return [merged
                 for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, g[u].keys())
                 for merged in
                 Physlr.merge_communities(
                     g, [cluster
@@ -1438,7 +1435,7 @@ class Physlr:
         communities = []
         if strategy == 1:  # bi-connected
             communities = \
-                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, g[u].keys())
         elif strategy == 2:  # bi-connected + k-clique
             communities = Physlr.determine_molecules_bc_k_cliques(g, u)
         elif strategy == 3:  # bi-connected + Louvain
