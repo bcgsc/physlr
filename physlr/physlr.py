@@ -2009,7 +2009,7 @@ class Physlr:
             "-p", "--min_p_val", action="store", dest="p", type=float, default=0.01,
             help="Minimum significance threshold (FPR) for Mann-Kendall Test")
         argparser.add_argument(
-            "-s", "--support", action="store", dest="s", type=int, default=5,
+            "-s", "--support", action="store", dest="s", type=int, default=3,
             help="Minimum number of barcodes required to support a position")
         argparser.add_argument(
             "--mkt-median-threshold", action="store", dest="mkt_median_threshold",
