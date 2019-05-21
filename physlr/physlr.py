@@ -1525,11 +1525,13 @@ class Physlr:
         """
         # communities = []
         # communities2 = []
-        # for bi_connected_component in Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u))):
+        # for bi_connected_component \
+        #         in Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u))):
         #     communities.extend(Physlr.detect_communities_k_clique(g, bi_connected_component))
         # for community in communities:
         #     communities2.extend(
-        #         Physlr.detect_communities_cosine_of_squared(g, community, squaring=False, threshold=0.4))
+        #         Physlr.detect_communities_cosine_of_squared(
+        #             g, community, squaring=False, threshold=0.4))
         # communities = []
         # for community2 in communities2:
         #     communities.extend(Physlr.detect_communities_cosine_of_squared(g, community2))
@@ -1583,7 +1585,7 @@ class Physlr:
             communities = Physlr.determine_molecules_bc_cosine_of_squared(g, u)
         elif strategy == 5:  # bi-connected + partition + bi-connected + k-cliques + merge
             communities = Physlr.determine_molecules_partition_split_merge(g, u)
-        elif strategy == 20:  # Consensus Clustering
+        elif strategy == 6:  # extensive detection
             communities = Physlr.determine_molecules_extensive(g, u)
         else:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
@@ -1613,10 +1615,10 @@ class Physlr:
                "(after separating bi-connected components)",
             5: "\n\tStrategy: "
                "Fast Community detection {partition + detect + merge}\n\t"
-               "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)"
-            20: "\n\tStrategy: "
-                "Community detection by consensus clustering"
-                "\n\t(bi-connected + k3-clique + cosine similarity)"
+               "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)",
+            6: "\n\tStrategy: "
+               "Community detection by extensive community-detection"
+               "\n\t(bi-connected + k3-clique + cosine similarity (with/out squaring)."
         }
         if self.args.strategy not in strategy_switcher:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
