@@ -1517,38 +1517,56 @@ class Physlr:
                     bi_connected_component, strategy=0)
                 ]
 
-    def determine_molecules_consensus(g, u):
+    @staticmethod
+    def determine_molecules_extensive(g, u):
         """
         Assign the neighbours of this vertex to molecules
-        by Applying a stack of different approaches.
+        by Applying a queue of different algorithms on top of each other.
         """
-        communities = []
-        communities2 = []
-        for bi_connected_component in Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u))):
-            communities.extend(Physlr.detect_communities_k_clique(g, bi_connected_component))
-        for community in communities:
-            communities2.extend(
-                Physlr.detect_communities_cosine_of_squared(g, community, squaring=False, threshold=0.4))
-        communities = []
-        for community2 in communities2:
-            communities.extend(Physlr.detect_communities_cosine_of_squared(g, community2))
-        return communities
+        # communities = []
+        # communities2 = []
+        # for bi_connected_component in Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u))):
+        #     communities.extend(Physlr.detect_communities_k_clique(g, bi_connected_component))
+        # for community in communities:
+        #     communities2.extend(
+        #         Physlr.detect_communities_cosine_of_squared(g, community, squaring=False, threshold=0.4))
+        # communities = []
+        # for community2 in communities2:
+        #     communities.extend(Physlr.detect_communities_cosine_of_squared(g, community2))
+        # return communities
         # communities2 = []
         # for community in communities:
         #     communities2.extend(Physlr.detect_communities_louvain(g, community))
         # return communities2
-        # return [community2
-        #         for bi_connected_component in
-        #         Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
-        #         for community in
-        #         Physlr.detect_communities_k_clique(g, bi_connected_component)
-        #         for community2 in
-        #         Physlr.detect_communities_cosine_of_squared(g, community, squaring=False)
-        #         # for community3 in
-        #         # Physlr.detect_communities_cosine_of_squared(g, community2)
-        #         # for community4 in
-        #         # Physlr.detect_communities_louvain(g, community3)
-        #         ]
+
+        from collections import deque
+
+        communities = [g[u].keys()]
+        communities_final = []
+
+        alg_list = deque(["bc", "k3", "bc", "cos", "bc", "sqCos", "bc"])
+        while alg_list:
+            communities_final.clear()
+            algoritm = alg_list.popleft()
+            if algoritm == "bc":
+                for component in communities:
+                    communities_final.extend(
+                        Physlr.detect_communities_biconnected_components(g, component))
+            elif algoritm == "k3":
+                for component in communities:
+                    communities_final.extend(
+                        Physlr.detect_communities_k_clique(g, component))
+            elif algoritm == "cos":
+                for component in communities:
+                    communities_final.extend(
+                        Physlr.detect_communities_cosine_of_squared(
+                            g, component, squaring=False, threshold=0.4))
+            elif algoritm == "sqCos":
+                for component in communities:
+                    communities_final.extend(
+                        Physlr.detect_communities_cosine_of_squared(g, component))
+            communities = communities_final.copy()
+        return communities_final
 
     @staticmethod
     def determine_molecules(g, u, strategy):
@@ -1566,7 +1584,7 @@ class Physlr:
         elif strategy == 5:  # bi-connected + partition + bi-connected + k-cliques + merge
             communities = Physlr.determine_molecules_partition_split_merge(g, u)
         elif strategy == 20:  # Consensus Clustering
-            communities = Physlr.determine_molecules_consensus(g, u)
+            communities = Physlr.determine_molecules_extensive(g, u)
         else:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
 
