@@ -1329,7 +1329,7 @@ class Physlr:
         """
         return [community
                 for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, g[u].keys())
                 for community in
                 Physlr.detect_communities_k_clique(g, bi_connected_component)]
 
@@ -1341,7 +1341,7 @@ class Physlr:
         """
         return [community
                 for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, g[u].keys())
                 for community in
                 Physlr.detect_communities_louvain(g, bi_connected_component)]
 
@@ -1353,9 +1353,81 @@ class Physlr:
         """
         return [community
                 for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, g[u].keys())
                 for community in
                 Physlr.detect_communities_cosine_of_squared(g, bi_connected_component)]
+
+    @staticmethod
+    def partition_subgraph_into_bins_randomly(node_set, max_size=50):
+        """
+        Partition the subgraph into bins randomly for faster processing. Return bins.
+        Warning: This function is not deterministic.
+        """
+        bins_count = 1 + len(node_set) // max_size
+        node_list = list(node_set)
+        random.shuffle(node_list)
+        size, leftover = divmod(len(node_set), bins_count)
+        bins = [node_list[0 + size * i: size * (i + 1)] for i in range(bins_count)]
+        edge = size * bins_count
+        for i in range(leftover):
+            bins[i % bins_count].append(node_list[edge + i])
+        return [set(x) for x in bins]
+
+    @staticmethod
+    def merge_communities(g, communities, node_set=0, strategy=0, cutoff=20):
+        """Merge communities if appropriate."""
+        mode = 1
+        if cutoff == -1:  # no merging
+            return communities
+        if len(communities) == 1 and (node_set == 0 or strategy != 1):
+            return communities
+        if strategy == 1:  # Merge by Initializing Louvain with the communities
+            return Physlr.detect_communities_louvain(g, node_set, communities)
+        # Ad-hoc Merge (default - strategy = 0)
+        merge_network = nx.Graph()
+        for i in range(len(communities)):
+            merge_network.add_node(i)
+        for i, com1 in enumerate(communities):
+            for j, com2 in enumerate(communities):
+                if i >= j:
+                    continue
+                if mode == 1:  # disjoint input communities.
+                    if nx.number_of_edges(
+                            g.subgraph(com1.union(com2))) - \
+                            nx.number_of_edges(g.subgraph(com1)) - \
+                            nx.number_of_edges(g.subgraph(com2)) > cutoff:
+                        merge_network.add_edge(i, j)
+                else:  # overlapping input communities.
+                    if nx.number_of_edges(
+                            g.subgraph(com1.union(com2))) - \
+                            len(set(g.subgraph(com1).edges()).union(
+                                set(g.subgraph(com2).edges()))) \
+                            > cutoff:
+                        merge_network.add_edge(i, j)
+        return [{barcode for j in i for barcode in communities[j]}
+                for i in nx.connected_components(merge_network)]
+
+    @staticmethod
+    def determine_molecules_partition_split_merge(g, u):
+        """
+        Assign the neighbours of this vertex to molecules using fast heuristic community detection.
+        Pipeline: bi-connected (bc) + partition + bc + k-cliques communities + merge.
+        """
+        return [merged
+                for bi_connected_component in
+                Physlr.detect_communities_biconnected_components(g, g[u].keys())
+                for merged in
+                Physlr.merge_communities(
+                    g, [cluster
+                        for bin_set in
+                        Physlr.partition_subgraph_into_bins_randomly(
+                            bi_connected_component)
+                        for bi_con2 in
+                        Physlr.detect_communities_biconnected_components(g, bin_set)
+                        for cluster in
+                        Physlr.detect_communities_k_clique(g, bi_con2, 3)],
+                    bi_connected_component, strategy=0)
+                ]
 
     @staticmethod
     def determine_molecules(g, u, strategy):
@@ -1363,13 +1435,15 @@ class Physlr:
         communities = []
         if strategy == 1:  # bi-connected
             communities = \
-                Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
+                Physlr.detect_communities_biconnected_components(g, g[u].keys())
         elif strategy == 2:  # bi-connected + k-clique
             communities = Physlr.determine_molecules_bc_k_cliques(g, u)
         elif strategy == 3:  # bi-connected + Louvain
             communities = Physlr.determine_molecules_bc_louvain(g, u)
         elif strategy == 4:  # bi-connected + sqCos
             communities = Physlr.determine_molecules_bc_cosine_of_squared(g, u)
+        elif strategy == 5:  # bi-connected + partition + bi-connected + k-cliques + merge
+            communities = Physlr.determine_molecules_partition_split_merge(g, u)
         else:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
 
@@ -1395,7 +1469,10 @@ class Physlr:
                "Louvain community detection (after separating bi-connected components)",
             4: "\n\tStrategy: "
                "Community detection by cosine of squared adjacency matrix"
-               "(after separating bi-connected components)"
+               "(after separating bi-connected components)",
+            5: "\n\tStrategy: "
+               "Fast Community detection {partition + detect + merge}\n\t"
+               "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)"
         }
         if self.args.strategy not in strategy_switcher:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
