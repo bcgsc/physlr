@@ -1532,11 +1532,11 @@ class Physlr:
         communities = []
         for community2 in communities2:
             communities.extend(Physlr.detect_communities_cosine_of_squared(g, community2))
-        # return communities
-        communities2 = []
-        for community in communities:
-            communities2.extend(Physlr.detect_communities_louvain(g, community))
-        return communities2
+        return communities
+        # communities2 = []
+        # for community in communities:
+        #     communities2.extend(Physlr.detect_communities_louvain(g, community))
+        # return communities2
         # return [community2
         #         for bi_connected_component in
         #         Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u)))
