@@ -1134,8 +1134,12 @@ class Physlr:
         g = self.read_graph(self.args.FILES)
         Physlr.remove_singletons(g)
         backbones = Physlr.determine_backbones_and_remove_chimera(g)
-        backbone = (u for path in backbones for u in path)
-        subgraph = self.sort_vertices(g.subgraph(backbone))
+        subgraph = nx.Graph()
+        for backbone in backbones:
+            gbackbone = g.subgraph(backbone)
+            subgraph.add_nodes_from(gbackbone.nodes.data())
+            subgraph.add_edges_from(gbackbone.edges.data())
+        subgraph = self.sort_vertices(subgraph)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Output the backbone subgraph", file=sys.stderr)
 
