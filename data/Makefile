@@ -899,21 +899,16 @@ mol_strategy=1
 # Layout and render an undirected graph to PDF.
 # Do not prevent overlapping vertices.
 %.gv.squish.pdf: %.gv
-	neato -Gsize=100,100 -Tpdf -o $@ $<
-
-# Layout and render an undirected graph to PDF using sfdp.
-# Prevent overlapping vertices by scaling the layout.
-%.gv.sfdp.pdf: %.gv
-	sfdp -Goverlap=scale -Gsize=100,100 -Tpdf -o $@ $<
+	neato -Gsize=100 -Tpdf -o $@ $<
 
 # Layout and render an undirected graph to PDF.
 # Prevent overlapping vertices by scaling the layout.
 %.gv.pdf: %.gv
-	neato -Goverlap=scale -Gsize=100,100 -Tpdf -o $@ $<
+	neato -Gsize=100 -Goverlap=scale -Tpdf -o $@ $<
 
-# Layout and render an undirected graph to PNG.
-%.gv.png: %.gv
-	neato -Goverlap=scale -Tpng -o $@ $<
+# Layout and render an undirected graph to PDF using sfdp.
+%.gv.sfdp.pdf: %.gv
+	sfdp -Gsize=100 -Goverlap_scaling=500 -Tpdf -o $@ $<
 
 ################################################################################
 # RMarkdown reports
