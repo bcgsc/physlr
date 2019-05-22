@@ -569,12 +569,55 @@ class Physlr:
             print()
 
     @staticmethod
+    def identify_contiguous_paths(g):
+        """Return the contiguous paths of the graph."""
+        g = g.copy()
+        junctions = [u for u, deg in g.degree() if deg >= 3]
+        g.remove_nodes_from(junctions)
+        paths = list(nx.connected_components(g))
+        paths.sort(key=len, reverse=True)
+        return paths
+
+    @staticmethod
+    def remove_bridges(g, bridge_length):
+        """
+        Remove bridges from this graph.
+        Bridges are non-blunt contigs shorter than a specified length.
+        """
+        paths = Physlr.identify_contiguous_paths(g)
+        bridges = [path for path in paths if len(path) < bridge_length
+                   and all(g.degree(u) == 2 for u in path)]
+        for bridge in bridges:
+            g.remove_nodes_from(bridge)
+        if Physlr.args.verbose >= 3:
+            print("Bridges:", *map(len, bridges), file=sys.stderr, flush=True)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", sum(map(len, bridges)), "vertices in", len(bridges), "bridges",
+            "shorter than", bridge_length, "vertices.",
+            file=sys.stderr, flush=True)
+
+    @staticmethod
+    def determine_pruned_mst(g):
+        """Return the pruned maximum spanning tree of the graph."""
+        gmst = nx.maximum_spanning_tree(g, weight="n")
+        print(
+            int(timeit.default_timer() - t0),
+            "Determined the maximum spanning tree.", file=sys.stderr, flush=True)
+        if Physlr.args.prune > 0:
+            Physlr.prune_mst(gmst, Physlr.args.prune)
+            Physlr.remove_bridges(gmst, Physlr.args.prune)
+        return gmst
+
+    @staticmethod
     def determine_backbones(g):
         "Determine the backbones of the graph."
         g = g.copy()
         backbones = []
         while not nx.is_empty(g):
-            gmst = nx.maximum_spanning_tree(g, weight="n")
+            gmst = Physlr.determine_pruned_mst(g)
+            if nx.is_empty(gmst):
+                break
             paths = Physlr.determine_backbones_of_trees(gmst, Physlr.args.min_branch)
             backbones.extend(paths)
             vertices = [u for path in paths for u in path]
@@ -583,7 +626,10 @@ class Physlr:
             g.remove_nodes_from(neighbors)
             Physlr.remove_singletons(g)
         backbones.sort(key=len, reverse=True)
-        print(int(timeit.default_timer() - t0), "Determined the backbone paths", file=sys.stderr)
+        print(
+            int(timeit.default_timer() - t0),
+            "Assembled", sum(map(len, backbones)), "molecules in", len(backbones), "paths.",
+            file=sys.stderr, flush=True)
         return backbones
 
     @staticmethod
@@ -633,8 +679,12 @@ class Physlr:
         g0 = g.copy()
         for component in nx.connected_components(g0):
             branch_lengths = Physlr.measure_branch_length(g0.subgraph(component))
-            g.remove_nodes_from(v for (u, v), length in branch_lengths.items()
-                                if g0.degree(u) >= 3 and length < branch_size)
+            edges = [(u, v) for (u, v), length in branch_lengths.items()
+                     if g0.degree(u) >= 3 and length < branch_size]
+            g.remove_edges_from(edges)
+            for _, v in edges:
+                if g.has_node(v):
+                    g.remove_nodes_from(nx.node_connected_component(g, v))
         n = g0.number_of_nodes()
         pruned = n - g.number_of_nodes()
         print(
@@ -653,7 +703,7 @@ class Physlr:
         iterations = 0
         total_pruned = 0
         pruned = True
-        while pruned:
+        while pruned and not nx.is_empty(g):
             pruned = Physlr.prune_mst_once(g, branch_size)
             total_pruned += pruned
             if pruned:
@@ -1059,10 +1109,7 @@ class Physlr:
     def physlr_mst(self):
         """Determine the maximum spanning tree pruned for small branches."""
         g = self.read_graph(self.args.FILES)
-        print(int(timeit.default_timer() - t0), "Extracting the MST.", file=sys.stderr)
-        gmst = nx.algorithms.tree.mst.maximum_spanning_tree(g, weight="n")
-        if self.args.prune > 0:
-            Physlr.prune_mst(gmst, self.args.prune)
+        gmst = Physlr.determine_pruned_mst(g)
 
         print(int(timeit.default_timer() - t0), "Measuring branches.", file=sys.stderr, flush=True)
         for component in nx.connected_components(gmst):
