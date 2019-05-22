@@ -2158,8 +2158,8 @@ class Physlr:
             "--prune", action="store", dest="prune", type=int, default=10,
             help="size of the branches to be pruned [10]. set to 0 to skip prunning.")
         argparser.add_argument(
-            "--min-branch", action="store", dest="min_branch", type=int, default=100,
-            help="split a backbone path when the alternative branch is long [100]")
+            "--min-branch", action="store", dest="min_branch", type=int, default=0,
+            help="split a backbone path when the alternative branch is long [0]")
         return argparser.parse_args()
 
     def __init__(self):
