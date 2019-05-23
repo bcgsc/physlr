@@ -655,15 +655,12 @@ class Physlr:
         if Physlr.args.prune > 0:
             Physlr.remove_bridges(g, Physlr.args.prune)
         backbones = []
-        while not nx.is_empty(g):
-            gmst = nx.maximum_spanning_tree(g, weight="n")
+        gmst = Physlr.determine_pruned_mst(g)
+        while not nx.is_empty(gmst):
             paths = Physlr.determine_backbones_of_trees(gmst, Physlr.args.min_branch)
-            backbones.extend(paths)
-            vertices = [u for path in paths for u in path]
-            neighbors = [v for u in vertices for v in g.neighbors(u)]
-            g.remove_nodes_from(vertices)
-            g.remove_nodes_from(neighbors)
-            Physlr.remove_singletons(g)
+            backbones += (path for path in paths if len(path) >= Physlr.args.prune)
+            for path in paths:
+                gmst.remove_nodes_from(path)
         backbones.sort(key=len, reverse=True)
         print(
             int(timeit.default_timer() - t0),
