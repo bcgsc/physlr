@@ -291,6 +291,22 @@ class Physlr:
             "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
 
     @staticmethod
+    def remove_unsupported_edges(g):
+        "Remove edges with no common neighbours."
+        unsupported = [(u, v) for u, v in progress(g.edges())
+                       if next(nx.common_neighbors(g, u, v), None) is None]
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", len(unsupported), "unsupported edges of", g.number_of_edges(),
+            f"({round(100 * len(unsupported) / g.number_of_edges(), 2)}%)", file=sys.stderr)
+        g.remove_edges_from(unsupported)
+
+        num_singletons = Physlr.remove_singletons(g)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
+
+    @staticmethod
     def read_minimizers(filenames):
         "Read minimizers in TSV format. Returns unordered set."
         bxtomxs = {}
