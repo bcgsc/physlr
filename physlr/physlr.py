@@ -596,13 +596,22 @@ class Physlr:
 
     @staticmethod
     def identify_contiguous_paths(g):
-        """Return the contiguous paths of the graph."""
+        """Return the contiguous paths and junctions of the graph."""
         g = g.copy()
         junctions = [u for u, deg in g.degree() if deg >= 3]
         g.remove_nodes_from(junctions)
         paths = list(nx.connected_components(g))
         paths.sort(key=len, reverse=True)
-        return paths
+        return paths, junctions
+
+    @staticmethod
+    def identify_bridges(g, bridge_length):
+        """Return the bridges of the graph"""
+        paths, junctions = Physlr.identify_contiguous_paths(g)
+        bridges = [path for path in paths if len(path) < bridge_length
+                   and all(g.degree(u) == 2 for u in path)]
+        bridges += g.subgraph(junctions).edges
+        return bridges
 
     @staticmethod
     def remove_bridges_once(g, bridge_length):
@@ -611,13 +620,11 @@ class Physlr:
         Bridges are non-blunt contigs shorter than a specified length.
         """
         gmst = Physlr.determine_pruned_mst(g)
-        paths = Physlr.identify_contiguous_paths(gmst)
-        bridges = [path for path in paths if len(path) < bridge_length
-                   and all(gmst.degree(u) == 2 for u in path)]
+        bridges = Physlr.identify_bridges(gmst, bridge_length)
         for bridge in bridges:
             g.remove_nodes_from(bridge)
         if Physlr.args.verbose >= 3:
-            print("Bridges:", *map(len, bridges), file=sys.stderr, flush=True)
+            print("Bridges:", *bridges, file=sys.stderr, flush=True)
         print(
             int(timeit.default_timer() - t0),
             "Removed", sum(map(len, bridges)), "vertices in", len(bridges), "bridges",
