@@ -585,6 +585,16 @@ class Physlr:
             print()
 
     @staticmethod
+    def determine_pruned_mst(g):
+        """Return the pruned maximum spanning tree of the graph."""
+        gmst = nx.maximum_spanning_tree(g, weight="n")
+        print(
+            int(timeit.default_timer() - t0),
+            "Determined the maximum spanning tree.", file=sys.stderr, flush=True)
+        Physlr.prune_mst(gmst, Physlr.args.prune)
+        return gmst
+
+    @staticmethod
     def identify_contiguous_paths(g):
         """Return the contiguous paths of the graph."""
         g = g.copy()
@@ -595,14 +605,15 @@ class Physlr:
         return paths
 
     @staticmethod
-    def remove_bridges(g, bridge_length):
+    def remove_bridges_once(g, bridge_length):
         """
         Remove bridges from this graph.
         Bridges are non-blunt contigs shorter than a specified length.
         """
-        paths = Physlr.identify_contiguous_paths(g)
+        gmst = Physlr.determine_pruned_mst(g)
+        paths = Physlr.identify_contiguous_paths(gmst)
         bridges = [path for path in paths if len(path) < bridge_length
-                   and all(g.degree(u) == 2 for u in path)]
+                   and all(gmst.degree(u) == 2 for u in path)]
         for bridge in bridges:
             g.remove_nodes_from(bridge)
         if Physlr.args.verbose >= 3:
@@ -612,28 +623,33 @@ class Physlr:
             "Removed", sum(map(len, bridges)), "vertices in", len(bridges), "bridges",
             "shorter than", bridge_length, "vertices.",
             file=sys.stderr, flush=True)
+        return len(bridges)
 
     @staticmethod
-    def determine_pruned_mst(g):
-        """Return the pruned maximum spanning tree of the graph."""
-        gmst = nx.maximum_spanning_tree(g, weight="n")
+    def remove_bridges(g, bridge_length):
+        """Remove bridges iteratively until none remain."""
+        iterations = 0
+        total_nbridges = 0
+        while True:
+            nbridges = Physlr.remove_bridges_once(g, bridge_length)
+            if nbridges == 0:
+                break
+            iterations += 1
+            total_nbridges += nbridges
         print(
             int(timeit.default_timer() - t0),
-            "Determined the maximum spanning tree.", file=sys.stderr, flush=True)
-        if Physlr.args.prune > 0:
-            Physlr.prune_mst(gmst, Physlr.args.prune)
-            Physlr.remove_bridges(gmst, Physlr.args.prune)
-        return gmst
+            "Removed", total_nbridges, "bridges in", iterations, "iterations.",
+            file=sys.stderr, flush=True)
 
     @staticmethod
     def determine_backbones(g):
         "Determine the backbones of the graph."
         g = g.copy()
+        if Physlr.args.prune > 0:
+            Physlr.remove_bridges(g, Physlr.args.prune)
         backbones = []
         while not nx.is_empty(g):
-            gmst = Physlr.determine_pruned_mst(g)
-            if nx.is_empty(gmst):
-                break
+            gmst = nx.maximum_spanning_tree(g, weight="n")
             paths = Physlr.determine_backbones_of_trees(gmst, Physlr.args.min_branch)
             backbones.extend(paths)
             vertices = [u for path in paths for u in path]
@@ -689,9 +705,6 @@ class Physlr:
         Prune branches smaller than branch_size.
         Return the number of pruned vertices.
         """
-        print(
-            int(timeit.default_timer() - t0),
-            "Pruning branches shorter than", branch_size, file=sys.stderr, flush=True)
         g0 = g.copy()
         for component in nx.connected_components(g0):
             branch_lengths = Physlr.measure_branch_length(g0.subgraph(component))
@@ -703,10 +716,11 @@ class Physlr:
                     g.remove_nodes_from(nx.node_connected_component(g, v))
         n = g0.number_of_nodes()
         pruned = n - g.number_of_nodes()
-        print(
-            int(timeit.default_timer() - t0),
-            "Pruned", pruned, "vertices of", n, f"({round(100 * pruned / n, 2)}%)",
-            file=sys.stderr, flush=True)
+        if Physlr.args.verbose >= 3:
+            print(
+                int(timeit.default_timer() - t0),
+                "Pruned", pruned, "vertices of", n, f"({round(100 * pruned / n, 2)}%)",
+                file=sys.stderr, flush=True)
         return pruned
 
     @staticmethod
@@ -1125,6 +1139,8 @@ class Physlr:
     def physlr_mst(self):
         """Determine the maximum spanning tree pruned for small branches."""
         g = self.read_graph(self.args.FILES)
+        if Physlr.args.prune > 0:
+            Physlr.remove_bridges(g, Physlr.args.prune)
         gmst = Physlr.determine_pruned_mst(g)
 
         print(int(timeit.default_timer() - t0), "Measuring branches.", file=sys.stderr, flush=True)
