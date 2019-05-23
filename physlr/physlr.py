@@ -1143,6 +1143,7 @@ class Physlr:
     def physlr_mst(self):
         """Determine the maximum spanning tree pruned for small branches."""
         g = self.read_graph(self.args.FILES)
+        Physlr.remove_singletons(g)
         if Physlr.args.prune > 0:
             Physlr.remove_bridges(g, Physlr.args.prune)
         gmst = Physlr.determine_pruned_mst(g)
