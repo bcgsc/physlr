@@ -117,8 +117,7 @@ f1: \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.sort.best.bed.path.quast.tsv \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf \
-	f1.quast.tsv
+	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Scaffold the ABySS assembly of the fly genome.
 # ref=fly lr=f1 draft=f1.abyss n=47
