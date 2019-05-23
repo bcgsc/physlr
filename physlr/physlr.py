@@ -1523,24 +1523,6 @@ class Physlr:
         Assign the neighbours of this vertex to molecules
         by Applying a queue of different algorithms on top of each other.
         """
-        # communities = []
-        # communities2 = []
-        # for bi_connected_component \
-        #         in Physlr.detect_communities_biconnected_components(g, set(g.neighbors(u))):
-        #     communities.extend(Physlr.detect_communities_k_clique(g, bi_connected_component))
-        # for community in communities:
-        #     communities2.extend(
-        #         Physlr.detect_communities_cosine_of_squared(
-        #             g, community, squaring=False, threshold=0.4))
-        # communities = []
-        # for community2 in communities2:
-        #     communities.extend(Physlr.detect_communities_cosine_of_squared(g, community2))
-        # return communities
-        # communities2 = []
-        # for community in communities:
-        #     communities2.extend(Physlr.detect_communities_louvain(g, community))
-        # return communities2
-
         from collections import deque
 
         communities = [g[u].keys()]
@@ -1567,6 +1549,10 @@ class Physlr:
                 for component in communities:
                     communities_final.extend(
                         Physlr.detect_communities_cosine_of_squared(g, component))
+            elif algoritm == "louvain":
+                for component in communities:
+                    communities_final.extend(
+                        Physlr.detect_communities_louvain(g, component))
             communities = communities_final.copy()
         return communities_final
 
