@@ -1526,7 +1526,7 @@ class Physlr:
         communities = [g[u].keys()]
         communities_final = []
 
-        for alg in ["bc", "k3", "bc", "cos", "bc", "sqCos", "bc"]:
+        for algorithm in ["bc", "k3", "bc", "cos", "bc", "sqCos", "bc"]:
             communities_final.clear()
             if algoritm == "bc":
                 for component in communities:
