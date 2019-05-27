@@ -1523,15 +1523,11 @@ class Physlr:
         Assign the neighbours of this vertex to molecules
         by Applying a queue of different algorithms on top of each other.
         """
-        from collections import deque
-
         communities = [g[u].keys()]
         communities_final = []
 
-        alg_list = deque(["bc", "k3", "bc", "cos", "bc", "sqCos", "bc"])
-        while alg_list:
+        for alg in ["bc", "k3", "bc", "cos", "bc", "sqCos", "bc"]:
             communities_final.clear()
-            algoritm = alg_list.popleft()
             if algoritm == "bc":
                 for component in communities:
                     communities_final.extend(
