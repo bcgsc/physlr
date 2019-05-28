@@ -288,8 +288,7 @@ hg004: \
 	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.grch38.minidot.pdf \
 	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
 	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.label.gv.pdf \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.grch38.n10.ann.gv.squish.pdf \
-	hg004.quast.tsv
+	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.grch38.n10.ann.gv.squish.pdf
 
 # ref=grch38 lr=hg004 draft=hg004.abyss n=90 min_component_size=200
 hg004-abyss: \
