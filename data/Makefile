@@ -197,7 +197,7 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Assemble a physical map of fish using physlr-indexlr (native implementation).
-# ref=z11 lr=fish draft=fish.supernova n=50 min_component_size=200
+# ref=z11 lr=fish draft=fish.supernova n=40 min_component_size=200
 fish: \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.path.z11.molecule.bed.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.paf.gz.pdf \
@@ -205,15 +205,14 @@ fish: \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.minidot.pdf \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.ann.gv.squish.pdf \
-	fish.quast.tsv
+	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.ann.gv.squish.pdf
 
 # Aggregate QUAST metrics.
 fish.quast.tsv: \
 		fish.supernova.scaftigs.quast.tsv \
 		fish.supernova.quast.tsv \
-		fish.indexlr.n100-2000.c2-x.physlr.overlap.n50.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
-		fish.indexlr.n100-2000.c2-x.physlr.overlap.n50.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv
+		fish.indexlr.n100-2000.c2-x.physlr.overlap.n40.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
+		fish.indexlr.n100-2000.c2-x.physlr.overlap.n40.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 # Assemble a physical map of fish chromosome 25.
