@@ -106,7 +106,7 @@ f1chr2R: \
 	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Assemble a physical map of the fly genome.
-# ref=fly lr=f1 draft=f1.supernova.scaftigs n=47
+# ref=fly lr=f1 draft=f1.supernova.scaftigs n=25
 f1: \
 	f1.indexlr.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1.indexlr.n100-1000.physlr.depth.tsv.pdf \
@@ -120,7 +120,7 @@ f1: \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Scaffold the ABySS assembly of the fly genome.
-# ref=fly lr=f1 draft=f1.abyss n=47
+# ref=fly lr=f1 draft=f1.abyss n=25
 f1-abyss: \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
 	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
@@ -133,10 +133,10 @@ f1.quast.tsv: \
 		f1.abyss.scaftigs.quast.tsv \
 		f1.supernova.quast.tsv \
 		f1.supernova.scaftigs.quast.tsv \
-		f1.indexlr.n100-1000.c2-x.physlr.overlap.n47.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv \
-		f1.indexlr.n100-1000.c2-x.physlr.overlap.n47.mol.backbone.map-mkt.f1.abyss.n10.sort.best.bed.path.quast.tsv \
-		f1.indexlr.n100-1000.c2-x.physlr.overlap.n47.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-		f1.indexlr.n100-1000.c2-x.physlr.overlap.n47.mol.backbone.map-mkt.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+		f1.indexlr.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv \
+		f1.indexlr.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map-mkt.f1.abyss.n10.sort.best.bed.path.quast.tsv \
+		f1.indexlr.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		f1.indexlr.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map-mkt.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 # Download the fly genome from NCBI.
