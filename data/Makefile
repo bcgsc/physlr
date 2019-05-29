@@ -865,9 +865,10 @@ mol_strategy=1
 %.comp1.gv: %.gv
 	ccomps -z -X'#0' $< >$@ || true
 
-# Turn graphs into subgraphs.
-%.subgraphs.gv: %.gv
-	awk 'BEGIN { print "strict graph {" } END { print "}" } { sub("^strict graph ", "subgraph ") } 1' $< >$@
+# Extract components of at least 100 vertices.
+%.X100.gv: %.gv
+	(ccomps -z -X'%100-' $< || true) \
+	| awk 'BEGIN { print "strict graph {" } END { print "}" } { sub("^strict graph ", "subgraph ") } 1' >$@
 
 # Label the edges with edge weight.
 %.label.gv: %.gv
