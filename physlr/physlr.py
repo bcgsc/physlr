@@ -1528,24 +1528,24 @@ class Physlr:
 
         for algorithm in ["bc", "k3", "cos", "sqCos"]:
             communities_temp = []
-            if algoritm == "bc":
+            if algorithm == "bc":
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_biconnected_components(g, component))
-            elif algoritm == "k3":
+            elif algorithm == "k3":
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_k_clique(g, component))
-            elif algoritm == "cos":
+            elif algorithm == "cos":
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
                             g, component, squaring=False, threshold=0.4))
-            elif algoritm == "sqCos":
+            elif algorithm == "sqCos":
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(g, component))
-            elif algoritm == "louvain":
+            elif algorithm == "louvain":
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_louvain(g, component))
