@@ -1527,7 +1527,7 @@ class Physlr:
         communities_final = []
 
         for algorithm in ["bc", "k3", "cos", "sqCos"]:
-            communities_final.clear()
+            communities_final = []
             if algoritm == "bc":
                 for component in communities:
                     communities_final.extend(
@@ -1549,7 +1549,7 @@ class Physlr:
                 for component in communities:
                     communities_final.extend(
                         Physlr.detect_communities_louvain(g, component))
-            communities = communities_final.copy()
+            communities = communities_final
         return communities_final
 
     @staticmethod
