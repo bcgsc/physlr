@@ -1524,33 +1524,33 @@ class Physlr:
         by Applying a queue of different algorithms on top of each other.
         """
         communities = [g[u].keys()]
-        communities_final = []
+        communities_temp = []
 
         for algorithm in ["bc", "k3", "cos", "sqCos"]:
-            communities_final = []
+            communities_temp = []
             if algoritm == "bc":
                 for component in communities:
-                    communities_final.extend(
+                    communities_temp.extend(
                         Physlr.detect_communities_biconnected_components(g, component))
             elif algoritm == "k3":
                 for component in communities:
-                    communities_final.extend(
+                    communities_temp.extend(
                         Physlr.detect_communities_k_clique(g, component))
             elif algoritm == "cos":
                 for component in communities:
-                    communities_final.extend(
+                    communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
                             g, component, squaring=False, threshold=0.4))
             elif algoritm == "sqCos":
                 for component in communities:
-                    communities_final.extend(
+                    communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(g, component))
             elif algoritm == "louvain":
                 for component in communities:
-                    communities_final.extend(
+                    communities_temp.extend(
                         Physlr.detect_communities_louvain(g, component))
-            communities = communities_final
-        return communities_final
+            communities = communities_temp
+        return communities
 
     @staticmethod
     def determine_molecules(g, u, strategy):
