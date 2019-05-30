@@ -1380,7 +1380,7 @@ class Physlr:
                 for com in set(partition.values())]
 
     @staticmethod
-    def detect_communities_cosine_of_squared(g, node_set, squaring=True, threshold=0.75):
+    def detect_communities_cosine_of_squared(g, node_set, squaring=True, threshold=0.7):
         """
         Square the adjacency matrix and then use cosine similarity to detect communities.
         Return communities.
@@ -1518,6 +1518,41 @@ class Physlr:
                 ]
 
     @staticmethod
+    def determine_molecules_extensive(g, u):
+        """
+        Assign the neighbours of this vertex to molecules
+        by Applying a queue of different algorithms on top of each other.
+        """
+        communities = [g[u].keys()]
+        communities_temp = []
+
+        for algorithm in ["bc", "k3", "cos", "sqCos"]:
+            communities_temp = []
+            if algorithm == "bc":
+                for component in communities:
+                    communities_temp.extend(
+                        Physlr.detect_communities_biconnected_components(g, component))
+            elif algorithm == "k3":
+                for component in communities:
+                    communities_temp.extend(
+                        Physlr.detect_communities_k_clique(g, component))
+            elif algorithm == "cos":
+                for component in communities:
+                    communities_temp.extend(
+                        Physlr.detect_communities_cosine_of_squared(
+                            g, component, squaring=False, threshold=0.4))
+            elif algorithm == "sqCos":
+                for component in communities:
+                    communities_temp.extend(
+                        Physlr.detect_communities_cosine_of_squared(g, component))
+            elif algorithm == "louvain":
+                for component in communities:
+                    communities_temp.extend(
+                        Physlr.detect_communities_louvain(g, component))
+            communities = communities_temp
+        return communities
+
+    @staticmethod
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
         communities = []
@@ -1532,6 +1567,8 @@ class Physlr:
             communities = Physlr.determine_molecules_bc_cosine_of_squared(g, u)
         elif strategy == 5:  # bi-connected + partition + bi-connected + k-cliques + merge
             communities = Physlr.determine_molecules_partition_split_merge(g, u)
+        elif strategy == 6:  # extensive detection
+            communities = Physlr.determine_molecules_extensive(g, u)
         else:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
 
@@ -1560,7 +1597,10 @@ class Physlr:
                "(after separating bi-connected components)",
             5: "\n\tStrategy: "
                "Fast Community detection {partition + detect + merge}\n\t"
-               "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)"
+               "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)",
+            6: "\n\tStrategy: "
+               "Community detection by extensive community-detection"
+               "\n\t(bi-connected + k3-clique + cosine similarity (with/out squaring)."
         }
         if self.args.strategy not in strategy_switcher:
             exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
