@@ -2121,7 +2121,8 @@ class Physlr:
         argparser.add_argument(
             "--separation-strategy", action="store", dest="strategy", default="bc.k3",
             help="strategy for barcode to molecule separation [bc.k3.bc]. Use a combination"
-                 " of bc, k3, cos, sqCos, and louvain concatenated with dots (example:bc.k3.bc)")
+                 " of bc, k3, cos, sqCos, louvain, and distributed"
+                 " concatenated with dots (example:bc.k3.bc)")
         argparser.add_argument(
             "--coef", action="store", dest="coef", type=float, default=1.5,
             help="ignore minimizers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
