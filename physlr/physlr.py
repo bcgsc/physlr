@@ -1536,7 +1536,7 @@ class Physlr:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
                             g, component, squaring=False, threshold=0.4))
-            elif algorithm == "sqCos" or algorithm == "sqcos":
+            elif algorithm in ("sqCos", "sqcos"):
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(g, component))
@@ -1562,12 +1562,11 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        from collections import deque
-
-        alg_list = deque(self.args.strategy.split("."))
+        alg_list = self.args.strategy.split(".")
         if not alg_list:
             exit("\033[91m Input argument not provided: --separation-strategy!\033[0m")
-        if not set(alg_list).issubset({"bc", "k3", "cos", "sqCos", "sqcos", "louvain"}):
+        if not set(alg_list).issubset(
+                {"bc", "k3", "cos", "sqCos", "sqcos", "louvain", "distributed"}):
             exit("\033[91m Wrong input argument: --separation-strategy!\033[0m")
 
         gin = self.read_graph(self.args.FILES)
@@ -1575,7 +1574,7 @@ class Physlr:
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules using the following algorithm(s):\n\t",
-            strategy.replace(".", " + "),
+            self.args.strategy.replace(".", " + "),
             file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
