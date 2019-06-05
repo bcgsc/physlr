@@ -772,17 +772,19 @@ min_path_size=200
 	mlr --tsvlite filter '$$n >= $n' $< >$@
 
 # Separate barcodes into molecules.
-mol_strategy=1
+mol_strategy="bc"
 %.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) $< >$@
 
 # Separate barcodes into molecules using K3-clique community detection.
+mol_strategy2="bc.k3"
 %.k3.mol.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=2 $< >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy2) $< >$@
 
 # Separate barcodes into molecules using Louvain community detection.
+mol_strategy3="bc.louvain"
 %.louvain.mol.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=3 $< >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy3) $< >$@
 
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv

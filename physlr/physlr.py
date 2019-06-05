@@ -1574,8 +1574,8 @@ class Physlr:
         Physlr.filter_edges(gin, self.args.n)
         print(
             int(timeit.default_timer() - t0),
-            "Separating barcodes into molecules using an ordered set of algorithm(s):\n\t",
-            self.args.strategy,
+            "Separating barcodes into molecules using the following algorithm(s):\n\t",
+            strategy.replace(".", " + "),
             file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
@@ -2120,7 +2120,7 @@ class Physlr:
             "-w", "--window", action="store", dest="w", type=int,
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
-            "--separation-strategy", action="store", dest="strategy", default="bc.k3.bc",
+            "--separation-strategy", action="store", dest="strategy", default="bc.k3",
             help="strategy for barcode to molecule separation [bc.k3.bc]. Use a combination"
                  " of bc, k3, cos, sqCos, and louvain concatenated with dots (example:bc.k3.bc)")
         argparser.add_argument(
