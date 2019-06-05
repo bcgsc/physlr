@@ -1519,38 +1519,35 @@ class Physlr:
     @staticmethod
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
-        from collections import deque
-        alg_list = deque(strategy.split("."))
+        alg_list  = strategy.split(".")
         communities = [g[u].keys()]
-        communities_final = []
-        while alg_list:
-            communities_final.clear()
-            algorithm = alg_list.popleft()
+        for algorithm in alg_list:
+            communities_temp = []
             if algorithm == "bc":
                 for component in communities:
-                    communities_final.extend(
+                    communities_temp.extend(
                         Physlr.detect_communities_biconnected_components(g, component))
             elif algorithm == "k3":
                 for component in communities:
-                    communities_final.extend(
+                    communities_temp.extend(
                         Physlr.detect_communities_k_clique(g, component))
             elif algorithm == "cos":
                 for component in communities:
-                    communities_final.extend(
+                    communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
                             g, component, squaring=False, threshold=0.4))
             elif algorithm == "sqCos" or algorithm == "sqcos":
                 for component in communities:
-                    communities_final.extend(
+                    communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(g, component))
             elif algorithm == "louvain":
                 for component in communities:
-                    communities_final.extend(
+                    communities_temp.extend(
                         Physlr.detect_communities_louvain(g, component))
             if algorithm == "distributed":
-                communities_final.extend(
+                communities_temp.extend(
                     Physlr.determine_molecules_partition_split_merge(g, component))
-            communities = communities_final.copy()
+            communities = communities_temp
 
         communities.sort(key=len, reverse=True)
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
