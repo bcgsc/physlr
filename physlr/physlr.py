@@ -1519,7 +1519,7 @@ class Physlr:
     @staticmethod
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
-        alg_list  = strategy.split(".")
+        alg_list = strategy.split(".")
         communities = [g[u].keys()]
         for algorithm in alg_list:
             communities_temp = []
