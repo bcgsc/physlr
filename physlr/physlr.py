@@ -1501,7 +1501,7 @@ class Physlr:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
                             g, component, squaring=False, threshold=0.4))
-            elif algorithm in ("sqCos", "sqcos"):
+            elif algorithm == "sqcos":
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(g, component))
@@ -1527,7 +1527,7 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        alg_white_list = {"bc", "k3", "cos", "sqCos", "sqcos", "louvain", "distributed"}
+        alg_white_list = {"bc", "k3", "cos", "sqcos", "louvain", "distributed"}
         alg_list = self.args.strategy.split("+")
         if not alg_list:
             exit("Error: physlr molecule: missing parameter --separation-strategy")
@@ -2088,7 +2088,7 @@ class Physlr:
         argparser.add_argument(
             "--separation-strategy", action="store", dest="strategy", default="bc+k3",
             help="strategy for barcode to molecule separation [bc+k3]. Use a combination"
-                 " of bc, k3, cos, sqCos, louvain, and distributed"
+                 " of bc, k3, cos, sqcos, louvain, and distributed"
                  " concatenated plus sign (example:bc+k3+bc)")
         argparser.add_argument(
             "--coef", action="store", dest="coef", type=float, default=1.5,

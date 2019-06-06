@@ -777,14 +777,12 @@ mol_strategy=bc
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) $< >$@
 
 # Separate barcodes into molecules using K3-clique community detection.
-mol_strategy2=bc+k3
 %.k3.mol.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy2) $< >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3 $< >$@
 
 # Separate barcodes into molecules using Louvain community detection.
-mol_strategy3=bc+louvain
 %.louvain.mol.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy3) $< >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+louvain $< >$@
 
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv
