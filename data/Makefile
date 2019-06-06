@@ -828,6 +828,14 @@ mol_strategy=bc
 %.bed.path: %.bed
 	$(time) $(python) $(bin)/physlr bed-to-path $^ >$@
 
+# Sort a PAF file by target position.
+%.sort.paf.gz: %.paf.gz
+	gunzip -c $< | sort -k6,6n -k8,8n -k9,9n -k10,10nr | $(gzip) >$@
+
+# Keep the best alignment for each PAF (Tname,Tstart,Tend) tuple.
+%.sort.best.paf.gz: %.sort.paf.gz
+	gunzip -c $< | awk '{ keep = $$6 " " $$8 " " $$9 != x; x = $$6 " " $$8 " " $$9 } keep' | $(gzip) >$@
+
 # Produce sequences in FASTA format from paths.
 %.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
 	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=3000 $^ >$@
