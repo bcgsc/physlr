@@ -2086,10 +2086,10 @@ class Physlr:
             "-w", "--window", action="store", dest="w", type=int,
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
-            "--separation-strategy", action="store", dest="strategy", default="bc.k3",
+            "--separation-strategy", action="store", dest="strategy", default="bc+k3",
             help="strategy for barcode to molecule separation [bc+k3]. Use a combination"
                  " of bc, k3, cos, sqCos, louvain, and distributed"
-                 " concatenated with + (example:bc+k3+bc+cos)")
+                 " concatenated plus sign (example:bc+k3+bc)")
         argparser.add_argument(
             "--coef", action="store", dest="coef", type=float, default=1.5,
             help="ignore minimizers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
