@@ -906,7 +906,7 @@ mol_strategy=bc
 
 # Layout and render an undirected graph to PDF using sfdp.
 %.gv.sfdp.pdf: %.gv
-	sfdp -Gsize=100 -Goverlap_scaling=500 -Tpdf -o $@ $<
+	sfdp -Gsize=100 -Goverlap_scaling=200 -Tpdf -o $@ $<
 
 ################################################################################
 # RMarkdown reports
