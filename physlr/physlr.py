@@ -1541,7 +1541,7 @@ class Physlr:
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules using the following algorithm(s):\n\t",
-            self.args.strategy.replace(".", " + "),
+            self.args.strategy.replace("+", " + "),
             file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
@@ -2087,9 +2087,9 @@ class Physlr:
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
             "--separation-strategy", action="store", dest="strategy", default="bc.k3",
-            help="strategy for barcode to molecule separation [bc.k3.bc]. Use a combination"
+            help="strategy for barcode to molecule separation [bc+k3]. Use a combination"
                  " of bc, k3, cos, sqCos, louvain, and distributed"
-                 " concatenated with dots (example:bc.k3.bc)")
+                 " concatenated with + (example:bc+k3+bc+cos)")
         argparser.add_argument(
             "--coef", action="store", dest="coef", type=float, default=1.5,
             help="ignore minimizers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
