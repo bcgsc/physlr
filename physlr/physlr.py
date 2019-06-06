@@ -1482,44 +1482,9 @@ class Physlr:
                 ]
 
     @staticmethod
-    def determine_molecules_extensive(g, u):
-        """
-        Assign the neighbours of this vertex to molecules
-        by Applying a queue of different algorithms on top of each other.
-        """
-        communities = [g[u].keys()]
-        communities_temp = []
-
-        for algorithm in ["bc", "k3", "cos", "sqCos"]:
-            communities_temp = []
-            if algorithm == "bc":
-                for component in communities:
-                    communities_temp.extend(
-                        Physlr.detect_communities_biconnected_components(g, component))
-            elif algorithm == "k3":
-                for component in communities:
-                    communities_temp.extend(
-                        Physlr.detect_communities_k_clique(g, component))
-            elif algorithm == "cos":
-                for component in communities:
-                    communities_temp.extend(
-                        Physlr.detect_communities_cosine_of_squared(
-                            g, component, squaring=False, threshold=0.4))
-            elif algorithm == "sqCos":
-                for component in communities:
-                    communities_temp.extend(
-                        Physlr.detect_communities_cosine_of_squared(g, component))
-            elif algorithm == "louvain":
-                for component in communities:
-                    communities_temp.extend(
-                        Physlr.detect_communities_louvain(g, component))
-            communities = communities_temp
-        return communities
-
-    @staticmethod
     def determine_molecules(g, u, strategy):
         """Assign the neighbours of this vertex to molecules."""
-        alg_list = strategy.split(".")
+        alg_list = strategy.split("+")
         communities = [g[u].keys()]
         for algorithm in alg_list:
             communities_temp = []
@@ -1562,12 +1527,14 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        alg_list = self.args.strategy.split(".")
+        alg_white_list = {"bc", "k3", "cos", "sqCos", "sqcos", "louvain", "distributed"}
+        alg_list = self.args.strategy.split("+")
         if not alg_list:
-            exit("\033[91m Input argument not provided: --separation-strategy!\033[0m")
-        if not set(alg_list).issubset(
-                {"bc", "k3", "cos", "sqCos", "sqcos", "louvain", "distributed"}):
-            exit("\033[91m Wrong input argument: --separation-strategy!\033[0m")
+            exit("Error: physlr molecule: missing parameter --separation-strategy")
+        if not set(alg_list).issubset(alg_white_list):
+            exit_message = "Error: physlr molecule: wrong input parameter(s) " + \
+                      "--separation-strategy: " + str(set(alg_list) - alg_white_list)
+            exit(exit_message)
 
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
