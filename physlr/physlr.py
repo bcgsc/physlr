@@ -1410,42 +1410,6 @@ class Physlr:
         return communities
 
     @staticmethod
-    def determine_molecules_bc_k_cliques(g, u):
-        """
-        Assign the neighbours of this vertex to molecules by
-        applying k-cliques community detection for each bi-connected component.
-        """
-        return [community
-                for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, g[u].keys())
-                for community in
-                Physlr.detect_communities_k_clique(g, bi_connected_component)]
-
-    @staticmethod
-    def determine_molecules_bc_louvain(g, u):
-        """
-        Assign the neighbours of this vertex to molecules by
-        applying louvain for each bi-connected component.
-        """
-        return [community
-                for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, g[u].keys())
-                for community in
-                Physlr.detect_communities_louvain(g, bi_connected_component)]
-
-    @staticmethod
-    def determine_molecules_bc_cosine_of_squared(g, u):
-        """
-        Assign the neighbours of this vertex to molecules by
-        applying cosine of squared of the adjacency matrix for each bi-connected component.
-        """
-        return [community
-                for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, g[u].keys())
-                for community in
-                Physlr.detect_communities_cosine_of_squared(g, bi_connected_component)]
-
-    @staticmethod
     def partition_subgraph_into_bins_randomly(node_set, max_size=50):
         """
         Partition the subgraph into bins randomly for faster processing. Return bins.
@@ -1518,15 +1482,11 @@ class Physlr:
                 ]
 
     @staticmethod
-    def determine_molecules_extensive(g, u):
-        """
-        Assign the neighbours of this vertex to molecules
-        by Applying a queue of different algorithms on top of each other.
-        """
+    def determine_molecules(g, u, strategy):
+        """Assign the neighbours of this vertex to molecules."""
+        alg_list = strategy.split("+")
         communities = [g[u].keys()]
-        communities_temp = []
-
-        for algorithm in ["bc", "k3", "cos", "sqCos"]:
+        for algorithm in alg_list:
             communities_temp = []
             if algorithm == "bc":
                 for component in communities:
@@ -1541,7 +1501,7 @@ class Physlr:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
                             g, component, squaring=False, threshold=0.4))
-            elif algorithm == "sqCos":
+            elif algorithm == "sqcos":
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(g, component))
@@ -1549,28 +1509,10 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_louvain(g, component))
+            if algorithm == "distributed":
+                communities_temp.extend(
+                    Physlr.determine_molecules_partition_split_merge(g, component))
             communities = communities_temp
-        return communities
-
-    @staticmethod
-    def determine_molecules(g, u, strategy):
-        """Assign the neighbours of this vertex to molecules."""
-        communities = []
-        if strategy == 1:  # bi-connected
-            communities = \
-                Physlr.detect_communities_biconnected_components(g, g[u].keys())
-        elif strategy == 2:  # bi-connected + k-clique
-            communities = Physlr.determine_molecules_bc_k_cliques(g, u)
-        elif strategy == 3:  # bi-connected + Louvain
-            communities = Physlr.determine_molecules_bc_louvain(g, u)
-        elif strategy == 4:  # bi-connected + sqCos
-            communities = Physlr.determine_molecules_bc_cosine_of_squared(g, u)
-        elif strategy == 5:  # bi-connected + partition + bi-connected + k-cliques + merge
-            communities = Physlr.determine_molecules_partition_split_merge(g, u)
-        elif strategy == 6:  # extensive detection
-            communities = Physlr.determine_molecules_extensive(g, u)
-        else:
-            exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
 
         communities.sort(key=len, reverse=True)
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
@@ -1585,31 +1527,21 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        strategy_switcher = {
-            1: "\n\tStrategy: "
-               "Bi-connected components separation",
-            2: "\n\tStrategy: "
-               "K-clique community detection (after separating bi-connected components)",
-            3: "\n\tStrategy: "
-               "Louvain community detection (after separating bi-connected components)",
-            4: "\n\tStrategy: "
-               "Community detection by cosine of squared adjacency matrix"
-               "(after separating bi-connected components)",
-            5: "\n\tStrategy: "
-               "Fast Community detection {partition + detect + merge}\n\t"
-               "(pipeline: bi-connected + partition + bi-connected + k-cliques + merge)",
-            6: "\n\tStrategy: "
-               "Community detection by extensive community-detection"
-               "\n\t(bi-connected + k3-clique + cosine similarity (with/out squaring)."
-        }
-        if self.args.strategy not in strategy_switcher:
-            exit("\033[93m Wrong input argument: --separation-strategy!\033[0m")
+        alg_white_list = {"bc", "k3", "cos", "sqcos", "louvain", "distributed"}
+        alg_list = self.args.strategy.split("+")
+        if not alg_list:
+            exit("Error: physlr molecule: missing parameter --separation-strategy")
+        if not set(alg_list).issubset(alg_white_list):
+            exit_message = "Error: physlr molecule: wrong input parameter(s) " + \
+                      "--separation-strategy: " + str(set(alg_list) - alg_white_list)
+            exit(exit_message)
+
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
         print(
             int(timeit.default_timer() - t0),
-            "Separating barcodes into molecules",
-            strategy_switcher.get(self.args.strategy),
+            "Separating barcodes into molecules using the following algorithm(s):\n\t",
+            self.args.strategy.replace("+", " + "),
             file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
@@ -2154,8 +2086,10 @@ class Physlr:
             "-w", "--window", action="store", dest="w", type=int,
             help="number of k-mers in a window of size k + w - 1 bp")
         argparser.add_argument(
-            "--separation-strategy", action="store", dest="strategy", type=int, default=1,
-            help="strategy id, for barcode to molecule separation [1]")
+            "--separation-strategy", action="store", dest="strategy", default="bc+k3",
+            help="strategy for barcode to molecule separation [bc+k3]. Use a combination"
+                 " of bc, k3, cos, sqcos, louvain, and distributed"
+                 " concatenated plus sign (example:bc+k3+bc)")
         argparser.add_argument(
             "--coef", action="store", dest="coef", type=float, default=1.5,
             help="ignore minimizers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
