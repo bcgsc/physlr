@@ -1378,6 +1378,20 @@ class Physlr:
         return components
 
     @staticmethod
+    def detect_communities_common_neighbours(g, node_set, cn_threshold):
+        """
+        Filter edges with few common neighbours (local bridges).
+        Separate bi-connected components. Return components.
+        """
+        subgraph = g.subgraph(node_set).copy()
+        weak_edges = [(u, v) for u, v in progress(subgraph.edges())
+                      if len(list(nx.common_neighbors(subgraph, u, v))) < cn_threshold]
+        subgraph.remove_edges_from(weak_edges)
+        cut_vertices = list(nx.articulation_points(subgraph))
+        subgraph.remove_nodes_from(cut_vertices)
+        return list(nx.connected_components(subgraph))
+
+    @staticmethod
     def detect_communities_k_clique(g, node_set, k=3):
         """Apply k-clique community detection. Return communities."""
         return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
@@ -1505,6 +1519,10 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_biconnected_components(g, component))
+            elif algorithm == "cn3":
+                for component in communities:
+                    communities_temp.extend(
+                        Physlr.detect_communities_common_neighbours(g, component, cn_threshold=3))
             elif algorithm == "k3":
                 for component in communities:
                     communities_temp.extend(
@@ -1540,7 +1558,7 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        alg_white_list = {"bc", "k3", "cos", "sqcos", "louvain", "distributed"}
+        alg_white_list = {"bc", "cn3", "k3", "cos", "sqcos", "louvain", "distributed"}
         alg_list = self.args.strategy.split("+")
         if not alg_list:
             exit("Error: physlr molecule: missing parameter --separation-strategy")
