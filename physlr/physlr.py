@@ -1140,6 +1140,19 @@ class Physlr:
             print(u, prop["n"], g.degree(u), sep="\t")
         print(int(timeit.default_timer() - t0), "Wrote degrees of vertices", file=sys.stderr)
 
+    def physlr_common_neighbours(self):
+        """Count the number of common neighbours for each edge."""
+        g = self.read_graph(self.args.FILES)
+        if Physlr.args.prune > 0:
+            Physlr.remove_bridges(g, Physlr.args.prune)
+        for u, v in g.edges:
+            g[u][v]["n"] = len(list(nx.common_neighbors(g, u, v)))
+        print(int(timeit.default_timer() - t0), "Counted common neighbours.",
+              file=sys.stderr, flush=True)
+
+        self.write_graph(g, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote the graph.", file=sys.stderr)
+
     def physlr_mst(self):
         """Determine the maximum spanning tree pruned for small branches."""
         g = self.read_graph(self.args.FILES)

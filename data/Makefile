@@ -751,6 +751,10 @@ min_path_size=200
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
 	$(python) $(bin)/physlr filter -M2 $< >$@
 
+# Count the number of common neighbours for each edge.
+%.cn.tsv: %.tsv
+	$(python) $(bin)/physlr common-neighbours $< >$@
+
 # Filter edges n >= 10 using Miller.
 %.n10.tsv: %.tsv
 	mlr --tsvlite filter '$$n >= 10' $< >$@
