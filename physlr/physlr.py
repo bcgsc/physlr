@@ -1389,7 +1389,7 @@ class Physlr:
         return list(nx.connected_components(subgraph))
 
     @staticmethod
-    def detect_communities_k_clique(g, node_set, k=3):
+    def detect_communities_k_clique(g, node_set, k):
         """Apply k-clique community detection. Return communities."""
         return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
 
@@ -1501,7 +1501,7 @@ class Physlr:
                         for bi_con2 in
                         Physlr.detect_communities_biconnected_components(g, bin_set)
                         for cluster in
-                        Physlr.detect_communities_k_clique(g, bi_con2, 3)],
+                        Physlr.detect_communities_k_clique(g, bi_con2, k=3)],
                     bi_connected_component, strategy=0)
                 ]
 
@@ -1516,6 +1516,10 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_biconnected_components(g, component))
+            elif algorithm == "cn2":
+                for component in communities:
+                    communities_temp.extend(
+                        Physlr.detect_communities_common_neighbours(g, component, cn_threshold=2))
             elif algorithm == "cn3":
                 for component in communities:
                     communities_temp.extend(
@@ -1523,7 +1527,11 @@ class Physlr:
             elif algorithm == "k3":
                 for component in communities:
                     communities_temp.extend(
-                        Physlr.detect_communities_k_clique(g, component))
+                        Physlr.detect_communities_k_clique(g, component, k=3))
+            elif algorithm == "k4":
+                for component in communities:
+                    communities_temp.extend(
+                        Physlr.detect_communities_k_clique(g, component, k=4))
             elif algorithm == "cos":
                 for component in communities:
                     communities_temp.extend(
@@ -1555,7 +1563,7 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        alg_white_list = {"bc", "cn3", "k3", "cos", "sqcos", "louvain", "distributed"}
+        alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
         alg_list = self.args.strategy.split("+")
         if not alg_list:
             exit("Error: physlr molecule: missing parameter --separation-strategy")
