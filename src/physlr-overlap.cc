@@ -147,7 +147,7 @@ main(int argc, char* argv[])
 
 	// Threads currently not supported.
 	if (opt::threads > 1) {
-		std::cerr << "threads not yet supported" << std::endl;
+		std::cerr << "Error: physlr-overlap: Threads not yet supported.\n";
 		die = true;
 	}
 
