@@ -10,3 +10,7 @@ lint:
 # Assemble the test data.
 check:
 	make -C data
+
+# Render the diagram of the pipeline.
+pipeline.pdf: pipeline.gv
+	dot -Tpdf -o $@ $<
