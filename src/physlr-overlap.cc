@@ -107,21 +107,21 @@ main(int argc, char* argv[])
 
 	// long form arguments
 	static struct option long_options[] = { { "min-n", required_argument, nullptr, 'n' },
-	//		                                    { "threads", required_argument, nullptr, 't' },
+		                                    { "threads", required_argument, nullptr, 't' },
 		                                    { "version", no_argument, nullptr, 'v' },
 		                                    { nullptr, 0, nullptr, 0 } };
 
 	int i = 0;
-	while ((c = getopt_long(argc, argv, "n:v:", long_options, &i)) != -1) {
+	while ((c = getopt_long(argc, argv, "n:t:v:", long_options, &i)) != -1) {
 		switch (c) {
-		//		case 't': {
-		//			std::stringstream convert(optarg);
-		//			if (!(convert >> opt::threads)) {
-		//				std::cerr << "Error - Invalid parameters! t: " << optarg << std::endl;
-		//				return 0;
-		//			}
-		//			break;
-		//		}
+		case 't': {
+			std::stringstream convert(optarg);
+			if (!(convert >> opt::threads)) {
+				std::cerr << "Error - Invalid parameters! t: " << optarg << std::endl;
+				return 0;
+			}
+			break;
+		}
 		case 'n': {
 			std::stringstream convert(optarg);
 			if (!(convert >> opt::minN)) {
@@ -144,6 +144,12 @@ main(int argc, char* argv[])
 #if _OPENMP
 	omp_set_num_threads(opt::threads);
 #endif
+
+	//Threads currently not supported
+	if(opt::threads > 1){
+		std::cerr << "threads not yet supported" << std::endl;
+		die = true;
+	}
 
 	// Stores fasta input file names
 	std::vector<std::string> inputFiles;
