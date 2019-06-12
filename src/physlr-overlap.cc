@@ -146,7 +146,7 @@ main(int argc, char* argv[])
 #endif
 
 	// Threads currently not supported.
-	if(opt::threads > 1){
+	if (opt::threads > 1) {
 		std::cerr << "threads not yet supported" << std::endl;
 		die = true;
 	}
