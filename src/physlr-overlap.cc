@@ -145,7 +145,7 @@ main(int argc, char* argv[])
 	omp_set_num_threads(opt::threads);
 #endif
 
-	//Threads currently not supported
+	// Threads currently not supported.
 	if(opt::threads > 1){
 		std::cerr << "threads not yet supported" << std::endl;
 		die = true;
