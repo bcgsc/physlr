@@ -52,7 +52,6 @@ printHelpDialog()
 	    "Usage: physlr-overlap [OPTION]... [MINIZERS.tsv]\n"
 	    "Read a sketch of linked reads and find overlapping barcodes.\n"
 	    "  -n, --min-n=INT   Remove edges with fewer than n shared markers [0].\n"
-		//"  -t, --threads=INT Number of threads [1].\n"
 	    "  -v, --version     Print version\n"
 	    "Report bugs to <cjustin@bcgsc.ca>.";
 	std::cerr << dialog << std::endl;
