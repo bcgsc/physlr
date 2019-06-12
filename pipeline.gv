@@ -1,0 +1,41 @@
+digraph {
+	graph [fontname="times-bold" fontsize="36" style=dotted]
+	node [shape="rectangle" width=5]
+
+	subgraph cluster_physical_map {
+		graph [label="Physical Map"]
+
+		reads [label="Linked reads (FASTQ)" shape="parallelogram"]
+		index_reads [label="Index the minimizers of the linked reads"]
+		filter_minimizers [label="Filter singleton and frequent minimizers"]
+		overlap_barcodes [label="Identify all pairs of barcodes sharing significant minimizers"]
+		separate_molecules [label="Separate barcodes into molecules"]
+		mst [label="Find a maximum spanning tree of the molecule overlap graph"]
+		backbone [label="Find contiguous paths in the maximum spanning tree"]
+		physical_map [label="Physical map of molecules" shape="ellipse"]
+	}
+
+	subgraph cluster_scaffold {
+		graph [label="Scaffold"]
+	
+		draft [label="Draft genome assembly (FASTA)" shape="parallelogram"]
+		index_draft [label="Index the minimizers of the draft assembly"]
+		map_draft [label="Map the draft assembly to the physical map"]
+		scaffold [label="Order and orient sequences on the physical map"]
+		scaffolds [label="Scaffolds (FASTA)" shape="ellipse"]
+	}
+
+	reads -> index_reads
+	index_reads -> filter_minimizers
+	filter_minimizers -> overlap_barcodes
+	overlap_barcodes -> separate_molecules
+	separate_molecules -> mst
+	mst -> backbone
+	backbone -> physical_map
+
+	draft -> index_draft
+	index_draft -> map_draft
+	physical_map -> map_draft
+	map_draft -> scaffold
+	scaffold -> scaffolds
+}
