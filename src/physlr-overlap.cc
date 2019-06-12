@@ -52,7 +52,7 @@ printHelpDialog()
 	    "Usage: physlr-overlap [OPTION]... [MINIZERS.tsv]\n"
 	    "Read a sketch of linked reads and find overlapping barcodes.\n"
 	    "  -n, --min-n=INT   Remove edges with fewer than n shared markers [0].\n"
-//	    "  -t, --threads=INT Number of threads [1].\n"
+		//"  -t, --threads=INT Number of threads [1].\n"
 	    "  -v, --version     Print version\n"
 	    "Report bugs to <cjustin@bcgsc.ca>.";
 	std::cerr << dialog << std::endl;
@@ -108,21 +108,21 @@ main(int argc, char* argv[])
 
 	// long form arguments
 	static struct option long_options[] = { { "min-n", required_argument, nullptr, 'n' },
-//		                                    { "threads", required_argument, nullptr, 't' },
+	//		                                    { "threads", required_argument, nullptr, 't' },
 		                                    { "version", no_argument, nullptr, 'v' },
 		                                    { nullptr, 0, nullptr, 0 } };
 
 	int i = 0;
 	while ((c = getopt_long(argc, argv, "n:v:", long_options, &i)) != -1) {
 		switch (c) {
-//		case 't': {
-//			std::stringstream convert(optarg);
-//			if (!(convert >> opt::threads)) {
-//				std::cerr << "Error - Invalid parameters! t: " << optarg << std::endl;
-//				return 0;
-//			}
-//			break;
-//		}
+		//		case 't': {
+		//			std::stringstream convert(optarg);
+		//			if (!(convert >> opt::threads)) {
+		//				std::cerr << "Error - Invalid parameters! t: " << optarg << std::endl;
+		//				return 0;
+		//			}
+		//			break;
+		//		}
 		case 'n': {
 			std::stringstream convert(optarg);
 			if (!(convert >> opt::minN)) {
