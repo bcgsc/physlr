@@ -538,7 +538,7 @@ minsize=2000
 
 # Count k-mers using ntCard.
 %.ntcard_k32.hist: %.fq.gz
-	ntcard -t$t -c1000 -k 32,64,96,128 -p $*.ntcard $<
+	ntcard -t$t -c1000 -k 32,48,64,80,96,112,128 -p $*.ntcard $<
 
 # Convert a .hist to a .histo file for GenomeScope.
 %.histo: %.hist
