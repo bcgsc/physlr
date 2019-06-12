@@ -201,7 +201,11 @@ private:
                 ++inputNum;
                 ++reads.dataCounter;
             }
-            reads.num = reads.data[0].num;
+            if (reads.dataCounter > 0) {
+                reads.num = reads.data[0].num;
+            } else {
+                reads.num = inputNum - 1;
+            }
 
             buffer.releaseWriteAccess(currentNum);
 
@@ -224,11 +228,7 @@ inline void MinimizeWorker::work() {
     Block<Read> reads;
     std::stringstream ss;
     Result result;
-    while (true) {
-        if (inputWorker.allRead && inputWorker.buffer.elements() == 0) {
-            break;
-        }
-
+    while (!inputWorker.allRead || inputWorker.buffer.elements() != 0) {
         inputWorker.buffer.read(reads);
         if (inputWorker.buffer.isClosed()) {
             break;
@@ -289,10 +289,16 @@ inline void MinimizeWorker::work() {
             }
             ss << '\n';
         }
-        result.num = reads.data[0].num;
-        assert(reads.dataCounter - 1 < sizeof(reads.data) / sizeof(reads.data[0]));
-        result.lastNum = reads.data[reads.dataCounter - 1].num;
-        result.barcodesAndMinimizers = ss.str();
+        if (reads.dataCounter > 0) {
+            result.num = reads.num;
+            assert(reads.dataCounter - 1 < sizeof(reads.data) / sizeof(reads.data[0]));
+            result.lastNum = reads.data[reads.dataCounter - 1].num;
+            result.barcodesAndMinimizers = ss.str();
+        } else {
+            result.num = reads.num;
+            result.lastNum = reads.num;
+            result.barcodesAndMinimizers = "";
+        }
 
         outputWorker.buffer.write(result);
     }
