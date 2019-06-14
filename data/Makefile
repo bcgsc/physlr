@@ -26,7 +26,11 @@ lr=Error_missing_parameter_lr
 ifneq ($(filter z11%, $(ref)),)
 name=fish
 else
+ifneq ($(filter b73%, $(ref)),)
+name=maize
+else
 name=$(ref)
+endif
 endif
 
 # Draft genome assembly.
@@ -272,6 +276,62 @@ fish.fq.gz: fish/fish.bx.trimadap.fq.gz
 # Symlink the chromosome 25 reads.
 fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 	ln -sf $< $@
+
+################################################################################
+# Maize (Zea mays)
+# See https://support.10xgenomics.com/de-novo-assembly/datasets/2.1.0/maize
+# and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
+
+# Assemble a physical map of maize.
+# ref=b73 lr=maize draft=maize.supernova n=50 min_component_size=200
+maize: \
+	maize.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
+	maize.k32-w32.n100-5000.physlr.depth.tsv.pdf \
+	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.b73.n10.paf.gz.pdf \
+	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.pdf \
+	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.path.b73.minidot.pdf \
+	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.path.quast.tsv \
+	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.maize.supernova.n10.sort.best.bed.path.quast.tsv \
+	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.b73.n10.ann.gv.squish.pdf
+
+# Aggregate QUAST metrics.
+maize.quast.tsv: \
+		maize.supernova.scaftigs.quast.tsv \
+		maize.supernova.quast.tsv \
+		maize.k32-w32.n200-10000.c2-x.physlr.overlap.n50.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.path.quast.tsv \
+		maize.k32-w32.n200-10000.c2-x.physlr.overlap.n50.k3.mol.backbone.map-mkt.maize.supernova.n10.sort.best.bed.path.quast.tsv
+	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
+
+# Download the maize genome from NCBI.
+maize/b73.ncbi.fa:
+	mkdir -p $(@D)
+	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/005/GCF_000005005.2_B73_RefGen_v4/ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/005/GCF_000005005.2_B73_RefGen_v4/GCF_000005005.2_B73_RefGen_v4_genomic.fna.gz | seqtk seq >$@
+
+# Download the maize genome from Ensembl.
+maize/b73.all.fa:
+	mkdir -p $(@D)
+	curl ftp://ftp.ensemblgenomes.org/pub/plants/release-43/fasta/zea_mays/dna/Zea_mays.B73_RefGen_v4.dna.toplevel.fa.gz | seqtk seq >$@
+
+# Filter out the unplaced contigs from the reference genome.
+maize/b73.fa: maize/b73.all.fa
+	paste - - <$< | grep -v contig | gsort -V | tr '\t' '\n' >$@
+
+# Download the Supernova assembly of the linked reads from 10x Genomics.
+maize.supernova.fa:
+	curl http://cf.10xgenomics.com/samples/assembly/2.1.0/maize/maize_pseudohap.fasta.gz | seqtk seq >$@
+
+# Download the maize linked reads from 10x Genomics.
+maize/maize.tar:
+	mkdir -p $(@D)
+	curl -o $@ http://s3-us-west-2.amazonaws.com/10x.files/samples/assembly/2.1.0/maize/maize_fastqs.tar
+
+# Extract the tar file of maize FASTQ reads.
+maize/maize.fq.gz: maize/maize.tar
+	tar --wildcards -Oxf maize/maize.tar 'maize/H3*/read-RA*.fastq.gz' >$@
+
+# Symlink the maize reads.
+maize.fq.gz: maize/maize.bx.trimadap.fq.gz
+	ln -s $< $@
 
 ################################################################################
 # Human (HG004)
