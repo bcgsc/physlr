@@ -291,6 +291,31 @@ class Physlr:
             "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
 
     @staticmethod
+    def keep_best_edges(g, bestn):
+        """Keep the best edges of each vertex."""
+        if bestn is None:
+            return
+        num_edges = g.number_of_edges()
+        num_removed = 0
+        us = list(g.nodes)
+        us.sort(key=g.degree, reverse=True)
+        for u in progress(us):
+            vs = list(g[u])
+            vs.sort(key=lambda v, u=u: g[u][v]["n"], reverse=True)
+            for v in vs[bestn:]:
+                g.remove_edge(u, v)
+                num_removed += 1
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", num_removed, "non-best edges of", g.number_of_edges(),
+            f"({round(100 * num_removed / num_edges, 2)}%)", file=sys.stderr)
+
+        num_singletons = Physlr.remove_singletons(g)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
+
+    @staticmethod
     def remove_unsupported_edges(g):
         "Remove edges with no common neighbours."
         unsupported = [(u, v) for u, v in progress(g.edges())
@@ -801,6 +826,14 @@ class Physlr:
                 file=sys.stderr)
         Physlr.remove_small_components(g, self.args.min_component_size)
         self.write_graph(g, sys.stdout, self.args.graph_format)
+
+    def physlr_best_edges(self):
+        """Keep the best edges of each vertex."""
+        g = self.read_graph(self.args.FILES)
+        Physlr.filter_edges(g, self.args.n)
+        Physlr.keep_best_edges(g, self.args.bestn)
+        self.write_graph(g, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
     def physlr_flesh_backbone(self):
         "Flesh out the barcodes in the backbone paths"
@@ -2147,6 +2180,9 @@ class Physlr:
         argparser.add_argument(
             "-N", "--max-n", action="store", dest="N", type=int, default=None,
             help="remove edges with at least N shared minimizers [None]")
+        argparser.add_argument(
+            "--bestn", action="store", dest="bestn", type=int, default=None,
+            help="Keep the best n edges of each vertex [None]")
         argparser.add_argument(
             "--min-length", action="store", dest="min_length", type=int, default=0,
             help="remove sequences with length less than N bp [0]")
