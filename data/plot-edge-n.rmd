@@ -37,7 +37,7 @@ cat(quartiles)
 ```{r histogram-n}
 ggplot(edges) +
 	aes(x = n) +
-	geom_histogram(binwidth = 1, boundary = 0) +
+	geom_histogram(binwidth = 1) +
 	geom_vline(xintercept = quartiles, colour = "grey", linetype = "dashed") +
 	coord_cartesian(x = c(0, 1.2 * upper_whisker)) +
 	theme_bw() +
