@@ -831,9 +831,13 @@ min_path_size=200
 %.n100.tsv: %.tsv
 	mlr --tsvlite filter '$$n >= 100' $< >$@
 
-# Filter edges n >= 118 using Miller.
+# Filter edges by n using Miller.
 %.n$n.tsv: %.tsv
 	mlr --tsvlite filter '$$n >= $n' $< >$@
+
+# Keep the best edges of each vertex.
+%.best$(bestn).tsv: %.tsv
+	$(python) $(bin)/physlr best-edges --bestn=$(bestn) $< >$@
 
 # Separate barcodes into molecules.
 mol_strategy=bc
