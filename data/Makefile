@@ -676,7 +676,7 @@ minsize=2000
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
-	$(time) $(python) $(bin)/physlr overlap -V$V -n10 $< >$@
+	$(time) $(physlr_path)/src/physlr-overlap -t1 -n10 $< >$@
 
 # Determine the degree of each vertex.
 %.deg.tsv: %.tsv
