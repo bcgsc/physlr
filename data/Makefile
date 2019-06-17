@@ -200,7 +200,7 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 # See https://support.10xgenomics.com/de-novo-assembly/datasets/2.1.0/fish
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
-# Assemble a physical map of fish using physlr-indexlr (native implementation).
+# Assemble a physical map of fish.
 # ref=z11 lr=fish draft=fish.supernova n=40 min_component_size=200
 fish: \
 	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.path.z11.molecule.bed.pdf \
@@ -627,18 +627,10 @@ minsize=2000
 # Physlr
 
 # Index a FASTA file.
-%.physlr.tsv: %.fa
-	$(time) parallel -j$t --pipe -k -L2 $(python) $(bin)/physlr indexfa -k$k -w$w - <$< >$@
-
-# Index a FASTA file using physlr-indexlr (native implementation).
 %.k$k-w$w.physlr.tsv: %.fa
 	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -o $@ $<
 
-# Index linked reads.
-%.physlr.tsv: %.fq.gz
-	$(zcat) $< | $(python) $(bin)/physlr indexlr -k$k -w$w - >$@
-
-# Index linked reads using physlr-indexlr (native implementation).
+# Index a compressed FASTQ file of linked reads.
 %.k$k-w$w.physlr.tsv: %.fq.gz
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -o $@ -
 
