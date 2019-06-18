@@ -46,15 +46,57 @@ paf <- paf_orig %>%
 	distinct(Tname, Tstart, .keep_all = TRUE)
 ```
 
+# Chain alignments
+```{r chain-alignments}
+mapq_threshold <- 1
+nbarcodes_threshold <- 50
+Qchain_threshold <- 50000
+Tchain_threshold <- 10
+
+paf_segmented <- paf %>%
+	filter(Mapq >= mapq_threshold) %>%
+	arrange(desc(Tlength), Tname, Tstart) %>%
+	group_by(Qname, Tname) %>%
+	filter(abs(dplyr::lead(Qstart) - Qstart) < Qchain_threshold | abs(Qstart - dplyr::lag(Qstart)) < Qchain_threshold) %>%
+	mutate(
+		Qstartdelta = lead(Qstart) - Qstart,
+		Qenddelta = lead(Qend) - Qend,
+		Qdelta = ifelse(abs(Qstartdelta) > abs(Qenddelta), Qstartdelta, Qenddelta),
+		Tdelta = lead(Tstart) - Tstart,
+		Boundary = abs(Qdelta) >= Qchain_threshold | abs(Tdelta) >= Tchain_threshold) %>%
+	replace_na(list(Boundary = FALSE)) %>%
+	ungroup() %>%
+	group_by(Qname, Tname) %>%
+	mutate(Segment = cumsum(Boundary)) %>%
+	ungroup()
+
+paf_chained_orig <- paf_segmented %>%
+	group_by(Qname, Qlength, Qindex, Tname, Tlength, Tindex, Segment) %>%
+	summarise(
+		Qstart = min(c(Qstart, Qend)),
+		Qend = max(c(Qstart, Qend)),
+		Tstart = min(c(Tstart, Tend)),
+		Tend = max(c(Tstart, Tend)),
+		Barcodes = n(),
+		Matches = sum(Matches)) %>%
+	ungroup()
+
+paf_chained <- paf_chained_orig %>% filter(Barcodes >= nbarcodes_threshold)
+```
+
 # Backbone coverage
 ```{r plot-paf, fig.width=8, fig.height=10}
-ggplot(paf) +
+alphabet_colours <- alphabet.colors(26)
+alphabet_colours["iron"] <- c("indigo" = "#3F00FF")
+alphabet_colours <- as.vector(alphabet_colours)
+
+ggplot(paf_chained) +
 	aes(xmin = Tstart, xmax = Tend, ymin = Tindex, ymax = Tindex + 1, fill = Qname) +
 	geom_rect() +
 	scale_x_continuous(name = "Position", labels = comma_format()) +
 	scale_y_reverse(name = "Backbone (Target)",
 		minor_breaks = seq(0, max(paf$Tindex), 10)) +
-	scale_fill_manual(name = "Query", values = as.vector(alphabet.colors(26))) +
+	scale_fill_manual(name = "Query", values = alphabet_colours) +
 	theme_bw() +
 	guides(fill = guide_legend(ncol = 1)) +
 	labs(caption = input_paf)
@@ -68,12 +110,14 @@ cat(pdf_filename)
 
 # Reference coverage
 ```{r plot-pafq, fig.width=8, fig.height=10}
-mapq_threshold <- 1
+pafq_lumped <- paf_chained %>%
+	arrange(desc(Tlength), Tname, Tstart, Barcodes) %>%
+	mutate(Tname = fct_inorder(fct_lump(Tname, n = 26, w = Barcodes, ties.method = "first")))
 
-pafq <- paf %>%
-	filter(Mapq >= mapq_threshold) %>%
-	mutate(Tname = fct_inorder(fct_lump(Tname, n = 25, ties.method = "first"))) %>%
-	arrange(desc(Qlength), Qname, Qstart, Matches)
+pal <- setNames(alphabet_colours, pafq_lumped$Tname %>% setdiff("Other") %>% unique())
+pal["Other"] <- "#c0c0c0"
+
+pafq <- pafq_lumped %>% arrange(desc(Qlength), Qname, Qstart, Barcodes)
 
 ggplot(pafq) +
 	geom_rect(aes(
@@ -86,7 +130,7 @@ ggplot(pafq) +
 	scale_y_reverse(name = "Chromosome (Query)",
 		breaks = 0.5 + seq_len(nlevels(pafq$Qname)),
 		labels = levels(pafq$Qname)) +
-	scale_fill_manual(name = "Target", values = as.vector(alphabet.colors(26))) +
+	scale_fill_manual(name = "Target", values = pal) +
 	theme_bw() +
 	guides(fill = guide_legend(ncol = 1)) +
 	labs(caption = input_paf)
@@ -99,7 +143,7 @@ cat(pdf_filename)
 ```
 
 # Dot plot
-```{r plot-pafm, fig.width=6, fig.height=24}
+```{r plot-dot, fig.width=6, fig.height=24}
 tlength_threshold <- 200
 mapq_threshold <- 1
 
@@ -115,7 +159,7 @@ ggplot(pafdot) +
 	scale_x_continuous(name = "Chromosome (Query) Position", labels = unit_format(unit = "M", scale = 1e-6)) +
 	scale_y_reverse(name = "Backbone (Target) Position", minor_breaks = NULL,
 		breaks = boundaries$Index, labels = boundaries$Tname) +
-	scale_fill_manual(name = "Query", values = as.vector(alphabet.colors(26))) +
+	scale_fill_manual(name = "Query", values = alphabet_colours) +
 	theme_bw() +
 	guides(fill = guide_legend(ncol = 1)) +
 	labs(caption = input_paf)
