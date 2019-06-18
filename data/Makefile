@@ -88,48 +88,48 @@ all: f1chr4 f1chr2R f1 fishchr25 fish
 # Assemble a physical map of fly chromosome 4.
 # ref=fly lr=f1chr4 draft=f1.supernova.scaftigs n=50
 f1chr4: \
-	f1chr4.indexlr.n100-1000.physlr.mxperbx.tsv.pdf \
-	f1chr4.indexlr.n100-1000.physlr.depth.tsv.pdf \
-	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
-	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
-	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
-	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1chr4.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
+	f1chr4.k32-w32.n100-1000.physlr.mxperbx.tsv.pdf \
+	f1chr4.k32-w32.n100-1000.physlr.depth.tsv.pdf \
+	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
+	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
+	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Assemble a physical map of fly chromosome 2R.
 # ref=fly lr=f1chr2R draft=f1.supernova.scaftigs n=50
 f1chr2R: \
-	f1chr2R.indexlr.n100-1000.physlr.mxperbx.tsv.pdf \
-	f1chr2R.indexlr.n100-1000.physlr.depth.tsv.pdf \
-	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
-	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
-	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
-	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1chr2R.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
+	f1chr2R.k32-w32.n100-1000.physlr.mxperbx.tsv.pdf \
+	f1chr2R.k32-w32.n100-1000.physlr.depth.tsv.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Assemble a physical map of the fly genome.
 # ref=fly lr=f1 draft=f1.supernova.scaftigs n=25
 f1: \
-	f1.indexlr.n100-1000.physlr.mxperbx.tsv.pdf \
-	f1.indexlr.n100-1000.physlr.depth.tsv.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.sort.best.bed.path.quast.tsv \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
+	f1.k32-w32.n100-1000.physlr.mxperbx.tsv.pdf \
+	f1.k32-w32.n100-1000.physlr.depth.tsv.pdf \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.sort.best.bed.path.quast.tsv \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Scaffold the ABySS assembly of the fly genome.
 # ref=fly lr=f1 draft=f1.abyss n=25
 f1-abyss: \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
-	f1.indexlr.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.sort.best.bed.path.quast.tsv
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.sort.best.bed.path.quast.tsv
 
 # Aggregate QUAST metrics.
 f1.quast.tsv: \
@@ -137,10 +137,10 @@ f1.quast.tsv: \
 		f1.abyss.scaftigs.quast.tsv \
 		f1.supernova.quast.tsv \
 		f1.supernova.scaftigs.quast.tsv \
-		f1.indexlr.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv \
-		f1.indexlr.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map-mkt.f1.abyss.n10.sort.best.bed.path.quast.tsv \
-		f1.indexlr.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-		f1.indexlr.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map-mkt.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+		f1.k32-w32.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv \
+		f1.k32-w32.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map-mkt.f1.abyss.n10.sort.best.bed.path.quast.tsv \
+		f1.k32-w32.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		f1.k32-w32.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map-mkt.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 # Download the fly genome from NCBI.
@@ -203,32 +203,32 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 # Assemble a physical map of fish.
 # ref=z11 lr=fish draft=fish.supernova n=40 min_component_size=200
 fish: \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.path.z11.molecule.bed.pdf \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.paf.gz.pdf \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.minidot.pdf \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv \
-	fish.indexlr.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.ann.gv.squish.pdf
+	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.path.z11.molecule.bed.pdf \
+	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.paf.gz.pdf \
+	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
+	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.minidot.pdf \
+	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
+	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv \
+	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.ann.gv.squish.pdf
 
 # Aggregate QUAST metrics.
 fish.quast.tsv: \
 		fish.supernova.scaftigs.quast.tsv \
 		fish.supernova.quast.tsv \
-		fish.indexlr.n100-2000.c2-x.physlr.overlap.n40.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
-		fish.indexlr.n100-2000.c2-x.physlr.overlap.n40.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv
+		fish.k32-w32.n100-2000.c2-x.physlr.overlap.n40.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
+		fish.k32-w32.n100-2000.c2-x.physlr.overlap.n40.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 # Assemble a physical map of fish chromosome 25.
 # ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=50
 fishchr25: \
-	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11chr25.molecule.bed.pdf \
-	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.paf.gz.pdf \
-	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.pdf \
-	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.z11chr25.minidot.pdf \
-	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.quast.tsv \
-	fishchr25.indexlr.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.ann.gv.squish.pdf
+	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11chr25.molecule.bed.pdf \
+	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.paf.gz.pdf \
+	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.pdf \
+	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.z11chr25.minidot.pdf \
+	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.quast.tsv \
+	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.ann.gv.squish.pdf
 
 # Download the zebrafish genome from NCBI.
 fish/z11.ncbi.fa:
@@ -339,23 +339,23 @@ maize.fq.gz: maize/maize.bx.trimadap.fq.gz
 # Assemble a physical map of hg004.
 # ref=grch38 lr=hg004 draft=hg004.supernova.scaftigs n=70 min_component_size=200
 hg004: \
-	hg004.indexlr.n100-5000.physlr.mxperbx.tsv.pdf \
-	hg004.indexlr.n100-5000.physlr.depth.tsv.pdf \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.path \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.grch38.n10.paf.gz.pdf \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.pdf \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.grch38.minidot.pdf \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.label.gv.pdf \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.grch38.n10.ann.gv.squish.pdf
+	hg004.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
+	hg004.k32-w32.n100-5000.physlr.depth.tsv.pdf \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.path \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.grch38.n10.paf.gz.pdf \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.pdf \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.grch38.minidot.pdf \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.label.gv.pdf \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.grch38.n10.ann.gv.squish.pdf
 
 # ref=grch38 lr=hg004 draft=hg004.abyss n=70 min_component_size=200
 hg004-abyss: \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.pdf \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.grch38.minidot.pdf \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
-	hg004.indexlr.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.pdf \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.grch38.minidot.pdf \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
+	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv
 
 # Download the human genome from NCBI.
 grch38/grch38.all.fa:
@@ -376,11 +376,11 @@ hg004.quast.tsv: \
 		hg004.abyss.quast.tsv \
 		hg004.supernova.quast.tsv \
 		hg004.supernova.scaftigs.quast.tsv \
-		hg004.indexlr.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
-		hg004.indexlr.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
-		hg004.indexlr.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-		hg004.indexlr.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-		hg004.indexlr.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.quast.tsv
+		hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
+		hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
+		hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 ################################################################################
@@ -391,11 +391,11 @@ hg004.quast.tsv: \
 # Assemble a physical map of western redcedar.
 # lr=redcedar draft=redcedar.abyss n=10 min_component_size=200
 redcedar: \
-	redcedar.indexlr.n100-5000.physlr.mxperbx.tsv.pdf \
-	redcedar.indexlr.n100-5000.physlr.depth.tsv.pdf \
-	redcedar.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path \
-	redcedar.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.redcedar.abyss.n10.sort.best.bed.path.fa \
-	redcedar.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.redcedar.abyss.n10.sort.best.bed.pdf
+	redcedar.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
+	redcedar.k32-w32.n100-5000.physlr.depth.tsv.pdf \
+	redcedar.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path \
+	redcedar.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.redcedar.abyss.n10.sort.best.bed.path.fa \
+	redcedar.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.redcedar.abyss.n10.sort.best.bed.pdf
 
 # Symlink the linked reads.
 redcedar.fq.gz: redcedar.lrbasic.trimadap.fq.gz
@@ -407,11 +407,11 @@ redcedar.fq.gz: redcedar.lrbasic.trimadap.fq.gz
 # Assemble a physical map of white spruce.
 # lr=ws77111 draft=ws77111.abyss n=50 min_component_size=200
 ws77111: \
-	ws77111.indexlr.n100-5000.physlr.mxperbx.tsv.pdf \
-	ws77111.indexlr.n100-5000.physlr.depth.tsv.pdf \
-	ws77111.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path \
-	ws77111.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.ws77111.abyss.n10.sort.best.bed.path.fa \
-	ws77111.indexlr.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.ws77111.abyss.n10.sort.best.bed.pdf
+	ws77111.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
+	ws77111.k32-w32.n100-5000.physlr.depth.tsv.pdf \
+	ws77111.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path \
+	ws77111.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.ws77111.abyss.n10.sort.best.bed.path.fa \
+	ws77111.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.ws77111.abyss.n10.sort.best.bed.pdf
 
 # Trim adapter sequences using trimadap.
 ws77111.lrbasic.trimadap.fq.gz: path=/projects/spruceup/pglauca/WS77111/data/reads/DNA/fastq/chromium
