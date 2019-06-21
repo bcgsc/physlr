@@ -50,20 +50,30 @@ paf <- paf_orig %>%
 ```{r chain-alignments}
 mapq_threshold <- 1
 nbarcodes_threshold <- 50
-Qchain_threshold <- 50000
-Tchain_threshold <- 10
+Qdistance_threshold <- 50000
+Tdistance_threshold <- 10
+
+# Return true when the two intervals [as, ae] and [bs, be] overlap.
+is_overlap <- function(as, ae, bs, be) {
+	as <= bs & bs <= ae | as <= be & be <= ae | bs <= as & as <= be | bs <= ae & ae <= be
+}
+
+# Return the distance between the two intervals [as, ae] and [bs, be].
+# Return 0 if they overlap.
+interval_distance <- function(as, ae, bs, be) {
+	ifelse(is_overlap(as, ae, bs, be), 0, pmax(bs - ae, as - be))
+}
 
 paf_segmented <- paf %>%
 	filter(Mapq >= mapq_threshold) %>%
 	arrange(desc(Tlength), Tname, Tstart) %>%
 	group_by(Qname, Tname) %>%
-	filter(abs(dplyr::lead(Qstart) - Qstart) < Qchain_threshold | abs(Qstart - dplyr::lag(Qstart)) < Qchain_threshold) %>%
+	filter(is_overlap(lag(Qstart), lag(Qend), Qstart, Qend)
+		| is_overlap(Qstart, Qend, lead(Qstart), lead(Qend))) %>%
 	mutate(
-		Qstartdelta = lead(Qstart) - Qstart,
-		Qenddelta = lead(Qend) - Qend,
-		Qdelta = ifelse(abs(Qstartdelta) > abs(Qenddelta), Qstartdelta, Qenddelta),
-		Tdelta = lead(Tstart) - Tstart,
-		Boundary = abs(Qdelta) >= Qchain_threshold | abs(Tdelta) >= Tchain_threshold) %>%
+		Qdistance = interval_distance(lag(Qstart), lag(Qend), Qstart, Qend),
+		Tdistance = interval_distance(lag(Tstart), lag(Tend), Tstart, Tend),
+		Boundary = Qdistance >= Qdistance_threshold | Tdistance >= Tdistance_threshold) %>%
 	replace_na(list(Boundary = FALSE)) %>%
 	ungroup() %>%
 	group_by(Qname, Tname) %>%
@@ -73,10 +83,10 @@ paf_segmented <- paf %>%
 paf_chained_orig <- paf_segmented %>%
 	group_by(Qname, Qlength, Qindex, Tname, Tlength, Tindex, Segment) %>%
 	summarise(
-		Qstart = min(c(Qstart, Qend)),
-		Qend = max(c(Qstart, Qend)),
-		Tstart = min(c(Tstart, Tend)),
-		Tend = max(c(Tstart, Tend)),
+		Qstart = min(Qstart),
+		Qend = max(Qend),
+		Tstart = min(Tstart),
+		Tend = max(Tend),
 		Barcodes = n(),
 		Matches = sum(Matches)) %>%
 	ungroup()
@@ -138,6 +148,38 @@ ggplot(pafq) +
 
 ```{r save-plot-q}
 pdf_filename <- paste0(input_paf, ".q.pdf")
+ggsave(pdf_filename, width = 8, height = 10, units = "in")
+cat(pdf_filename)
+```
+
+# Chromosome ideogram
+```{r plot-ideogram, fig.width=8, fig.height=10}
+paf_ideogram <- paf_chained %>%
+	arrange(desc(Qlength), Qname, Qstart, Barcodes) %>%
+	group_by(Qname) %>%
+	mutate(Colour = (Qindex + row_number()) %% 2) %>%
+	ungroup() %>%
+	mutate(Colour = factor(Colour))
+
+ggplot(paf_ideogram) +
+	geom_rect(aes(
+		xmin = Qstart, xmax = Qend,
+		ymin = Qindex + 0.1, ymax = Qindex + 0.9,
+		fill = Colour)) +
+	geom_point(aes(x = Qlength, y = 0.5 + Qindex),
+		data = distinct(pafq, Qlength, Qindex)) +
+	scale_x_continuous(name = "Position", labels = unit_format(unit = "M", scale = 1e-6)) +
+	scale_y_reverse(name = "Chromosome (Query)",
+		breaks = 0.5 + seq_len(nlevels(pafq$Qname)), minor_breaks = NULL,
+		labels = levels(pafq$Qname)) +
+	scale_fill_manual(name = "Target", values = c("0" = "#808080", "1" = "#c0c0c0")) +
+	theme_bw() +
+	guides(fill = FALSE) +
+	labs(caption = input_paf)
+```
+
+```{r save-plot-ideogram}
+pdf_filename <- paste0(input_paf, ".ideo.pdf")
 ggsave(pdf_filename, width = 8, height = 10, units = "in")
 cat(pdf_filename)
 ```
