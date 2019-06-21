@@ -630,40 +630,40 @@ minsize=2000
 	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -o $@ $<
 
 # Index a compressed FASTQ file of linked reads.
-%.k$k-w$w.physlr.tsv: %.fq.gz
-	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -o $@ -
+%.k$k-w$w.physlr.tsv.gz: %.fq.gz
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w - | $(gzip) >$@
 
-# Count the frequency of the minimizers.
-%.physlr.depth.tsv: %.physlr.tsv
-	$(time) $(python) $(bin)/physlr count-minimizers -V$V $< >$@
-	
 # Identify the overlapping minimizers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv
 	$(python) $(bin)/physlr intersect $< >$@
 
 # Filter barcodes by number of minimizers.
-%.n100-1000.physlr.tsv: %.physlr.tsv
-	$(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N1000 $< >$@
+%.n100-1000.physlr.tsv.gz: %.physlr.tsv.gz
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N1000 - | $(gzip) >$@
 
 # Filter barcodes by number of minimizers.
-%.n100-2000.physlr.tsv: %.physlr.tsv
-	$(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N2000 $< >$@
+%.n100-2000.physlr.tsv.gz: %.physlr.tsv.gz
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N2000 - | $(gzip) >$@
 
 # Filter barcodes by number of minimizers.
-%.n100-5000.physlr.tsv: %.physlr.tsv
-	$(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N5000 $< >$@
+%.n100-5000.physlr.tsv.gz: %.physlr.tsv.gz
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N5000 - | $(gzip) >$@
 
 # Filter barcodes by number of minimizers.
-%.n100-10000.physlr.tsv: %.physlr.tsv
-	$(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N10000 $< >$@
-
-# Filter minimizers by their frequency.
-%.c2-x.physlr.tsv: %.physlr.tsv
-	$(time) $(python) $(bin)/physlr filter-minimizers -V$V $< >$@
+%.n100-10000.physlr.tsv.gz: %.physlr.tsv.gz
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N10000 - | $(gzip) >$@
 
 # Count the number of minimizers per barcode.
-%.physlr.mxperbx.tsv: %.physlr.tsv
-	awk 'BEGIN { print "Minimizers" } { print NF - 1 }' $< >$@
+%.physlr.mxperbx.tsv: %.physlr.tsv.gz
+	$(zcat) $< | awk 'BEGIN { print "Minimizers" } { print NF - 1 }' >$@
+
+# Count the frequency of the minimizers.
+%.physlr.depth.tsv: %.physlr.tsv.gz
+	$(zcat) $< | $(time) $(python) $(bin)/physlr count-minimizers -V$V - >$@
+
+# Filter minimizers by their frequency.
+%.c2-x.physlr.tsv: %.physlr.tsv.gz
+	$(zcat) $< | $(time) $(python) $(bin)/physlr filter-minimizers -V$V - >$@
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
