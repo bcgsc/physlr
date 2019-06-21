@@ -2,7 +2,7 @@ Assembler	Scaffolder	NG50 (Mbp)	NGA50 (Mbp)	Misassemblies	Genome fraction	Mismat
 ABySS-LR		1.45	1.28	942	89.7%	0.0978%
 Supernova		38.48	12.37	1,071	94.7%	0.1209%
 Supernova scaftigs		0.15	0.15	795	94.5%	0.1184%
-ABySS-LR	Physlr	19.05	2.38	1,246	71.1%	0.0930%
-ABySS-LR	Physlr mkt	20.28	2.28	1,542	72.9%	0.0941%
-Supernova scaftigs	Physlr	4.34	0.14	3,929	55.6%	0.1049%
-Supernova scaftigs	Physlr mkt	23.82	1.05	2,866	75.5%	0.1133%
+ABySS-LR	Physlr	23.68	2.32	1,262	71.1%	0.0926%
+ABySS-LR	Physlr mkt	24.16	2.32	1,536	73.0%	0.0943%
+Supernova scaftigs	Physlr	4.46	0.13	3,928	55.3%	0.1052%
+Supernova scaftigs	Physlr mkt	32.96	1.03	2,921	75.5%	0.1141%
