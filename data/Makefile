@@ -337,25 +337,24 @@ maize.fq.gz: maize/maize.bx.trimadap.fq.gz
 # Human (HG004)
 
 # Assemble a physical map of hg004.
-# ref=grch38 lr=hg004 draft=hg004.supernova.scaftigs n=70 min_component_size=200
+# ref=grch38 lr=hg004 draft=hg004.supernova.scaftigs k=40 w=32 n=62 min_component_size=200
 hg004: \
-	hg004.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
-	hg004.k32-w32.n100-5000.physlr.depth.tsv.pdf \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.path \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.grch38.n10.paf.gz.pdf \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.pdf \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.grch38.minidot.pdf \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.label.gv.pdf \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.grch38.n10.ann.gv.squish.pdf
+	hg004.k40-w32.n100-5000.physlr.mxperbx.tsv.pdf \
+	hg004.k40-w32.n100-5000.physlr.depth.tsv.pdf \
+	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.grch38.n10.paf.gz.pdf \
+	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.grch38.n10.ann.gv.squish.pdf \
+	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.pdf \
+	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.grch38.minidot.pdf \
+	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 
-# ref=grch38 lr=hg004 draft=hg004.abyss n=70 min_component_size=200
+# Scaffold the ABySS assembly with the physical map of hg004.
+# ref=grch38 lr=hg004 draft=hg004.abyss k=40 w=32 n=62 min_component_size=200
 hg004-abyss: \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.pdf \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.grch38.minidot.pdf \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
-	hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv
+	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.pdf \
+	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.grch38.minidot.pdf \
+	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
+	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv
 
 # Download the human genome from NCBI.
 grch38/grch38.all.fa:
@@ -376,11 +375,11 @@ hg004.quast.tsv: \
 		hg004.abyss.quast.tsv \
 		hg004.supernova.quast.tsv \
 		hg004.supernova.scaftigs.quast.tsv \
-		hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
-		hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
-		hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-		hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-		hg004.k32-w32.n100-5000.c2-x.physlr.overlap.n70.k3.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.quast.tsv
+		hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
+		hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
+		hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 ################################################################################
