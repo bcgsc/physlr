@@ -663,7 +663,7 @@ minsize=2000
 
 # Filter minimizers by their frequency.
 %.c2-x.physlr.tsv: %.physlr.tsv.gz
-	$(zcat) $< | $(time) $(python) $(bin)/physlr filter-minimizers -V$V - >$@
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-bxmx -o $@ -
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
