@@ -13,25 +13,27 @@
 #include <vector>
 
 // Return true if the second string is a prefix of the string s.
-template <size_t N>
-static inline bool startsWith(const std::string& s, const char (&prefix)[N])
+template<size_t N>
+static inline bool
+startsWith(const std::string& s, const char (&prefix)[N])
 {
 	auto n = N - 1;
 	return s.size() > n && equal(s.begin(), s.begin() + n, prefix);
 }
 
 // Hash the k-mers of a read using ntHash.
-static inline std::vector<uint64_t> hashKmers(const std::string &readstr, const size_t k)
+static inline std::vector<uint64_t>
+hashKmers(const std::string& readstr, const size_t k)
 {
-    std::vector<uint64_t> hashes;
-    if (readstr.size() < k) {
-        return hashes;
-    }
-    hashes.reserve(readstr.size() - k + 1);
-    for (ntHashIterator iter(readstr, 1, k); iter != ntHashIterator::end(); ++iter) {
-        hashes.push_back((*iter)[0]);
-    }
-    return hashes;
+	std::vector<uint64_t> hashes;
+	if (readstr.size() < k) {
+		return hashes;
+	}
+	hashes.reserve(readstr.size() - k + 1);
+	for (ntHashIterator iter(readstr, 1, k); iter != ntHashIterator::end(); ++iter) {
+		hashes.push_back((*iter)[0]);
+	}
+	return hashes;
 }
 
 // Minimerize a sequence: Find the minimizers of a vector of hash values representing a sequence.
@@ -66,39 +68,40 @@ for each window of v bounded by [l, r]
     r = l + w - 1    Set window's right bound
 }*/
 
-static inline std::vector<uint64_t> getMinimizers(const std::vector<uint64_t> &hashes, const unsigned w)
+static inline std::vector<uint64_t>
+getMinimizers(const std::vector<uint64_t>& hashes, const unsigned w)
 {
-    std::vector<uint64_t> minimizers;
-    if (hashes.size() < w) {
-        return minimizers;
-    }
-    minimizers.reserve(2 * hashes.size() / w);
-    int i = -1, prev = -1;
-    auto firstIt = hashes.begin();
-    auto minIt   = hashes.end();
-    for (auto leftIt = firstIt; leftIt < hashes.end() - w + 1; ++leftIt) {
-        auto rightIt = leftIt + w;
-        if (i < leftIt - firstIt) {
-            // Use of operator '<=' returns the minimum that is furthest from left.
-            minIt = std::min_element(leftIt, rightIt, std::less_equal<uint64_t>());
-        }
-        else if (*(rightIt - 1) <= *minIt) {
-            minIt = rightIt - 1;
-        }
-        i = minIt - firstIt;
-        if (i > prev) {
-            prev = i;
-            minimizers.push_back(*minIt);
-        }
-    }
-    return minimizers;
+	std::vector<uint64_t> minimizers;
+	if (hashes.size() < w) {
+		return minimizers;
+	}
+	minimizers.reserve(2 * hashes.size() / w);
+	int i = -1, prev = -1;
+	auto firstIt = hashes.begin();
+	auto minIt = hashes.end();
+	for (auto leftIt = firstIt; leftIt < hashes.end() - w + 1; ++leftIt) {
+		auto rightIt = leftIt + w;
+		if (i < leftIt - firstIt) {
+			// Use of operator '<=' returns the minimum that is furthest from left.
+			minIt = std::min_element(leftIt, rightIt, std::less_equal<uint64_t>());
+		} else if (*(rightIt - 1) <= *minIt) {
+			minIt = rightIt - 1;
+		}
+		i = minIt - firstIt;
+		if (i > prev) {
+			prev = i;
+			minimizers.push_back(*minIt);
+		}
+	}
+	return minimizers;
 }
 
 // Test the condition of a I/O stream.
-static inline void assert_good(const std::ios& stream, const std::string& path)
+static inline void
+assert_good(const std::ios& stream, const std::string& path)
 {
 	if (!stream.good()) {
-		std::cerr << "error: " << std::strerror(errno) <<  ": " << path << '\n';
+		std::cerr << "error: " << std::strerror(errno) << ": " << path << '\n';
 		exit(EXIT_FAILURE);
 	}
 }
