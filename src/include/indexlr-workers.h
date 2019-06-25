@@ -286,8 +286,9 @@ MinimizeWorker::work()
 			}
 			for (auto& m : minimizers) {
 				ss << sep << m.hash;
-				if (withPositions)
+				if (withPositions) {
 					ss << ':' << m.pos;
+				}
 				sep = ' ';
 			}
 			ss << '\n';

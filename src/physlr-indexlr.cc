@@ -81,7 +81,7 @@ main(int argc, char* argv[])
 	bool failed = false;
 	bool w_set = false;
 	bool k_set = false;
-	int withPositions = 0;
+	static int withPositions = 0;
 	char* end = nullptr;
 	std::string outfile("/dev/stdout");
 	static const struct option longopts[] = { { "pos", no_argument, &withPositions, 1 },
