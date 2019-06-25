@@ -15,8 +15,8 @@ clang-tidy:
 
 # Check the C++ source code for white-space errors with clang-format.
 clang-format:
-	for i in *.cc; do clang-format -style=file $$i >$$i.fixed; done
-	for i in *.cc; do diff -su $$i $$i.fixed && rm -f $$i.fixed; done
+	for i in *.cc include/*.h; do clang-format -style=file $$i >$$i.fixed; done
+	for i in *.cc include/*.h; do diff -su $$i $$i.fixed && rm -f $$i.fixed; done
 	if ls *.fixed; then exit 1; fi
 
 # Fix white-space errors with clang-format.
