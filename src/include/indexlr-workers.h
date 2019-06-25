@@ -79,11 +79,13 @@ class MinimizeWorker
 	MinimizeWorker(
 	    size_t k,
 	    size_t w,
+	    bool withPositions,
 	    bool verbose,
 	    InputWorker& inputWorker,
 	    OutputWorker& outputWorker)
 	  : k(k)
 	  , w(w)
+	  , withPositions(withPositions)
 	  , verbose(verbose)
 	  , inputWorker(inputWorker)
 	  , outputWorker(outputWorker)
@@ -92,6 +94,7 @@ class MinimizeWorker
 	MinimizeWorker(const MinimizeWorker& worker)
 	  : k(worker.k)
 	  , w(worker.w)
+	  , withPositions(worker.withPositions)
 	  , verbose(worker.verbose)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
@@ -100,6 +103,7 @@ class MinimizeWorker
 	MinimizeWorker(MinimizeWorker&& worker) noexcept
 	  : k(worker.k)
 	  , w(worker.w)
+	  , withPositions(worker.withPositions)
 	  , verbose(worker.verbose)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
@@ -117,6 +121,7 @@ class MinimizeWorker
   private:
 	size_t k = 0;
 	size_t w = 0;
+	bool withPositions = false;
 	bool verbose = false;
 	InputWorker& inputWorker;
 	OutputWorker& outputWorker;
@@ -280,7 +285,9 @@ MinimizeWorker::work()
 				ss << sep;
 			}
 			for (auto& m : minimizers) {
-				ss << sep << m;
+				ss << sep << m.hash;
+				if (withPositions)
+					ss << ':' << m.pos;
 				sep = ' ';
 			}
 			ss << '\n';
