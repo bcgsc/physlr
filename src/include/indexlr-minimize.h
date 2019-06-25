@@ -21,11 +21,13 @@ startsWith(const std::string& s, const char (&prefix)[N])
 	return s.size() > n && equal(s.begin(), s.begin() + n, prefix);
 }
 
+using HashValues = std::vector<uint64_t>;
+
 // Hash the k-mers of a read using ntHash.
-static inline std::vector<uint64_t>
+static inline HashValues
 hashKmers(const std::string& readstr, const size_t k)
 {
-	std::vector<uint64_t> hashes;
+	HashValues hashes;
 	if (readstr.size() < k) {
 		return hashes;
 	}
@@ -68,10 +70,10 @@ for each window of v bounded by [l, r]
     r = l + w - 1    Set window's right bound
 }*/
 
-static inline std::vector<uint64_t>
-getMinimizers(const std::vector<uint64_t>& hashes, const unsigned w)
+static inline HashValues
+getMinimizers(const HashValues& hashes, const unsigned w)
 {
-	std::vector<uint64_t> minimizers;
+	HashValues minimizers;
 	if (hashes.size() < w) {
 		return minimizers;
 	}
@@ -83,7 +85,7 @@ getMinimizers(const std::vector<uint64_t>& hashes, const unsigned w)
 		auto rightIt = leftIt + w;
 		if (i < leftIt - firstIt) {
 			// Use of operator '<=' returns the minimum that is furthest from left.
-			minIt = std::min_element(leftIt, rightIt, std::less_equal<uint64_t>());
+			minIt = std::min_element(leftIt, rightIt, std::less_equal<HashValues::value_type>());
 		} else if (*(rightIt - 1) <= *minIt) {
 			minIt = rightIt - 1;
 		}
