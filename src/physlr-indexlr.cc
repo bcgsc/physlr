@@ -24,7 +24,8 @@ minimizeReads(
     const size_t k,
     const size_t w,
     const size_t t,
-    bool verbose)
+    const bool withPositions,
+    const bool verbose)
 {
 	InputWorker inputWorker(ipath);
 	OutputWorker outputWorker(opath, inputWorker);
@@ -32,8 +33,8 @@ minimizeReads(
 	inputWorker.start();
 	outputWorker.start();
 
-	auto minimizeWorkers =
-	    std::vector<MinimizeWorker>(t, MinimizeWorker(k, w, verbose, inputWorker, outputWorker));
+	auto minimizeWorkers = std::vector<MinimizeWorker>(
+	    t, MinimizeWorker(k, w, withPositions, verbose, inputWorker, outputWorker));
 	for (auto& worker : minimizeWorkers) {
 		worker.start();
 	}
@@ -58,6 +59,7 @@ printUsage(const std::string& progname)
 	          << "  -k K -w W [-v] [-o FILE] FILE...\n\n"
 	             "  -k K       use K as k-mer size\n"
 	             "  -w W       use W as sliding-window size\n"
+	             "  --pos      include minimizer positions in the output\n"
 	             "  -v         enable verbose output\n"
 	             "  -o FILE    write output to FILE, default is stdout\n"
 	             "  -t N       use N number of threads (default 1, max 5)\n"
@@ -79,9 +81,11 @@ main(int argc, char* argv[])
 	bool failed = false;
 	bool w_set = false;
 	bool k_set = false;
+	int withPositions = 0;
 	char* end = nullptr;
 	std::string outfile("/dev/stdout");
-	static const struct option longopts[] = { { "help", no_argument, &help, 1 },
+	static const struct option longopts[] = { { "pos", no_argument, &withPositions, 1 },
+		                                      { "help", no_argument, &help, 1 },
 		                                      { nullptr, 0, nullptr, 0 } };
 	while ((c = getopt_long(argc, argv, "k:w:o:vt:", longopts, &optindex)) != -1) {
 		switch (c) {
@@ -142,7 +146,8 @@ main(int argc, char* argv[])
 	}
 
 	for (auto& infile : infiles) {
-		minimizeReads(infile == "-" ? "/dev/stdin" : infile, outfile, k, w, t, verbose);
+		minimizeReads(
+		    infile == "-" ? "/dev/stdin" : infile, outfile, k, w, t, withPositions, verbose);
 	}
 
 	return 0;
