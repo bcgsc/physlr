@@ -22,298 +22,296 @@ KSEQ_INIT(gzFile, gzread) // NOLINT
 
 // A read from input file with a number associated with it
 // where first read is 0, second 1, etc...
-struct Read {
-    size_t num = 0;
-    std::string id;
-    std::string barcode;
-    std::string sequence;
+struct Read
+{
+	size_t num = 0;
+	std::string id;
+	std::string barcode;
+	std::string sequence;
 };
 
 // Result stores barcodes and minimizers of a block of reads
 // so that it can be written to output file in one go
-struct Result {
-    size_t num = 0;
-    std::string barcodesAndMinimizers;
-    size_t lastNum = 0;
+struct Result
+{
+	size_t num = 0;
+	std::string barcodesAndMinimizers;
+	size_t lastNum = 0;
 
-    Result() {
-        barcodesAndMinimizers.reserve(BLOCK_SIZE * 1024);
-    }
+	Result() { barcodesAndMinimizers.reserve(BLOCK_SIZE * 1024); }
 };
 
 class InputWorker;
 class MinimizeWorker;
 class OutputWorker;
 
-class InputWorker {
+class InputWorker
+{
 
-public:
+  public:
+	explicit InputWorker(std::string ipath)
+	  : ipath(std::move(ipath))
+	{}
 
-    explicit InputWorker(std::string ipath): ipath(std::move(ipath)) {}
+	void start() { t = std::thread(doWork, this); }
 
-    void start() {
-        t = std::thread(doWork, this);
-    }
+	void join() { t.join(); }
 
-    void join() {
-        t.join();
-    }
+	std::atomic<bool> allRead{ false };
+	size_t inputNum = 0;
+	std::atomic<bool> fasta{ false };
+	InputBuffer<Block<Read>> buffer;
 
-    std::atomic<bool> allRead{false};
-    size_t inputNum = 0;
-    std::atomic<bool> fasta{false};
-    InputBuffer<Block<Read>> buffer;
+  private:
+	const std::string ipath;
 
-private:
+	inline void work();
 
-    const std::string ipath;
+	static void doWork(InputWorker* worker) { worker->work(); }
 
-    inline void work();
-
-    static void doWork(InputWorker *worker) {
-        worker->work();
-    }
-
-    std::thread t;
-
+	std::thread t;
 };
 
-class MinimizeWorker {
+class MinimizeWorker
+{
 
-public:
+  public:
+	MinimizeWorker(
+	    size_t k,
+	    size_t w,
+	    bool verbose,
+	    InputWorker& inputWorker,
+	    OutputWorker& outputWorker)
+	  : k(k)
+	  , w(w)
+	  , verbose(verbose)
+	  , inputWorker(inputWorker)
+	  , outputWorker(outputWorker)
+	{}
 
-    MinimizeWorker(size_t k, size_t w, bool verbose,
-        InputWorker& inputWorker, OutputWorker& outputWorker)
-        : k(k), w(w), verbose(verbose), inputWorker(inputWorker),
-        outputWorker(outputWorker) {}
+	MinimizeWorker(const MinimizeWorker& worker)
+	  : k(worker.k)
+	  , w(worker.w)
+	  , verbose(worker.verbose)
+	  , inputWorker(worker.inputWorker)
+	  , outputWorker(worker.outputWorker)
+	{}
 
-    MinimizeWorker(const MinimizeWorker& worker)
-        : k(worker.k), w(worker.w), verbose(worker.verbose),
-        inputWorker(worker.inputWorker), outputWorker(worker.outputWorker) {}
+	MinimizeWorker(MinimizeWorker&& worker) noexcept
+	  : k(worker.k)
+	  , w(worker.w)
+	  , verbose(worker.verbose)
+	  , inputWorker(worker.inputWorker)
+	  , outputWorker(worker.outputWorker)
+	{}
 
-    MinimizeWorker(MinimizeWorker&& worker) noexcept
-        : k(worker.k), w(worker.w), verbose(worker.verbose),
-        inputWorker(worker.inputWorker), outputWorker(worker.outputWorker) {}
+	MinimizeWorker& operator=(const MinimizeWorker& worker) = delete;
+	MinimizeWorker& operator=(MinimizeWorker&& worker) = delete;
 
-    MinimizeWorker& operator=(const MinimizeWorker& worker) = delete;
-    MinimizeWorker& operator=(MinimizeWorker&& worker) = delete;
+	~MinimizeWorker() = default;
 
-    ~MinimizeWorker() = default;
+	void start() { t = std::thread(doWork, this); }
 
-    void start() {
-        t = std::thread(doWork, this);
-    }
+	void join() { t.join(); }
 
-    void join() {
-        t.join();
-    }
+  private:
+	size_t k = 0;
+	size_t w = 0;
+	bool verbose = false;
+	InputWorker& inputWorker;
+	OutputWorker& outputWorker;
 
-private:
+	inline void work();
 
-    size_t k = 0;
-    size_t w = 0;
-    bool verbose = false;
-    InputWorker &inputWorker;
-    OutputWorker &outputWorker;
+	static void doWork(MinimizeWorker* worker) { worker->work(); }
 
-    inline void work();
-
-    static void doWork(MinimizeWorker *worker) {
-        worker->work();
-    }
-
-    std::thread t;
-
+	std::thread t;
 };
 
-class OutputWorker {
+class OutputWorker
+{
 
-public:
+  public:
+	OutputWorker(std::string opath, const InputWorker& inputWorker)
+	  : opath(std::move(opath))
+	  , inputWorker(inputWorker)
+	{
+		ofs.open(this->opath);
+	}
 
-    OutputWorker(std::string opath, const InputWorker& inputWorker)
-        : opath(std::move(opath)), inputWorker(inputWorker)
-    {
-        ofs.open(this->opath);
-    }
+	void start() { t = std::thread(doWork, this); }
 
-    void start() {
-        t = std::thread(doWork, this);
-    }
+	void join() { t.join(); }
 
-    void join() {
-        t.join();
-    }
+	OutputBuffer<Result> buffer;
 
-    OutputBuffer<Result> buffer;
+  private:
+	const std::string opath;
+	std::ofstream ofs;
+	const InputWorker& inputWorker;
 
+	inline void work();
 
-private:
+	static void doWork(OutputWorker* worker) { worker->work(); }
 
-    const std::string opath;
-    std::ofstream ofs;
-    const InputWorker &inputWorker;
-
-    inline void work();
-
-    static void doWork(OutputWorker *worker) {
-        worker->work();
-    }
-
-    std::thread t;
-
+	std::thread t;
 };
 
- inline void InputWorker::work() {
-    gzFile fp = gzopen(ipath.c_str(), "r");
+inline void
+InputWorker::work()
+{
+	gzFile fp = gzopen(ipath.c_str(), "r");
 
-    char c;
-    c = gzgetc(fp);
-    gzungetc(c, fp);
-    if (c == '>') {
-        fasta = true;
-    } else {
-        fasta = false;
-    }
+	char c;
+	c = gzgetc(fp);
+	gzungetc(c, fp);
+	if (c == '>') {
+		fasta = true;
+	} else {
+		fasta = false;
+	}
 
-    if (gzeof(fp)) {
-        std::cerr << "physlr-indexlr: error: Empty input file: " << ipath << '\n';
-        exit(EXIT_FAILURE);
-    } else {
-        kseq_t *seq = kseq_init(fp);
+	if (gzeof(fp)) {
+		std::cerr << "physlr-indexlr: error: Empty input file: " << ipath << '\n';
+		exit(EXIT_FAILURE);
+	} else {
+		kseq_t* seq = kseq_init(fp);
 
-        bool done = false;
-        while (true) {
-            size_t currentNum = inputNum;
-            Block<Read> &reads = buffer.getWriteAccess(currentNum);
+		bool done = false;
+		while (true) {
+			size_t currentNum = inputNum;
+			Block<Read>& reads = buffer.getWriteAccess(currentNum);
 
-            reads.dataCounter = 0;
-            for (auto &read : reads.data) {
-                if (kseq_read(seq) < 0) {
-                    done = true;
-                    break;
-                }
+			reads.dataCounter = 0;
+			for (auto& read : reads.data) {
+				if (kseq_read(seq) < 0) {
+					done = true;
+					break;
+				}
 
-                read.id = seq->name.l > 0 ? seq->name.s : "";
-                read.barcode = seq->comment.l > 0 ? seq->comment.s : "";
-                read.sequence = seq->seq.l > 0 ? seq->seq.s : "";
+				read.id = seq->name.l > 0 ? seq->name.s : "";
+				read.barcode = seq->comment.l > 0 ? seq->comment.s : "";
+				read.sequence = seq->seq.l > 0 ? seq->seq.s : "";
 
-                read.num = inputNum;
-                ++inputNum;
-                ++reads.dataCounter;
-            }
-            if (reads.dataCounter > 0) {
-                reads.num = reads.data[0].num;
-            } else {
-                reads.num = inputNum - 1;
-            }
+				read.num = inputNum;
+				++inputNum;
+				++reads.dataCounter;
+			}
+			if (reads.dataCounter > 0) {
+				reads.num = reads.data[0].num;
+			} else {
+				reads.num = inputNum - 1;
+			}
 
-            buffer.releaseWriteAccess(currentNum);
+			buffer.releaseWriteAccess(currentNum);
 
-            if (done) {
-                allRead = true;
-                if (buffer.elements() == 0) {
-                    buffer.close();
-                }
-                break;
-            }
-        }
+			if (done) {
+				allRead = true;
+				if (buffer.elements() == 0) {
+					buffer.close();
+				}
+				break;
+			}
+		}
 
-        kseq_destroy(seq);
-    }
+		kseq_destroy(seq);
+	}
 
-    gzclose(fp);
+	gzclose(fp);
 }
 
-inline void MinimizeWorker::work() {
-    Block<Read> reads;
-    std::stringstream ss;
-    Result result;
-    while (!inputWorker.allRead || inputWorker.buffer.elements() != 0) {
-        inputWorker.buffer.read(reads);
-        if (inputWorker.buffer.isClosed()) {
-            break;
-        }
-        if (inputWorker.allRead && inputWorker.buffer.elements() == 0) {
-            inputWorker.buffer.close();
-        }
+inline void
+MinimizeWorker::work()
+{
+	Block<Read> reads;
+	std::stringstream ss;
+	Result result;
+	while (!inputWorker.allRead || inputWorker.buffer.elements() != 0) {
+		inputWorker.buffer.read(reads);
+		if (inputWorker.buffer.isClosed()) {
+			break;
+		}
+		if (inputWorker.allRead && inputWorker.buffer.elements() == 0) {
+			inputWorker.buffer.close();
+		}
 
-        ss.str("");
-        for (size_t i = 0; i < reads.dataCounter; i++) {
-            assert(i < sizeof(reads.data) / sizeof(reads.data[0]));
-            Read &read = reads.data[i];
+		ss.str("");
+		for (size_t i = 0; i < reads.dataCounter; i++) {
+			assert(i < sizeof(reads.data) / sizeof(reads.data[0]));
+			Read& read = reads.data[i];
 
-            if (startsWith(read.barcode, "BX:Z:")) {
-                auto pos = read.barcode.find(' ');
-                if (pos != std::string::npos) {
-                    read.barcode.erase(pos);
-                }
-                read.barcode.erase(0, 5);
-            } else {
-                // No barcode tag is present. For FASTA, use the sequence ID. For FASTQ, use NA.
-                read.barcode = inputWorker.fasta ? read.id : "NA";
-            }
+			if (startsWith(read.barcode, "BX:Z:")) {
+				auto pos = read.barcode.find(' ');
+				if (pos != std::string::npos) {
+					read.barcode.erase(pos);
+				}
+				read.barcode.erase(0, 5);
+			} else {
+				// No barcode tag is present. For FASTA, use the sequence ID. For FASTQ, use NA.
+				read.barcode = inputWorker.fasta ? read.id : "NA";
+			}
 
-            if (read.sequence.size() < k) {
-                if (verbose) {
-                    std::stringstream ss;
-                    ss << "physlr-indexlr: warning: Skip read " << (read.num + 1)
-                        << " on line " << (read.num + 1) * 4 - 2
-                        << "; k > read length " << "(k = " << k
-                        << ", read length = " << read.sequence.size() << ")\n";
-                    std::cerr << ss.str();
-                }
-            }
+			if (read.sequence.size() < k) {
+				if (verbose) {
+					std::stringstream ss;
+					ss << "physlr-indexlr: warning: Skip read " << (read.num + 1) << " on line "
+					   << (read.num + 1) * 4 - 2 << "; k > read length "
+					   << "(k = " << k << ", read length = " << read.sequence.size() << ")\n";
+					std::cerr << ss.str();
+				}
+			}
 
-            auto hashes = hashKmers(read.sequence, k);
-            if (w > hashes.size()) {
-                if (verbose) {
-                    std::stringstream ss;
-                    ss << "physlr-indexlr: warning: Skip read " << (read.num + 1)
-                        << " on line " << (read.num + 1) * 4 - 2
-                        << "; window size > #hashes (w = " << w
-                        << ", #hashes = " << hashes.size() << ")\n";
-                    std::cerr << ss.str();
-                }
-            }
+			auto hashes = hashKmers(read.sequence, k);
+			if (w > hashes.size()) {
+				if (verbose) {
+					std::stringstream ss;
+					ss << "physlr-indexlr: warning: Skip read " << (read.num + 1) << " on line "
+					   << (read.num + 1) * 4 - 2 << "; window size > #hashes (w = " << w
+					   << ", #hashes = " << hashes.size() << ")\n";
+					std::cerr << ss.str();
+				}
+			}
 
-            auto minimizers = getMinimizers(hashes, w);
+			auto minimizers = getMinimizers(hashes, w);
 
-            ss << read.barcode;
-            char sep = '\t';
-            if (minimizers.empty()) {
-                ss << sep;
-            }
-            for (auto &m : minimizers) {
-                ss << sep << m;
-                sep = ' ';
-            }
-            ss << '\n';
-        }
-        if (reads.dataCounter > 0) {
-            result.num = reads.num;
-            assert(reads.dataCounter - 1 < sizeof(reads.data) / sizeof(reads.data[0]));
-            result.lastNum = reads.data[reads.dataCounter - 1].num;
-            result.barcodesAndMinimizers = ss.str();
-        } else {
-            result.num = reads.num;
-            result.lastNum = reads.num;
-            result.barcodesAndMinimizers = "";
-        }
+			ss << read.barcode;
+			char sep = '\t';
+			if (minimizers.empty()) {
+				ss << sep;
+			}
+			for (auto& m : minimizers) {
+				ss << sep << m;
+				sep = ' ';
+			}
+			ss << '\n';
+		}
+		if (reads.dataCounter > 0) {
+			result.num = reads.num;
+			assert(reads.dataCounter - 1 < sizeof(reads.data) / sizeof(reads.data[0]));
+			result.lastNum = reads.data[reads.dataCounter - 1].num;
+			result.barcodesAndMinimizers = ss.str();
+		} else {
+			result.num = reads.num;
+			result.lastNum = reads.num;
+			result.barcodesAndMinimizers = "";
+		}
 
-        outputWorker.buffer.write(result);
-    }
+		outputWorker.buffer.write(result);
+	}
 }
 
-inline void OutputWorker::work() {
-    Result result;
-    size_t lastWritten;
+inline void
+OutputWorker::work()
+{
+	Result result;
+	size_t lastWritten;
 
-    do {
-        buffer.read(result);
-        ofs << result.barcodesAndMinimizers;
-        lastWritten = result.lastNum;
-        assert_good(ofs, opath);
-    } while (!inputWorker.allRead || lastWritten != inputWorker.inputNum - 1);
+	do {
+		buffer.read(result);
+		ofs << result.barcodesAndMinimizers;
+		lastWritten = result.lastNum;
+		assert_good(ofs, opath);
+	} while (!inputWorker.allRead || lastWritten != inputWorker.inputNum - 1);
 }
 
 #endif
