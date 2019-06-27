@@ -90,6 +90,33 @@ class Physlr:
         return bed
 
     @staticmethod
+    def read_paf(filenames):
+        """Read PAF files."""
+        paf = []
+        for filename in filenames:
+            print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
+            with open(filename) as fin:
+                if Physlr.args.verbose >= 2:
+                    progressbar = progress_bar_for_file(fin)
+                for line in fin:
+                    if Physlr.args.verbose >= 2:
+                        progressbar.update(len(line))
+                    fields = line.rstrip("\n").split("\t")
+                    if len(fields) < 12:
+                        print("physlr: expected 12 or more PAF fields:", line, file=sys.stderr)
+                        exit(1)
+                    qname, qlength, qstart, qend, orientation, \
+                        tname, tlength, tstart, tend, score, length, mapq = fields[0:12]
+                    paf.append((
+                        qname, int(qlength), int(qstart), int(qend), orientation,
+                        tname, int(tlength), int(tstart), int(tend),
+                        int(score), int(length), int(mapq)))
+                if Physlr.args.verbose >= 2:
+                    progressbar.close()
+            print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
+        return paf
+
+    @staticmethod
     def read_fastas(filenames):
         "Read FASTA files. Return a dictionary of names to sequences."
         seqs = {}
@@ -376,6 +403,37 @@ class Physlr:
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return bxtomxs
+
+    @staticmethod
+    def read_minimizers_pos(filenames):
+        "Read minimizers with positions. Returns an ordered list of (position, hash) tuples."
+        nametomxs = {}
+        for filename in filenames:
+            print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
+            with open(filename) as fin:
+                progressbar = progress_bar_for_file(fin)
+                for line in fin:
+                    progressbar.update(len(line))
+                    fields = line.split("\t", 1)
+                    if len(fields) < 2:
+                        continue
+                    name = fields[0]
+                    if name in nametomxs:
+                        print("Error: Duplicate sequence name:", name, "in", filename, \
+                            file=sys.stderr)
+                        exit(1)
+                    posmxs = []
+                    for mx_pos in fields[1].split():
+                        if ":" not in mx_pos:
+                            print("Error: Minimizers do not include positions:", filename, \
+                                file=sys.stderr)
+                            exit(1)
+                        mx, pos = mx_pos.split(":", 1)
+                        posmxs.append((pos, mx))
+                    nametomxs[name] = posmxs
+                progressbar.close()
+            print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
+        return nametomxs
 
     @staticmethod
     def count_molecules_per_bx(moltomxs):
@@ -1906,6 +1964,29 @@ class Physlr:
             int(timeit.default_timer() - t0),
             "Mapped", num_mapped, "sequences of", len(query_mxs),
             f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
+
+    def physlr_liftover_paf(self):
+        """Lift over query coordinates of a PAF file from minimzer index to nucleotide position."""
+        if len(self.args.FILES) < 2:
+            exit("physlr liftover-paf: error: At least two file arguments are required")
+        query_filenames = [self.args.FILES[0]]
+        paf_filenames = self.args.FILES[1:]
+
+        # Read the minimizer positions of the query sequence.
+        liftover = {}
+        for qname, posmxs in Physlr.read_minimizers_pos(query_filenames).items():
+            assert qname not in liftover
+            liftover[qname] = {}
+            for index, (pos, _) in enumerate(posmxs):
+                liftover[qname][index] = pos
+
+        # Lift over the query coordinates of the PAF file.
+        for qname, qlength, qstart, qend, orientation, \
+                tname, tlength, tstart, tend, score, length, mapq in \
+                progress(Physlr.read_paf(paf_filenames)):
+            print(
+                qname, liftover[qname][qlength], liftover[qname][qstart], liftover[qname][qend],
+                orientation, tname, tlength, tstart, tend, score, length, mapq, sep="\t")
 
     @staticmethod
     def chr_isdecimal(x):
