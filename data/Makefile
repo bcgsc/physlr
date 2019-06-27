@@ -366,6 +366,17 @@ grch38/grch38.all.fa:
 grch38/grch38.fa: grch38/grch38.all.fa
 	paste - - <$< | egrep -v 'chrEBV|chrUn|random' | tr '\t' '\n' >$@
 
+# Download coordinates of modeled centromeres and heterochromatin regions.
+grch38/grch38.gap.tsv:
+	mkdir -p $(@D)
+	curl https://www.ncbi.nlm.nih.gov/projects/genome/assembly/grc/human/data/38/Modeled_regions_for_GRCh38.tsv \
+		| sed 's/^#//' >$@
+
+# Convert coordinates of centromeres and gaps to BED format.
+grch38/grch38.gap.bed: grch38/grch38.gap.tsv grch38/grch38.fa.gap.bed
+	(awk 'NR>1 { print "chr" $$2 "\t" $$3 "\t" $$4 "\t" $$1 }' $<; \
+		awk '{ print $$1 "\t" $$2 "\t" $$3 "\tgap" NR }' grch38/grch38.fa.gap.bed) >$@
+
 # Symlink the reads.
 hg004.fq.gz: hg004.lrbasic.trimadap.fq.gz
 	ln -s $< $@
