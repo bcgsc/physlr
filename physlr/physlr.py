@@ -1974,18 +1974,18 @@ class Physlr:
 
         # Read the minimizer positions of the query sequence.
         liftover = {}
+        qlengths = {}
         for qname, posmxs in Physlr.read_minimizers_pos(query_filenames).items():
             assert qname not in liftover
-            liftover[qname] = {}
-            for index, (pos, _) in enumerate(posmxs):
-                liftover[qname][index] = pos
+            liftover[qname] = [pos for pos, _ in posmxs]
+            qlengths[qname] = max(liftover[qname])
 
         # Lift over the query coordinates of the PAF file.
-        for qname, qlength, qstart, qend, orientation, \
+        for qname, _qlength, qstart, qend, orientation, \
                 tname, tlength, tstart, tend, score, length, mapq in \
                 progress(Physlr.read_paf(paf_filenames)):
             print(
-                qname, liftover[qname][qlength], liftover[qname][qstart], liftover[qname][qend],
+                qname, qlengths[qname], liftover[qname][qstart], liftover[qname][qend],
                 orientation, tname, tlength, tstart, tend, score, length, mapq, sep="\t")
 
     @staticmethod
