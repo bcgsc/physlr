@@ -2221,6 +2221,15 @@ class Physlr:
             ng75 = Physlr.compute_ngxx(xs, self.args.g, 0.75)
             print(max(xs), ng25, ng50, ng75, min(xs), len(xs), sum(xs), filename, sep="\t")
 
+    def physlr_fasta_gaps(self):
+        """Print the coordinates in BED format of gaps in a FASTA file."""
+        seqs = Physlr.read_fastas(self.args.FILES)
+        gap_regex = re.compile(r'NN*')
+        for name, seq in seqs.items():
+            for match in re.finditer(gap_regex, seq):
+                if match.end() - match.start() >= self.args.n:
+                    print(name, match.start(), match.end(), sep="\t")
+
     @staticmethod
     def parse_arguments():
         "Parse the command line arguments."
