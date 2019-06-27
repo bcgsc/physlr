@@ -19,8 +19,10 @@ library(tidyr)
 
 knit_print.data.frame <- function(x, ...) kable(x) %>% paste(collapse = "\n") %>% asis_output
 input_paf <- params$input_paf
+output_paf <- sub("\\.paf\\.gz$", ".chained.paf.gz", input_paf)
 
 input_paf
+output_paf
 ```
 
 # Read the PAF file
@@ -85,13 +87,24 @@ paf_chained_orig <- paf_segmented %>%
 	summarise(
 		Qstart = min(Qstart),
 		Qend = max(Qend),
+		Orientation = names(which.max(table(Orientation))),
 		Tstart = min(Tstart),
 		Tend = max(Tend),
-		Barcodes = n(),
-		Matches = sum(Matches)) %>%
-	ungroup()
+		Matches = sum(Matches),
+		Length = sum(Length),
+		Mapq = median(Mapq),
+		Barcodes = n()) %>%
+	ungroup() %>%
+	select(Qname, Qlength, Qstart, Qend, Orientation,
+		Tname, Tlength, Tstart, Tend, Matches, Length, Mapq, Barcodes, everything()) %>%
+	arrange(desc(Tlength), Tname, Tstart)
 
 paf_chained <- paf_chained_orig %>% filter(Barcodes >= nbarcodes_threshold)
+
+paf_chained_orig %>%
+	select(Qname:Barcodes) %>%
+	mutate(Barcodes = paste0("FC:i:", Barcodes)) %>%
+	write_tsv(output_paf, col_names = FALSE)
 ```
 
 # Backbone coverage
