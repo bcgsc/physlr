@@ -629,6 +629,10 @@ minsize=2000
 %.k$k-w$w.physlr.tsv: %.fa
 	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -o $@ $<
 
+# Index a FASTA file and include coordinates of the minimizers.
+%.k$k-w$w.pos.physlr.tsv: %.fa
+	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w --pos -o $@ $<
+
 # Index a compressed FASTQ file of linked reads.
 %.k$k-w$w.physlr.tsv.gz: %.fq.gz
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w - | $(gzip) >$@
@@ -774,6 +778,10 @@ min_path_size=200
 # Map the reference to the corrected backbone graph and output PAF.
 %.overlap.n$n.mol.s3.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.s3.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
+
+# Lift over query coordinates of a PAF file from minimzer index to nucleotide coordinate.
+%.qpos.paf.gz: $(name)/$(ref).k$k-w$w.pos.physlr.tsv %.paf.gz
+	$(zcat) $*.paf.gz | $(time) $(python) $(bin)/physlr liftover-paf -V$V $< - | $(gzip) >$@
 
 # Annotate a backbone graph with a BED file of mappings.
 # Filter out small components.
