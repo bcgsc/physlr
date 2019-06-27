@@ -625,6 +625,10 @@ minsize=2000
 ################################################################################
 # Physlr
 
+# Extract the coordinates in BED format of gaps in a FASTA file.
+%.fa.gap.bed: %.fa
+	$(python) $(bin)/physlr fasta-gaps $< >$@
+
 # Index a FASTA file.
 %.k$k-w$w.physlr.tsv: %.fa
 	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -o $@ $<
