@@ -798,6 +798,10 @@ min_path_size=200
 %.qpos.paf.gz: $(name)/$(ref).k$k-w$w.pos.physlr.tsv %.paf.gz
 	$(zcat) $*.paf.gz | $(time) $(python) $(bin)/physlr liftover-paf -V$V $< - | $(gzip) >$@
 
+# Chain alignments in PAF format.
+%.chain.paf.gz: %.paf.gz
+	bin/chainpaf $< $@
+
 # Annotate a backbone graph with a BED file of mappings.
 # Filter out small components.
 %.map.$(ref).n10.sort.best.ann.gv: %.tsv %.path %.map.$(ref).n10.sort.best.bed
