@@ -124,7 +124,7 @@ paf_chained <- paf_chained_orig %>% filter(Barcodes >= nbarcodes_threshold)
 
 paf_chained_orig %>%
 	select(Qname:Barcodes) %>%
-	mutate(Barcodes = paste0("FC:i:", Barcodes)) %>%
+	mutate(Barcodes = paste0("XN:i:", Barcodes)) %>%
 	write_tsv(output_paf, col_names = FALSE)
 ```
 
