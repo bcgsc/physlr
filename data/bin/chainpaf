@@ -1,0 +1,87 @@
+#!/usr/bin/env Rscript
+# Chain alignments in a PAF file.
+
+library(dplyr)
+library(forcats)
+library(readr)
+library(tidyr)
+
+args = commandArgs(trailingOnly=TRUE)
+input_paf <- args[1]
+output_paf <- args[2]
+
+# Read the PAF file
+tlength_threshold <- 100
+
+paf_orig <- read_tsv(input_paf,
+	col_names = c(
+		"Qname", "Qlength", "Qstart", "Qend",
+		"Orientation",
+		"Tname", "Tlength", "Tstart", "Tend",
+		"Matches", "Length", "Mapq"),
+	col_types = "ciiicciiiiii")
+
+paf <- paf_orig %>%
+	filter(
+		Tlength >= tlength_threshold,
+		!startsWith(Qname, "NW_")) %>%
+	arrange(desc(Qlength), Qname, Qstart, desc(Matches)) %>%
+	mutate(Qname = fct_inorder(Qname), Qindex = as.numeric(Qname),
+		Tindex = as.numeric(Tname)) %>%
+	arrange(desc(Tlength), Tname, Tstart, desc(Matches)) %>%
+	distinct(Tname, Tstart, .keep_all = TRUE)
+
+# Chain alignments
+mapq_threshold <- 1
+nbarcodes_threshold <- 50
+Qdistance_threshold <- 500000
+Tdistance_threshold <- 10
+
+# Return true when the two intervals [as, ae] and [bs, be] overlap.
+is_overlap <- function(as, ae, bs, be) {
+	as <= bs & bs <= ae | as <= be & be <= ae | bs <= as & as <= be | bs <= ae & ae <= be
+}
+
+# Return the distance between the two intervals [as, ae] and [bs, be].
+# Return 0 if they overlap.
+interval_distance <- function(as, ae, bs, be) {
+	ifelse(is_overlap(as, ae, bs, be), 0, pmax(bs - ae, as - be))
+}
+
+paf_segmented <- paf %>%
+	filter(Mapq >= mapq_threshold) %>%
+	arrange(desc(Tlength), Tname, Tstart) %>%
+	group_by(Qname, Tname) %>%
+	filter(is_overlap(lag(Qstart), lag(Qend), Qstart, Qend)
+		| is_overlap(Qstart, Qend, lead(Qstart), lead(Qend))) %>%
+	mutate(
+		Qdistance = interval_distance(lag(Qstart), lag(Qend), Qstart, Qend),
+		Tdistance = interval_distance(lag(Tstart), lag(Tend), Tstart, Tend),
+		Boundary = Qdistance >= Qdistance_threshold | Tdistance >= Tdistance_threshold) %>%
+	replace_na(list(Boundary = FALSE)) %>%
+	ungroup() %>%
+	group_by(Qname, Tname) %>%
+	mutate(Segment = cumsum(Boundary)) %>%
+	ungroup()
+
+paf_chained <- paf_segmented %>%
+	group_by(Qname, Qlength, Qindex, Tname, Tlength, Tindex, Segment) %>%
+	summarise(
+		Qstart = min(Qstart),
+		Qend = max(Qend),
+		Orientation = names(which.max(table(Orientation))),
+		Tstart = min(Tstart),
+		Tend = max(Tend),
+		Matches = sum(Matches),
+		Length = sum(Length),
+		Mapq = median(Mapq),
+		Barcodes = n()) %>%
+	ungroup() %>%
+	select(Qname, Qlength, Qstart, Qend, Orientation,
+		Tname, Tlength, Tstart, Tend, Matches, Length, Mapq, Barcodes, everything()) %>%
+	arrange(desc(Tlength), Tname, Tstart)
+
+paf_chained %>%
+	select(Qname:Barcodes) %>%
+	mutate(Barcodes = paste0("XN:i:", Barcodes)) %>%
+	write_tsv(output_paf, col_names = FALSE)
