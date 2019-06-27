@@ -642,10 +642,6 @@ minsize=2000
 
 # Index a FASTA file.
 %.k$k-w$w.physlr.tsv: %.fa
-	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -o $@ $<
-
-# Index a FASTA file and include coordinates of the minimizers.
-%.k$k-w$w.pos.physlr.tsv: %.fa
 	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w --pos -o $@ $<
 
 # Index a compressed FASTQ file of linked reads.
@@ -795,7 +791,7 @@ min_path_size=200
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
 # Lift over query coordinates of a PAF file from minimzer index to nucleotide coordinate.
-%.qpos.paf.gz: $(name)/$(ref).k$k-w$w.pos.physlr.tsv %.paf.gz
+%.qpos.paf.gz: $(name)/$(ref).k$k-w$w.physlr.tsv %.paf.gz
 	$(zcat) $*.paf.gz | $(time) $(python) $(bin)/physlr liftover-paf -V$V $< - | $(gzip) >$@
 
 # Chain alignments in PAF format.
