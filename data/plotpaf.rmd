@@ -50,7 +50,7 @@ paf <- paf_orig %>%
 ```{r chain-alignments}
 mapq_threshold <- 1
 nbarcodes_threshold <- 50
-Qdistance_threshold <- 50000
+Qdistance_threshold <- 500000
 Tdistance_threshold <- 10
 
 # Return true when the two intervals [as, ae] and [bs, be] overlap.
