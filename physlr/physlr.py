@@ -376,7 +376,7 @@ class Physlr:
                     bx = fields[0]
                     if bx not in bxtomxs:
                         bxtomxs[bx] = set()
-                    bxtomxs[bx].update(int(mx) for mx in fields[1].split())
+                    bxtomxs[bx].update(int(mx.split(":", 1)[0]) for mx in fields[1].split())
                 if Physlr.args.verbose >= 2:
                     progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
@@ -399,7 +399,7 @@ class Physlr:
                     if bx in bxtomxs:
                         print("Error: Expected single id per in file", file=sys.stderr)
                         exit(1)
-                    bxtomxs[bx] = [int(mx) for mx in fields[1].split()]
+                    bxtomxs[bx] = [int(mx.split(":", 1)[0]) for mx in fields[1].split()]
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
         return bxtomxs
