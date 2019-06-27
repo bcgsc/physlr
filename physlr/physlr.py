@@ -429,7 +429,7 @@ class Physlr:
                                 file=sys.stderr)
                             exit(1)
                         mx, pos = mx_pos.split(":", 1)
-                        posmxs.append((pos, mx))
+                        posmxs.append((int(pos), int(mx)))
                     nametomxs[name] = posmxs
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
