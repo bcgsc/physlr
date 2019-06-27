@@ -2225,10 +2225,12 @@ class Physlr:
         """Print the coordinates in BED format of gaps in a FASTA file."""
         seqs = Physlr.read_fastas(self.args.FILES)
         gap_regex = re.compile(r'NN*')
+        gap = 0
         for name, seq in seqs.items():
             for match in re.finditer(gap_regex, seq):
+                gap += 1
                 if match.end() - match.start() >= self.args.n:
-                    print(name, match.start(), match.end(), sep="\t")
+                    print(name, match.start(), match.end(), f"gap{gap}", sep="\t")
 
     @staticmethod
     def parse_arguments():
