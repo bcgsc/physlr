@@ -4,7 +4,7 @@ author: Shaun Jackman
 params:
   gap_bed:
     label: "BED file of gaps"
-    value: "grch38/grch38.gap.bed"
+    value: "gap.bed"
     input: text
   input_paf:
     label: "Input PAF file"
