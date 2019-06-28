@@ -4,7 +4,7 @@ author: Shaun Jackman
 params:
   gap_bed:
     label: "BED file of gaps"
-    value: "gap.bed"
+    value: "grch38/grch38.gap.bed"
     input: text
   input_paf:
     label: "Input PAF file"
@@ -33,7 +33,7 @@ output_paf
 
 # Read the PAF file
 ```{r read-data}
-tlength_threshold <- 100
+tlength_threshold <- 50
 
 paf_orig <- read_tsv(input_paf,
 	col_names = c(
