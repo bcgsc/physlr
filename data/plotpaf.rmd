@@ -56,7 +56,7 @@ paf <- paf_orig %>%
 
 # Read the BED file of gaps
 ```{r read-gaps}
-gap_threshold <- 1e6
+gap_threshold <- 1000
 
 qname_qindex <- paf %>%
 	transmute(Name = as.character(Qname), Index = Qindex) %>%
