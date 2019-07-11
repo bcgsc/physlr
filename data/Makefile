@@ -798,6 +798,14 @@ min_path_size=200
 %.chain.paf.gz: %.paf.gz
 	bin/chainpaf $< $@
 
+# Reference genome size.
+g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
+
+# Report assembly metrics of a PAF file.
+%.qpos.chain.metrics.tsv: %.qpos.chain.paf.gz $(name)/$(ref).fa.fai
+	$(zcat) $< | $(time) $(python) $(bin)/physlr paf-metrics -V$V -g$g - \
+		| sed 's/\/dev\/stdin/$</' >$@
+
 # Annotate a backbone graph with a BED file of mappings.
 # Filter out small components.
 %.map.$(ref).n10.sort.best.ann.gv: %.tsv %.path %.map.$(ref).n10.sort.best.bed
