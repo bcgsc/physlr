@@ -2221,6 +2221,26 @@ class Physlr:
             ng75 = Physlr.compute_ngxx(xs, self.args.g, 0.75)
             print(max(xs), ng25, ng50, ng75, min(xs), len(xs), sum(xs), filename, sep="\t")
 
+    def physlr_paf_metrics(self):
+        "Report assembly metrics of a PAF file."
+        if self.args.g is None:
+            exit("physlr paf-metrics: error: You must specify -g, --genome-size")
+        print("Max\tNG25\tNG50\tNG75\tMin\tCount\tSum\tFile")
+        for filename in self.args.FILES:
+            xs = []
+            for qname, qlength, qstart, qend, orientation, \
+                    tname, tlength, tstart, tend, score, length, mapq in \
+                    progress(Physlr.read_paf([filename])):
+                xs.append(qend - qstart)
+            if not xs:
+                print(f"0\t0\t0\t0\t0\t0\t0\t{filename}")
+                continue
+            xs.sort(reverse=True)
+            ng25 = Physlr.compute_ngxx(xs, self.args.g, 0.25)
+            ng50 = Physlr.compute_ngxx(xs, self.args.g, 0.50)
+            ng75 = Physlr.compute_ngxx(xs, self.args.g, 0.75)
+            print(max(xs), ng25, ng50, ng75, min(xs), len(xs), sum(xs), filename, sep="\t")
+
     def physlr_fasta_gaps(self):
         """Print the coordinates in BED format of gaps in a FASTA file."""
         seqs = Physlr.read_fastas(self.args.FILES)
