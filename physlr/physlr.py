@@ -1792,7 +1792,7 @@ class Physlr:
         # Index the positions of the minimizers in the backbone.
         moltomxs = Physlr.read_minimizers(target_filenames)
         query_mxs = moltomxs if target_filenames == query_filenames else \
-            Physlr.read_minimizers(query_filenames)
+            Physlr.read_minimizers_list(query_filenames)
 
         # Index the positions of the markers in the backbone.
         backbones = Physlr.read_paths(path_filenames)
