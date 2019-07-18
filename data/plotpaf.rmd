@@ -47,11 +47,12 @@ paf <- paf_orig %>%
 	filter(
 		Tlength >= tlength_threshold,
 		!startsWith(Qname, "NW_")) %>%
+	arrange(desc(Tlength), Tname, Tstart, desc(Matches)) %>%
+	distinct(Tname, Tstart, .keep_all = TRUE) %>%
 	arrange(desc(Qlength), Qname, Qstart, desc(Matches)) %>%
 	mutate(Qname = fct_inorder(Qname), Qindex = as.numeric(Qname),
 		Tindex = as.numeric(Tname)) %>%
-	arrange(desc(Tlength), Tname, Tstart, desc(Matches)) %>%
-	distinct(Tname, Tstart, .keep_all = TRUE)
+	arrange(desc(Tlength), Tname, Tstart, desc(Matches))
 ```
 
 # Read the BED file of gaps
