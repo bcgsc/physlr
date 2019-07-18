@@ -115,7 +115,9 @@ paf_chained_orig <- paf_segmented %>%
 		Matches = sum(Matches),
 		Length = sum(Length),
 		Mapq = median(Mapq),
-		Barcodes = n()) %>%
+		Barcodes = n(),
+		Qdistance = max(Qdistance),
+		Tdistance = max(Tdistance)) %>%
 	ungroup() %>%
 	select(Qname, Qlength, Qstart, Qend, Orientation,
 		Tname, Tlength, Tstart, Tend, Matches, Length, Mapq, Barcodes, everything()) %>%
