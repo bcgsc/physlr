@@ -1637,8 +1637,9 @@ class Physlr:
                     communities_temp.extend(
                         Physlr.detect_communities_louvain(g, component))
             if algorithm == "distributed":
-                communities_temp.extend(
-                    Physlr.determine_molecules_partition_split_merge(g, component))
+                for component in communities:
+                    communities_temp.extend(
+                        Physlr.determine_molecules_partition_split_merge(g, component))
             communities = communities_temp
 
         communities.sort(key=len, reverse=True)
