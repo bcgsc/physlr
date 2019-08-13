@@ -2228,8 +2228,8 @@ class Physlr:
         print("Max\tNG25\tNG50\tNG75\tMin\tCount\tSum\tFile")
         for filename in self.args.FILES:
             xs = []
-            for qname, qlength, qstart, qend, orientation, \
-                    tname, tlength, tstart, tend, score, length, mapq in \
+            for _qname, _qlength, qstart, qend, _orientation, \
+                    _tname, _tlength, _tstart, _tend, _score, _length, _mapq in \
                     progress(Physlr.read_paf([filename])):
                 xs.append(qend - qstart)
             if not xs:
