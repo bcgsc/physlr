@@ -1575,14 +1575,14 @@ class Physlr:
                 for i in nx.connected_components(merge_network)]
 
     @staticmethod
-    def determine_molecules_partition_split_merge(g, u):
+    def determine_molecules_partition_split_merge(g, component):
         """
         Assign the neighbours of this vertex to molecules using fast heuristic community detection.
         Pipeline: bi-connected (bc) + partition + bc + k-cliques communities + merge.
         """
         return [merged
                 for bi_connected_component in
-                Physlr.detect_communities_biconnected_components(g, g[u].keys())
+                Physlr.detect_communities_biconnected_components(g, component)
                 for merged in
                 Physlr.merge_communities(
                     g, [cluster
