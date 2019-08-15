@@ -1218,7 +1218,7 @@ class Physlr:
         Physlr.neighbour_min = neighbour_min
         with multiprocessing.Pool(self.args.threads) as pool:
             edges2 = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection, progress(edge_list),
-                                            chunksize=100) for x in l)
+                                              chunksize=100) for x in l)
         edges = edges2
         print(int(timeit.default_timer() - t0), "Recalculated", len(edges), "edges weights", file=sys.stderr)
 
