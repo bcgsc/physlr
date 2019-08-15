@@ -1184,6 +1184,7 @@ class Physlr:
 
     @staticmethod
     def physlr_overlap_minimizer_intersection(edge):
+        "Calculate the intersection of minimizers neighbours of each edge node"
         return [(edge, len(Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]))]
 
     def physlr_overlap(self):
@@ -1214,13 +1215,18 @@ class Physlr:
             neighbour_min[edge[1]] += bxtomxs[edge[0]]
         for i in progress(bxtomxs):
             neighbour_min[i] = set(neighbour_min[i])
-        print(int(timeit.default_timer() - t0), "Found", len(neighbour_min), "edges weights", file=sys.stderr)
+        print(
+            int(timeit.default_timer() - t0),
+            "Found", len(neighbour_min), "edges weights", file=sys.stderr)
         Physlr.neighbour_min = neighbour_min
         with multiprocessing.Pool(self.args.threads) as pool:
-            edges2 = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection, progress(edge_list),
+            edges2 = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection,
+                                              progress(edge_list),
                                               chunksize=100) for x in l)
         edges = edges2
-        print(int(timeit.default_timer() - t0), "Recalculated", len(edges), "edges weights", file=sys.stderr)
+        print(
+            int(timeit.default_timer() - t0),
+            "Recalculated", len(edges), "edges weights", file=sys.stderr)
 
         for (u, v), n in progress(edges.items()):
             if n >= self.args.n:
