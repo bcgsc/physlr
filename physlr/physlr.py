@@ -13,6 +13,7 @@ import statistics
 import sys
 import timeit
 from collections import Counter
+from collections import defaultdict
 
 
 import networkx as nx
@@ -1181,6 +1182,10 @@ class Physlr:
             "Removed", len(repetitive), "most frequent minimizers of", num_mxs,
             f"({round(100 * len(repetitive) / num_mxs, 2)}%)", file=sys.stderr)
 
+    @staticmethod
+    def physlr_overlap_minimizer_intersection(edge):
+        return [(edge, len(Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]))]
+
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
 
@@ -1200,6 +1205,22 @@ class Physlr:
         edges = Counter(
             (u, v) for bxs in progress(mxtobxs.values()) for u, v in itertools.combinations(bxs, 2))
         print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
+
+        edge_list = list(edges)
+        neighbour_min = defaultdict(list)
+
+        for edge in edge_list:
+            neighbour_min[edge[0]] += bxtomxs[edge[1]]
+            neighbour_min[edge[1]] += bxtomxs[edge[0]]
+        for i in progress(bxtomxs):
+            neighbour_min[i] = set(neighbour_min[i])
+        print(int(timeit.default_timer() - t0), "Found", len(neighbour_min), "edges weights", file=sys.stderr)
+        Physlr.neighbour_min = neighbour_min
+        with multiprocessing.Pool(self.args.threads) as pool:
+            edges2 = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection, progress(edge_list),
+                                            chunksize=100) for x in l)
+        edges = edges2
+        print(int(timeit.default_timer() - t0), "Recalculated", len(edges), "edges weights", file=sys.stderr)
 
         for (u, v), n in progress(edges.items()):
             if n >= self.args.n:
