@@ -216,7 +216,7 @@ class Physlr:
                         exit(1)
                 else:
                     if len(xs) == 3:
-                        g.add_edge(xs[0], xs[1], n=int(xs[2]))
+                        g.add_edge(xs[0], xs[1], n=int(float(xs[2])))
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
                         exit(1)
@@ -1186,15 +1186,15 @@ class Physlr:
     def neighbour_minimizer_intersection(edge):
         "Calculate the intersection of minimizers neighbours of each edge node"
         n_weight = Physlr.edges[edge]
-        if n_weight < self.args.n:
+        if n_weight < Physlr.args.n:
             return [(edge, -1)]
         return [(edge, len(Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]))]
 
     @staticmethod
     def jaccard_similarity_index(edge):
-        "Calculate the intersection of minimizers neighbours of each edge node"
+        "Calculate the jaccard similarity index of minimizers of each edge node"
         n_weight = Physlr.edges[edge]
-        if n_weight < self.args.n:
+        if n_weight < Physlr.args.n:
             return [(edge, -1)]
         return [(edge, len(Physlr.bxtomxs[edge[0]] & Physlr.bxtomxs[edge[1]])\
             / len(Physlr.bxtomxs[edge[0]] | Physlr.bxtomxs[edge[1]]))]
@@ -1259,11 +1259,6 @@ class Physlr:
             print(self.args.edge_weight_type + " is an illegal argument for --edge-weight-type.",
                   file=sys.stderr)
             sys.exit(1)
-
-        histogram_out = open("histogram" + self.args.edge_weight_type + ".txt", "w+")
-        for (u, v), n in progress(edges.items()):
-            histogram_out.write(str(n) + "\n")
-        histogram_out.close()
 
         if self.args.edge_weight_type == "n":
             filter_weight = self.args.n
