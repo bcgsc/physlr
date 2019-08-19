@@ -1185,7 +1185,15 @@ class Physlr:
     @staticmethod
     def physlr_overlap_minimizer_intersection(edge):
         "Calculate the intersection of minimizers neighbours of each edge node"
+        n_weight = Physlr.edges[edge]
+        if n_weight < 10:
+            return [(edge, n_weight)]
         return [(edge, len(Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]))]
+
+    @staticmethod
+    def barcode_jaccard_similarity(edge):
+        "Calculate the intersection of minimizers neighbours of each edge node"
+        return [(edge, len(Physlr.bxtomxs[edge[0]].intersection(Physlr.bxtomxs[edge[1]])) / len(Physlr.bxtomxs[edge[0]].union(Physlr.bxtomxs[edge[1]]))]
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
@@ -1207,10 +1215,10 @@ class Physlr:
             (u, v) for bxs in progress(mxtobxs.values()) for u, v in itertools.combinations(bxs, 2))
         print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
 
-        edge_list = list(edges)
+        #edge_list = list(edges)
         neighbour_min = defaultdict(list)
 
-        for edge in edge_list:
+        for edge in edges:
             neighbour_min[edge[0]] += bxtomxs[edge[1]]
             neighbour_min[edge[1]] += bxtomxs[edge[0]]
         for i in progress(bxtomxs):
@@ -1219,14 +1227,18 @@ class Physlr:
             int(timeit.default_timer() - t0),
             "Found", len(neighbour_min), "edges weights", file=sys.stderr)
         Physlr.neighbour_min = neighbour_min
-        with multiprocessing.Pool(self.args.threads) as pool:
-            edges2 = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection,
-                                              progress(edge_list),
-                                              chunksize=100) for x in l)
-        edges = edges2
+        Physlr.edges = edges
+        with multiprocessing.Pool(48) as pool:
+            edges = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection,
+                                             progress(edges),
+                                             chunksize=100) for x in l)
         print(
             int(timeit.default_timer() - t0),
             "Recalculated", len(edges), "edges weights", file=sys.stderr)
+        f = open("histogramv4.txt", "w+")
+        for (u,v), n in progress(edges.items()):
+            f.write(str(n) + "\n")
+        f.close()
 
         for (u, v), n in progress(edges.items()):
             if n >= self.args.n:
