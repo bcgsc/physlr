@@ -1193,7 +1193,7 @@ class Physlr:
     @staticmethod
     def barcode_jaccard_similarity(edge):
         "Calculate the intersection of minimizers neighbours of each edge node"
-        return [(edge, len(Physlr.bxtomxs[edge[0]].intersection(Physlr.bxtomxs[edge[1]])) / len(Physlr.bxtomxs[edge[0]].union(Physlr.bxtomxs[edge[1]]))]
+        return [(edge, len(Physlr.bxtomxs[edge[0]].intersection(Physlr.bxtomxs[edge[1]])) / len(Physlr.bxtomxs[edge[0]].union(Physlr.bxtomxs[edge[1]])))]
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
@@ -2394,6 +2394,11 @@ class Physlr:
         argparser.add_argument(
             "--min-branch", action="store", dest="min_branch", type=int, default=0,
             help="split a backbone path when the alternative branch is long [0]")
+        argparser.add_argument(
+            "--edge-weight-type", action="store", dest="edge_weight_type", type=str, default="n",
+            help="the type of edge weight: n:intersection of minimizers of two nodes,"
+                 "w:intersection of minimizers of the neighbours of two nodes,"
+                 "j:Jaccard index of minizers of two nodes [n]")
         return argparser.parse_args()
 
     def __init__(self):
