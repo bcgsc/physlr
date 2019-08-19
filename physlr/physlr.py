@@ -1183,18 +1183,21 @@ class Physlr:
             f"({round(100 * len(repetitive) / num_mxs, 2)}%)", file=sys.stderr)
 
     @staticmethod
-    def physlr_overlap_minimizer_intersection(edge):
+    def neighbour_minimizer_intersection(edge):
         "Calculate the intersection of minimizers neighbours of each edge node"
         n_weight = Physlr.edges[edge]
-        if n_weight < 10:
-            return [(edge, n_weight)]
+        if n_weight < self.args.n:
+            return [(edge, -1)]
         return [(edge, len(Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]))]
 
     @staticmethod
-    def barcode_jaccard_similarity(edge):
+    def jaccard_similarity_index(edge):
         "Calculate the intersection of minimizers neighbours of each edge node"
-        return [(edge, len(Physlr.bxtomxs[edge[0]].intersection(Physlr.bxtomxs[edge[1]]))\
-        / len(Physlr.bxtomxs[edge[0]].union(Physlr.bxtomxs[edge[1]])))]
+        n_weight = Physlr.edges[edge]
+        if n_weight < self.args.n:
+            return [(edge, -1)]
+        return [(edge, len(Physlr.bxtomxs[edge[0]] & Physlr.bxtomxs[edge[1]])\
+            / len(Physlr.bxtomxs[edge[0]] | Physlr.bxtomxs[edge[1]]))]
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
@@ -1233,19 +1236,22 @@ class Physlr:
             Physlr.edges = edges
 
             with multiprocessing.Pool(48) as pool:
-                edges = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection,
-                                                progress(edges),
-                                                chunksize=100) for x in l)
+                edges = dict(x for l in pool.map(self.neighbour_minimizer_intersection,
+                                                 progress(edges),
+                                                 chunksize=100) for x in l)
             print(
                 int(timeit.default_timer() - t0),
                 "Recalculated", len(edges), "edges weights", file=sys.stderr)
 
         elif self.args.edge_weight_type == "j":
             Physlr.bxtomxs = bxtomxs
+            Physlr.edges = edges
+            for i in progress(Physlr.bxtomxs):
+                Physlr.bxtomxs[i] = set(Physlr.bxtomxs[i])
             with multiprocessing.Pool(48) as pool:
-                edges = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection,
-                                                progress(edges),
-                                                chunksize=100) for x in l)
+                edges = dict(x for l in pool.map(self.jaccard_similarity_index,
+                                                 progress(edges),
+                                                 chunksize=100) for x in l)
             print(
                 int(timeit.default_timer() - t0),
                 "Recalculated", len(edges), "edges weights", file=sys.stderr)
@@ -1254,13 +1260,18 @@ class Physlr:
                   file=sys.stderr)
             sys.exit(1)
 
-        f = open("histogramv4.txt", "w+")
-        for (u,v), n in progress(edges.items()):
-            f.write(str(n) + "\n")
-        f.close()
+        histogram_out = open("histogram" + self.args.edge_weight_type + ".txt", "w+")
+        for (u, v), n in progress(edges.items()):
+            histogram_out.write(str(n) + "\n")
+        histogram_out.close()
+
+        if self.args.edge_weight_type == "n":
+            filter_weight = self.args.n
+        else:
+            filter_weight = 0
 
         for (u, v), n in progress(edges.items()):
-            if n >= self.args.n:
+            if n >= filter_weight:
                 g.add_edge(u, v, n=n)
         num_removed = len(edges) - g.number_of_edges()
         print(
