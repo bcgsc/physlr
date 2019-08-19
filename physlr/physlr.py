@@ -1193,7 +1193,8 @@ class Physlr:
     @staticmethod
     def barcode_jaccard_similarity(edge):
         "Calculate the intersection of minimizers neighbours of each edge node"
-        return [(edge, len(Physlr.bxtomxs[edge[0]].intersection(Physlr.bxtomxs[edge[1]])) / len(Physlr.bxtomxs[edge[0]].union(Physlr.bxtomxs[edge[1]])))]
+        return [(edge, len(Physlr.bxtomxs[edge[0]].intersection(Physlr.bxtomxs[edge[1]]))\
+        / len(Physlr.bxtomxs[edge[0]].union(Physlr.bxtomxs[edge[1]])))]
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
@@ -1215,26 +1216,44 @@ class Physlr:
             (u, v) for bxs in progress(mxtobxs.values()) for u, v in itertools.combinations(bxs, 2))
         print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
 
-        #edge_list = list(edges)
-        neighbour_min = defaultdict(list)
+        if self.args.edge_weight_type == "n":
+            pass
+        elif self.args.edge_weight_type == "w":
+            neighbour_min = defaultdict(list)
 
-        for edge in edges:
-            neighbour_min[edge[0]] += bxtomxs[edge[1]]
-            neighbour_min[edge[1]] += bxtomxs[edge[0]]
-        for i in progress(bxtomxs):
-            neighbour_min[i] = set(neighbour_min[i])
-        print(
-            int(timeit.default_timer() - t0),
-            "Found", len(neighbour_min), "edges weights", file=sys.stderr)
-        Physlr.neighbour_min = neighbour_min
-        Physlr.edges = edges
-        with multiprocessing.Pool(48) as pool:
-            edges = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection,
-                                             progress(edges),
-                                             chunksize=100) for x in l)
-        print(
-            int(timeit.default_timer() - t0),
-            "Recalculated", len(edges), "edges weights", file=sys.stderr)
+            for edge in edges:
+                neighbour_min[edge[0]] += bxtomxs[edge[1]]
+                neighbour_min[edge[1]] += bxtomxs[edge[0]]
+            for i in progress(bxtomxs):
+                neighbour_min[i] = set(neighbour_min[i])
+            print(
+                int(timeit.default_timer() - t0),
+                "Found", len(neighbour_min), "minimizers of neighbours", file=sys.stderr)
+            Physlr.neighbour_min = neighbour_min
+            Physlr.edges = edges
+
+            with multiprocessing.Pool(48) as pool:
+                edges = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection,
+                                                progress(edges),
+                                                chunksize=100) for x in l)
+            print(
+                int(timeit.default_timer() - t0),
+                "Recalculated", len(edges), "edges weights", file=sys.stderr)
+
+        elif self.args.edge_weight_type == "j":
+            Physlr.bxtomxs = bxtomxs
+            with multiprocessing.Pool(48) as pool:
+                edges = dict(x for l in pool.map(self.physlr_overlap_minimizer_intersection,
+                                                progress(edges),
+                                                chunksize=100) for x in l)
+            print(
+                int(timeit.default_timer() - t0),
+                "Recalculated", len(edges), "edges weights", file=sys.stderr)
+        else:
+            print(self.args.edge_weight_type + " is an illegal argument for --edge-weight-type.",
+                  file=sys.stderr)
+            sys.exit(1)
+
         f = open("histogramv4.txt", "w+")
         for (u,v), n in progress(edges.items()):
             f.write(str(n) + "\n")
