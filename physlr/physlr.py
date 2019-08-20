@@ -1048,11 +1048,7 @@ class Physlr:
 
         singletons = {mx for mx, n in progress(mx_counts.items()) if n < 2}
         for mxs in progress(bxtomxs.values()):
-                mxs -= singletons
-
-        mx_counts2 = Counter(mx for mxs in progress(bxtomxs.values()) for mx in mxs)
-        singletons_check = {mx for mx, n in progress(mx_counts2.items()) if n < 2}
-        print("singleton_check length is ", len(singletons_check), file=sys.stderr)
+            mxs -= singletons
 
         print(
             int(timeit.default_timer() - t0),
@@ -1070,19 +1066,17 @@ class Physlr:
         Write a minimizer to TFIDF dictionary to a pickle file.
         """
         bxtomxs = self.read_minimizers(self.args.FILES)
+        mxtobxs = self.construct_minimizers_to_barcodes(bxtomxs)
 
-        mx_counts = Counter(mx for mxs in progress(bxtomxs.values()) for mx in mxs)
+        total_bx = len(bxtomxs.keys())
+        mxtotfidf = dict((mx, math.log(total_bx/len(bxs))) for mx, bxs in mxtobxs.items())
 
-        totalBx = len(bxtomxs.keys())
-        mxtotfidf = dict((mx, math.log(totalBx/occurence)) for mx, occurence in mx_counts.items())
-        
-        fileout = open(self.args.output,"wb")
-        pickle.dump(mxtotfidf,fileout)
+        fileout = open(self.args.output, "wb")
+        pickle.dump(mxtotfidf, fileout)
         fileout.close()
-        
-        print("Total", totalBx, "barcodes read.", sep=" ", end="\n")
+
+        print("Total", total_bx, "barcodes read.", sep=" ", end="\n")
         print("Total", len(mxtotfidf.keys()), "minimizers read.", sep=" ", end="\n")
-        print("A minimizer occurs in",int(sum(mx_counts.values())/totalBx), "barcodes on average.", sep=" ", end="\n")
 
     def physlr_filter_barcodes(self):
         """
@@ -1094,8 +1088,6 @@ class Physlr:
         """
         bxtomxs = self.read_minimizers(self.args.FILES)
         Physlr.remove_singleton_minimizers(bxtomxs)
-
-        print("bxtomx length ",len(bxtomxs),sep="", file=sys.stderr)
 
         q0, q1, q2, q3, q4 = quantile(
             [0, 0.25, 0.5, 0.75, 1], (len(mxs) for mxs in bxtomxs.values()))
