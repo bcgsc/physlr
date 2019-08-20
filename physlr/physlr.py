@@ -1066,10 +1066,10 @@ class Physlr:
         Write a minimizer to TFIDF dictionary to a pickle file.
         """
         bxtomxs = self.read_minimizers(self.args.FILES)
-        mxtobxs = self.construct_minimizers_to_barcodes(bxtomxs)
+        mx_counts = Counter(mx for mxs in progress(bxtomxs.values()) for mx in mxs)
 
         total_bx = len(bxtomxs.keys())
-        mxtotfidf = dict((mx, math.log(total_bx/len(bxs))) for mx, bxs in mxtobxs.items())
+        mxtotfidf = dict((mx, math.log(total_bx/occurence)) for mx, occurence in mx_counts.items())
 
         fileout = open(self.args.output, "wb")
         pickle.dump(mxtotfidf, fileout)
