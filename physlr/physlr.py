@@ -1085,11 +1085,11 @@ class Physlr:
 
         too_few_or_many = []
         too_few, too_many = 0, 0
-        for bx,mxs in progress(bxtomxs.items()):
-            if len(bxtomxs[bx]) < self.args.n:
+        for bx, mxs in progress(bxtomxs.items()):
+            if len(mxs) < self.args.n:
                 too_few += 1
                 too_few_or_many.append(bx)
-            elif len(bxtomxs[bx]) > self.args.N:
+            elif len(mxs) > self.args.N:
                 too_many += 1
                 too_few_or_many.append(bx)
 
@@ -1106,8 +1106,8 @@ class Physlr:
         for bx in too_few_or_many:
             del bxtomxs[bx]
 
-        print("Removing minimizers that became singleton after"
-            " discarding barcodes out of threshold", file=sys.stderr)
+        print("Removing minimizers that became singleton after",
+            "discarding barcodes out of threshold", file=sys.stderr)
 
         Physlr.remove_singleton_minimizers(bxtomxs)
         for bx, mxs in progress(bxtomxs.items()):
