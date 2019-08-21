@@ -1107,7 +1107,7 @@ class Physlr:
             del bxtomxs[bx]
 
         print("Removing minimizers that became singleton after",
-            "discarding barcodes out of threshold", file=sys.stderr)
+              "discarding barcodes out of threshold", file=sys.stderr)
 
         Physlr.remove_singleton_minimizers(bxtomxs)
         for bx, mxs in progress(bxtomxs.items()):
