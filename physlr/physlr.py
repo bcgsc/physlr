@@ -1083,15 +1083,16 @@ class Physlr:
             f"    Q3+{self.args.coef}*(Q3-Q1)={high_whisker} N={self.args.N}",
             sep="", file=sys.stderr)
 
+        too_few_or_many = []
         too_few, too_many = 0, 0
-        for bx, mxs in progress(bxtomxs.items()):
-            if len(mxs) < self.args.n:
+        for bx,mxs in progress(bxtomxs.items()):
+            if len(bxtomxs[bx]) < self.args.n:
                 too_few += 1
-            elif len(mxs) >= self.args.N:
+                too_few_or_many.append(bx)
+            elif len(bxtomxs[bx]) > self.args.N:
                 too_many += 1
-            else:
-                print(bx, "\t", sep="", end="")
-                print(*mxs)
+                too_few_or_many.append(bx)
+
         print(
             "    Discarded", too_few, "barcodes with too few minimizers of", len(bxtomxs),
             f"({round(100 * too_few / len(bxtomxs), 2)}%)", file=sys.stderr)
@@ -1101,6 +1102,18 @@ class Physlr:
         print(
             int(timeit.default_timer() - t0),
             "Wrote", len(bxtomxs) - too_few - too_many, "barcodes", file=sys.stderr)
+
+        for bx in too_few_or_many:
+            del bxtomxs[bx]
+
+        print("Removing minimizers that became singleton after"
+            " discarding barcodes out of threshold", file=sys.stderr)
+
+        Physlr.remove_singleton_minimizers(bxtomxs)
+        for bx, mxs in progress(bxtomxs.items()):
+            print(bx, "\t", sep="", end="")
+            print(*mxs)
+
 
     def physlr_filter_minimizers(self):
         "Filter minimizers by depth of coverage. Remove repetitive minimizers."
