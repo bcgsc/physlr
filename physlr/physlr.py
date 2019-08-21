@@ -1049,7 +1049,6 @@ class Physlr:
         singletons = {mx for mx, n in progress(mx_counts.items()) if n < 2}
         for mxs in progress(bxtomxs.values()):
             mxs -= singletons
-
         print(
             int(timeit.default_timer() - t0),
             "Removed", len(singletons), "minimizers that occur only once of", len(mx_counts),
@@ -1057,7 +1056,6 @@ class Physlr:
         for mx in singletons:
             del mx_counts[mx]
         return mx_counts
-
 
     def physlr_calculate_minimizer_tfidf(self):
         """
