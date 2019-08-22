@@ -161,10 +161,16 @@ class Physlr:
                 print(u, prop["n"], prop["m"], sep="\t", file=fout)
             else:
                 print(u, prop["n"], sep="\t", file=fout)
-        print("\nU\tV\tn", file=fout)
+        if "w" in next(iter(g.edges.values())):
+            print("\nU\tV\tn\tw", file=fout)
+        else:
+            print("\nU\tV\tn", file=fout)
         for e, prop in g.edges.items():
             u, v = sorted(e)
-            print(u, v, prop["n"], sep="\t", file=fout)
+            if "w" in prop:
+                print(u, v, prop["n"], prop["w"], sep="\t", file=fout)
+            else:
+                print(u, v, prop["n"], sep="\t", file=fout)
 
     @staticmethod
     def write_graph(g, fout, graph_format):
@@ -187,6 +193,7 @@ class Physlr:
             if Physlr.args.verbose >= 2:
                 progressbar.update(len(line))
             if line not in ["U\tn\n", "U\tn\tm\n"]:
+                print("hi2", file=sys.stderr)
                 print("Unexpected header:", line, file=sys.stderr)
                 exit(1)
             reading_vertices = True
@@ -197,9 +204,10 @@ class Physlr:
                     line = fin.readline()
                     if Physlr.args.verbose >= 2:
                         progressbar.update(len(line))
-                    if line == "U\tV\tn\n":
+                    if line in ["U\tV\tn\n", "U\tV\tn\tw\n"]:
                         reading_vertices = False
                     else:
+                        print("hi:", line, file=sys.stderr)
                         print("Unexpected header:", line, file=sys.stderr)
                         exit(1)
                     line = fin.readline()
@@ -215,8 +223,10 @@ class Physlr:
                         print("Unexpected row:", line, file=sys.stderr)
                         exit(1)
                 else:
-                    if len(xs) == 3:
-                        g.add_edge(xs[0], xs[1], n=int(float(xs[2])))
+                    if len(xs) == 4:
+                        g.add_edge(xs[0], xs[1], n=float(xs[2]), w=float(xs[3]))
+                    elif len(xs) == 3:
+                        g.add_edge(xs[0], xs[1], n=float(xs[2]))
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
                         exit(1)
@@ -1191,13 +1201,33 @@ class Physlr:
         return [(edge, len(Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]))]
 
     @staticmethod
+    def neighbour_minimizer_intersection_jaccard(edge):
+        "Calculate jaccard similarity index the intersection of minimizers neighbours of each edge node"
+        n_weight = Physlr.edges[edge]
+        if n_weight < Physlr.args.n:
+            return [(edge, -1)]
+        set_a = Physlr.neighbour_min[(edge[0],)]
+        set_b = Physlr.neighbour_min[(edge[1],)]
+        intersection = len(set_a & set_b)
+        len_a = len(set_a)
+        len_b = len(set_b)
+        return [(edge, intersection / (len_a + len_b - intersection))]
+
+    @staticmethod
     def jaccard_similarity_index(edge):
         "Calculate the jaccard similarity index of minimizers of each edge node"
         n_weight = Physlr.edges[edge]
         if n_weight < Physlr.args.n:
             return [(edge, -1)]
-        return [(edge, len(Physlr.bxtomxs[edge[0]] & Physlr.bxtomxs[edge[1]])\
-            / len(Physlr.bxtomxs[edge[0]] | Physlr.bxtomxs[edge[1]]))]
+        return [(edge, len(Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]))]
+
+    @staticmethod
+    def neighbour_mxs(node):
+        "return the set corresponding to an element"
+        min_list = []
+        for neighbour in Physlr.bxs_neighbours[node]:
+            min_list.append(Physlr.bxtomxs[neighbour])
+        return [((node,), set(min_list))]
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
@@ -1219,55 +1249,90 @@ class Physlr:
             (u, v) for bxs in progress(mxtobxs.values()) for u, v in itertools.combinations(bxs, 2))
         print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
 
+        edges_w = defaultdict(int)
+
         if self.args.edge_weight_type == "n":
             pass
-        elif self.args.edge_weight_type == "w":
-            neighbour_min = defaultdict(list)
+        elif self.args.edge_weight_type == "w" or self.args.edge_weight_type == "wj":
+            #bxs_neighbours = defaultdict(list)
+            #for edge in progress(edges):
+            #    bxs_neighbours[edge[0]].append(edge[1])
+            #    bxs_neighbours[edge[1]].append(edge[0])
 
+            #Physlr.bxs_neighbours = bxs_neighbours
+            #bxs_neighbours = None
+            #Physlr.bxtomxs = bxtomxs
+
+            #with multiprocessing.Pool(48) as pool:
+            #    neighbour_min = dict(x for l in pool.map(self.neighbour_mxs,
+            #                                        progress(bxtomxs),
+            #                                        chunksize=100) for x in l)
+            #print(
+            #    int(timeit.default_timer() - t0),
+            #    "Found", len(neighbour_min), "sets of minimizers of neighbours", file=sys.stderr)
+            #for i in progress(bxtomxs):
+            #    neighbour_min[i] = set(neighbour_min[i])
+
+            #Physlr.barcode_edges = None
+            #Physlr.bxtomxs = None
+
+            neighbour_min = defaultdict(list)
             for edge in edges:
                 neighbour_min[edge[0]] += bxtomxs[edge[1]]
                 neighbour_min[edge[1]] += bxtomxs[edge[0]]
             for i in progress(bxtomxs):
                 neighbour_min[i] = set(neighbour_min[i])
+
+            w_distrbution_out = open("neighbour_min_distribution_histogram.txt", "w+")
+            for i in progress(bxtomxs):
+                w_distrbution_out.write(str(len(neighbour_min[i]))+"\n")
+            w_distrbution_out.close()
             print(
                 int(timeit.default_timer() - t0),
-                "Found", len(neighbour_min), "minimizers of neighbours", file=sys.stderr)
+                "Print Neighbour min distribution", file=sys.stderr)
+
             Physlr.neighbour_min = neighbour_min
             Physlr.edges = edges
 
-            with multiprocessing.Pool(48) as pool:
-                edges = dict(x for l in pool.map(self.neighbour_minimizer_intersection,
-                                                 progress(edges),
-                                                 chunksize=100) for x in l)
-            print(
-                int(timeit.default_timer() - t0),
-                "Recalculated", len(edges), "edges weights", file=sys.stderr)
-
+            if self.args.edge_weight_type == "w":
+                with multiprocessing.Pool(48) as pool:
+                    edges_w = dict(x for l in pool.map(self.neighbour_minimizer_intersection,
+                                                       progress(edges),
+                                                       chunksize=100) for x in l)
+            else:
+                with multiprocessing.Pool(48) as pool:
+                    edges_w = dict(x for l in pool.map(
+                                                       self.neighbour_minimizer_intersection_jaccard,
+                                                       progress(edges),
+                                                       chunksize=100) for x in l)
         elif self.args.edge_weight_type == "j":
             Physlr.bxtomxs = bxtomxs
             Physlr.edges = edges
             for i in progress(Physlr.bxtomxs):
                 Physlr.bxtomxs[i] = set(Physlr.bxtomxs[i])
             with multiprocessing.Pool(48) as pool:
-                edges = dict(x for l in pool.map(self.jaccard_similarity_index,
-                                                 progress(edges),
-                                                 chunksize=100) for x in l)
-            print(
-                int(timeit.default_timer() - t0),
-                "Recalculated", len(edges), "edges weights", file=sys.stderr)
+                edges_w = dict(x for l in pool.map(self.jaccard_similarity_index,
+                                                   progress(edges),
+                                                   chunksize=100) for x in l)
         else:
             print(self.args.edge_weight_type + " is an illegal argument for --edge-weight-type.",
                   file=sys.stderr)
             sys.exit(1)
 
-        if self.args.edge_weight_type == "n":
-            filter_weight = self.args.n
-        else:
-            filter_weight = 0
+        print(
+            int(timeit.default_timer() - t0),
+            "Recalculated", len(edges), "edges weights", file=sys.stderr)
+
+        histogram_out = open("histogram" + self.args.edge_weight_type + ".txt", "w+")
+        for (u, v), n in progress(edges.items()):
+            if n > 0:
+                histogram_out.write(str(u) + "\t" + str(v) + "\t" + str(n) + "\n")
+        histogram_out.close()
+
 
         for (u, v), n in progress(edges.items()):
-            if n >= filter_weight:
-                g.add_edge(u, v, n=n)
+            if n >= self.args.n:
+                g.add_edge(u, v, n=n, w=edges_w[(u, v)])
         num_removed = len(edges) - g.number_of_edges()
         print(
             int(timeit.default_timer() - t0),
@@ -2421,9 +2486,11 @@ class Physlr:
             help="split a backbone path when the alternative branch is long [0]")
         argparser.add_argument(
             "--edge-weight-type", action="store", dest="edge_weight_type", type=str, default="n",
-            help="the type of edge weight: n:intersection of minimizers of two nodes,"
+            help="the type of edge weight:"
+                 "n:intersection of minimizers of two nodes,"
                  "w:intersection of minimizers of the neighbours of two nodes,"
-                 "j:Jaccard index of minizers of two nodes [n]")
+                 "j:Jaccard index of minizers of two nodes,"
+                 "wj:Jaccard index of w [n]")
         return argparser.parse_args()
 
     def __init__(self):
