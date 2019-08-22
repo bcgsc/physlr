@@ -210,6 +210,8 @@ class Physlr:
                         g.add_node(xs[0], n=int(xs[1]))
                     elif len(xs) == 3:
                         g.add_node(xs[0], n=int(xs[1]), m=int(xs[2]))
+                    elif len(xs) == 0:
+                        continue
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
                         exit(1)
