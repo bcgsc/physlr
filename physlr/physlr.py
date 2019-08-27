@@ -1073,8 +1073,10 @@ class Physlr:
         pickle.dump(mxtotfidf, fileout)
         fileout.close()
 
-        print("Total", total_bx, "barcodes read.", sep=" ", end="\n")
-        print("Total", len(mxtotfidf.keys()), "minimizers read.", sep=" ", end="\n")
+        print("Total", total_bx, "barcodes read.", sep=" ", end="\n", file=sys.stderr)
+        print("Total", len(mxtotfidf.keys()), "minimizers read.", sep=" ", end="\n", file=sys.stderr)
+
+        return mxtotfidf
 
     def physlr_filter_barcodes(self):
         """
