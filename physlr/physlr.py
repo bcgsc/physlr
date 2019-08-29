@@ -203,7 +203,6 @@ class Physlr:
             if Physlr.args.verbose >= 2:
                 progressbar.update(len(line))
             if line not in ["U\tn\n", "U\tn\tm\n"]:
-                print("hi2", file=sys.stderr)
                 print("Unexpected header:", line, file=sys.stderr)
                 exit(1)
             reading_vertices = True
