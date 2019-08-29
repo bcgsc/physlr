@@ -2586,10 +2586,13 @@ class Physlr:
         argparser.add_argument(
             "--edge-weight-type", action="store", dest="edge_weight_type", type=str, default="n",
             help="the type of edge weight:"
-                 "n:intersection of minimizers of two nodes,"
-                 "w:intersection of minimizers of the neighbours of two nodes,"
-                 "j:Jaccard index of minizers of two nodes,"
-                 "wj:Jaccard index of w [n]")
+                 "n:intersection of minimizers between two nodes,"
+                 "nj:Jaccard similarity index between two nodes,"
+                 "ntfidf:TFIDF of intersection of minizers between two nodes,"
+                 "w:intersection of minimizers between the neighbours of two nodes,"
+                 "wj:Jaccard similarity index between the neighbours of two nodes,"
+                 "wtfidf:TFIDF of intersection of minimizers between the neighbours"
+                 " of two nodes [n]")
         return argparser.parse_args()
 
     def __init__(self):
