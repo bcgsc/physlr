@@ -7,13 +7,17 @@ import argparse
 import itertools
 import multiprocessing
 import os
+import math
+import pickle
 import random
 import re
 import statistics
 import sys
 import timeit
+import pprint
 from collections import Counter
 from collections import defaultdict
+from functools import partial
 
 
 import networkx as nx
@@ -161,13 +165,19 @@ class Physlr:
                 print(u, prop["n"], prop["m"], sep="\t", file=fout)
             else:
                 print(u, prop["n"], sep="\t", file=fout)
-        if "w" in next(iter(g.edges.values())):
+        if "wtfidf" in next(iter(g.edges.values())):
+            print("\nU\tV\tn\tnj\tntfidf\tw\twj\twtfidf", file=fout)
+        elif "w" in next(iter(g.edges.values())):
             print("\nU\tV\tn\tw", file=fout)
         else:
             print("\nU\tV\tn", file=fout)
         for e, prop in g.edges.items():
             u, v = sorted(e)
-            if "w" in prop:
+            if "wtfidf" in prop:
+                print(u, v, prop["n"], prop["nj"],\
+                    prop["ntfidf"], prop["w"], prop["wj"],\
+                    prop["wtfidf"], sep="\t", file=fout)
+            elif "w" in prop:
                 print(u, v, prop["n"], prop["w"], sep="\t", file=fout)
             else:
                 print(u, v, prop["n"], sep="\t", file=fout)
@@ -204,10 +214,9 @@ class Physlr:
                     line = fin.readline()
                     if Physlr.args.verbose >= 2:
                         progressbar.update(len(line))
-                    if line in ["U\tV\tn\n", "U\tV\tn\tw\n"]:
+                    if line in ["U\tV\tn\n", "U\tV\tn\tw\n", "U\tV\tn\tnj\tntfidf\tw\twj\twtfidf"]:
                         reading_vertices = False
                     else:
-                        print("hi:", line, file=sys.stderr)
                         print("Unexpected header:", line, file=sys.stderr)
                         exit(1)
                     line = fin.readline()
@@ -223,7 +232,11 @@ class Physlr:
                         print("Unexpected row:", line, file=sys.stderr)
                         exit(1)
                 else:
-                    if len(xs) == 4:
+                    if len(xs) == 8:
+                        g.add_edge(xs[0], xs[1], n=float(xs[2]), nj=float(xs[3]),\
+                        ntfidf=float(xs[4]), w=float(xs[5]), wj=float(xs[6]),\
+                        wtfidf=float(xs[7]))
+                    elif len(xs) == 4:
                         g.add_edge(xs[0], xs[1], n=float(xs[2]), w=float(xs[3]))
                     elif len(xs) == 3:
                         g.add_edge(xs[0], xs[1], n=float(xs[2]))
@@ -1194,40 +1207,176 @@ class Physlr:
 
     @staticmethod
     def neighbour_minimizer_intersection(edge):
-        "Calculate the intersection of minimizers neighbours of each edge node"
+        "Calculate the neighbours' minimizer intersection between the nodes of an edge"
         n_weight = Physlr.edges[edge]
         if n_weight < Physlr.args.n:
             return [(edge, -1)]
+
         return [(edge, len(Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]))]
 
     @staticmethod
-    def neighbour_minimizer_intersection_jaccard(edge):
-        "Calculate jaccard similarity index the intersection of minimizers neighbours of each edge node"
+    def tfidf_neighbour_minimizer_intersection(edge):
+        "Calculate the tfidf of neighbours' minimizer intersection between the nodes of an edge"
         n_weight = Physlr.edges[edge]
         if n_weight < Physlr.args.n:
             return [(edge, -1)]
-        set_a = Physlr.neighbour_min[(edge[0],)]
-        set_b = Physlr.neighbour_min[(edge[1],)]
+
+        intersection = Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]
+        return [(edge, sum([Physlr.mxstotfidf[min] for min in intersection]))]
+
+    @staticmethod
+    def tfidf_node_minimizer_intersection(edge):
+        "Calculate the tfidf of minimizer intersection between the nodes of an edge"
+        n_weight = Physlr.edges[edge]
+        if n_weight < Physlr.args.n:
+            return [(edge, -1)]
+
+        intersection = Physlr.bxtomxs[edge[0]] & Physlr.bxtomxs[edge[1]]
+        return [(edge, sum([Physlr.mxstotfidf[min] for min in intersection]))]
+
+    @staticmethod
+    def jaccard_neighbour_minimizer_intersection(edge):
+        "Calculate jaccard similarity index of neighbours' minimizers between the nodes of an edge"
+        n_weight = Physlr.edges[edge]
+        if n_weight < Physlr.args.n:
+            return [(edge, -1)]
+
+        set_a = Physlr.neighbour_min[edge[0]]
+        set_b = Physlr.neighbour_min[edge[1]]
         intersection = len(set_a & set_b)
         len_a = len(set_a)
         len_b = len(set_b)
+
         return [(edge, intersection / (len_a + len_b - intersection))]
 
     @staticmethod
-    def jaccard_similarity_index(edge):
-        "Calculate the jaccard similarity index of minimizers of each edge node"
+    def jaccard_node_minimizer_intersection(edge):
+        "Calculate the jaccard similarity index of minimizers between the nodes of an edge"
         n_weight = Physlr.edges[edge]
         if n_weight < Physlr.args.n:
             return [(edge, -1)]
-        return [(edge, len(Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]))]
+
+        set_a = Physlr.bxtomxs[edge[0]]
+        set_b = Physlr.bxtomxs[edge[1]]
+        intersection = len(set_a & set_b)
+        len_a = len(set_a)
+        len_b = len(set_b)
+
+        return [(edge, intersection / (len_a + len_b - intersection))]
 
     @staticmethod
-    def neighbour_mxs(node):
-        "return the set corresponding to an element"
+    def all_weights(edge):
+        "Calculate all edge weights of an edge"
+        n_weight = Physlr.edges[edge]
+        if n_weight < Physlr.args.n:
+            return [(edge, -1)]
+
+        set_a_n = Physlr.bxtomxs[edge[0]]
+        set_b_n = Physlr.bxtomxs[edge[1]]
+        intersection_n = set_a_n & set_b_n
+        len_a_n = len(set_a_n)
+        len_b_n = len(set_b_n)
+        n = len(intersection_n)
+        n_jaccard = n / (len_a_n + len_b_n - n)
+        n_tfidf = sum([Physlr.mxstotfidf[min] for min in intersection_n])
+
+        set_a_w = Physlr.neighbour_min[edge[0]]
+        set_b_w = Physlr.neighbour_min[edge[1]]
+        intersection_w = set_a_w & set_b_w
+        len_a_w = len(set_a_w)
+        len_b_w = len(set_b_w)
+        w = len(intersection_w)
+        w_jaccard = w / (len_a_w + len_b_w - w)
+        w_tfidf = sum([Physlr.mxstotfidf[min] for min in intersection_w])
+
+        return [(edge, (n, n_jaccard, n_tfidf, w, w_jaccard, w_tfidf))]
+
+    @staticmethod
+    def find_neighbour_mxs(node):
+        "return the set of neighbour minimizers corresponding to a node"
         min_list = []
         for neighbour in Physlr.bxs_neighbours[node]:
-            min_list.append(Physlr.bxtomxs[neighbour])
-        return [((node,), set(min_list))]
+            min_list += Physlr.bxtomxs[neighbour]
+        return [(node, set(min_list))]
+
+    def physlr_overlap_edge_recalculation(self):
+        "recalculate edge weight based on edge-weight-type argument"
+        if self.args.edge_weight_type == "n":
+            return self.edges
+
+        if self.args.edge_weight_type == "nj":
+            with multiprocessing.Pool(self.args.threads) as pool:
+                edges_w = dict(x for l in pool.map(
+                    self.jaccard_node_minimizer_intersection,
+                    progress(self.edges),
+                    chunksize=20) for x in l)
+
+        elif self.args.edge_weight_type in ["all", "w", "wj", "wtfidf", "ntfidf"]:
+            if self.args.edge_weight_type in ["all", "wtfidf", "ntfidf"]:
+                mxstotfidf = self.physlr_calculate_minimizer_tfidf()
+                Physlr.mxstotfidf = mxstotfidf
+
+            if self.args.edge_weight_type == "ntfidf":
+                with multiprocessing.Pool(self.args.threads) as pool:
+                    edges_w = dict(x for l in pool.map(
+                        self.tfidf_node_minimizer_intersection,
+                        progress(self.edges),
+                        chunksize=20) for x in l)
+
+            else:
+                bxs_neighbours = defaultdict(list)
+                for edge in progress(self.edges):
+                    bxs_neighbours[edge[0]].append(edge[1])
+                    bxs_neighbours[edge[1]].append(edge[0])
+                Physlr.bxs_neighbours = bxs_neighbours
+                bxs_neighbours = None
+                with multiprocessing.Pool(self.args.threads) as pool:
+                    neighbour_min = dict(x for l in pool.map(
+                        self.find_neighbour_mxs,
+                        progress(self.bxtomxs),
+                        chunksize=20) for x in l)
+                print(
+                    int(timeit.default_timer() - t0),
+                    "Found", len(neighbour_min), "sets of minimizers of neighbours",\
+                         file=sys.stderr)
+                Physlr.bxs_neighbours = None
+                Physlr.neighbour_min = neighbour_min
+
+                if self.args.edge_weight_type == "all":
+                    with multiprocessing.Pool(self.args.threads) as pool:
+                        edges_w = dict(x for l in pool.map(
+                            self.all_weights,
+                            progress(self.edges),
+                            chunksize=20) for x in l)
+
+                if self.args.edge_weight_type == "w":
+                    with multiprocessing.Pool(self.args.threads) as pool:
+                        edges_w = dict(x for l in pool.map(
+                            self.neighbour_minimizer_intersection,
+                            progress(self.edges),
+                            chunksize=20) for x in l)
+
+                if self.args.edge_weight_type == "wtfidf":
+                    with multiprocessing.Pool(self.args.threads) as pool:
+                        neighbour_min = dict(x for l in pool.map(
+                            self.tfidf_neighbour_minimizer_intersection,
+                            progress(self.edges),
+                            chunksize=20) for x in l)
+
+                if self.args.edge_weight_type == "wj":
+                    with multiprocessing.Pool(self.args.threads) as pool:
+                        edges_w = dict(x for l in pool.map(
+                            self.jaccard_neighbour_minimizer_intersection,
+                            progress(self.edges),
+                            chunksize=20) for x in l)
+
+                Physlr.neighbour_min = None
+                neighbour_min = None
+        else:
+            print(self.args.edge_weight_type + " is an illegal argument for --edge-weight-type.",
+                  file=sys.stderr)
+            sys.exit(1)
+        return edges_w
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
@@ -1249,90 +1398,22 @@ class Physlr:
             (u, v) for bxs in progress(mxtobxs.values()) for u, v in itertools.combinations(bxs, 2))
         print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
 
-        edges_w = defaultdict(int)
-
-        if self.args.edge_weight_type == "n":
-            pass
-        elif self.args.edge_weight_type == "w" or self.args.edge_weight_type == "wj":
-            #bxs_neighbours = defaultdict(list)
-            #for edge in progress(edges):
-            #    bxs_neighbours[edge[0]].append(edge[1])
-            #    bxs_neighbours[edge[1]].append(edge[0])
-
-            #Physlr.bxs_neighbours = bxs_neighbours
-            #bxs_neighbours = None
-            #Physlr.bxtomxs = bxtomxs
-
-            #with multiprocessing.Pool(48) as pool:
-            #    neighbour_min = dict(x for l in pool.map(self.neighbour_mxs,
-            #                                        progress(bxtomxs),
-            #                                        chunksize=100) for x in l)
-            #print(
-            #    int(timeit.default_timer() - t0),
-            #    "Found", len(neighbour_min), "sets of minimizers of neighbours", file=sys.stderr)
-            #for i in progress(bxtomxs):
-            #    neighbour_min[i] = set(neighbour_min[i])
-
-            #Physlr.barcode_edges = None
-            #Physlr.bxtomxs = None
-
-            neighbour_min = defaultdict(list)
-            for edge in edges:
-                neighbour_min[edge[0]] += bxtomxs[edge[1]]
-                neighbour_min[edge[1]] += bxtomxs[edge[0]]
-            for i in progress(bxtomxs):
-                neighbour_min[i] = set(neighbour_min[i])
-
-            w_distrbution_out = open("neighbour_min_distribution_histogram.txt", "w+")
-            for i in progress(bxtomxs):
-                w_distrbution_out.write(str(len(neighbour_min[i]))+"\n")
-            w_distrbution_out.close()
-            print(
-                int(timeit.default_timer() - t0),
-                "Print Neighbour min distribution", file=sys.stderr)
-
-            Physlr.neighbour_min = neighbour_min
-            Physlr.edges = edges
-
-            if self.args.edge_weight_type == "w":
-                with multiprocessing.Pool(48) as pool:
-                    edges_w = dict(x for l in pool.map(self.neighbour_minimizer_intersection,
-                                                       progress(edges),
-                                                       chunksize=100) for x in l)
-            else:
-                with multiprocessing.Pool(48) as pool:
-                    edges_w = dict(x for l in pool.map(
-                                                       self.neighbour_minimizer_intersection_jaccard,
-                                                       progress(edges),
-                                                       chunksize=100) for x in l)
-        elif self.args.edge_weight_type == "j":
-            Physlr.bxtomxs = bxtomxs
-            Physlr.edges = edges
-            for i in progress(Physlr.bxtomxs):
-                Physlr.bxtomxs[i] = set(Physlr.bxtomxs[i])
-            with multiprocessing.Pool(48) as pool:
-                edges_w = dict(x for l in pool.map(self.jaccard_similarity_index,
-                                                   progress(edges),
-                                                   chunksize=100) for x in l)
-        else:
-            print(self.args.edge_weight_type + " is an illegal argument for --edge-weight-type.",
-                  file=sys.stderr)
-            sys.exit(1)
+        Physlr.edges = edges
+        Physlr.bxtomxs = bxtomxs
+        edges_w = self.physlr_overlap_edge_recalculation()
 
         print(
             int(timeit.default_timer() - t0),
             "Recalculated", len(edges), "edges weights", file=sys.stderr)
 
-        histogram_out = open("histogram" + self.args.edge_weight_type + ".txt", "w+")
-        for (u, v), n in progress(edges.items()):
-            if n > 0:
-                histogram_out.write(str(u) + "\t" + str(v) + "\t" + str(n) + "\n")
-        histogram_out.close()
-
-
         for (u, v), n in progress(edges.items()):
             if n >= self.args.n:
-                g.add_edge(u, v, n=n, w=edges_w[(u, v)])
+                if self.args.edge_weight_type == "all":
+                    weights = edges_w[(u, v)]
+                    g.add_edge(u, v, n=weights[0], nj=weights[1], ntfidf=weights[2],\
+                          w=weights[3], wj=weights[4], wtfidf=weights[5])
+                else:
+                    g.add_edge(u, v, n=n, w=edges_w[(u, v)])
         num_removed = len(edges) - g.number_of_edges()
         print(
             int(timeit.default_timer() - t0),
@@ -2370,6 +2451,22 @@ class Physlr:
             ng75 = Physlr.compute_ngxx(xs, self.args.g, 0.75)
             print(max(xs), ng25, ng50, ng75, min(xs), len(xs), sum(xs), filename, sep="\t")
 
+    def physlr_calculate_minimizer_tfidf(self):
+        """
+        Read a TSV file of barcodes to minimizers.
+        Create TFIDF of each minimizer.
+        Write a minimizer to TFIDF dictionary to a pickle file.
+        """
+        bxtomxs = self.read_minimizers(self.args.FILES)
+        mx_counts = Counter(mx for mxs in progress(bxtomxs.values()) for mx in mxs)
+
+        total_bx = len(bxtomxs.keys())
+        mxtotfidf = dict((mx, math.log(total_bx/occurence)) for mx, occurence in mx_counts.items())
+
+        print("Total", total_bx, "barcodes read.", sep=" ", end="\n")
+        print("Total", len(mxtotfidf.keys()), "minimizers read.", sep=" ", end="\n")
+        return mxtotfidf
+
     def physlr_fasta_gaps(self):
         """Print the coordinates in BED format of gaps in a FASTA file."""
         seqs = Physlr.read_fastas(self.args.FILES)
@@ -2481,6 +2578,9 @@ class Physlr:
         argparser.add_argument(
             "--prune", action="store", dest="prune", type=int, default=10,
             help="size of the branches to be pruned [10]. set to 0 to skip prunning.")
+        argparser.add_argument(
+            "--scale", action="store", dest="scale", type=str, default="no",
+            help="test scale[no]")
         argparser.add_argument(
             "--min-branch", action="store", dest="min_branch", type=int, default=0,
             help="split a backbone path when the alternative branch is long [0]")
