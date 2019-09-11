@@ -228,7 +228,7 @@ filter_minimizers(bool silent, BxtoMxs& bxtomxs, MxtoCount counts, unsigned C)
 	}
 	std::vector<float> q = { 0.25, 0.5, 0.75 };
 	q = quantile(q, values);
-	unsigned high_whisker = int(q[2] + 1.5 * (q[2] - q[0]));
+	unsigned high_whisker = int(q[1] + 1.5 * (q[2] - q[0]));
 	if (C == 0) {
 		C = high_whisker;
 	}
