@@ -752,7 +752,7 @@ class Physlr:
         return backbones
 
     @staticmethod
-    def wrap_up_messages_and_pass(mst, messages, sender, receiver):
+    def wrap_up_messages_and_pass(mst, messages, sender, receiver, weighted=1):
         """
         Wrap up all incoming messages to this node (sender) except the one from receiver;
         and set (pass) the message from sender to receiver.
@@ -761,7 +761,8 @@ class Physlr:
             length = 0
         else:
             length = max(messages[(sender, u)] for u in mst.neighbors(sender) if u != receiver)
-        messages[(receiver, sender)] = 1 + length
+        messages[(receiver, sender)] = length + \
+                                       (1-weighted) + weighted*mst[receiver][sender]['weight']
 
     @staticmethod
     def measure_branch_length(mst):
