@@ -5,6 +5,7 @@ Physlr: Physical Mapping of Linked Reads
 
 import argparse
 import itertools
+import time
 import multiprocessing
 import os
 import math
@@ -13,8 +14,10 @@ import re
 import statistics
 import sys
 import timeit
+import pickle
 from collections import Counter
 from collections import defaultdict
+from operator import itemgetter
 
 
 import networkx as nx
@@ -164,8 +167,12 @@ class Physlr:
                 print(u, prop["n"], sep="\t", file=fout)
         if "wtfidf" in next(iter(g.edges.values())):
             print("\nU\tV\tn\tnj\tntfidf\tw\twj\twtfidf", file=fout)
+        elif "w1" in next(iter(g.edges.values())):
+            print("\nU\tV\tn\tshared_neighbours\tnaiive_w1\tnaiive_edge1\tw1\tedge1", file=fout)
         elif "w" in next(iter(g.edges.values())):
             print("\nU\tV\tn\tw", file=fout)
+        elif "sn" in next(iter(g.edges.values())):
+            print("\nU\tV\tn\tsn\tsn1", file=fout)
         else:
             print("\nU\tV\tn", file=fout)
         for e, prop in g.edges.items():
@@ -174,6 +181,13 @@ class Physlr:
                 print(u, v, prop["n"], prop["nj"],\
                     prop["ntfidf"], prop["w"], prop["wj"],\
                     prop["wtfidf"], sep="\t", file=fout)
+            elif "w1" in prop:
+                print(u, v, prop["n"], prop["shared_neighbours"],\
+                    prop["naiive_w1"], prop["naiive_edge1"], prop["w1"],\
+                    prop["edge1"], sep="\t", file=fout)
+            elif "sn" in prop:
+                print(u, v, prop["n"], prop["sn"],\
+                    prop["sn1"], sep="\t", file=fout)
             elif "w" in prop:
                 print(u, v, prop["n"], prop["w"], sep="\t", file=fout)
             else:
@@ -691,6 +705,10 @@ class Physlr:
     def determine_pruned_mst(g):
         """Return the pruned maximum spanning tree of the graph."""
         gmst = nx.maximum_spanning_tree(g, weight="n")
+        f = open("mst.tsv", "w")
+        Physlr.write_tsv(gmst, f)
+        f.close()
+        #sys.exit(1)
         print(
             int(timeit.default_timer() - t0),
             "Determined the maximum spanning tree.", file=sys.stderr, flush=True)
@@ -759,9 +777,13 @@ class Physlr:
             Physlr.remove_bridges(g, Physlr.args.prune)
         backbones = []
         gmst = Physlr.determine_pruned_mst(g)
+        #print("checkpoint1", file=sys.stderr)
         while not nx.is_empty(gmst):
+            #print("checkpoint2", file=sys.stderr)
             paths = Physlr.determine_backbones_of_trees(gmst, Physlr.args.min_branch)
+            #print(len(paths), file=sys.stderr)
             backbones += (path for path in paths if len(path) >= Physlr.args.prune)
+            #print(len(backbones), file=sys.stderr)
             for path in paths:
                 gmst.remove_nodes_from(path)
         backbones.sort(key=len, reverse=True)
@@ -1207,8 +1229,235 @@ class Physlr:
         n_weight = Physlr.edges[edge]
         if n_weight < Physlr.args.n:
             return [(edge, -1)]
+        if edge[0] not in Physlr.neighbour_min or edge[1] not in Physlr.neighbour_min:
+            return [(edge, n_weight)]
 
         return [(edge, len(Physlr.neighbour_min[edge[0]] & Physlr.neighbour_min[edge[1]]))]
+
+    @staticmethod
+    def num_shared_neighbours(edge):
+        a = edge[0]
+        b = edge[1]
+        neighbours_a = Physlr.bxs_neighbours[a]
+        neighbours_b = Physlr.bxs_neighbours[b]
+        set_neighbours_a = set(neighbours_a)
+        set_neighbours_b = set(neighbours_b)
+
+        shared_neighbours = len(set_neighbours_a & set_neighbours_b)
+
+        neighbours_a = Physlr.bxs_neighbours_over1[a]
+        neighbours_b = Physlr.bxs_neighbours_over1[b]
+        set_neighbours_a = set(neighbours_a)
+        set_neighbours_b = set(neighbours_b)
+
+        shared_neighbours_over1 = len(set_neighbours_a & set_neighbours_b)
+        return [(edge, (shared_neighbours, shared_neighbours_over1))]
+
+
+    @staticmethod
+    def max_neighbour_minimizer_intersection(edge):
+        "Calculate the max of all combinations of neighbour's minimizer intersection with each neighbour of the other node of an edge"
+        n_weight = Physlr.edges[edge]
+        if n_weight < Physlr.args.n:
+            return [(edge, -1)]
+
+        a = edge[0]
+        b = edge[1]
+        neighbours_a = Physlr.bxs_neighbours[a]
+        neighbours_b = Physlr.bxs_neighbours[b]
+        set_neighbours_a = set(neighbours_a)
+        set_neighbours_b = set(neighbours_b)
+
+        shared_neighbours = len(set_neighbours_a & set_neighbours_b)
+        naiive_neighbour_comb = itertools.product(neighbours_a, neighbours_b)
+        neighbours_a.remove(b)
+        neighbours_b.remove(a)
+        neighbour_comb = itertools.product(neighbours_a, neighbours_b)
+        naiive_edge_n_equals_1 = 0
+        edge_n_equals_1 = 0
+
+        max_w1_naiive = 0
+        for (u, v) in naiive_neighbour_comb:
+            if (u, v) in Physlr.edges:
+                if max_w1_naiive <Physlr.edges[(u, v)]:
+                    max_w1_naiive = Physlr.edges[(u, v)]
+
+            elif (v, u) in Physlr.edges:
+                if max_w1_naiive <Physlr.edges[(v, u)]:
+                    max_w1_naiive = Physlr.edges[(v, u)]
+            else:
+                continue
+
+
+
+        end = time.time()
+        print(
+            int(timeit.default_timer() - t0),
+            (end-start),file=sys.stderr)
+        start = time.time()
+        print(
+            int(timeit.default_timer() - t0),
+            "checkpoint7456456", file=sys.stderr)
+        max_w1 = 0
+        list_neighbour_comb = list(neighbour_comb)
+        print(len(list_neighbour_comb),file=sys.stderr)
+        start = time.time()
+        for (u, v) in list_neighbour_comb:
+            #continue
+            if (u, v) in Physlr.edges:
+                continue
+            #    if max_w1 <Physlr.edges[(u, v)]:
+                    #max_w1 = Physlr.edges[(u, v)]
+                    #pass
+
+            elif (v, u) in Physlr.edges:
+                continue
+            #    if max_w1 <Physlr.edges[(v, u)]:
+                    #max_w1 = Physlr.edges[(v, u)]
+            #        pass
+            else:
+                continue
+
+        end = time.time()
+        print(
+            int(timeit.default_timer() - t0),
+            (end-start),file=sys.stderr)
+
+        start = time.time()
+        print(
+            int(timeit.default_timer() - t0),
+            "checkpoint7", file=sys.stderr)
+        max_w1 = []
+        print(len(list_neighbour_comb),file=sys.stderr)
+        for (u, v) in list_neighbour_comb:
+            if (u, v) in Physlr.edges:
+                max_w1.append((u, v))
+            #    if max_w1 <Physlr.edges[(u, v)]:
+                    #max_w1 = Physlr.edges[(u, v)]
+                    #pass
+
+            elif (v, u) in Physlr.edges:
+                max_w1.append((v, u))
+            #    if max_w1 <Physlr.edges[(v, u)]:
+                    #max_w1 = Physlr.edges[(v, u)]
+            #        pass
+            else:
+                continue
+        print(len(max_w1),file=sys.stderr)
+        end = time.time()
+        print(
+            int(timeit.default_timer() - t0),
+            (end-start),file=sys.stderr)
+        print(
+            int(timeit.default_timer() - t0),
+            "checkpoint84566456", file=sys.stderr)
+        start = time.time()
+        max_w1_test=0
+        for (u, v) in max_w1:
+            #continue
+            #if (u, v) in Physlr.edges:
+                #continue
+            if max_w1_test <Physlr.edges[(u, v)]:
+                    max_w1_test = Physlr.edges[(u, v)]
+                    #pass
+
+            #elif (v, u) in Physlr.edges:
+            #    continue
+            #    if max_w1 <Physlr.edges[(v, u)]:
+                    #max_w1 = Physlr.edges[(v, u)]
+            #        pass
+            #else:
+            #    continue
+
+        end = time.time()
+        print(
+            int(timeit.default_timer() - t0),
+            (end-start),file=sys.stderr)
+        start = time.time()
+        print(
+            int(timeit.default_timer() - t0),
+            "checkpoint7", file=sys.stderr)
+        max_w1 = [Physlr.edges[(u, v)] if (u, v) in Physlr.edges else Physlr.edges[(v, u)] for (u, v) in list_neighbour_comb if (v, u) in Physlr.edges]
+        end = time.time()
+        print(
+            int(timeit.default_timer() - t0),
+            (end-start),file=sys.stderr)
+        #start = time.time()
+        #print(
+        #    int(timeit.default_timer() - t0),
+        #    "checkpoint7", file=sys.stderr)
+        #max_w1 = 0
+        #for (u, v) in neighbour_comb:
+        #    if (u, v) in Physlr.edges:
+        #        if max_w1 <Physlr.edges[(u, v)]:
+        #            max_w1 = Physlr.edges[(u, v)]
+                #if Physlr.edges[(u, v)] == 1:
+                    #edge_n_equals_1 += 1
+                #w1.append((u, v, Physlr.edges[(u, v)]))
+                #w1_n.append(Physlr.edges[(u, v)])
+
+        #    elif (v, u) in Physlr.edges:
+        #        if max_w1 <Physlr.edges[(v, u)]:
+        #            max_w1 = Physlr.edges[(v, u)]
+                #if Physlr.edges[(v, u)] == 1:
+                    #edge_n_equals_1 += 1
+                #w1.append((v, u, Physlr.edges[(v, u)]))
+                #w1_n.append(Physlr.edges[(v, u)])
+        #    else:
+        #        continue
+
+        #end = time.time()
+        #print(
+        #    int(timeit.default_timer() - t0),
+        #    (end-start),file=sys.stderr)
+
+        #print(
+        #    int(timeit.default_timer() - t0),
+        #    "checkpoint5.55", file=sys.stderr)
+        #start = time.time()
+
+        #naiive_neighbour_comb2 =[(u, v) for (u, v) in naiive_neighbour_comb if (u, v) in Physlr.edges if (v, u) in Physlr.edges]
+
+        #end = time.time()
+        #print(
+        #    int(timeit.default_timer() - t0),
+        #    (end-start),file=sys.stderr)
+        #print(
+        #    int(timeit.default_timer() - t0),
+        #    "checkpoint5.6", file=sys.stderr)
+
+        #start = time.time()
+
+        #max_w1 = max(w1, key=itemgetter(2))
+
+        #end = time.time()
+        #print(
+        #    int(timeit.default_timer() - t0),
+        #    (end-start),file=sys.stderr)
+        #print(
+        #    int(timeit.default_timer() - t0),
+        #    "checkpoint5.7", file=sys.stderr)
+        #start = time.time()
+        #max_w1_n = max(w1_n)
+        #end = time.time()
+        #print(
+        #    int(timeit.default_timer() - t0),
+        #    (end-start),file=sys.stderr)
+        #print(
+        #    int(timeit.default_timer() - t0),
+        #    "checkpoint6", file=sys.stderr)
+        #start = time.time()
+        #abc = nx.edge_boundary(Physlr.g, neighbours_a, neighbours_b)
+
+        end = time.time()
+        print(
+            int(timeit.default_timer() - t0),
+            (end-start),file=sys.stderr)
+        #print(
+        #    int(timeit.default_timer() - t0),
+        #    "checkpoint7", file=sys.stderr)
+        return [(edge, (shared_neighbours, max_w1_naiive,\
+            naiive_edge_n_equals_1, max_w1, edge_n_equals_1))]
 
     @staticmethod
     def tfidf_neighbour_minimizer_intersection(edge):
@@ -1307,7 +1556,7 @@ class Physlr:
                     progress(self.edges),
                     chunksize=20) for x in l)
 
-        elif self.args.edge_weight_type in ["all", "w", "wj", "wtfidf", "ntfidf"]:
+        elif self.args.edge_weight_type in ["all", "sn", "w", "w1", "wj", "wtfidf", "ntfidf"]:
             if self.args.edge_weight_type in ["all", "wtfidf", "ntfidf"]:
                 mxstotfidf = self.physlr_calculate_minimizer_tfidf()
                 Physlr.mxstotfidf = mxstotfidf
@@ -1321,58 +1570,304 @@ class Physlr:
 
             else:
                 bxs_neighbours = defaultdict(list)
-                for edge in progress(self.edges):
-                    bxs_neighbours[edge[0]].append(edge[1])
-                    bxs_neighbours[edge[1]].append(edge[0])
-                Physlr.bxs_neighbours = bxs_neighbours
-                bxs_neighbours = None
-                with multiprocessing.Pool(self.args.threads) as pool:
-                    neighbour_min = dict(x for l in pool.map(
-                        self.find_neighbour_mxs,
-                        progress(self.bxtomxs),
-                        chunksize=20) for x in l)
+                bxs_neighbours_over_threshold = defaultdict(list)
+                edges_over1 = []
                 print(
                     int(timeit.default_timer() - t0),
-                    "Found", len(neighbour_min), "sets of minimizers of neighbours",\
-                         file=sys.stderr)
-                Physlr.bxs_neighbours = None
-                Physlr.neighbour_min = neighbour_min
+                    "Collecting neighbours with n >=", self.args.neighbour_threshold,
+                    "for each barcode",
+                        file=sys.stderr)
+                for edge, n in self.edges.items():
+                    bxs_neighbours[edge[0]].append(edge[1])
+                    bxs_neighbours[edge[1]].append(edge[0])
+                    if n >= self.args.neighbour_threshold:
+                        edges_over1.append(edge)
+                        bxs_neighbours_over_threshold[edge[0]].append(edge[1])
+                        bxs_neighbours_over_threshold[edge[1]].append(edge[0])
+                #Physlr.bxs_neighbours = bxs_neighbours
+                Physlr.bxs_neighbours = bxs_neighbours_over_threshold
+                #Physlr.bxs_neighbours_over1 =  bxs_neighbours_over1
+                bxs_neighbours = None
+                bxs_neighbours_over_threshold = None
 
-                if self.args.edge_weight_type == "all":
+                print(
+                    int(timeit.default_timer() - t0),
+                    "Found", len(Physlr.bxs_neighbours), "sets of neighbours",\
+                        file=sys.stderr)
+
+                if self.args.edge_weight_type == "sn":
+                    with multiprocessing.Pool(self.args.threads) as pool:
+                        edges_total = dict(x for l in pool.map(
+                            self.num_shared_neighbours,
+                            progress(self.edges),
+                            chunksize=20) for x in l)
+
+                elif self.args.edge_weight_type == "w1":
                     with multiprocessing.Pool(self.args.threads) as pool:
                         edges_w = dict(x for l in pool.map(
-                            self.all_weights,
+                            self.max_neighbour_minimizer_intersection,
                             progress(self.edges),
                             chunksize=20) for x in l)
 
-                if self.args.edge_weight_type == "w":
-                    with multiprocessing.Pool(self.args.threads) as pool:
-                        edges_w = dict(x for l in pool.map(
-                            self.neighbour_minimizer_intersection,
-                            progress(self.edges),
-                            chunksize=20) for x in l)
+                else:
+                    #bx_list = list(self.bxtomxs.keys())
+                    bx_list = list(Physlr.bxs_neighbours.keys())
+                    num_bx = len(bx_list)
+                    num_iterations = 10
+                    print(
+                        int(timeit.default_timer() - t0),
+                        "Dividing neighbour minimizer collection into", num_iterations, "iterations",\
+                            file=sys.stderr)
+                    if num_iterations == 1:
+                        with multiprocessing.Pool(self.args.threads) as pool:
+                            neighbour_min = dict(x for l in pool.map(
+                                self.find_neighbour_mxs,
+                                progress(bx_list),
+                                chunksize=20) for x in l)
+                    else:
+                        slice_size = math.floor(num_bx / num_iterations)
+                        slice_size_modulo = num_bx % num_iterations
+                        start_index = 0
+                        neighbour_min = {}
+                        for i in range(num_iterations):
 
-                if self.args.edge_weight_type == "wtfidf":
-                    with multiprocessing.Pool(self.args.threads) as pool:
-                        neighbour_min = dict(x for l in pool.map(
-                            self.tfidf_neighbour_minimizer_intersection,
-                            progress(self.edges),
-                            chunksize=20) for x in l)
+                            if i < slice_size_modulo:
+                                end_index = start_index + slice_size + 1
+                            else:
+                                end_index = start_index + slice_size
 
-                if self.args.edge_weight_type == "wj":
-                    with multiprocessing.Pool(self.args.threads) as pool:
-                        edges_w = dict(x for l in pool.map(
-                            self.jaccard_neighbour_minimizer_intersection,
-                            progress(self.edges),
-                            chunksize=20) for x in l)
+                            print(
+                                int(timeit.default_timer() - t0),
+                                "Iteration: ", i + 1, "\n",\
+                                    "barcodes: ", start_index, " to ", end_index,
+                                file=sys.stderr)
+                            curr_bx_set = bx_list[start_index : end_index]
 
-                Physlr.neighbour_min = None
-                neighbour_min = None
+                            filename = "neighbour_min_part_" + str((i+1)) + ".pkl"
+                            if os.path.isfile(filename):
+                                print(
+                                    int(timeit.default_timer() - t0),
+                                    "Found", filename, "in current directory\n",\
+                                    "Reading", filename,\
+                                    file=sys.stderr)
+                                handle = open(filename, 'rb')
+                                neighbour_min_sub = pickle.load(handle)
+                                handle.close()
+                                if len(neighbour_min_sub.keys()) != (end_index - start_index):
+                                    print(
+                                        int(timeit.default_timer() - t0),
+                                        "Length of dictionaries do not match\n",
+                                        "Expected ", (end_index - start_index - 1), " entries\n",
+                                        "Got ", len(neighbour_min_sub.keys()), " entries",
+                                        file=sys.stderr)
+                                    if self.args.edge_weight_type == "w":
+                                        with multiprocessing.Pool(self.args.threads) as pool:
+                                            neighbour_min_sub = dict(x for l in pool.map(
+                                                self.find_neighbour_mxs,
+                                                progress(curr_bx_set),
+                                                chunksize=6) for x in l)
+                                        with open(filename, 'wb') as handle:
+                                            pickle.dump(neighbour_min_sub, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                            else:
+                                with multiprocessing.Pool(self.args.threads) as pool:
+                                    neighbour_min_sub = dict(x for l in pool.map(
+                                        self.find_neighbour_mxs,
+                                        progress(curr_bx_set),
+                                        chunksize=6) for x in l)
+
+                                with open(filename, 'wb') as handle:
+                                    pickle.dump(neighbour_min_sub, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                            start_index = end_index
+                            neighbour_min.update(neighbour_min_sub)
+
+                            print(
+                                int(timeit.default_timer() - t0),
+                                "Found", len(neighbour_min_sub), "sets of minimizers of neighbours",\
+                                file=sys.stderr)
+
+                    print(
+                        int(timeit.default_timer() - t0),
+                        "Found", len(neighbour_min), "sets of minimizers of neighbours",\
+                            file=sys.stderr)
+                    Physlr.neighbour_min = neighbour_min
+
+                    edge_list = list(self.edges)
+                    #edge_list = edges_over1
+                    edge_list.sort(key=lambda tup: tup[0])
+                    num_edges = len(edge_list)
+                    num_iterations = 100
+                    if num_iterations == 1:
+                        if self.args.edge_weight_type == "w":
+                            with multiprocessing.Pool(self.args.threads) as pool:
+                                edges_total = dict(x for l in pool.map(
+                                    self.neighbour_minimizer_intersection,
+                                    progress(edge_list),
+                                    chunksize=20) for x in l)
+                    else:
+                        slice_size = math.floor(num_edges / num_iterations)
+                        slice_size_modulo = num_edges % num_iterations
+                        start_index = 0
+
+                        print(
+                            int(timeit.default_timer() - t0),
+                            "Dividing weight recalculation into ", num_iterations, " iterations",\
+                                file=sys.stderr)
+                        edges_total = {}
+                        for i in range(num_iterations):
+                            if i < slice_size_modulo:
+                                end_index = start_index + slice_size + 1
+                            else:
+                                end_index = start_index + slice_size
+
+                            print(
+                                int(timeit.default_timer() - t0),
+                                "Iteration: ", i + 1, "\n",\
+                                    "edges: ", start_index, " to ", end_index,
+                                file=sys.stderr)
+                            curr_edges_set = edge_list[start_index : end_index]
+                            
+                            #if i == 3:
+                            #    start_index = end_index
+                            #    continue
+
+                            #bx_subset = set(sum(curr_edges_set, ()))
+                            #bx_subset_list = []
+                            #for edge in curr_edges_set:
+                            #    bx_subset_list.extend(edge)
+                            #bx_subset = set(bx_subset_list)
+                            #bx_subset ={item for sublist in curr_edges_set for item in curr_edges_set}
+
+                            filename = "edge_w_part_" + str((i+1)) + ".pkl"
+                            if os.path.isfile(filename):
+                                print(
+                                    int(timeit.default_timer() - t0),
+                                    "Found ", filename, " in current directory",\
+                                    file=sys.stderr)
+                                handle = open(finum_iterlename, 'rb')
+                                edges_w = pickle.load(handle)
+                                handle.close()
+                                if len(edges_w.keys()) != (end_index - start_index):
+                                    print(
+                                        int(timeit.default_timer() - t0),
+                                        "Length of dictionaries dont match",\
+                                        file=sys.stderr)
+                                    print(
+                                        int(timeit.default_timer() - t0),
+                                        "Expected ", (end_index - start_index - 1), " entries",\
+                                        file=sys.stderr)
+                                    print(
+                                        int(timeit.default_timer() - t0),
+                                        "Got ", len(edges_w.keys()), " entries",\
+                                        file=sys.stderr)
+                                    if self.args.edge_weight_type == "all":
+                                        with multiprocessing.Pool(self.args.threads) as pool:
+                                            edges_w = dict(x for l in pool.map(
+                                                self.all_weights,
+                                                progress(curr_edges_set),
+                                                chunksize=20) for x in l)
+
+                                    if self.args.edge_weight_type == "w":
+                                        with multiprocessing.Pool(self.args.threads) as pool:
+                                            edges_w = dict(x for l in pool.map(
+                                                self.neighbour_minimizer_intersection,
+                                                progress(curr_edges_set),
+                                                chunksize=3) for x in l)
+
+                                    if self.args.edge_weight_type == "wtfidf":
+                                        with multiprocessing.Pool(self.args.threads) as pool:
+                                            neighbour_min = dict(x for l in pool.map(
+                                                self.tfidf_neighbour_minimizer_intersection,
+                                                progress(curr_edges_set),
+                                                chunksize=20) for x in l)
+
+                                    if self.args.edge_weight_type == "wj":
+                                        with multiprocessing.Pool(self.args.threads) as pool:
+                                            edges_w = dict(x for l in pool.map(
+                                                self.jaccard_neighbour_minimizer_intersection,
+                                                progress(curr_edges_set),
+                                                chunksize=20) for x in l)
+                                    with open(filename, 'wb') as handle:
+                                        pickle.dump(edges_w, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                            else:
+
+                                if i == 100:
+                                    edges_w ={}
+                                    sub_iteration = 4
+                                    total_slice = end_index - start_index
+                                    slice_size = math.floor(total_slice / sub_iteration)
+                                    slice_size_modulo = total_slice % sub_iteration
+                                    #end_index = start_index + slice_size
+                                    for j in range(sub_iteration):
+                                        if j < slice_size_modulo:
+                                            end_index = start_index + slice_size + 1
+                                        else:
+                                            end_index = start_index + slice_size
+                                        print(
+                                            int(timeit.default_timer() - t0),
+                                            "Iteration: ", i + 1,  ".", j + 1, "\n",\
+                                                "edges: ", start_index, " to ", end_index,
+                                            file=sys.stderr)
+                                        curr_edges_set = edge_list[start_index : end_index]
+                                        start_index = end_index
+
+                                        if self.args.edge_weight_type == "w":
+                                            with multiprocessing.Pool(self.args.threads) as pool:
+                                                edges_w_sub = dict(x for l in pool.map(
+                                                    self.neighbour_minimizer_intersection,
+                                                    progress(curr_edges_set),
+                                                    chunksize=3) for x in l)
+                                        edges_w.update(edges_w_sub)
+                                    with open(filename, 'wb') as handle:
+                                        pickle.dump(edges_w, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                                    edges_total.update(edges_w)
+                                    start_index = end_index
+                                    continue
+
+                                if self.args.edge_weight_type == "all":
+                                    with multiprocessing.Pool(self.args.threads) as pool:
+                                        edges_w = dict(x for l in pool.map(
+                                            self.all_weights,
+                                            progress(curr_edges_set),
+                                            chunksize=20) for x in l)
+
+                                if self.args.edge_weight_type == "w":
+                                    with multiprocessing.Pool(self.args.threads) as pool:
+                                        edges_w = dict(x for l in pool.map(
+                                            self.neighbour_minimizer_intersection,
+                                            progress(curr_edges_set),
+                                            chunksize=3) for x in l)
+
+                                if self.args.edge_weight_type == "wtfidf":
+                                    with multiprocessing.Pool(self.args.threads) as pool:
+                                        neighbour_min = dict(x for l in pool.map(
+                                            self.tfidf_neighbour_minimizer_intersection,
+                                            progress(curr_edges_set),
+                                            chunksize=20) for x in l)
+
+                                if self.args.edge_weight_type == "wj":
+                                    with multiprocessing.Pool(self.args.threads) as pool:
+                                        edges_w = dict(x for l in pool.map(
+                                            self.jaccard_neighbour_minimizer_intersection,
+                                            progress(curr_edges_set),
+                                            chunksize=20) for x in l)
+                                with open(filename, 'wb') as handle:
+                                    pickle.dump(edges_w, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+                            print(
+                                int(timeit.default_timer() - t0),
+                                "Recalculated", len(edges_w), "edges weights", file=sys.stderr)
+                            start_index = end_index
+                            edges_total.update(edges_w)
+
+                    Physlr.bxs_neighbours = None
+                    Physlr.neighbour_min = None
+                    neighbour_min = None
+                    #sys.exit(0)
         else:
             print(self.args.edge_weight_type + " is an illegal argument for --edge-weight-type.",
                   file=sys.stderr)
             sys.exit(1)
-        return edges_w
+        return edges_total
 
     def physlr_overlap(self):
         "Read a sketch of linked reads and find overlapping barcodes."
@@ -1390,12 +1885,54 @@ class Physlr:
             "Added", g.number_of_nodes(), "barcodes to the graph", file=sys.stderr)
 
         # Add the overlap edges.
-        edges = Counter(
-            (u, v) for bxs in progress(mxtobxs.values()) for u, v in itertools.combinations(bxs, 2))
-        print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
+        
+
+        filename = "edges" + ".pkl"
+        if os.path.isfile(filename):
+            print(
+                int(timeit.default_timer() - t0),
+                "Found", filename, "in current directory\n",\
+                "Reading", filename,\
+                file=sys.stderr)
+            handle = open(filename, 'rb')
+            edges = pickle.load(handle)
+            handle.close()
+            print(
+                int(timeit.default_timer() - t0),
+                "Read", filename,\
+                file=sys.stderr)
+        else:
+            edges = Counter(
+                (u, v) for bxs in progress(mxtobxs.values()) for u, v in itertools.combinations(bxs, 2))
+            with open(filename, 'wb') as handle:
+                pickle.dump(edges, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         Physlr.edges = edges
         Physlr.bxtomxs = bxtomxs
+
+
+
+        #for (u, v), n in progress(edges.items()):
+        #    if n >= self.args.n:
+        #        g.add_edge(u, v, n=n)
+
+        #Physlr.g = g
+
+        if self.args.edge_weight_type == "w1":
+            bxs_neighbours = defaultdict(list)
+            for edge in progress(self.edges):
+                bxs_neighbours[edge[0]].append(edge[1])
+                bxs_neighbours[edge[1]].append(edge[0])
+            Physlr.bxs_neighbours = bxs_neighbours
+            bxs_neighbours = None
+            print(
+                int(timeit.default_timer() - t0),
+                "Found", len(Physlr.bxs_neighbours), "sets of neighbours",\
+                    file=sys.stderr)
+            for i in edges:
+                self.max_neighbour_minimizer_intersection(i)
+                break
+            sys.exit(0)
         edges_w = self.physlr_overlap_edge_recalculation()
 
         print(
@@ -1408,6 +1945,13 @@ class Physlr:
                     weights = edges_w[(u, v)]
                     g.add_edge(u, v, n=weights[0], nj=weights[1], ntfidf=weights[2],\
                           w=weights[3], wj=weights[4], wtfidf=weights[5])
+                elif self.args.edge_weight_type == "w1":
+                    weights = edges_w[(u, v)]
+                    g.add_edge(u, v, n=n, shared_neighbours=weights[0], naiive_w1=weights[1][2],\
+                          naiive_edge1=weights[2], w1=weights[3][2], edge1=weights[4])
+                elif self.args.edge_weight_type == "sn":
+                    weights = edges_w[(u, v)]
+                    g.add_edge(u, v, n=n, sn=weights[0], sn1=weights[1])
                 else:
                     g.add_edge(u, v, n=n, w=edges_w[(u, v)])
         num_removed = len(edges) - g.number_of_edges()
@@ -1416,6 +1960,18 @@ class Physlr:
             "Removed", num_removed, "edges with fewer than", self.args.n,
             "common minimizers of", len(edges),
             f"({round(100 * num_removed / len(edges), 2)}%)", file=sys.stderr)
+
+        if self.args.edge_weight_type == "n":
+            cliques = nx.find_cliques(g)
+            edge_keep_list = [list(itertools.combinations(set(clq), 2)) \
+                for clq in cliques if len(clq)>=3]
+            flat_edge_keep_set = {item for sublist in edge_keep_list for item in sublist}
+            remove_edge_set = [(u, v) for (u, v) in list(edges) \
+                if (u, v) not in flat_edge_keep_set if  (v, u) not in flat_edge_keep_set]
+            g.remove_edges_from(remove_edge_set)
+            print(
+                int(timeit.default_timer() - t0),
+                "Removed", len(remove_edge_set), "edges from graph using 3-clique", file=sys.stderr)
 
         num_singletons = Physlr.remove_singletons(g)
         print(
@@ -1477,13 +2033,16 @@ class Physlr:
         "Determine the backbone-induced subgraph."
         g = self.read_graph(self.args.FILES)
         Physlr.remove_singletons(g)
+        Physlr.print_graph_stats(g)
         backbones = Physlr.determine_backbones_and_remove_chimera(g)
         subgraph = nx.Graph()
         for backbone in backbones:
             gbackbone = g.subgraph(backbone)
             subgraph.add_nodes_from(gbackbone.nodes.data())
             subgraph.add_edges_from(gbackbone.edges.data())
+        #print(backbones, sys.stderr)
         subgraph = self.sort_vertices(subgraph)
+        Physlr.print_graph_stats(subgraph)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Output the backbone subgraph", file=sys.stderr)
 
@@ -1869,7 +2428,9 @@ class Physlr:
                       "--separation-strategy: " + str(set(alg_list) - alg_white_list)
             exit(exit_message)
 
+
         gin = self.read_graph(self.args.FILES)
+        Physlr.remove_singletons(gin)
         Physlr.filter_edges(gin, self.args.n)
         print(
             int(timeit.default_timer() - t0),
@@ -2590,6 +3151,9 @@ class Physlr:
                  "wj:Jaccard similarity index between the neighbours of two nodes,"
                  "wtfidf:TFIDF of intersection of minimizers between the neighbours"
                  " of two nodes [n]")
+        argparser.add_argument(
+            "--neighbour-threshold", action="store", dest="neighbour_threshold", type=int, default=2,
+            help="edge weight for two nodes to be considered neighbours [2]")
         return argparser.parse_args()
 
     def __init__(self):
@@ -2611,4 +3175,5 @@ def main():
     Physlr().main()
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method('forkserver')
     main()
