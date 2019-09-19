@@ -33,12 +33,6 @@ struct HashData
 	uint64_t hash;
 	size_t pos;
 	char strand;
-	bool operator()(HashData data) {
-		if (data.hash == hash && data.pos == pos && data.strand == strand)
-			return true;
-		else
-			return false;
-    }
 };
 
 struct find_HashData
@@ -72,7 +66,6 @@ hashKmers(const std::string& readstr, const size_t k)
 	}
 	return hashes;
 }
-
 
 // Minimerize a sequence: Find the minimizers of a vector of hash values representing a sequence.
 /* Algorithm
