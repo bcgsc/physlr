@@ -80,11 +80,11 @@ class MinimizeWorker
 	MinimizeWorker(
 	    size_t k,
 	    size_t w,
-		bool withBloomFilter,
+	    bool withBloomFilter,
 	    bool withPositions,
 	    bool withStrands,
 	    bool verbose,
-		BloomFilter& bloomFilter,
+	    BloomFilter& bloomFilter,
 	    InputWorker& inputWorker,
 	    OutputWorker& outputWorker)
 	  : k(k)
