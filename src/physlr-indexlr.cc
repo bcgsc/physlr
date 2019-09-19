@@ -8,7 +8,6 @@
 #include "btl_bloomfilter/BloomFilter.hpp"
 
 #include <cassert>
-#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -16,7 +15,6 @@
 #include <getopt.h>
 #include <iostream>
 #include <limits>
-#include <math.h>
 #include <sstream>
 #include <string>
 #include <vector>
