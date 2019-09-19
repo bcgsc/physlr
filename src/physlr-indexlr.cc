@@ -4,6 +4,8 @@
 // Originally written for Physlr: (https://github.com/bcgsc/physlri
 // Written by Vladimir Nikolic (schutzekatze) and Shaun Jackman (@sjackman)
 
+#include "indexlr-workers.h"
+#include "btl_bloomfilter/BloomFilter.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -18,9 +20,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include "indexlr-workers.h"
-#include "btl_bloomfilter/BloomFilter.hpp"
 
 // Read a FASTQ file and reduce each read to a set of minimizers
 static void
@@ -172,11 +171,11 @@ main(int argc, char* argv[])
 		    k,
 		    w,
 		    t,
-			withBloomFilter,
+		    withBloomFilter,
 		    withPositions,
 		    withStrands,
 		    verbose,
-			bloomFilter);
+		    bloomFilter);
 	}
 
 	return 0;
