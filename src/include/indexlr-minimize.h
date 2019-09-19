@@ -2,8 +2,10 @@
 #define INDEXLR_MINIMIZE_H
 
 // ntHash 2.0.0
+#include "IOUtil.h"
 #include "ntHashIterator.h"
 #include "nthash.h"
+#include "btl_bloomfilter/BloomFilter.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -31,6 +33,27 @@ struct HashData
 	uint64_t hash;
 	size_t pos;
 	char strand;
+	bool operator()(HashData data) {
+		if (data.hash == hash && data.pos == pos && data.strand == strand)
+			return true;
+		else
+			return false;
+    }
+};
+
+struct find_HashData
+{
+	uint64_t hash;
+	size_t pos;
+	char strand;
+    find_HashData(HashData d) : hash(d.hash), pos(d.pos), strand(d.strand) {}
+    bool operator () ( const HashData& d ) const
+    {
+		if (d.hash == hash && d.pos == pos && d.strand == strand)
+			return true;
+		else
+			return false;
+    }
 };
 
 using HashValues = std::vector<HashData>;
@@ -49,6 +72,7 @@ hashKmers(const std::string& readstr, const size_t k)
 	}
 	return hashes;
 }
+
 
 // Minimerize a sequence: Find the minimizers of a vector of hash values representing a sequence.
 /* Algorithm
@@ -112,14 +136,52 @@ getMinimizers(const HashValues& hashes, const unsigned w)
 	return minimizers;
 }
 
-// Test the condition of a I/O stream.
-static inline void
-assert_good(const std::ios& stream, const std::string& path)
+static inline HashValues
+getMinimizers(const HashValues& hashes, const unsigned w, const BloomFilter& bloomFilter)
 {
-	if (!stream.good()) {
-		std::cerr << "error: " << std::strerror(errno) << ": " << path << '\n';
-		exit(EXIT_FAILURE);
+	HashValues minimizers;
+	if (hashes.size() < w) {
+		return minimizers;
 	}
+	minimizers.reserve(2 * hashes.size() / w);
+	int i = -1, prev = -1;
+	auto firstIt = hashes.begin();
+	auto minIt = hashes.end();
+	for (auto leftIt = firstIt; leftIt < hashes.end() - w + 1; ++leftIt) {
+		auto rightIt = leftIt + w;
+		if (i < leftIt - firstIt) {
+			HashValues tracker;
+			tracker.reserve(w);
+			for (auto trackerIt = leftIt;  trackerIt < rightIt; ++trackerIt )
+			{
+				vector<uint64_t> vect{(*trackerIt).hash };
+				if (!bloomFilter.contains(vect)){
+					tracker.push_back(*trackerIt);
+				}
+			}
+			if (tracker.size() == 0){
+				continue;
+			}
+			// Use of operator '<=' returns the minimum that is furthest from left.
+			auto trackerMinIt = std::min_element(tracker.begin(), tracker.end(), [](const HashData& a, const HashData& b) {
+				return a.hash <= b.hash;
+			});
+			minIt = std::find_if (leftIt, rightIt, find_HashData(*trackerMinIt));
+		} else if (rightIt[-1].hash <= minIt->hash) {
+			vector<uint64_t> vect{ rightIt[-1].hash };
+			if (bloomFilter.contains(vect))
+			{
+				continue;
+			}
+			minIt = rightIt - 1;
+		}
+		i = minIt - firstIt;
+		if (i > prev) {
+			prev = i;
+			minimizers.push_back(*minIt);
+		}
+	}
+	return minimizers;
 }
 
 #endif
