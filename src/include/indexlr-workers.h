@@ -3,6 +3,7 @@
 
 #include "indexlr-buffer.h"
 #include "indexlr-minimize.h"
+#include "btl_bloomfilter/BloomFilter.hpp"
 
 #include "kseq.h" // NOLINT
 #include <zlib.h>
@@ -79,16 +80,20 @@ class MinimizeWorker
 	MinimizeWorker(
 	    size_t k,
 	    size_t w,
+		bool withBloomFilter,
 	    bool withPositions,
 	    bool withStrands,
 	    bool verbose,
+		BloomFilter& bloomFilter,
 	    InputWorker& inputWorker,
 	    OutputWorker& outputWorker)
 	  : k(k)
 	  , w(w)
+	  , withBloomFilter(withBloomFilter)
 	  , withPositions(withPositions)
 	  , withStrands(withStrands)
 	  , verbose(verbose)
+	  , bloomFilter(bloomFilter)
 	  , inputWorker(inputWorker)
 	  , outputWorker(outputWorker)
 	{}
@@ -96,9 +101,11 @@ class MinimizeWorker
 	MinimizeWorker(const MinimizeWorker& worker)
 	  : k(worker.k)
 	  , w(worker.w)
+	  , withBloomFilter(worker.withBloomFilter)
 	  , withPositions(worker.withPositions)
 	  , withStrands(worker.withStrands)
 	  , verbose(worker.verbose)
+	  , bloomFilter(worker.bloomFilter)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
 	{}
@@ -106,9 +113,11 @@ class MinimizeWorker
 	MinimizeWorker(MinimizeWorker&& worker) noexcept
 	  : k(worker.k)
 	  , w(worker.w)
+	  , withBloomFilter(worker.withBloomFilter)
 	  , withPositions(worker.withPositions)
 	  , withStrands(worker.withStrands)
 	  , verbose(worker.verbose)
+	  , bloomFilter(worker.bloomFilter)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
 	{}
@@ -125,9 +134,11 @@ class MinimizeWorker
   private:
 	size_t k = 0;
 	size_t w = 0;
+	bool withBloomFilter = false;
 	bool withPositions = false;
 	bool withStrands = false;
 	bool verbose = false;
+	BloomFilter& bloomFilter;
 	InputWorker& inputWorker;
 	OutputWorker& outputWorker;
 
@@ -282,7 +293,15 @@ MinimizeWorker::work()
 				}
 			}
 
-			auto minimizers = getMinimizers(hashes, w);
+			HashValues minimizers;
+
+			if (withBloomFilter)
+			{
+				minimizers = getMinimizers(hashes, w, bloomFilter);
+			}
+			else {
+				minimizers = getMinimizers(hashes, w);
+			}
 
 			ss << read.barcode;
 			char sep = '\t';
