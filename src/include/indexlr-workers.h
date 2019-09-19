@@ -1,9 +1,9 @@
 #ifndef INDEXLR_WORKERS_H
 #define INDEXLR_WORKERS_H
 
+#include "btl_bloomfilter/BloomFilter.hpp"
 #include "indexlr-buffer.h"
 #include "indexlr-minimize.h"
-#include "btl_bloomfilter/BloomFilter.hpp"
 
 #include "kseq.h" // NOLINT
 #include <zlib.h>
@@ -295,11 +295,9 @@ MinimizeWorker::work()
 
 			HashValues minimizers;
 
-			if (withBloomFilter)
-			{
+			if (withBloomFilter) {
 				minimizers = getMinimizers(hashes, w, bloomFilter);
-			}
-			else {
+			} else {
 				minimizers = getMinimizers(hashes, w);
 			}
 

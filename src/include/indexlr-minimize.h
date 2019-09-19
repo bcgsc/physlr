@@ -3,9 +3,9 @@
 
 // ntHash 2.0.0
 #include "IOUtil.h"
+#include "btl_bloomfilter/BloomFilter.hpp"
 #include "ntHashIterator.h"
 #include "nthash.h"
-#include "btl_bloomfilter/BloomFilter.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -40,14 +40,18 @@ struct find_HashData
 	uint64_t hash;
 	size_t pos;
 	char strand;
-    find_HashData(HashData d) : hash(d.hash), pos(d.pos), strand(d.strand) {}
-    bool operator () ( const HashData& d ) const
-    {
+	find_HashData(HashData d)
+	  : hash(d.hash)
+	  , pos(d.pos)
+	  , strand(d.strand)
+	{}
+	bool operator()(const HashData& d) const
+	{
 		if (d.hash == hash && d.pos == pos && d.strand == strand)
 			return true;
 		else
 			return false;
-    }
+	}
 };
 
 using HashValues = std::vector<HashData>;
@@ -145,25 +149,24 @@ getMinimizers(const HashValues& hashes, const unsigned w, const BloomFilter& blo
 		if (i < leftIt - firstIt) {
 			HashValues tracker;
 			tracker.reserve(w);
-			for (auto trackerIt = leftIt;  trackerIt < rightIt; ++trackerIt )
-			{
-				vector<uint64_t> vect{(*trackerIt).hash };
-				if (!bloomFilter.contains(vect)){
+			for (auto trackerIt = leftIt; trackerIt < rightIt; ++trackerIt) {
+				vector<uint64_t> vect{ (*trackerIt).hash };
+				if (!bloomFilter.contains(vect)) {
 					tracker.push_back(*trackerIt);
 				}
 			}
-			if (tracker.size() == 0){
+			if (tracker.size() == 0) {
 				continue;
 			}
 			// Use of operator '<=' returns the minimum that is furthest from left.
-			auto trackerMinIt = std::min_element(tracker.begin(), tracker.end(), [](const HashData& a, const HashData& b) {
-				return a.hash <= b.hash;
-			});
-			minIt = std::find_if (leftIt, rightIt, find_HashData(*trackerMinIt));
+			auto trackerMinIt = std::min_element(
+			    tracker.begin(), tracker.end(), [](const HashData& a, const HashData& b) {
+				    return a.hash <= b.hash;
+			    });
+			minIt = std::find_if(leftIt, rightIt, find_HashData(*trackerMinIt));
 		} else if (rightIt[-1].hash <= minIt->hash) {
 			vector<uint64_t> vect{ rightIt[-1].hash };
-			if (bloomFilter.contains(vect))
-			{
+			if (bloomFilter.contains(vect)) {
 				continue;
 			}
 			minIt = rightIt - 1;

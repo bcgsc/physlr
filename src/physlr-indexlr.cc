@@ -4,8 +4,8 @@
 // Originally written for Physlr: (https://github.com/bcgsc/physlri
 // Written by Vladimir Nikolic (schutzekatze) and Shaun Jackman (@sjackman)
 
-#include "indexlr-workers.h"
 #include "btl_bloomfilter/BloomFilter.hpp"
+#include "indexlr-workers.h"
 
 #include <cassert>
 #include <cstdlib>
@@ -40,7 +40,17 @@ minimizeReads(
 	outputWorker.start();
 
 	auto minimizeWorkers = std::vector<MinimizeWorker>(
-	    t, MinimizeWorker(k, w, withBloomFilter, withPositions, withStrands, verbose, bloomFilter, inputWorker, outputWorker));
+	    t,
+	    MinimizeWorker(
+	        k,
+	        w,
+	        withBloomFilter,
+	        withPositions,
+	        withStrands,
+	        verbose,
+	        bloomFilter,
+	        inputWorker,
+	        outputWorker));
 	for (auto& worker : minimizeWorkers) {
 		worker.start();
 	}
@@ -65,7 +75,7 @@ printUsage(const std::string& progname)
 	          << "  -k K -w W [-b bf_path] [-v] [-o FILE] FILE...\n\n"
 	             "  -k K        use K as k-mer size\n"
 	             "  -w W        use W as sliding-window size\n"
-				 "  -b bf_path  use a bloomfilter to filter out bad minimizers\n"
+	             "  -b bf_path  use a bloomfilter to filter out bad minimizers\n"
 	             "  --pos       include minimizer positions in the output\n"
 	             "  --strand    include minimizer strand in the output\n"
 	             "  -v          enable verbose output\n"
