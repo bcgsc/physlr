@@ -4,9 +4,9 @@
 // Originally written for Physlr: (https://github.com/bcgsc/physlri
 // Written by Vladimir Nikolic (schutzekatze) and Shaun Jackman (@sjackman)
 
-#include "indexlr-workers.h"
 
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -14,9 +14,13 @@
 #include <getopt.h>
 #include <iostream>
 #include <limits>
+#include <math.h>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "indexlr-workers.h"
+#include "btl_bloomfilter/BloomFilter.hpp"
 
 // Read a FASTQ file and reduce each read to a set of minimizers
 static void
@@ -26,9 +30,11 @@ minimizeReads(
     const size_t k,
     const size_t w,
     const size_t t,
+	const bool withBloomFilter,
     const bool withPositions,
     const bool withStrands,
-    const bool verbose)
+    const bool verbose,
+	BloomFilter& bloomFilter)
 {
 	InputWorker inputWorker(ipath);
 	OutputWorker outputWorker(opath, inputWorker);
@@ -37,7 +43,7 @@ minimizeReads(
 	outputWorker.start();
 
 	auto minimizeWorkers = std::vector<MinimizeWorker>(
-	    t, MinimizeWorker(k, w, withPositions, withStrands, verbose, inputWorker, outputWorker));
+	    t, MinimizeWorker(k, w, withBloomFilter, withPositions, withStrands, verbose, bloomFilter, inputWorker, outputWorker));
 	for (auto& worker : minimizeWorkers) {
 		worker.start();
 	}
@@ -59,16 +65,17 @@ static void
 printUsage(const std::string& progname)
 {
 	std::cout << "Usage:  " << progname
-	          << "  -k K -w W [-v] [-o FILE] FILE...\n\n"
-	             "  -k K       use K as k-mer size\n"
-	             "  -w W       use W as sliding-window size\n"
-	             "  --pos      include minimizer positions in the output\n"
-	             "  --strand   include minimizer strand in the output\n"
-	             "  -v         enable verbose output\n"
-	             "  -o FILE    write output to FILE, default is stdout\n"
-	             "  -t N       use N number of threads (default 1, max 5)\n"
-	             "  --help     display this help and exit\n"
-	             "  FILE       space separated list of FASTQ files\n";
+	          << "  -k K -w W [-b bf_path] [-v] [-o FILE] FILE...\n\n"
+	             "  -k K        use K as k-mer size\n"
+	             "  -w W        use W as sliding-window size\n"
+				 "  -b bf_path  use a bloomfilter to filter out bad minimizers\n"
+	             "  --pos       include minimizer positions in the output\n"
+	             "  --strand    include minimizer strand in the output\n"
+	             "  -v          enable verbose output\n"
+	             "  -o FILE     write output to FILE, default is stdout\n"
+	             "  -t N        use N number of threads (default 1, max 5)\n"
+	             "  --help      display this help and exit\n"
+	             "  FILE        space separated list of FASTQ files\n";
 }
 
 int
@@ -81,6 +88,8 @@ main(int argc, char* argv[])
 	unsigned k = 0;
 	unsigned w = 0;
 	bool verbose = false;
+	bool withBloomFilter = false;
+	BloomFilter bloomFilter;
 	unsigned t = 1;
 	bool failed = false;
 	bool w_set = false;
@@ -93,7 +102,7 @@ main(int argc, char* argv[])
 		                                      { "strand", no_argument, &withStrands, 1 },
 		                                      { "help", no_argument, &help, 1 },
 		                                      { nullptr, 0, nullptr, 0 } };
-	while ((c = getopt_long(argc, argv, "k:w:o:vt:", longopts, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, "k:w:o:vt:b:", longopts, &optindex)) != -1) {
 		switch (c) {
 		case 0:
 			break;
@@ -118,6 +127,11 @@ main(int argc, char* argv[])
 				std::cerr << progname
 				          << ": Using more than 5 threads does not scale, reverting to 5.\n";
 			}
+			break;
+		case 'b':
+			withBloomFilter = true;
+			std::cerr << "loading bloomfilter from " << optarg << std::endl;
+			bloomFilter.loadFilter(optarg);
 			break;
 		default:
 			exit(EXIT_FAILURE);
@@ -158,9 +172,11 @@ main(int argc, char* argv[])
 		    k,
 		    w,
 		    t,
+			withBloomFilter,
 		    withPositions,
 		    withStrands,
-		    verbose);
+		    verbose,
+			bloomFilter);
 	}
 
 	return 0;
