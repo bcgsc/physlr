@@ -138,7 +138,11 @@ main(int argc, char* argv[])
 		case 'b':
 			withBloomFilter = true;
 			std::cerr << "loading bloomfilter from " << optarg << std::endl;
-			bloomFilter.loadFilter(optarg);
+			try {
+				bloomFilter.loadFilter(optarg);
+			} catch (const std::exception& e) {
+				std::cerr << e.what() << '\n';
+			}
 			break;
 		default:
 			exit(EXIT_FAILURE);

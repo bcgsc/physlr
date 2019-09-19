@@ -40,17 +40,14 @@ struct find_HashData
 	uint64_t hash;
 	size_t pos;
 	char strand;
-	find_HashData(HashData d)
+	explicit find_HashData(HashData d)
 	  : hash(d.hash)
 	  , pos(d.pos)
 	  , strand(d.strand)
 	{}
 	bool operator()(const HashData& d) const
 	{
-		if (d.hash == hash && d.pos == pos && d.strand == strand)
-			return true;
-		else
-			return false;
+		return d.hash == hash && d.pos == pos && d.strand == strand;
 	}
 };
 
@@ -155,7 +152,7 @@ getMinimizers(const HashValues& hashes, const unsigned w, const BloomFilter& blo
 					tracker.push_back(*trackerIt);
 				}
 			}
-			if (tracker.size() == 0) {
+			if (tracker.empty()) {
 				continue;
 			}
 			// Use of operator '<=' returns the minimum that is furthest from left.
