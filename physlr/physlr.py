@@ -777,13 +777,9 @@ class Physlr:
             Physlr.remove_bridges(g, Physlr.args.prune)
         backbones = []
         gmst = Physlr.determine_pruned_mst(g)
-        #print("checkpoint1", file=sys.stderr)
         while not nx.is_empty(gmst):
-            #print("checkpoint2", file=sys.stderr)
             paths = Physlr.determine_backbones_of_trees(gmst, Physlr.args.min_branch)
-            #print(len(paths), file=sys.stderr)
             backbones += (path for path in paths if len(path) >= Physlr.args.prune)
-            #print(len(backbones), file=sys.stderr)
             for path in paths:
                 gmst.remove_nodes_from(path)
         backbones.sort(key=len, reverse=True)
@@ -1576,7 +1572,7 @@ class Physlr:
                     int(timeit.default_timer() - t0),
                     "Collecting neighbours with n >=", self.args.neighbour_threshold,
                     "for each barcode",
-                        file=sys.stderr)
+                    file=sys.stderr)
                 for edge, n in self.edges.items():
                     bxs_neighbours[edge[0]].append(edge[1])
                     bxs_neighbours[edge[1]].append(edge[0])
@@ -1584,10 +1580,7 @@ class Physlr:
                         edges_over1.append(edge)
                         bxs_neighbours_over_threshold[edge[0]].append(edge[1])
                         bxs_neighbours_over_threshold[edge[1]].append(edge[0])
-                #Physlr.bxs_neighbours = bxs_neighbours
                 Physlr.bxs_neighbours = bxs_neighbours_over_threshold
-                #Physlr.bxs_neighbours_over1 =  bxs_neighbours_over1
-                bxs_neighbours = None
                 bxs_neighbours_over_threshold = None
 
                 print(
@@ -1725,17 +1718,6 @@ class Physlr:
                                     "edges: ", start_index, " to ", end_index,
                                 file=sys.stderr)
                             curr_edges_set = edge_list[start_index : end_index]
-                            
-                            #if i == 3:
-                            #    start_index = end_index
-                            #    continue
-
-                            #bx_subset = set(sum(curr_edges_set, ()))
-                            #bx_subset_list = []
-                            #for edge in curr_edges_set:
-                            #    bx_subset_list.extend(edge)
-                            #bx_subset = set(bx_subset_list)
-                            #bx_subset ={item for sublist in curr_edges_set for item in curr_edges_set}
 
                             filename = "edge_w_part_" + str((i+1)) + ".pkl"
                             if os.path.isfile(filename):
@@ -1743,7 +1725,7 @@ class Physlr:
                                     int(timeit.default_timer() - t0),
                                     "Found ", filename, " in current directory",\
                                     file=sys.stderr)
-                                handle = open(finum_iterlename, 'rb')
+                                handle = open(filename, 'rb')
                                 edges_w = pickle.load(handle)
                                 handle.close()
                                 if len(edges_w.keys()) != (end_index - start_index):
@@ -1881,15 +1863,14 @@ class Physlr:
             num_mxs = len(mxs)
             if num_mxs >= self.args.n:
                 #print(len(mxs))
-                g.add_node(u, node_n=num_mxs)
+                g.add_node(u, n=num_mxs)
         print(
             int(timeit.default_timer() - t0),
             "Added", g.number_of_nodes(), "barcodes to the graph", file=sys.stderr)
 
         # Add the overlap edges.
-        
 
-        filename = "edges" + ".pkl"
+        filename = "edges.pkl"
         if os.path.isfile(filename):
             print(
                 int(timeit.default_timer() - t0),
@@ -1909,37 +1890,26 @@ class Physlr:
             with open(filename, 'wb') as handle:
                 pickle.dump(edges, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        edges_over_n = {}
-        for (u, v), n in progress(edges.items()):
-            if n >= self.args.n:
-                edges_over_n[(u, v)] = n
+        if self.args.porportion == true:
+            n_list = sorted(list(edges.values()))
+            porportion = n_list[int(len(n_list) * .8)]
+            self.args.n = porportion
+            self.args.neighbour_threshold = porportion
+
+        if self.args.n != 1:
+            edges_over_n = {}
+            for (u, v), n in progress(edges.items()):
+                if n >= self.args.n:
+                    edges_over_n[(u, v)] = n
+        else:
+            edges_over_n = edges
+
+        print(len(edges), file=sys.stderr)
+        print(len(edges_over_n), file=sys.stderr)
 
         Physlr.edges = edges_over_n
         Physlr.bxtomxs = bxtomxs
 
-
-
-        #for (u, v), n in progress(edges.items()):
-        #    if n >= self.args.n:
-        #        g.add_edge(u, v, n=n)
-
-        #Physlr.g = g
-
-        if self.args.edge_weight_type == "w1":
-            bxs_neighbours = defaultdict(list)
-            for edge in progress(self.edges):
-                bxs_neighbours[edge[0]].append(edge[1])
-                bxs_neighbours[edge[1]].append(edge[0])
-            Physlr.bxs_neighbours = bxs_neighbours
-            bxs_neighbours = None
-            print(
-                int(timeit.default_timer() - t0),
-                "Found", len(Physlr.bxs_neighbours), "sets of neighbours",\
-                    file=sys.stderr)
-            for i in edges:
-                self.max_neighbour_minimizer_intersection(i)
-                break
-            sys.exit(0)
         edges_w = self.physlr_overlap_edge_recalculation()
 
         print(
@@ -1968,17 +1938,17 @@ class Physlr:
             "common minimizers of", len(edges),
             f"({round(100 * num_removed / len(edges), 2)}%)", file=sys.stderr)
 
-        if self.args.edge_weight_type == "n":
-            cliques = nx.find_cliques(g)
-            edge_keep_list = [list(itertools.combinations(set(clq), 2)) \
-                for clq in cliques if len(clq)>=3]
-            flat_edge_keep_set = {item for sublist in edge_keep_list for item in sublist}
-            remove_edge_set = [(u, v) for (u, v) in list(edges) \
-                if (u, v) not in flat_edge_keep_set if  (v, u) not in flat_edge_keep_set]
-            g.remove_edges_from(remove_edge_set)
-            print(
-                int(timeit.default_timer() - t0),
-                "Removed", len(remove_edge_set), "edges from graph using 3-clique", file=sys.stderr)
+        #if self.args.edge_weight_type == "n":
+        #    cliques = nx.find_cliques(g)
+        #    edge_keep_list = [list(itertools.combinations(set(clq), 2)) \
+        #        for clq in cliques if len(clq)>=3]
+        #    flat_edge_keep_set = {item for sublist in edge_keep_list for item in sublist}
+        #    remove_edge_set = [(u, v) for (u, v) in list(edges) \
+        #        if (u, v) not in flat_edge_keep_set if  (v, u) not in flat_edge_keep_set]
+        #    g.remove_edges_from(remove_edge_set)
+        #    print(
+        #        int(timeit.default_timer() - t0),
+        #        "Removed", len(remove_edge_set), "edges from graph using 3-clique", file=sys.stderr)
 
         num_singletons = Physlr.remove_singletons(g)
         print(
@@ -3167,6 +3137,9 @@ class Physlr:
         argparser.add_argument(
             "--edge-iteration", action="store", dest="edge_iteration", type=int, default=1,
             help="edge iteration [1]")
+        argparser.add_argument(
+            "--porportion", action="store", dest="porportion", type=bool, default=false,
+            help="use edges with the highest 20% of n[false]")
         return argparser.parse_args()
 
     def __init__(self):
