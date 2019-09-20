@@ -1613,7 +1613,7 @@ class Physlr:
                     #bx_list = list(self.bxtomxs.keys())
                     bx_list = list(Physlr.bxs_neighbours.keys())
                     num_bx = len(bx_list)
-                    num_iterations = 10
+                    num_iterations = self.args.neighbour_iteration
                     print(
                         int(timeit.default_timer() - t0),
                         "Dividing neighbour minimizer collection into", num_iterations, "iterations",\
@@ -1695,7 +1695,7 @@ class Physlr:
                     #edge_list = edges_over1
                     edge_list.sort(key=lambda tup: tup[0])
                     num_edges = len(edge_list)
-                    num_iterations = 100
+                    num_iterations = self.args.edge_iteration
                     if num_iterations == 1:
                         if self.args.edge_weight_type == "w":
                             with multiprocessing.Pool(self.args.threads) as pool:
@@ -1878,8 +1878,10 @@ class Physlr:
         # Add the vertices.
         g = nx.Graph()
         for u, mxs in sorted(progress(bxtomxs.items())):
-            if len(mxs) >= self.args.n:
-                g.add_node(u, n=len(mxs))
+            num_mxs = len(mxs)
+            if num_mxs >= self.args.n:
+                #print(len(mxs))
+                g.add_node(u, node_n=num_mxs)
         print(
             int(timeit.default_timer() - t0),
             "Added", g.number_of_nodes(), "barcodes to the graph", file=sys.stderr)
@@ -1907,7 +1909,12 @@ class Physlr:
             with open(filename, 'wb') as handle:
                 pickle.dump(edges, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        Physlr.edges = edges
+        edges_over_n = {}
+        for (u, v), n in progress(edges.items()):
+            if n >= self.args.n:
+                edges_over_n[(u, v)] = n
+
+        Physlr.edges = edges_over_n
         Physlr.bxtomxs = bxtomxs
 
 
@@ -3154,6 +3161,12 @@ class Physlr:
         argparser.add_argument(
             "--neighbour-threshold", action="store", dest="neighbour_threshold", type=int, default=2,
             help="edge weight for two nodes to be considered neighbours [2]")
+        argparser.add_argument(
+            "--neighbour-iteration", action="store", dest="neighbour_iteration", type=int, default=1,
+            help="neighbour minimizer iteration [1]")
+        argparser.add_argument(
+            "--edge-iteration", action="store", dest="edge_iteration", type=int, default=1,
+            help="edge iteration [1]")
         return argparser.parse_args()
 
     def __init__(self):
