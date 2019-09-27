@@ -82,7 +82,7 @@ class Physlr:
                     else:
                         print("physlr: expected 5 or 6 BED fields, or 12 or more PAF fields:",
                               line, file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                     bed.append((tname, int(tstart), int(tend), qname, int(score), orientation))
                 if Physlr.args.verbose >= 2:
                     progressbar.close()
@@ -104,7 +104,7 @@ class Physlr:
                     fields = line.rstrip("\n").split("\t")
                     if len(fields) < 12:
                         print("physlr: expected 12 or more PAF fields:", line, file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                     qname, qlength, qstart, qend, orientation, \
                         tname, tlength, tstart, tend, score, length, mapq = fields[0:12]
                     paf.append((
@@ -174,7 +174,7 @@ class Physlr:
             Physlr.write_tsv(g, fout)
         else:
             print("Unknown graph format:", graph_format, file=sys.stderr)
-            exit(1)
+            sys.exit(1)
 
     @staticmethod
     def read_tsv(g, filename):
@@ -187,7 +187,7 @@ class Physlr:
                 progressbar.update(len(line))
             if line not in ["U\tn\n", "U\tn\tm\n"]:
                 print("Unexpected header:", line, file=sys.stderr)
-                exit(1)
+                sys.exit(1)
             reading_vertices = True
             for line in fin:
                 if Physlr.args.verbose >= 2:
@@ -200,7 +200,7 @@ class Physlr:
                         reading_vertices = False
                     else:
                         print("Unexpected header:", line, file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                     line = fin.readline()
                     if Physlr.args.verbose >= 2:
                         progressbar.update(len(line))
@@ -212,13 +212,13 @@ class Physlr:
                         g.add_node(xs[0], n=int(xs[1]), m=int(xs[2]))
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                 else:
                     if len(xs) == 3:
                         g.add_edge(xs[0], xs[1], n=int(xs[2]))
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
         if Physlr.args.verbose >= 2:
             progressbar.close()
         return g
@@ -253,7 +253,7 @@ class Physlr:
         if orientation == "-":
             return Physlr.reverse_complement(sequences[name])
         print("physlr: Unexpected orientation:", orientation, file=sys.stderr)
-        sys.exit(1)
+        sys.sys.exit(1)
 
     @staticmethod
     def sort_vertices(g):
@@ -284,7 +284,7 @@ class Physlr:
                     g = Physlr.read_tsv(g, filename)
                 else:
                     print("Unexpected graph format", c + fin.readline(), file=sys.stderr)
-                    sys.exit(1)
+                    sys.sys.exit(1)
         print(int(timeit.default_timer() - t0), "Read", *filenames, file=sys.stderr)
         if read_gv:
             print(int(timeit.default_timer() - t0), "Sorting the vertices", file=sys.stderr)
@@ -398,7 +398,7 @@ class Physlr:
                     bx = fields[0]
                     if bx in bxtomxs:
                         print("Error: Expected single id per in file", file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                     bxtomxs[bx] = [int(mx.split(":", 1)[0]) for mx in fields[1].split()]
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
@@ -421,13 +421,13 @@ class Physlr:
                     if name in nametomxs:
                         print("Error: Duplicate sequence name:", name, "in", filename, \
                             file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                     posmxs = []
                     for mx_pos in fields[1].split():
                         if ":" not in mx_pos:
                             print("Error: Minimizers do not include positions:", filename, \
                                 file=sys.stderr)
-                            exit(1)
+                            sys.exit(1)
                         mx, pos = mx_pos.split(":", 1)
                         posmxs.append((int(pos), int(mx)))
                     nametomxs[name] = posmxs
@@ -2369,7 +2369,7 @@ class Physlr:
         method_name = "physlr_" + self.args.command.replace("-", "_")
         if not hasattr(Physlr, method_name):
             print("physlr: error: unrecognized command:", self.args.command, file=sys.stderr)
-            exit(1)
+            sys.exit(1)
         getattr(Physlr, method_name)(self)
 
 def main():
