@@ -82,7 +82,7 @@ class Physlr:
                     else:
                         print("physlr: expected 5 or 6 BED fields, or 12 or more PAF fields:",
                               line, file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                     bed.append((tname, int(tstart), int(tend), qname, int(score), orientation))
                 if Physlr.args.verbose >= 2:
                     progressbar.close()
@@ -104,7 +104,7 @@ class Physlr:
                     fields = line.rstrip("\n").split("\t")
                     if len(fields) < 12:
                         print("physlr: expected 12 or more PAF fields:", line, file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                     qname, qlength, qstart, qend, orientation, \
                         tname, tlength, tstart, tend, score, length, mapq = fields[0:12]
                     paf.append((
@@ -174,7 +174,7 @@ class Physlr:
             Physlr.write_tsv(g, fout)
         else:
             print("Unknown graph format:", graph_format, file=sys.stderr)
-            exit(1)
+            sys.exit(1)
 
     @staticmethod
     def read_tsv(g, filename):
@@ -187,7 +187,7 @@ class Physlr:
                 progressbar.update(len(line))
             if line not in ["U\tn\n", "U\tn\tm\n"]:
                 print("Unexpected header:", line, file=sys.stderr)
-                exit(1)
+                sys.exit(1)
             reading_vertices = True
             for line in fin:
                 if Physlr.args.verbose >= 2:
@@ -200,7 +200,7 @@ class Physlr:
                         reading_vertices = False
                     else:
                         print("Unexpected header:", line, file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                     line = fin.readline()
                     if Physlr.args.verbose >= 2:
                         progressbar.update(len(line))
@@ -212,13 +212,13 @@ class Physlr:
                         g.add_node(xs[0], n=int(xs[1]), m=int(xs[2]))
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                 else:
                     if len(xs) == 3:
                         g.add_edge(xs[0], xs[1], n=int(xs[2]))
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
         if Physlr.args.verbose >= 2:
             progressbar.close()
         return g
@@ -398,7 +398,7 @@ class Physlr:
                     bx = fields[0]
                     if bx in bxtomxs:
                         print("Error: Expected single id per in file", file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                     bxtomxs[bx] = [int(mx.split(":", 1)[0]) for mx in fields[1].split()]
                 progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
@@ -421,13 +421,13 @@ class Physlr:
                     if name in nametomxs:
                         print("Error: Duplicate sequence name:", name, "in", filename, \
                             file=sys.stderr)
-                        exit(1)
+                        sys.exit(1)
                     posmxs = []
                     for mx_pos in fields[1].split():
                         if ":" not in mx_pos:
                             print("Error: Minimizers do not include positions:", filename, \
                                 file=sys.stderr)
-                            exit(1)
+                            sys.exit(1)
                         mx, pos = mx_pos.split(":", 1)
                         posmxs.append((int(pos), int(mx)))
                     nametomxs[name] = posmxs
@@ -940,7 +940,7 @@ class Physlr:
     def physlr_subgraph(self):
         "Extract a vertex-induced subgraph."
         if self.args.d not in (0, 1):
-            exit("physlr subgraph: error: Only -d0 and -d1 are currently supported.")
+            sys.exit("physlr subgraph: error: Only -d0 and -d1 are currently supported.")
         vertices = set(self.args.v.split(","))
         if not self.args.exclude_vertices and len(vertices) == 1 and self.args.d == 1:
             self.args.exclude_vertices = self.args.v
@@ -956,9 +956,9 @@ class Physlr:
     def physlr_subgraphs(self):
         "Extract multiple vertex-induced subgraphs."
         if self.args.output is None:
-            exit("physlr subgraphs: missing parameter: --output is need but not provided.")
+            sys.exit("physlr subgraphs: missing parameter: --output is need but not provided.")
         if self.args.d not in (0, 1):
-            exit("physlr subgraphs: error: Only -d0 and -d1 are currently supported.")
+            sys.exit("physlr subgraphs: error: Only -d0 and -d1 are currently supported.")
         vertices = set(self.args.v.split(","))
         exclude_vertices = set(self.args.exclude_vertices.split(","))
         g = self.read_graph(self.args.FILES)
@@ -1348,7 +1348,8 @@ class Physlr:
     def physlr_split_minimizers(self):
         "Given the molecule overlap graph, split the minimizers into molecules"
         if len(self.args.FILES) < 2:
-            exit("physlr split-minimizers: error: graph file and bx to minimizer inputs required")
+            msg = "physlr split-minimizers: error: graph file and bx to minimizer inputs required"
+            sys.exit(msg)
         g = self.read_graph([self.args.FILES[0]])
         bxtomxs = self.read_minimizers([self.args.FILES[1]])
 
@@ -1377,7 +1378,7 @@ class Physlr:
     def physlr_split_reads_molecules(self):
         "Given the molecule -> minimizers table and the reads, partition reads into molecules"
         if len(self.args.FILES) < 3:
-            exit("physlr split-reads-molecules: error: molecule minimizers,\
+            sys.exit("physlr split-reads-molecules: error: molecule minimizers,\
             bx minimizers, reads inputs required")
         moltomxs = self.read_minimizers([self.args.FILES[0]])
         mol_counts = self.count_molecules_per_bx(moltomxs)
@@ -1402,7 +1403,7 @@ class Physlr:
                             (bx2_mol, mxs2) = self.parse_minimizer_line(mx_info2)
                             if bx1_mol != bx2_mol or bx1_mol != bx1:
                                 print("Should match: ", bx1_mol, bx2_mol, bx1, file=sys.stderr)
-                                exit("Error: Minimizer TSV order doesn't match reads fq file")
+                                sys.exit("Error: Minimizer TSV order doesn't match reads fq file")
 
                             (mol, inc_no_int_mx, inc_equal_mx) = self.assign_read_molecule(
                                 set.union(mxs1, mxs2), moltomxs, mol_counts, bx1)
@@ -1658,11 +1659,11 @@ class Physlr:
         alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
         alg_list = self.args.strategy.split("+")
         if not alg_list:
-            exit("Error: physlr molecule: missing parameter --separation-strategy")
+            sys.exit("Error: physlr molecule: missing parameter --separation-strategy")
         if not set(alg_list).issubset(alg_white_list):
             exit_message = "Error: physlr molecule: wrong input parameter(s) " + \
                       "--separation-strategy: " + str(set(alg_list) - alg_white_list)
-            exit(exit_message)
+            sys.exit(exit_message)
 
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
@@ -1785,7 +1786,7 @@ class Physlr:
     def map_indexing(self):
         "Load data structures and indexes required for mapping."
         if len(self.args.FILES) < 3:
-            exit("physlr map: error: at least three file arguments are required")
+            sys.exit("physlr map: error: at least three file arguments are required")
         path_filenames = [self.args.FILES[0]]
         target_filenames = [self.args.FILES[1]]
         query_filenames = self.args.FILES[2:]
@@ -1969,7 +1970,7 @@ class Physlr:
     def physlr_liftover_paf(self):
         """Lift over query coordinates of a PAF file from minimzer index to nucleotide position."""
         if len(self.args.FILES) < 2:
-            exit("physlr liftover-paf: error: At least two file arguments are required")
+            sys.exit("physlr liftover-paf: error: At least two file arguments are required")
         query_filenames = [self.args.FILES[0]]
         paf_filenames = self.args.FILES[1:]
 
@@ -2008,7 +2009,7 @@ class Physlr:
         """
 
         if len(self.args.FILES) < 2:
-            exit("physlr annotate-graph: error: at least two file arguments are required")
+            sys.exit("physlr annotate-graph: error: at least two file arguments are required")
         graph_filenames = [self.args.FILES[0]]
         path_filenames = [self.args.FILES[1]]
         bed_filenames = self.args.FILES[2:]
@@ -2106,7 +2107,7 @@ class Physlr:
         Usage: physlr path-to-fasta FASTA PATH... >FASTA
         """
         if len(self.args.FILES) < 2:
-            exit("physlr path-to-fasta: error: at least two file arguments are required")
+            sys.exit("physlr path-to-fasta: error: at least two file arguments are required")
         fasta_filenames = self.args.FILES[0:1]
         path_filenames = self.args.FILES[1:]
         seqs = Physlr.read_fastas(fasta_filenames)
@@ -2139,7 +2140,7 @@ class Physlr:
         Usage: physlr filter-bed BED PATH... >BED
         """
         if len(self.args.FILES) < 2:
-            exit("physlr filter-bed: error: at least two file arguments are required")
+            sys.exit("physlr filter-bed: error: at least two file arguments are required")
         bed_filenames = [self.args.FILES[0]]
         path_filenames = self.args.FILES[1:]
 
@@ -2208,7 +2209,7 @@ class Physlr:
     def physlr_path_metrics(self):
         "Report assembly metrics of a path file."
         if self.args.g is None:
-            exit("physlr path-metrics: error: You must specify -g, --expected-molecules")
+            sys.exit("physlr path-metrics: error: You must specify -g, --expected-molecules")
         print("Max\tNG25\tNG50\tNG75\tMin\tPaths\tNodes\tFile")
         for filename in self.args.FILES:
             paths = self.read_paths([filename])
@@ -2225,7 +2226,7 @@ class Physlr:
     def physlr_paf_metrics(self):
         "Report assembly metrics of a PAF file."
         if self.args.g is None:
-            exit("physlr paf-metrics: error: You must specify -g, --genome-size")
+            sys.exit("physlr paf-metrics: error: You must specify -g, --genome-size")
         print("Max\tNG25\tNG50\tNG75\tMin\tCount\tSum\tFile")
         for filename in self.args.FILES:
             xs = []
@@ -2369,7 +2370,7 @@ class Physlr:
         method_name = "physlr_" + self.args.command.replace("-", "_")
         if not hasattr(Physlr, method_name):
             print("physlr: error: unrecognized command:", self.args.command, file=sys.stderr)
-            exit(1)
+            sys.exit(1)
         getattr(Physlr, method_name)(self)
 
 def main():

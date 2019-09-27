@@ -8,3 +8,5 @@ max-public-methods=150
 ignore=mkt.py
 [TYPECHECK]
 ignored-modules=numpy.linalg
+[MESSAGES CONTROL]
+disable=C0415
