@@ -4,23 +4,23 @@ Physlr: Physical Mapping of Linked Reads
 """
 
 import argparse
+import community as louvain
 import itertools
 import multiprocessing
+import numpy as np
 import os
 import random
 import re
+import scipy as sp
 import statistics
 import sys
 import timeit
 from collections import Counter
-import numpy as np
-import scipy as sp
 from sklearn.metrics.pairwise import cosine_similarity
+
 
 import networkx as nx
 import tqdm
-
-import community as louvain
 
 import physlr.mkt
 
