@@ -8,6 +8,7 @@
 #include "indexlr-workers.h"
 
 #include <cassert>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -19,6 +20,25 @@
 #include <string>
 #include <vector>
 
+using namespace std::chrono;
+
+class Timer
+{
+  public:
+	Timer() { m_startTimepoint = high_resolution_clock::now(); }
+	~Timer() { stop(); }
+	void stop()
+	{
+		auto endTimepoint = high_resolution_clock::now();
+		auto start = time_point_cast<microseconds>(m_startTimepoint).time_since_epoch().count();
+		auto end = time_point_cast<microseconds>(endTimepoint).time_since_epoch().count();
+		std::cerr << (end - start) * 0.000001 << std::endl;
+	}
+
+  private:
+	time_point<high_resolution_clock> m_startTimepoint;
+};
+
 // Read a FASTQ file and reduce each read to a set of minimizers
 static void
 minimizeReads(
@@ -27,11 +47,13 @@ minimizeReads(
     const size_t k,
     const size_t w,
     const size_t t,
-    const bool withBloomFilter,
+    const bool withRBloomFilter,
+    const bool withSBloomFilter,
     const bool withPositions,
     const bool withStrands,
     const bool verbose,
-    BloomFilter& bloomFilter)
+    BloomFilter& rBloomFilter,
+    BloomFilter& sBloomFilter)
 {
 	InputWorker inputWorker(ipath);
 	OutputWorker outputWorker(opath, inputWorker);
@@ -44,11 +66,13 @@ minimizeReads(
 	    MinimizeWorker(
 	        k,
 	        w,
-	        withBloomFilter,
+	        withRBloomFilter,
+	        withSBloomFilter,
 	        withPositions,
 	        withStrands,
 	        verbose,
-	        bloomFilter,
+	        rBloomFilter,
+	        sBloomFilter,
 	        inputWorker,
 	        outputWorker));
 	for (auto& worker : minimizeWorkers) {
@@ -75,7 +99,8 @@ printUsage(const std::string& progname)
 	          << "  -k K -w W [-b bf_path] [-v] [-o FILE] FILE...\n\n"
 	             "  -k K        use K as k-mer size\n"
 	             "  -w W        use W as sliding-window size\n"
-	             "  -b bf_path  use a bloomfilter to filter out bad minimizers\n"
+	             "  -r repetitive_bf_path  use a bloomfilter to filter out bad minimizers\n"
+	             "  -s solid_bf_path  use a bloomfilter to filter in solid minimizers\n"
 	             "  --pos       include minimizer positions in the output\n"
 	             "  --strand    include minimizer strand in the output\n"
 	             "  -v          enable verbose output\n"
@@ -95,8 +120,10 @@ main(int argc, char* argv[])
 	unsigned k = 0;
 	unsigned w = 0;
 	bool verbose = false;
-	bool withBloomFilter = false;
-	BloomFilter bloomFilter;
+	bool withRBloomFilter = false;
+	bool withSBloomFilter = false;
+	BloomFilter repetitiveBloomFilter;
+	BloomFilter solidBloomFilter;
 	unsigned t = 1;
 	bool failed = false;
 	bool w_set = false;
@@ -109,7 +136,7 @@ main(int argc, char* argv[])
 		                                      { "strand", no_argument, &withStrands, 1 },
 		                                      { "help", no_argument, &help, 1 },
 		                                      { nullptr, 0, nullptr, 0 } };
-	while ((c = getopt_long(argc, argv, "k:w:o:vt:b:", longopts, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, "k:w:o:vt:r:s:", longopts, &optindex)) != -1) {
 		switch (c) {
 		case 0:
 			break;
@@ -135,15 +162,32 @@ main(int argc, char* argv[])
 				          << ": Using more than 5 threads does not scale, reverting to 5.\n";
 			}
 			break;
-		case 'b':
-			withBloomFilter = true;
-			std::cerr << "loading bloomfilter from " << optarg << std::endl;
+		case 'r': {
+			withRBloomFilter = true;
+			std::cerr << "Loading repetitive Bloom filter from " << optarg << std::endl;
+			Timer timer;
 			try {
-				bloomFilter.loadFilter(optarg);
+				repetitiveBloomFilter.loadFilter(optarg);
 			} catch (const std::exception& e) {
 				std::cerr << e.what() << '\n';
 			}
+			std::cerr << "Finished loading repetitive Bloom filter in sec: ";
+			timer.~Timer();
 			break;
+		}
+		case 's': {
+			withSBloomFilter = true;
+			std::cerr << "Loading solid Bloom filter from " << optarg << std::endl;
+			Timer timer;
+			try {
+				solidBloomFilter.loadFilter(optarg);
+			} catch (const std::exception& e) {
+				std::cerr << e.what() << '\n';
+			}
+			std::cerr << "Finished loading solid Bloom filter in sec: ";
+			timer.~Timer();
+			break;
+		}
 		default:
 			exit(EXIT_FAILURE);
 		}
@@ -171,6 +215,9 @@ main(int argc, char* argv[])
 	} else if (infiles.empty()) {
 		printErrorMsg(progname, "missing file operand");
 		failed = true;
+	} else if (withRBloomFilter && withSBloomFilter) {
+		printErrorMsg(progname, "missing file operand");
+		failed = true;
 	}
 	if (failed) {
 		exit(EXIT_FAILURE);
@@ -183,11 +230,13 @@ main(int argc, char* argv[])
 		    k,
 		    w,
 		    t,
-		    withBloomFilter,
+		    withRBloomFilter,
+		    withSBloomFilter,
 		    withPositions,
 		    withStrands,
 		    verbose,
-		    bloomFilter);
+		    repetitiveBloomFilter,
+		    solidBloomFilter);
 	}
 
 	return 0;

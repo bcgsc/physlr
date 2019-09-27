@@ -35,22 +35,6 @@ struct HashData
 	char strand;
 };
 
-struct find_HashData
-{
-	uint64_t hash;
-	size_t pos;
-	char strand;
-	explicit find_HashData(HashData d)
-	  : hash(d.hash)
-	  , pos(d.pos)
-	  , strand(d.strand)
-	{}
-	bool operator()(const HashData& d) const
-	{
-		return d.hash == hash && d.pos == pos && d.strand == strand;
-	}
-};
-
 using HashValues = std::vector<HashData>;
 
 // Hash the k-mers of a read using ntHash.
@@ -119,53 +103,6 @@ getMinimizers(const HashValues& hashes, const unsigned w)
 				return a.hash <= b.hash;
 			});
 		} else if (rightIt[-1].hash <= minIt->hash) {
-			minIt = rightIt - 1;
-		}
-		i = minIt - firstIt;
-		if (i > prev) {
-			prev = i;
-			minimizers.push_back(*minIt);
-		}
-	}
-	return minimizers;
-}
-
-static inline HashValues
-getMinimizers(const HashValues& hashes, const unsigned w, const BloomFilter& bloomFilter)
-{
-	HashValues minimizers;
-	if (hashes.size() < w) {
-		return minimizers;
-	}
-	minimizers.reserve(2 * hashes.size() / w);
-	int i = -1, prev = -1;
-	auto firstIt = hashes.begin();
-	auto minIt = hashes.end();
-	for (auto leftIt = firstIt; leftIt < hashes.end() - w + 1; ++leftIt) {
-		auto rightIt = leftIt + w;
-		if (i < leftIt - firstIt) {
-			HashValues tracker;
-			tracker.reserve(w);
-			for (auto trackerIt = leftIt; trackerIt < rightIt; ++trackerIt) {
-				vector<uint64_t> vect{ (*trackerIt).hash };
-				if (!bloomFilter.contains(vect)) {
-					tracker.push_back(*trackerIt);
-				}
-			}
-			if (tracker.empty()) {
-				continue;
-			}
-			// Use of operator '<=' returns the minimum that is furthest from left.
-			auto trackerMinIt = std::min_element(
-			    tracker.begin(), tracker.end(), [](const HashData& a, const HashData& b) {
-				    return a.hash <= b.hash;
-			    });
-			minIt = std::find_if(leftIt, rightIt, find_HashData(*trackerMinIt));
-		} else if (rightIt[-1].hash <= minIt->hash) {
-			vector<uint64_t> vect{ rightIt[-1].hash };
-			if (bloomFilter.contains(vect)) {
-				continue;
-			}
 			minIt = rightIt - 1;
 		}
 		i = minIt - firstIt;

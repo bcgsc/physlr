@@ -80,20 +80,24 @@ class MinimizeWorker
 	MinimizeWorker(
 	    size_t k,
 	    size_t w,
-	    bool withBloomFilter,
+	    bool withRBloomFilter,
+	    bool withSBloomFilter,
 	    bool withPositions,
 	    bool withStrands,
 	    bool verbose,
-	    BloomFilter& bloomFilter,
+	    BloomFilter& rBloomFilter,
+	    BloomFilter& SBloomFilter,
 	    InputWorker& inputWorker,
 	    OutputWorker& outputWorker)
 	  : k(k)
 	  , w(w)
-	  , withBloomFilter(withBloomFilter)
+	  , withRBloomFilter(withRBloomFilter)
+	  , withSBloomFilter(withSBloomFilter)
 	  , withPositions(withPositions)
 	  , withStrands(withStrands)
 	  , verbose(verbose)
-	  , bloomFilter(bloomFilter)
+	  , rBloomFilter(rBloomFilter)
+	  , sBloomFilter(sBloomFilter)
 	  , inputWorker(inputWorker)
 	  , outputWorker(outputWorker)
 	{}
@@ -101,11 +105,13 @@ class MinimizeWorker
 	MinimizeWorker(const MinimizeWorker& worker)
 	  : k(worker.k)
 	  , w(worker.w)
-	  , withBloomFilter(worker.withBloomFilter)
+	  , withRBloomFilter(worker.withRBloomFilter)
+	  , withSBloomFilter(worker.withSBloomFilter)
 	  , withPositions(worker.withPositions)
 	  , withStrands(worker.withStrands)
 	  , verbose(worker.verbose)
-	  , bloomFilter(worker.bloomFilter)
+	  , rBloomFilter(worker.rBloomFilter)
+	  , sBloomFilter(worker.sBloomFilter)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
 	{}
@@ -113,11 +119,13 @@ class MinimizeWorker
 	MinimizeWorker(MinimizeWorker&& worker) noexcept
 	  : k(worker.k)
 	  , w(worker.w)
-	  , withBloomFilter(worker.withBloomFilter)
+	  , withRBloomFilter(worker.withRBloomFilter)
+	  , withSBloomFilter(worker.withRBloomFilter)
 	  , withPositions(worker.withPositions)
 	  , withStrands(worker.withStrands)
 	  , verbose(worker.verbose)
-	  , bloomFilter(worker.bloomFilter)
+	  , rBloomFilter(worker.rBloomFilter)
+	  , sBloomFilter(worker.sBloomFilter)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
 	{}
@@ -134,11 +142,13 @@ class MinimizeWorker
   private:
 	size_t k = 0;
 	size_t w = 0;
-	bool withBloomFilter = false;
+	bool withRBloomFilter = false;
+	bool withSBloomFilter = false;
 	bool withPositions = false;
 	bool withStrands = false;
 	bool verbose = false;
-	BloomFilter& bloomFilter;
+	BloomFilter& rBloomFilter;
+	BloomFilter& sBloomFilter;
 	InputWorker& inputWorker;
 	OutputWorker& outputWorker;
 
@@ -293,13 +303,25 @@ MinimizeWorker::work()
 				}
 			}
 
-			HashValues minimizers;
-
-			if (withBloomFilter) {
-				minimizers = getMinimizers(hashes, w, bloomFilter);
-			} else {
-				minimizers = getMinimizers(hashes, w);
+			if (withRBloomFilter) {
+				for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
+					vector<uint64_t> vect{ (*hashesIt).hash };
+					if (rBloomFilter.contains(vect)) {
+						(*hashesIt).hash = UINT64_MAX;
+					}
+				}
 			}
+
+			if (withSBloomFilter) {
+				for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
+					vector<uint64_t> vect{ (*hashesIt).hash };
+					if (!sBloomFilter.contains(vect)) {
+						(*hashesIt).hash = UINT64_MAX;
+					}
+				}
+			}
+
+			auto minimizers = getMinimizers(hashes, w);
 
 			ss << read.barcode;
 			char sep = '\t';
@@ -307,14 +329,16 @@ MinimizeWorker::work()
 				ss << sep;
 			}
 			for (auto& m : minimizers) {
-				ss << sep << m.hash;
-				if (withPositions) {
-					ss << ':' << m.pos;
+				if (m.hash != UINT64_MAX) {
+					ss << sep << m.hash;
+					if (withPositions) {
+						ss << ':' << m.pos;
+					}
+					if (withStrands) {
+						ss << ':' << m.strand;
+					}
+					sep = ' ';
 				}
-				if (withStrands) {
-					ss << ':' << m.strand;
-				}
-				sep = ' ';
 			}
 			ss << '\n';
 		}
