@@ -1354,7 +1354,7 @@ class Physlr:
     def physlr_split_minimizers(self):
         "Given the molecule overlap graph, split the minimizers into molecules"
         if len(self.args.FILES) < 2:
-            exit_message = "physlr split-minimizers: error: graph file and bx to minimizer inputs required"
+            exit_msg = "physlr split-minimizers: error: graph file and bx to minimizer inputs required"
             sys.exit(exit_message)
         g = self.read_graph([self.args.FILES[0]])
         bxtomxs = self.read_minimizers([self.args.FILES[1]])
