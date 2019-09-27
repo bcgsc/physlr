@@ -4,19 +4,25 @@ Physlr: Physical Mapping of Linked Reads
 """
 
 import argparse
+import community as louvain
 import itertools
 import multiprocessing
+import numpy as np
 import os
 import random
 import re
+import scipy as sp
 import statistics
 import sys
 import timeit
 from collections import Counter
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 import networkx as nx
 import tqdm
+
+import physlr.mkt
 
 from physlr.minimerize import minimerize
 from physlr.read_fasta import read_fasta
@@ -1490,7 +1496,6 @@ class Physlr:
         """Apply Louvain community detection on a single component. Return communities."""
         if len(node_set) < 2:
             return []
-        import community as louvain
         partition = louvain.best_partition(g.subgraph(node_set), init_communities)
         return [{node for node in partition.keys() if partition[node] == com}
                 for com in set(partition.values())]
@@ -1501,9 +1506,6 @@ class Physlr:
         Square the adjacency matrix and then use cosine similarity to detect communities.
         Return communities.
         """
-        import scipy as sp
-        import numpy as np
-        from sklearn.metrics.pairwise import cosine_similarity
 
         communities = []
         if len(node_set) > 1:
@@ -1809,8 +1811,6 @@ class Physlr:
         Map sequences to a physical map.
         Usage: physlr map TGRAPH.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
         """
-        import physlr.mkt
-        import numpy
 
         query_mxs, mxtopos, _backbones = self.map_indexing()
 
@@ -1855,8 +1855,8 @@ class Physlr:
                         if tpos + 1 in tpos_to_qpos or tpos - 1 in tpos_to_qpos:
                             timepoints.append(tpos)
                             measurements.append(statistics.median_low(qpos_list))
-                tid_to_mkt[tid] = physlr.mkt.test(numpy.array(timepoints), \
-                                                  numpy.array(measurements), \
+                tid_to_mkt[tid] = physlr.mkt.test(np.array(timepoints), \
+                                                  np.array(measurements), \
                                                   1, self.args.p, "upordown")
             mapped = False
             for (tid, tpos), score in tidpos_to_n.items():
