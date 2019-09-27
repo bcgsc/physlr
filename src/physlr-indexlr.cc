@@ -52,8 +52,8 @@ minimizeReads(
     const bool withPositions,
     const bool withStrands,
     const bool verbose,
-    BloomFilter& rBloomFilter,
-    BloomFilter& sBloomFilter)
+    const BloomFilter& rBloomFilter,
+    const BloomFilter& sBloomFilter)
 {
 	InputWorker inputWorker(ipath);
 	OutputWorker outputWorker(opath, inputWorker);

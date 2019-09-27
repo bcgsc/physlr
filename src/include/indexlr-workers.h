@@ -85,8 +85,8 @@ class MinimizeWorker
 	    bool withPositions,
 	    bool withStrands,
 	    bool verbose,
-	    BloomFilter& rBloomFilter,
-	    BloomFilter& SBloomFilter,
+	    const BloomFilter& rBloomFilter,
+	    const BloomFilter& SBloomFilter,
 	    InputWorker& inputWorker,
 	    OutputWorker& outputWorker)
 	  : k(k)
@@ -147,8 +147,8 @@ class MinimizeWorker
 	bool withPositions = false;
 	bool withStrands = false;
 	bool verbose = false;
-	BloomFilter& rBloomFilter;
-	BloomFilter& sBloomFilter;
+	const BloomFilter& rBloomFilter;
+	const BloomFilter& sBloomFilter;
 	InputWorker& inputWorker;
 	OutputWorker& outputWorker;
 
