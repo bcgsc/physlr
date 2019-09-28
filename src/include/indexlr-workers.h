@@ -86,7 +86,7 @@ class MinimizeWorker
 	    bool withStrands,
 	    bool verbose,
 	    const BloomFilter& rBloomFilter,
-	    const BloomFilter& SBloomFilter,
+	    const BloomFilter& sBloomFilter,
 	    InputWorker& inputWorker,
 	    OutputWorker& outputWorker)
 	  : k(k)
