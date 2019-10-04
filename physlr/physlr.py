@@ -1267,7 +1267,6 @@ class Physlr:
             for u, v in branch_lengths:
                 gmst[u][v]["l"] = min(branch_lengths[(u, v)], branch_lengths[(v, u)])
         print(int(timeit.default_timer() - t0), "Measured branches.", file=sys.stderr, flush=True)
-        print(int(timeit.default_timer() - t0), "Measured branches.", file=sys.stderr, flush=True)
 
         self.write_graph(gmst, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote the MST.", file=sys.stderr)
