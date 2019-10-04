@@ -1710,6 +1710,10 @@ class Physlr:
             gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
         print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
 
+        num_singletons = Physlr.remove_singletons(gout)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
