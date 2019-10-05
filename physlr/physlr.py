@@ -1249,6 +1249,17 @@ class Physlr:
             Physlr.remove_bridges(g, Physlr.args.prune)
         gmst = Physlr.determine_pruned_mst(g)
 
+        self.write_graph(gmst, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote the MST.", file=sys.stderr)
+
+    def physlr_mst_troubleshoot(self):
+        """Determine the maximum spanning tree pruned for small branches."""
+        g = self.read_graph(self.args.FILES)
+        Physlr.remove_singletons(g)
+        if Physlr.args.prune > 0:
+            Physlr.remove_bridges(g, Physlr.args.prune)
+        gmst = Physlr.determine_pruned_mst(g)
+
         print(int(timeit.default_timer() - t0), "Measuring branches.", file=sys.stderr, flush=True)
         for component in nx.connected_components(gmst):
             gcomponent = gmst.subgraph(component)
