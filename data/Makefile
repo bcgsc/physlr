@@ -690,7 +690,7 @@ minsize=2000
 
 # Determine the maximum spanning tree.
 %.mst.tsv: %.tsv
-	$(python) $(bin)/physlr mst -V$V --prune=10 $< >$@
+	$(python) $(bin)/physlr mst -V$V --prune-branches=10 --prune-bridges=10 $< >$@
 
 # Separate a graph into its biconnected components by removing its cut vertices.
 %.bic.tsv: %.tsv
@@ -698,16 +698,16 @@ minsize=2000
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune=10 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 -s0 $< >$@
 
 # Determine the corrected backbone graph from the overlap TSV.
 min_path_size=200
 %.s3.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune=10 -s3 --min-path-size=$(min_path_size) $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 -s3 --min-path-size=$(min_path_size) $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
-	$(time) $(python) $(bin)/physlr backbone --prune=0 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr backbone --prune-branches=0 -s0 $< >$@
 
 # Cut chimeric paths to correct misassemblies.
 %.backbone.depth.tsv: %.tsv %.backbone.path
