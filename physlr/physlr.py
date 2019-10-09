@@ -518,13 +518,13 @@ class Physlr:
         return junctions
 
     @staticmethod
-    def split_junctions_of_tree(min_branch, gin):
+    def split_junctions_of_tree(min_branch, gin, keep_largest=0):
         """"
         Detect and split junctions of trees, with at least three branches larger than min_branch.
         For each junction, keep the two incident edges with the largest weight, and remove the rest.
         """
         if min_branch == 0:
-            return gin
+            return gin, 0
         junctions = Physlr.detect_junctions_of_tree(gin, min_branch)
         g = gin.copy()
         for junction in junctions:
@@ -533,9 +533,13 @@ class Physlr:
             if Physlr.args.verbose >= 3:
                 print("Junction:", junction, "Edges:", *edges, file=sys.stderr)
             # Keep the two incident edges with the largest weight, and remove the rest.
-            for u, v, _ in edges[2:-1]:
-                g.remove_edge(u, v)
-        return g
+            if keep_largest:
+                for u, v, _ in edges[2:-1]:
+                    g.remove_edge(u, v)
+            else:
+                for u, v, _ in edges:
+                    g.remove_edge(u, v)
+        return (g, len(junctions))
 
     @staticmethod
     def determine_backbones_of_trees(g, min_branch):
@@ -543,14 +547,21 @@ class Physlr:
         Determine backbones of the MSTs. resolve junctions of >=3 branches of size >= min_branch.
         """
         paths = []
+        removed_count = 0
         for component in nx.connected_components(g):
-            gcomponents = Physlr.split_junctions_of_tree(min_branch, g.subgraph(component))
+            gcomponents, rc =\
+                Physlr.split_junctions_of_tree(min_branch, g.subgraph(component))
+            removed_count += rc
             for subcomponent in nx.connected_components(gcomponents):
                 gsubcomponent = g.subgraph(subcomponent)
                 u, v, _ = Physlr.diameter_of_tree(gsubcomponent, weight="n")
                 path = nx.shortest_path(gsubcomponent, u, v, weight="n")
                 paths.append(path)
         paths.sort(key=len, reverse=True)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed ", removed_count, " junctions from the backbone",
+            file=sys.stderr)
         return paths
 
     @staticmethod
