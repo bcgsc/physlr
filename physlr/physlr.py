@@ -735,8 +735,8 @@ class Physlr:
     def determine_backbones(g):
         "Determine the backbones of the graph."
         g = g.copy()
-        if Physlr.args.prune > 0:
-            Physlr.remove_bridges(g, Physlr.args.prune)
+        if Physlr.args.prune_bridges > 0:
+            Physlr.remove_bridges(g, Physlr.args.prune_bridges)
         backbones = []
         gmst = Physlr.determine_pruned_mst(g)
         while not nx.is_empty(gmst):
@@ -1245,8 +1245,8 @@ class Physlr:
         """Determine the maximum spanning tree pruned for small branches."""
         g = self.read_graph(self.args.FILES)
         Physlr.remove_singletons(g)
-        if Physlr.args.prune > 0:
-            Physlr.remove_bridges(g, Physlr.args.prune)
+        if Physlr.args.prune_bridges > 0:
+            Physlr.remove_bridges(g, Physlr.args.prune_bridges)
         gmst = Physlr.determine_pruned_mst(g)
 
         self.write_graph(gmst, sys.stdout, self.args.graph_format)
@@ -1256,8 +1256,8 @@ class Physlr:
         """Determine the maximum spanning tree pruned for small branches."""
         g = self.read_graph(self.args.FILES)
         Physlr.remove_singletons(g)
-        if Physlr.args.prune > 0:
-            Physlr.remove_bridges(g, Physlr.args.prune)
+        if Physlr.args.prune_bridges > 0:
+            Physlr.remove_bridges(g, Physlr.args.prune_bridges)
         gmst = Physlr.determine_pruned_mst(g)
 
         print(int(timeit.default_timer() - t0), "Measuring branches.", file=sys.stderr, flush=True)
@@ -2370,8 +2370,11 @@ class Physlr:
             "--prune", action="store", dest="prune", type=int, default=10,
             help="size of the branches to be pruned [10]. set to 0 to skip prunning.")
         argparser.add_argument(
+            "--prune-bridges", action="store", dest="prune_bridges", type=int, default=0,
+            help="size of the bridges to be pruned [0]. set to 0 to skip bridge prunning.")
+        argparser.add_argument(
             "--min-branch", action="store", dest="min_branch", type=int, default=0,
-            help="split a backbone path when the alternative branch is long [0]")
+            help="split a backbone path when the alternative branch is longer than min-branch [0]. set to 0 to skip.")
         return argparser.parse_args()
 
     def __init__(self):
