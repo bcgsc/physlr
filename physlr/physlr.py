@@ -520,7 +520,7 @@ class Physlr:
     @staticmethod
     def split_junctions_of_tree(prune_junction, gin):
         """"
-        Detect and split junctions of trees, with at least three branches larger than prune_junction.
+        Detect and split junctions of trees, with at least 3 branches larger than prune_junction.
         For each junction, keep the two incident edges with the largest weight, and remove the rest.
         """
         if prune_junction == 0:
@@ -540,7 +540,8 @@ class Physlr:
     @staticmethod
     def determine_backbones_of_trees(g, prune_junction):
         """"
-        Determine backbones of the MSTs. resolve junctions of >=3 branches of size >= prune_junction.
+        Determine backbones of the MSTs.
+        Resolve junctions of >=3 branches of size >= prune_junction.
         """
         paths = []
         for component in nx.connected_components(g):
