@@ -2374,7 +2374,8 @@ class Physlr:
             help="size of the bridges to be pruned [0]. set to 0 to skip bridge prunning.")
         argparser.add_argument(
             "--min-branch", action="store", dest="min_branch", type=int, default=0,
-            help="split a backbone path when the alternative branch is longer than min-branch [0]. set to 0 to skip.")
+            help="split a backbone path when the alternative branch is longer than"
+                 "min-branch [0]. set to 0 to skip.")
         return argparser.parse_args()
 
     def __init__(self):
