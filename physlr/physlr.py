@@ -499,9 +499,9 @@ class Physlr:
         return (u, v, diameter)
 
     @staticmethod
-    def detect_junctions_of_tree(gcomponent, min_branch):
+    def detect_junctions_of_tree(gcomponent, prune_junction):
         """"
-        Detect the junctions in the tree, with at least branches larger than min_branch.
+        Detect the junctions in the tree, with at least branches larger than prune_junction.
         """
         branch_lengths = Physlr.measure_branch_length(gcomponent)
         candidate_junctions = [node
@@ -512,20 +512,20 @@ class Physlr:
             lengths = [branch_lengths[(candidate_junction, neighbor)]
                        for neighbor in gcomponent.neighbors(candidate_junction)]
             lengths.sort()
-            if lengths[-3] >= min_branch:
+            if lengths[-3] >= prune_junction:
                 # If the 3rd largest branch is considerably large, this node is a junction.
                 junctions.append(candidate_junction)
         return junctions
 
     @staticmethod
-    def split_junctions_of_tree(min_branch, gin):
+    def split_junctions_of_tree(prune_junction, gin):
         """"
-        Detect and split junctions of trees, with at least three branches larger than min_branch.
+        Detect and split junctions of trees, with at least three branches larger than prune_junction.
         For each junction, keep the two incident edges with the largest weight, and remove the rest.
         """
-        if min_branch == 0:
+        if prune_junction == 0:
             return gin
-        junctions = Physlr.detect_junctions_of_tree(gin, min_branch)
+        junctions = Physlr.detect_junctions_of_tree(gin, prune_junction)
         g = gin.copy()
         for junction in junctions:
             edges = list(g.edges(junction, data="n"))
@@ -538,13 +538,13 @@ class Physlr:
         return g
 
     @staticmethod
-    def determine_backbones_of_trees(g, min_branch):
+    def determine_backbones_of_trees(g, prune_junction):
         """"
-        Determine backbones of the MSTs. resolve junctions of >=3 branches of size >= min_branch.
+        Determine backbones of the MSTs. resolve junctions of >=3 branches of size >= prune_junction.
         """
         paths = []
         for component in nx.connected_components(g):
-            gcomponents = Physlr.split_junctions_of_tree(min_branch, g.subgraph(component))
+            gcomponents = Physlr.split_junctions_of_tree(prune_junction, g.subgraph(component))
             for subcomponent in nx.connected_components(gcomponents):
                 gsubcomponent = g.subgraph(subcomponent)
                 u, v, _ = Physlr.diameter_of_tree(gsubcomponent, weight="n")
@@ -674,7 +674,7 @@ class Physlr:
         print(
             int(timeit.default_timer() - t0),
             "Determined the maximum spanning tree.", file=sys.stderr, flush=True)
-        Physlr.prune_mst(gmst, Physlr.args.prune)
+        Physlr.prune_mst(gmst, Physlr.args.prune_branches)
         return gmst
 
     @staticmethod
@@ -740,8 +740,8 @@ class Physlr:
         backbones = []
         gmst = Physlr.determine_pruned_mst(g)
         while not nx.is_empty(gmst):
-            paths = Physlr.determine_backbones_of_trees(gmst, Physlr.args.min_branch)
-            backbones += (path for path in paths if len(path) >= Physlr.args.prune)
+            paths = Physlr.determine_backbones_of_trees(gmst, Physlr.args.prune_junction)
+            backbones += (path for path in paths if len(path) >= Physlr.args.prune_branches)
             for path in paths:
                 gmst.remove_nodes_from(path)
         backbones.sort(key=len, reverse=True)
@@ -2367,15 +2367,15 @@ class Physlr:
             "FILES", nargs="+",
             help="FASTA/FASTQ, TSV, or GraphViz format")
         argparser.add_argument(
-            "--prune", action="store", dest="prune", type=int, default=10,
+            "--prune-branches", action="store", dest="prune_branches", type=int, default=10,
             help="size of the branches to be pruned [10]. set to 0 to skip prunning.")
         argparser.add_argument(
             "--prune-bridges", action="store", dest="prune_bridges", type=int, default=0,
             help="size of the bridges to be pruned [0]. set to 0 to skip bridge prunning.")
         argparser.add_argument(
-            "--min-branch", action="store", dest="min_branch", type=int, default=0,
+            "--prune-junction", action="store", dest="prune_junction", type=int, default=0,
             help="split a backbone path when the alternative branch is longer than"
-                 "min-branch [0]. set to 0 to skip.")
+                 "prune-junction [0]. set to 0 to skip.")
         return argparser.parse_args()
 
     def __init__(self):
