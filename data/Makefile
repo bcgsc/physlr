@@ -642,11 +642,35 @@ minsize=2000
 
 # Index a FASTA file.
 %.k$k-w$w.physlr.tsv: %.fa
+ifeq ($(r),)
+ifeq ($(s),)
 	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w --pos -o $@ $<
+else
+	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -s $s --pos -o $@ $<
+endif
+else
+ifeq ($(s),)
+	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $r --pos -o $@ $<
+else
+	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $r -s $s --pos -o $@ $<
+endif
+endif
 
 # Index a compressed FASTQ file of linked reads.
 %.k$k-w$w.physlr.tsv.gz: %.fq.gz
+ifeq ($(r),)
+ifeq ($(s),)
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w - | $(gzip) >$@
+else
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -s $s - | $(gzip) >$@
+endif
+else
+ifeq ($(s),)
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $r - | $(gzip) >$@
+else
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $r -s $s - | $(gzip) >$@
+endif
+endif
 
 # Identify the overlapping minimizers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv
