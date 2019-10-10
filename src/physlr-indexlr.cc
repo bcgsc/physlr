@@ -47,8 +47,8 @@ minimizeReads(
     const size_t k,
     const size_t w,
     const size_t t,
-    const bool withRBloomFilter,
-    const bool withSBloomFilter,
+    const bool withRepeat,
+    const bool withSolid,
     const bool withPositions,
     const bool withStrands,
     const bool verbose,
@@ -66,8 +66,8 @@ minimizeReads(
 	    MinimizeWorker(
 	        k,
 	        w,
-	        withRBloomFilter,
-	        withSBloomFilter,
+	        withRepeat,
+	        withSolid,
 	        withPositions,
 	        withStrands,
 	        verbose,
@@ -96,10 +96,10 @@ static void
 printUsage(const std::string& progname)
 {
 	std::cout << "Usage:  " << progname
-	          << "  -k K -w W [-b bf_path] [-v] [-o FILE] FILE...\n\n"
+	          << "  -k K -w W [-r repeat_bf_path] [-s solid_bf_path] [-v] [-o FILE] FILE...\n\n"
 	             "  -k K        use K as k-mer size\n"
 	             "  -w W        use W as sliding-window size\n"
-	             "  -r repetitive_bf_path  use a bloomfilter to filter out bad minimizers\n"
+	             "  -r repeat_bf_path  use a bloomfilter to filter out repetitive minimizers\n"
 	             "  -s solid_bf_path  use a bloomfilter to filter in solid minimizers\n"
 	             "  --pos       include minimizer positions in the output\n"
 	             "  --strand    include minimizer strand in the output\n"
@@ -120,10 +120,10 @@ main(int argc, char* argv[])
 	unsigned k = 0;
 	unsigned w = 0;
 	bool verbose = false;
-	bool withRBloomFilter = false;
-	bool withSBloomFilter = false;
-	BloomFilter repetitiveBloomFilter;
-	BloomFilter solidBloomFilter;
+	bool withRepeat = false;
+	bool withSolid = false;
+	BloomFilter repeatBF;
+	BloomFilter solidBF;
 	unsigned t = 1;
 	bool failed = false;
 	bool w_set = false;
@@ -163,11 +163,11 @@ main(int argc, char* argv[])
 			}
 			break;
 		case 'r': {
-			withRBloomFilter = true;
+			withRepeat = true;
 			std::cerr << "Loading repetitive Bloom filter from " << optarg << std::endl;
 			Timer timer;
 			try {
-				repetitiveBloomFilter.loadFilter(optarg);
+				repeatBF.loadFilter(optarg);
 			} catch (const std::exception& e) {
 				std::cerr << e.what() << '\n';
 			}
@@ -176,11 +176,11 @@ main(int argc, char* argv[])
 			break;
 		}
 		case 's': {
-			withSBloomFilter = true;
+			withSolid = true;
 			std::cerr << "Loading solid Bloom filter from " << optarg << std::endl;
 			Timer timer;
 			try {
-				solidBloomFilter.loadFilter(optarg);
+				solidBF.loadFilter(optarg);
 			} catch (const std::exception& e) {
 				std::cerr << e.what() << '\n';
 			}
@@ -215,7 +215,7 @@ main(int argc, char* argv[])
 	} else if (infiles.empty()) {
 		printErrorMsg(progname, "missing file operand");
 		failed = true;
-	} else if (withRBloomFilter && withSBloomFilter) {
+	} else if (withRepeat && withSolid) {
 		printErrorMsg(progname, "missing file operand");
 		failed = true;
 	}
@@ -230,13 +230,13 @@ main(int argc, char* argv[])
 		    k,
 		    w,
 		    t,
-		    withRBloomFilter,
-		    withSBloomFilter,
+		    withRepeat,
+		    withSolid,
 		    withPositions,
 		    withStrands,
 		    verbose,
-		    repetitiveBloomFilter,
-		    solidBloomFilter);
+		    repeatBF,
+		    solidBF);
 	}
 
 	return 0;

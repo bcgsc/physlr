@@ -80,24 +80,24 @@ class MinimizeWorker
 	MinimizeWorker(
 	    size_t k,
 	    size_t w,
-	    bool withRBloomFilter,
-	    bool withSBloomFilter,
+	    bool withRepeat,
+	    bool withSolid,
 	    bool withPositions,
 	    bool withStrands,
 	    bool verbose,
-	    const BloomFilter& rBloomFilter,
-	    const BloomFilter& sBloomFilter,
+	    const BloomFilter& repeatBF,
+	    const BloomFilter& solidBF,
 	    InputWorker& inputWorker,
 	    OutputWorker& outputWorker)
 	  : k(k)
 	  , w(w)
-	  , withRBloomFilter(withRBloomFilter)
-	  , withSBloomFilter(withSBloomFilter)
+	  , withRepeat(withRepeat)
+	  , withSolid(withSolid)
 	  , withPositions(withPositions)
 	  , withStrands(withStrands)
 	  , verbose(verbose)
-	  , rBloomFilter(rBloomFilter)
-	  , sBloomFilter(sBloomFilter)
+	  , repeatBF(repeatBF)
+	  , solidBF(solidBF)
 	  , inputWorker(inputWorker)
 	  , outputWorker(outputWorker)
 	{}
@@ -105,13 +105,13 @@ class MinimizeWorker
 	MinimizeWorker(const MinimizeWorker& worker)
 	  : k(worker.k)
 	  , w(worker.w)
-	  , withRBloomFilter(worker.withRBloomFilter)
-	  , withSBloomFilter(worker.withSBloomFilter)
+	  , withRepeat(worker.withRepeat)
+	  , withSolid(worker.withSolid)
 	  , withPositions(worker.withPositions)
 	  , withStrands(worker.withStrands)
 	  , verbose(worker.verbose)
-	  , rBloomFilter(worker.rBloomFilter)
-	  , sBloomFilter(worker.sBloomFilter)
+	  , repeatBF(worker.repeatBF)
+	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
 	{}
@@ -119,13 +119,13 @@ class MinimizeWorker
 	MinimizeWorker(MinimizeWorker&& worker) noexcept
 	  : k(worker.k)
 	  , w(worker.w)
-	  , withRBloomFilter(worker.withRBloomFilter)
-	  , withSBloomFilter(worker.withRBloomFilter)
+	  , withRepeat(worker.withRepeat)
+	  , withSolid(worker.withRepeat)
 	  , withPositions(worker.withPositions)
 	  , withStrands(worker.withStrands)
 	  , verbose(worker.verbose)
-	  , rBloomFilter(worker.rBloomFilter)
-	  , sBloomFilter(worker.sBloomFilter)
+	  , repeatBF(worker.repeatBF)
+	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
 	{}
@@ -142,13 +142,13 @@ class MinimizeWorker
   private:
 	size_t k = 0;
 	size_t w = 0;
-	bool withRBloomFilter = false;
-	bool withSBloomFilter = false;
+	bool withRepeat = false;
+	bool withSolid = false;
 	bool withPositions = false;
 	bool withStrands = false;
 	bool verbose = false;
-	const BloomFilter& rBloomFilter;
-	const BloomFilter& sBloomFilter;
+	const BloomFilter& repeatBF;
+	const BloomFilter& solidBF;
 	InputWorker& inputWorker;
 	OutputWorker& outputWorker;
 
@@ -303,19 +303,19 @@ MinimizeWorker::work()
 				}
 			}
 
-			if (withRBloomFilter) {
+			if (withRepeat) {
 				for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
 					vector<uint64_t> vect{ (*hashesIt).hash };
-					if (rBloomFilter.contains(vect)) {
+					if (repeatBF.contains(vect)) {
 						(*hashesIt).hash = UINT64_MAX;
 					}
 				}
 			}
 
-			if (withSBloomFilter) {
+			if (withSolid) {
 				for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
 					vector<uint64_t> vect{ (*hashesIt).hash };
-					if (!sBloomFilter.contains(vect)) {
+					if (!solidBF.contains(vect)) {
 						(*hashesIt).hash = UINT64_MAX;
 					}
 				}
