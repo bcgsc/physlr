@@ -145,13 +145,13 @@ main(int argc, char* argv[])
 			break;
 		case 'r': {
 			withRepeat = true;
-			std::cerr << "Loading repetitive Bloom filter from " << optarg << std::endl;
+			std::cerr << "Loading repeat Bloom filter from " << optarg << std::endl;
 			try {
 				repeatBF.loadFilter(optarg);
 			} catch (const std::exception& e) {
 				std::cerr << e.what() << '\n';
 			}
-			std::cerr << "Finished loading repetitive Bloom filter" << std::endl;
+			std::cerr << "Finished loading repeat Bloom filter" << std::endl;
 			break;
 		}
 		case 's': {
