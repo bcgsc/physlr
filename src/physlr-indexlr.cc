@@ -20,25 +20,6 @@
 #include <string>
 #include <vector>
 
-using namespace std::chrono;
-
-class Timer
-{
-  public:
-	Timer() { m_startTimepoint = high_resolution_clock::now(); }
-	~Timer() { stop(); }
-	void stop()
-	{
-		auto endTimepoint = high_resolution_clock::now();
-		auto start = time_point_cast<microseconds>(m_startTimepoint).time_since_epoch().count();
-		auto end = time_point_cast<microseconds>(endTimepoint).time_since_epoch().count();
-		std::cerr << (end - start) * 0.000001 << std::endl;
-	}
-
-  private:
-	time_point<high_resolution_clock> m_startTimepoint;
-};
-
 // Read a FASTQ file and reduce each read to a set of minimizers
 static void
 minimizeReads(
@@ -165,27 +146,23 @@ main(int argc, char* argv[])
 		case 'r': {
 			withRepeat = true;
 			std::cerr << "Loading repetitive Bloom filter from " << optarg << std::endl;
-			Timer timer;
 			try {
 				repeatBF.loadFilter(optarg);
 			} catch (const std::exception& e) {
 				std::cerr << e.what() << '\n';
 			}
-			std::cerr << "Finished loading repetitive Bloom filter in sec: ";
-			timer.~Timer();
+			std::cerr << "Finished loading repetitive Bloom filter" << std::endl;
 			break;
 		}
 		case 's': {
 			withSolid = true;
 			std::cerr << "Loading solid Bloom filter from " << optarg << std::endl;
-			Timer timer;
 			try {
 				solidBF.loadFilter(optarg);
 			} catch (const std::exception& e) {
 				std::cerr << e.what() << '\n';
 			}
-			std::cerr << "Finished loading solid Bloom filter in sec: ";
-			timer.~Timer();
+			std::cerr << "Finished loading solid Bloom filter" << std::endl;
 			break;
 		}
 		default:
