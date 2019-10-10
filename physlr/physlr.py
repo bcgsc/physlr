@@ -1272,6 +1272,15 @@ class Physlr:
         self.write_graph(gmst, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote the MST.", file=sys.stderr)
 
+    def physlr_bridge_removed(self):
+        """
+        Iteratively remove bridges in the MST of the graph and output the graph.
+        """
+        g = self.read_graph(self.args.FILES)
+        if Physlr.args.prune_bridges > 0:
+            Physlr.remove_bridges(g, Physlr.args.prune_bridges)
+        self.write_graph(g, sys.stdout, self.args.graph_format)
+
     def physlr_backbone(self):
         "Determine the backbone path of the graph."
         g = self.read_graph(self.args.FILES)
