@@ -311,21 +311,22 @@ MinimizeWorker::work()
 					}
 				}
 			}
-
-			if (withRepeat) {
-				for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
-					vector<uint64_t> vect{ (*hashesIt).hash };
-					if (repeatBF.contains(vect)) {
-						(*hashesIt).hash = UINT64_MAX;
+			else {
+				if (withRepeat) {
+					for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
+						vector<uint64_t> vect{ (*hashesIt).hash };
+						if (repeatBF.contains(vect)) {
+							(*hashesIt).hash = UINT64_MAX;
+						}
 					}
 				}
-			}
 
-			if (withSolid) {
-				for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
-					vector<uint64_t> vect{ (*hashesIt).hash };
-					if (!solidBF.contains(vect)) {
-						(*hashesIt).hash = UINT64_MAX;
+				if (withSolid) {
+					for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
+						vector<uint64_t> vect{ (*hashesIt).hash };
+						if (!solidBF.contains(vect)) {
+							(*hashesIt).hash = UINT64_MAX;
+						}
 					}
 				}
 			}
