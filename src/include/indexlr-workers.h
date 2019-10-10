@@ -310,8 +310,7 @@ MinimizeWorker::work()
 						(*hashesIt).hash = UINT64_MAX;
 					}
 				}
-			}
-			else {
+			} else {
 				if (withRepeat) {
 					for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
 						vector<uint64_t> vect{ (*hashesIt).hash };
