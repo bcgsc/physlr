@@ -192,9 +192,6 @@ main(int argc, char* argv[])
 	} else if (infiles.empty()) {
 		printErrorMsg(progname, "missing file operand");
 		failed = true;
-	} else if (withRepeat && withSolid) {
-		printErrorMsg(progname, "missing file operand");
-		failed = true;
 	}
 	if (failed) {
 		exit(EXIT_FAILURE);
