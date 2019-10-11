@@ -640,35 +640,37 @@ minsize=2000
 %.fa.gap.bed: %.fa
 	$(python) $(bin)/physlr fasta-gaps $< >$@
 
+# solid_bloom_path - path to Bloom Filter with solid kmers
+# repeat_bloom_path - path to Bloom Filter with repetitive kmers
 # Index a FASTA file.
 %.k$k-w$w.physlr.tsv: %.fa
-ifeq ($(r),)
-ifeq ($(s),)
+ifeq ($(repeat_bloom_path),)
+ifeq ($(solid_bloom_path),)
 	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w --pos -o $@ $<
 else
-	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -s $s --pos -o $@ $<
+	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -s $(solid_bloom_path) --pos -o $@ $<
 endif
 else
-ifeq ($(s),)
-	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $r --pos -o $@ $<
+ifeq ($(solid_bloom_path),)
+	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(repeat_bloom_path) --pos -o $@ $<
 else
-	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $r -s $s --pos -o $@ $<
+	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(repeat_bloom_path) -s $(solid_bloom_path) --pos -o $@ $<
 endif
 endif
 
 # Index a compressed FASTQ file of linked reads.
 %.k$k-w$w.physlr.tsv.gz: %.fq.gz
-ifeq ($(r),)
-ifeq ($(s),)
+ifeq ($(repeat_bloom_path),)
+ifeq ($(solid_bloom_path),)
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w - | $(gzip) >$@
 else
-	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -s $s - | $(gzip) >$@
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -s $(solid_bloom_path) - | $(gzip) >$@
 endif
 else
-ifeq ($(s),)
-	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $r - | $(gzip) >$@
+ifeq ($(solid_bloom_path),)
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(repeat_bloom_path) - | $(gzip) >$@
 else
-	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $r -s $s - | $(gzip) >$@
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(repeat_bloom_path) -s $(solid_bloom_path) - | $(gzip) >$@
 endif
 endif
 
