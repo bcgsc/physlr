@@ -80,7 +80,7 @@ printUsage(const std::string& progname)
 	             "  -k K        use K as k-mer size\n"
 	             "  -w W        use W as sliding-window size\n"
 	             "  -r repeat_bf_path  use a Bloom filter to filter out repetitive minimizers\n"
-	             "  -s solid_bf_path  use a Bloom filter to filter in solid minimizers\n"
+	             "  -s solid_bf_path  use a Bloom filter to only select solid minimizers\n"
 	             "  --pos       include minimizer positions in the output\n"
 	             "  --strand    include minimizer strand in the output\n"
 	             "  -v          enable verbose output\n"
