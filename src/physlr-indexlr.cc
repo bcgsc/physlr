@@ -1,7 +1,7 @@
 // Convert linked-reads to minimizers using ntHash-2.0.0.
-// Usage:  physlr-indexlr -k K -w W [-v] [-o file] file...
+// Usage:  physlr-indexlr -k K -w W [-r repeat_bf_path] [-s solid_bf_path] [-v] [-o FILE] FILE...
 // Output: Each line of output is a barcode followed by a list of minimzers.
-// Originally written for Physlr: (https://github.com/bcgsc/physlri
+// Originally written for Physlr: (https://github.com/bcgsc/physlr)
 // Written by Vladimir Nikolic (schutzekatze) and Shaun Jackman (@sjackman)
 
 #include "btl_bloomfilter/BloomFilter.hpp"
