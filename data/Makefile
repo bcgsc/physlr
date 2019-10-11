@@ -698,7 +698,7 @@ minsize=2000
 
 # Determine the bridge-removed graph from the overlap TSV.
 %.bridge-removed.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr bridge-removed --prune-branches=10 --prune-bridges=10 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr remove-bridges-graph --prune-branches=10 --prune-bridges=10 -s0 $< >$@
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv

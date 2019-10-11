@@ -1272,7 +1272,7 @@ class Physlr:
         self.write_graph(gmst, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote the MST.", file=sys.stderr)
 
-    def physlr_bridge_removed(self):
+    def physlr_remove_bridges_graph(self):
         """
         Iteratively remove bridges in the MST of the graph and output the graph.
         """
