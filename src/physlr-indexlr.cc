@@ -8,7 +8,6 @@
 #include "indexlr-workers.h"
 
 #include <cassert>
-#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
