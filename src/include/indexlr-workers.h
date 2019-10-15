@@ -1,6 +1,7 @@
 #ifndef INDEXLR_WORKERS_H
 #define INDEXLR_WORKERS_H
 
+#include "btl_bloomfilter/BloomFilter.hpp"
 #include "indexlr-buffer.h"
 #include "indexlr-minimize.h"
 
@@ -79,16 +80,24 @@ class MinimizeWorker
 	MinimizeWorker(
 	    size_t k,
 	    size_t w,
+	    bool withRepeat,
+	    bool withSolid,
 	    bool withPositions,
 	    bool withStrands,
 	    bool verbose,
+	    const BloomFilter& repeatBF,
+	    const BloomFilter& solidBF,
 	    InputWorker& inputWorker,
 	    OutputWorker& outputWorker)
 	  : k(k)
 	  , w(w)
+	  , withRepeat(withRepeat)
+	  , withSolid(withSolid)
 	  , withPositions(withPositions)
 	  , withStrands(withStrands)
 	  , verbose(verbose)
+	  , repeatBF(repeatBF)
+	  , solidBF(solidBF)
 	  , inputWorker(inputWorker)
 	  , outputWorker(outputWorker)
 	{}
@@ -96,9 +105,13 @@ class MinimizeWorker
 	MinimizeWorker(const MinimizeWorker& worker)
 	  : k(worker.k)
 	  , w(worker.w)
+	  , withRepeat(worker.withRepeat)
+	  , withSolid(worker.withSolid)
 	  , withPositions(worker.withPositions)
 	  , withStrands(worker.withStrands)
 	  , verbose(worker.verbose)
+	  , repeatBF(worker.repeatBF)
+	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
 	{}
@@ -106,9 +119,13 @@ class MinimizeWorker
 	MinimizeWorker(MinimizeWorker&& worker) noexcept
 	  : k(worker.k)
 	  , w(worker.w)
+	  , withRepeat(worker.withRepeat)
+	  , withSolid(worker.withRepeat)
 	  , withPositions(worker.withPositions)
 	  , withStrands(worker.withStrands)
 	  , verbose(worker.verbose)
+	  , repeatBF(worker.repeatBF)
+	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
 	{}
@@ -125,9 +142,13 @@ class MinimizeWorker
   private:
 	size_t k = 0;
 	size_t w = 0;
+	bool withRepeat = false;
+	bool withSolid = false;
 	bool withPositions = false;
 	bool withStrands = false;
 	bool verbose = false;
+	const BloomFilter& repeatBF;
+	const BloomFilter& solidBF;
 	InputWorker& inputWorker;
 	OutputWorker& outputWorker;
 
@@ -282,6 +303,33 @@ MinimizeWorker::work()
 				}
 			}
 
+			if (withRepeat && withSolid) {
+				for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
+					vector<uint64_t> vect{ (*hashesIt).hash };
+					if (repeatBF.contains(vect) || !solidBF.contains(vect)) {
+						(*hashesIt).hash = UINT64_MAX;
+					}
+				}
+			} else {
+				if (withRepeat) {
+					for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
+						vector<uint64_t> vect{ (*hashesIt).hash };
+						if (repeatBF.contains(vect)) {
+							(*hashesIt).hash = UINT64_MAX;
+						}
+					}
+				}
+
+				if (withSolid) {
+					for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
+						vector<uint64_t> vect{ (*hashesIt).hash };
+						if (!solidBF.contains(vect)) {
+							(*hashesIt).hash = UINT64_MAX;
+						}
+					}
+				}
+			}
+
 			auto minimizers = getMinimizers(hashes, w);
 
 			ss << read.barcode;
@@ -290,14 +338,16 @@ MinimizeWorker::work()
 				ss << sep;
 			}
 			for (auto& m : minimizers) {
-				ss << sep << m.hash;
-				if (withPositions) {
-					ss << ':' << m.pos;
+				if (m.hash != UINT64_MAX) {
+					ss << sep << m.hash;
+					if (withPositions) {
+						ss << ':' << m.pos;
+					}
+					if (withStrands) {
+						ss << ':' << m.strand;
+					}
+					sep = ' ';
 				}
-				if (withStrands) {
-					ss << ':' << m.strand;
-				}
-				sep = ' ';
 			}
 			ss << '\n';
 		}
