@@ -33,7 +33,8 @@ minimizeReads(
     const bool withStrands,
     const bool verbose,
     const BloomFilter& rBloomFilter,
-    const BloomFilter& sBloomFilter)
+    const BloomFilter& sBloomFilter,
+	const bool stlfr)
 {
 	InputWorker inputWorker(ipath);
 	OutputWorker outputWorker(opath, inputWorker);
@@ -54,7 +55,8 @@ minimizeReads(
 	        rBloomFilter,
 	        sBloomFilter,
 	        inputWorker,
-	        outputWorker));
+	        outputWorker,
+	        stlfr));
 	for (auto& worker : minimizeWorkers) {
 		worker.start();
 	}
@@ -86,6 +88,7 @@ printUsage(const std::string& progname)
 	             "  -v          enable verbose output\n"
 	             "  -o FILE     write output to FILE, default is stdout\n"
 	             "  -t N        use N number of threads (default 1, max 5)\n"
+				 "  --stlfr     parse stlfr input\n"
 	             "  --help      display this help and exit\n"
 	             "  FILE        space separated list of FASTQ files\n";
 }
@@ -110,11 +113,13 @@ main(int argc, char* argv[])
 	bool k_set = false;
 	static int withPositions = 0;
 	static int withStrands = 0;
+	static int stlfr = 0;
 	char* end = nullptr;
 	std::string outfile("/dev/stdout");
 	static const struct option longopts[] = { { "pos", no_argument, &withPositions, 1 },
 		                                      { "strand", no_argument, &withStrands, 1 },
 		                                      { "help", no_argument, &help, 1 },
+		                                      { "stlfr", no_argument, &stlfr, 1 },
 		                                      { nullptr, 0, nullptr, 0 } };
 	while ((c = getopt_long(argc, argv, "k:w:o:vt:r:s:", longopts, &optindex)) != -1) {
 		switch (c) {
@@ -162,10 +167,10 @@ main(int argc, char* argv[])
 				std::cerr << e.what() << '\n';
 			}
 			std::cerr << "Finished loading solid Bloom filter" << std::endl;
-			break;
-		}
-		default:
-			exit(EXIT_FAILURE);
+			break;			
+		}			
+		default:			
+			exit(EXIT_FAILURE);			
 		}
 	}
 	std::vector<std::string> infiles(&argv[optind], &argv[argc]);
@@ -209,7 +214,8 @@ main(int argc, char* argv[])
 		    withStrands,
 		    verbose,
 		    repeatBF,
-		    solidBF);
+		    solidBF,
+		    stlfr);
 	}
 
 	return 0;
