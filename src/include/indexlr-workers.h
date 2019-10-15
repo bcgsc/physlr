@@ -220,11 +220,9 @@ InputWorker::work()
 					done = true;
 					break;
 				}
-				
 				regex right("*#");
 				regex left("/*");
-    // regex_replace() for replacing the match with 'geek'
-				
+
 				std::cerr << "seq name: " << seq->name.s << std::endl;
 				std::cerr << "seq comment: " << seq->comment.s << std::endl;
 				std::string barcode = std::regex_replace(seq->name.s, right, "");
