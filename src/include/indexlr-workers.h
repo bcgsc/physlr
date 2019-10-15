@@ -89,7 +89,8 @@ class MinimizeWorker
 	    const BloomFilter& repeatBF,
 	    const BloomFilter& solidBF,
 	    InputWorker& inputWorker,
-	    OutputWorker& outputWorker)
+	    OutputWorker& outputWorker,
+	    bool stlfr)
 	  : k(k)
 	  , w(w)
 	  , withRepeat(withRepeat)
@@ -101,6 +102,7 @@ class MinimizeWorker
 	  , solidBF(solidBF)
 	  , inputWorker(inputWorker)
 	  , outputWorker(outputWorker)
+	  , stlfr(stlfr)
 	{}
 
 	MinimizeWorker(const MinimizeWorker& worker)
@@ -115,6 +117,7 @@ class MinimizeWorker
 	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
+	  , stlfr(worker.stlfr)
 	{}
 
 	MinimizeWorker(MinimizeWorker&& worker) noexcept
@@ -129,6 +132,7 @@ class MinimizeWorker
 	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
+	  , stlfr(worker.stlfr)
 	{}
 
 	MinimizeWorker& operator=(const MinimizeWorker& worker) = delete;
@@ -152,6 +156,7 @@ class MinimizeWorker
 	const BloomFilter& solidBF;
 	InputWorker& inputWorker;
 	OutputWorker& outputWorker;
+	bool stlfr = false;
 
 	inline void work();
 
@@ -220,13 +225,6 @@ InputWorker::work()
 					done = true;
 					break;
 				}
-				regex right("*#");
-				regex left("/*");
-
-				std::cerr << "seq name: " << seq->name.s << std::endl;
-				std::cerr << "seq comment: " << seq->comment.s << std::endl;
-				std::string barcode = std::regex_replace(seq->name.s, right, "");
-				std::cerr << "barcode: " << barcode << std::endl;
 
 				read.id = seq->name.l > 0 ? seq->name.s : "";
 				read.barcode = seq->comment.l > 0 ? seq->comment.s : "";
@@ -340,7 +338,17 @@ MinimizeWorker::work()
 
 			auto minimizers = getMinimizers(hashes, w);
 
+			if (stlfr){
+			std::regex right("^.*#+");
+			std::regex left("/.*");
+
+
+			read.barcode = std::regex_replace(read.id, right, "");
+			read.barcode = std::regex_replace(read.barcode, left, "");
+			}
+
 			ss << read.barcode;
+
 			char sep = '\t';
 			if (minimizers.empty()) {
 				ss << sep;
