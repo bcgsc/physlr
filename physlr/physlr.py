@@ -110,7 +110,7 @@ class Physlr:
                     paf.append((
                         qname, int(qlength), int(qstart), int(qend), orientation,
                         tname, int(tlength), int(tstart), int(tend),
-                        int(score), int(length), int(mapq)))
+                        int(score), int(length), float(mapq)))
                 if Physlr.args.verbose >= 2:
                     progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
@@ -1272,6 +1272,24 @@ class Physlr:
         self.write_graph(gmst, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote the MST.", file=sys.stderr)
 
+    def physlr_report_junctions_graph(self):
+        """
+        Report junctions in the MST of the graph and output a list of junc barcodes.
+        """
+        g = self.read_graph(self.args.FILES)
+        gmst = Physlr.determine_pruned_mst(g)
+        print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
+        junctions = []
+        for component in nx.connected_components(gmst):
+            junctions +=\
+                Physlr.detect_junctions_of_tree(gmst.subgraph(component), Physlr.args.prune_junctions)
+        print(int(timeit.default_timer() - t0), "Found", len(junctions), "junctions.", file=sys.stderr)
+        gjunctions = nx.Graph()
+        gjunctions.add_nodes_from(junctions)
+        nx.set_node_attributes(gjunctions, 100, "n")
+        self.write_graph(gjunctions, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote the junctions.", file=sys.stderr)
+
     def physlr_remove_bridges_graph(self):
         """
         Iteratively remove bridges in the MST of the graph and output the graph.
@@ -1619,10 +1637,13 @@ class Physlr:
                 ]
 
     @staticmethod
-    def determine_molecules(g, u, strategy):
+    def determine_molecules(g, u, junctions, strategy):
         """Assign the neighbours of this vertex to molecules."""
-        alg_list = strategy.split("+")
         communities = [g[u].keys()]
+        if junctions:
+            if u not in junctions:
+                strategy = "bc"
+        alg_list = strategy.split("+")
         for algorithm in alg_list:
             communities_temp = []
             if algorithm == "bc":
@@ -1673,7 +1694,7 @@ class Physlr:
         Assign the neighbours of this vertex to molecules.
         The graph is passed in the class variable Physlr.graph.
         """
-        return Physlr.determine_molecules(Physlr.graph, u, Physlr.args.strategy)
+        return Physlr.determine_molecules(Physlr.graph, u, Physlr.junctions, Physlr.args.strategy)
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
@@ -1685,8 +1706,14 @@ class Physlr:
             exit_message = "Error: physlr molecule: wrong input parameter(s) " + \
                       "--separation-strategy: " + str(set(alg_list) - alg_white_list)
             sys.exit(exit_message)
+        junctions = []
+        if self.args.FILES[1]:
+            gin = self.read_graph(self.args.FILES[0])
+            gjunctions = self.read_graph(self.args.FILES[1])
+            junctions = gjunctions.nodes()
+        else:
+            gin = self.read_graph(self.args.FILES[0])
 
-        gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
         print(
             int(timeit.default_timer() - t0),
@@ -1697,9 +1724,10 @@ class Physlr:
         # Partition the neighbouring vertices of each barcode into molecules.
         if self.args.threads == 1:
             molecules = dict(
-                self.determine_molecules(gin, u, self.args.strategy) for u in progress(gin))
+                self.determine_molecules(gin, u, junctions, self.args.strategy) for u in progress(gin))
         else:
             Physlr.graph = gin
+            Physlr.junctions = junctions
             with multiprocessing.Pool(self.args.threads) as pool:
                 molecules = dict(pool.map(
                     self.determine_molecules_process, progress(gin), chunksize=100))
