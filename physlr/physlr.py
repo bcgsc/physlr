@@ -2385,7 +2385,7 @@ class Physlr:
         argparser.add_argument(
             "--prune-junctions", action="store", dest="prune_junctions", type=int, default=0,
             help="split a backbone path when the alternative branch is longer than"
-                 "prune-junction [0]. set to 0 to skip.")
+                 "prune-junctions [0]. set to 0 to skip.")
         return argparser.parse_args()
 
     def __init__(self):
