@@ -143,23 +143,50 @@ f1.quast.tsv: \
 		f1.k32-w32.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map-mkt.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
+# Download the fly genome from Ensembl.
+fly/fly.ensembl.fa:
+	mkdir -p $(@D)
+	curl ftp://ftp.ensembl.org/pub/release-98/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.22.dna.toplevel.fa.gz | seqtk seq >$@
+
+# Filter out the unplaced contigs from the fly genome.
+fly/fly.ensembl.chr.fa: fly/fly.ensembl.fa
+	paste - - <$< | sed 's/mitochondrion_genome/MT/' | egrep '^>(2L|2R|3L|3R|4|X|Y|MT) ' | tr '\t' '\n' >$@
+
+# Download the fly gene annotation from Ensembl.
+fly/fly.ensembl.gff:
+	mkdir -p $(@D)
+	curl ftp://ftp.ensembl.org/pub/release-98/gff3/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.22.98.chr.gff3.gz | $(zcat) >$@
+
+# Download fly chr4 from Ensembl.
+fly/flychr4.fa:
+	mkdir -p $(@D)
+	curl ftp://ftp.ensembl.org/pub/release-98/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.22.dna.chromosome.4.fa.gz | seqtk seq >$@
+
 # Download the fly genome from NCBI.
-fly/fly.all.fa:
+fly/fly.ncbi.fa:
 	mkdir -p $(@D)
 	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz | seqtk seq >$@
 
 # Filter out the unplaced contigs from the fly genome.
-fly/fly.fa: fly/fly.all.fa
+fly/fly.ncbi.chr.fa: fly/fly.ncbi.fa
 	paste - - <$< | grep -v NW_ | tr '\t' '\n' >$@
 
 # Download the fly annotation from NCBI.
-fly/fly.gff:
+fly/fly.ncbi.gff:
 	mkdir -p $(@D)
 	curl ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.gff.gz | $(zcat) >$@
+
+# Symlink the reference genome.
+fly/fly.fa: fly/fly.ncbi.chr.fa
+	ln -s $(<F) $@
 
 # Download the Supernova assembly of the linked reads from 10x Genomics.
 f1.supernova.fa:
 	curl http://cf.10xgenomics.com/samples/assembly/2.1.0/fly/fly_pseudohap.fasta.gz | $(zcat) >$@
+
+# Extract the chr4 scaffold from the Supernova assembly.
+f1chr4.supernova.fa: f1.supernova.fa
+	samtools faidx $< 49 | seqtk seq >$@
 
 # Download the fly linked reads from 10x Genomics.
 fly/f1.tar:
