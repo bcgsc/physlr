@@ -202,6 +202,10 @@ class Physlr:
                         print("Unexpected header:", line, file=sys.stderr)
                         sys.exit(1)
                     line = fin.readline()
+                    if not line:
+                        print("Warning: input graph has no edges, input file:\n",
+                              filename, file=sys.stderr)
+                        break
                     if Physlr.args.verbose >= 2:
                         progressbar.update(len(line))
                 xs = line.split()
@@ -1707,12 +1711,12 @@ class Physlr:
                       "--separation-strategy: " + str(set(alg_list) - alg_white_list)
             sys.exit(exit_message)
         junctions = []
-        if self.args.FILES[1]:
-            gin = self.read_graph(self.args.FILES[0])
-            gjunctions = self.read_graph(self.args.FILES[1])
+        if self.args.prune_junctions > 0:
+            gin = self.read_graph([self.args.FILES[0]])
+            gjunctions = self.read_graph([self.args.FILES[1]])
             junctions = gjunctions.nodes()
         else:
-            gin = self.read_graph(self.args.FILES[0])
+            gin = self.read_graph(self.args.FILES)
 
         Physlr.filter_edges(gin, self.args.n)
         print(
