@@ -1793,7 +1793,7 @@ class Physlr:
         for tid, path in enumerate(progress(backbones)):
             for pos, u in enumerate(path):
                 if u not in bxtomxs:
-                    u = u.split("_", 1)[0]
+                    u = u.rsplit("_", 1)[0]
                 for mx in bxtomxs[u]:
                     mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
