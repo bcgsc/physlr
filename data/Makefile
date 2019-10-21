@@ -853,7 +853,7 @@ min_path_size=200
 
 # Chain alignments in PAF format.
 %.chain.paf.gz: %.paf.gz
-	bin/chainpaf $< $@
+	$(physlr_path)/data/bin/chainpaf $< $@
 
 # Reference genome size.
 g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
