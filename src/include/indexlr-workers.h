@@ -338,13 +338,12 @@ MinimizeWorker::work()
 
 			auto minimizers = getMinimizers(hashes, w);
 
-			if (stlfr){
-			std::regex right("^.*#+");
-			std::regex left("/.*");
+			if (stlfr) {
+				std::regex right("^.*#+");
+				std::regex left("/.*");
 
-
-			read.barcode = std::regex_replace(read.id, right, "");
-			read.barcode = std::regex_replace(read.barcode, left, "");
+				read.barcode = std::regex_replace(read.id, right, "");
+				read.barcode = std::regex_replace(read.barcode, left, "");
 			}
 
 			ss << read.barcode;

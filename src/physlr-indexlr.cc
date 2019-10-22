@@ -34,7 +34,7 @@ minimizeReads(
     const bool verbose,
     const BloomFilter& rBloomFilter,
     const BloomFilter& sBloomFilter,
-	const bool stlfr)
+    const bool stlfr)
 {
 	InputWorker inputWorker(ipath);
 	OutputWorker outputWorker(opath, inputWorker);
@@ -88,7 +88,7 @@ printUsage(const std::string& progname)
 	             "  -v          enable verbose output\n"
 	             "  -o FILE     write output to FILE, default is stdout\n"
 	             "  -t N        use N number of threads (default 1, max 5)\n"
-				 "  --stlfr     parse stlfr input\n"
+	             "  --stlfr     parse stlfr input\n"
 	             "  --help      display this help and exit\n"
 	             "  FILE        space separated list of FASTQ files\n";
 }
@@ -167,10 +167,10 @@ main(int argc, char* argv[])
 				std::cerr << e.what() << '\n';
 			}
 			std::cerr << "Finished loading solid Bloom filter" << std::endl;
-			break;			
-		}			
-		default:			
-			exit(EXIT_FAILURE);			
+			break;
+		}
+		default:
+			exit(EXIT_FAILURE);
 		}
 	}
 	std::vector<std::string> infiles(&argv[optind], &argv[argc]);
