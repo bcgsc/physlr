@@ -23,7 +23,7 @@ clang-format:
 fix:
 	for i in *.cc; do clang-format -i -style=file $$i; done
 
-check: check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second
+check: check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR
 
 check-physlr-index-fasta: all
 	./physlr-indexlr -t16 -k100 -w5 data/mt.fa | diff -q - data/mt.physlr.tsv.good
@@ -51,3 +51,6 @@ check-physlr-filter-bxmx-second: all
 	./physlr-filter-bxmx data/f1.tiny.indexlr.physlr.tsv -o ff-cpp -n2 -N10
 	./data/checkMx.sh fm-py ff-cpp
 	rm fb-cpp fm-py ff-cpp
+
+check-physlr-index-stLFR: all
+	./physlr-indexlr -t16 -k8 -w1 data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.physlr.tsv.good
