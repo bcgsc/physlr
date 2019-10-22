@@ -15,6 +15,10 @@
 #include <sstream>
 #include <string>
 #include <vector>
+//#include <sdsl/int_vector.hpp>
+//#include "libpopcnt.h"
+#include <bitset>
+#include <memory>
 
 #if _OPENMP
 #include <omp.h>
@@ -27,6 +31,7 @@
 namespace opt {
 static unsigned minN = 10;
 static unsigned threads = 1;
+static const size_t bitVectorSizes = 4194304; //4mb
 } // namespace opt
 
 #define PROGRAM "physlr-overlap"
@@ -98,7 +103,7 @@ main(int argc, char* argv[])
 {
 	using BarcodeID = uint32_t;
 	using Minimizer = uint64_t;
-	using Count = uint16_t;
+//	using Count = uint16_t;
 
 	bool die = false;
 
@@ -173,8 +178,9 @@ main(int argc, char* argv[])
 	// barcode to ID table (index in vector)
 	tsl::robin_map<std::string, BarcodeID> barcodes;
 
-	// vector of barcodes
-	tsl::robin_map<Minimizer, tsl::robin_set<BarcodeID>> minimizerToBarcode;
+//	tsl::robin_map<Minimizer, tsl::robin_set<BarcodeID>> minimizerToBarcode;
+	//map of bitvectors
+	std::vector<std::unique_ptr<std::bitset<opt::bitVectorSizes>>> bitVectors;
 	std::vector<std::string> barcodeToStr;
 
 #if _OPENMP
@@ -191,7 +197,7 @@ main(int argc, char* argv[])
 		std::ifstream fh;
 		fh.open(itr->c_str());
 		std::string line;
-		std::cerr << "Loading file" << *itr << std::endl;
+		std::cerr << "Loading file: " << *itr << std::endl;
 		while (getline(fh, line)) {
 			std::stringstream ss(line);
 			ss >> barcodeBuffer;
@@ -199,86 +205,134 @@ main(int argc, char* argv[])
 			if (barcode == barcodes.end()) {
 				barcodeToStr.emplace_back(barcodeBuffer);
 				barcodes[barcodeBuffer] = barcodeToStr.size() - 1;
+				bitVectors.emplace_back(std::unique_ptr<std::bitset<opt::bitVectorSizes>>(new std::bitset<opt::bitVectorSizes>));
 				while (ss >> minimizerBuffer) {
-					minimizerToBarcode[minimizerBuffer].insert(barcodeToStr.size() - 1);
+					//init bit vectors
+					(*bitVectors[barcodeToStr.size() - 1])[minimizerBuffer%opt::bitVectorSizes] = 1;
 				}
 			} else {
 				while (ss >> minimizerBuffer) {
-					minimizerToBarcode[minimizerBuffer].insert(barcode->second);
+					(*bitVectors[barcodes[barcodeBuffer]])[minimizerBuffer%opt::bitVectorSizes] = 1;
 				}
 			}
 		}
 	}
 
+
 #if _OPENMP
-	std::cerr << "Finished constructing minimizerToBarcodes in sec: " << omp_get_wtime() - sTime
+	std::cerr << "Finished constructing bit vectors for each barcode in sec: " << omp_get_wtime() - sTime
 	          << std::endl;
 	sTime = omp_get_wtime();
 #endif
-	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
-
-	// store into 2d matrix / hash table
-	// todo revisit Counts? -> can be smaller
-	using SimMat = tsl::robin_map<uint64_t, Count, fastHash>;
-	SimMat barcodeSimMat;
-
-	// counts of vector
-	std::vector<Count> barcodeCount(barcodes.size(), 0);
-
-	std::cerr << "Populating Overlaps" << std::endl;
-	std::cerr << "Total Minimizers: " << minimizerToBarcode.size() << std::endl;
 	std::cerr << "Total Barcodes: " << barcodes.size() << std::endl;
-
-	for (const auto& itr : minimizerToBarcode) {
-		for (auto barcode_i = itr.second.begin(); barcode_i != itr.second.end(); barcode_i++) {
-			barcodeCount[*barcode_i]++;
-			auto barcode_j = tsl::robin_set<BarcodeID>::const_iterator(barcode_i);
-			for (barcode_j++; barcode_j != itr.second.end(); barcode_j++) {
-				// assign "canonical edge"
-				barcodeSimMat
-				    [*barcode_i > *barcode_j
-				         ? (static_cast<size_t>(*barcode_i) << 32u | *barcode_j)
-				         : (static_cast<size_t>(*barcode_j) << 32u | *barcode_i)]++;
-			}
-		}
-	}
-
-#if _OPENMP
-	std::cerr << "Finished computing overlaps in sec: " << omp_get_wtime() - sTime << std::endl;
-#endif
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
-	std::cerr << "Total number of unfiltered edges: " << barcodeSimMat.size() << std::endl;
+
+//	// store into 2d matrix / hash table
+//	// todo revisit Counts? -> can be smaller
+//	using SimMat = tsl::robin_map<uint64_t, Count, fastHash>;
+//	SimMat barcodeSimMat;
+//
+//	// counts of vector
+//	std::vector<Count> barcodeCount(barcodes.size(), 0);
+//
+//	std::cerr << "Populating Overlaps" << std::endl;
+////	std::cerr << "Total Minimizers: " << minimizerToBarcode.size() << std::endl;
+//	std::cerr << "Total Barcodes: " << barcodes.size() << std::endl;
+//
+//	for (const auto& itr : minimizerToBarcode) {
+//		for (auto barcode_i = itr.second.begin(); barcode_i != itr.second.end(); barcode_i++) {
+//			barcodeCount[*barcode_i]++;
+//			auto barcode_j = tsl::robin_set<BarcodeID>::const_iterator(barcode_i);
+//			for (barcode_j++; barcode_j != itr.second.end(); barcode_j++) {
+//				// assign "canonical edge"
+//				barcodeSimMat
+//				    [*barcode_i > *barcode_j
+//				         ? (static_cast<size_t>(*barcode_i) << 32u | *barcode_j)
+//				         : (static_cast<size_t>(*barcode_j) << 32u | *barcode_i)]++;
+//			}
+//		}
+//	}
+
+//#if _OPENMP
+//	std::cerr << "Finished computing overlaps in sec: " << omp_get_wtime() - sTime << std::endl;
+//#endif
+//	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
+//	std::cerr << "Total number of unfiltered edges: " << barcodeSimMat.size() << std::endl;
 
 	std::cout << "U\tn\n";
 	std::string bufferString;
 	// print out vertexes + counts
 #pragma omp parallel
-	for (const auto& itr : barcodes) {
+	for (const auto& itr : barcodes)
+	{
 		bufferString.clear();
 		bufferString += itr.first;
 		bufferString += "\t";
-		bufferString += std::to_string(barcodeCount[itr.second]);
+		bufferString += bitVectors[itr.second]->count();
 		bufferString += "\n";
 		std::cout << bufferString;
 	}
 
 	size_t edgeCount = 0;
 	std::cout << "\nU\tV\tn\n";
+
+#if _OPENMP
+	std::cerr << "Finished outputting vertexes in sec: " << omp_get_wtime() - sTime
+	          << std::endl;
+	sTime = omp_get_wtime();
+#endif
+	std::cerr << "Outputting edges" << std::endl;
+
+#if _OPENMP
+	size_t count = 0;
+#endif
+
+	//for each barcode pair perform & operation on bitvectors and then popcount
+	//output edge if reaches significance threshold
 #pragma omp parallel
-	for (const auto& itr : barcodeSimMat) {
-		// filter by n
-		if (opt::minN <= itr.second) {
-			bufferString.clear();
-			bufferString += barcodeToStr[itr.first >> 32u];
-			bufferString += "\t";
-			bufferString += barcodeToStr[static_cast<uint32_t>(itr.first)];
-			bufferString += "\t";
-			bufferString += std::to_string(itr.second);
-			bufferString += "\n";
-			std::cout << bufferString;
-			++edgeCount;
+	for (BarcodeID i = 0; i < bitVectors.size(); ++i)
+	{
+		for (BarcodeID j = i + 1; j < bitVectors.size(); ++j)
+		{
+#if _OPENMP
+			if(count++% 100000 == 0){
+				std::cerr << "Combinations Processed: " << count << "\tedges: " << edgeCount << "\tin:" << omp_get_wtime() - sTime
+				          << "s since last interval" << std::endl;
+				sTime = omp_get_wtime();
+			}
+#endif
+
+			//create temp bitvector
+			std::bitset<opt::bitVectorSizes> tempVect = (*bitVectors[i]) & (*bitVectors[j]);
+			uint64_t count = tempVect.count();
+			if(count > opt::minN){
+				bufferString.clear();
+				bufferString += barcodeToStr[i];
+				bufferString += "\t";
+				bufferString += barcodeToStr[j];
+				bufferString += "\t";
+				bufferString += std::to_string(count);
+				bufferString += "\n";
+				std::cout << bufferString;
+				++edgeCount;
+			}
 		}
 	}
+//#pragma omp parallel
+//	for (const auto& itr : barcodeSimMat) {
+//		// filter by n
+//		if (opt::minN <= itr.second) {
+//			bufferString.clear();
+//			bufferString += barcodeToStr[itr.first >> 32u];
+//			bufferString += "\t";
+//			bufferString += barcodeToStr[static_cast<uint32_t>(itr.first)];
+//			bufferString += "\t";
+//			bufferString += std::to_string(itr.second);
+//			bufferString += "\n";
+//			std::cout << bufferString;
+//			++edgeCount;
+//		}
+//	}
 	std::cerr << "Total number of filtered edges: " << edgeCount << std::endl;
 
 	return 0;
