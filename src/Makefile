@@ -53,4 +53,4 @@ check-physlr-filter-bxmx-second: all
 	rm fb-cpp fm-py ff-cpp
 
 check-physlr-index-stLFR: all
-	./physlr-indexlr -t16 -k8 -w1 data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.physlr.tsv.good
+	./physlr-indexlr -t16 -k8 -w1 --stlfr data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.physlr.tsv.good
