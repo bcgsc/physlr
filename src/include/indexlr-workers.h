@@ -333,15 +333,15 @@ MinimizeWorker::work()
 			auto minimizers = getMinimizers(hashes, w);
 
 			if (read.id.find("BX:Z:") == std::string::npos) {
-				size_t rightPos = read.id.find('#');
-				if (rightPos == std::string::npos) {
+				size_t sharpPos = read.id.find('#');
+				if (sharpPos == std::string::npos) {
 					ss << read.barcode;
 				} else {
-					size_t leftPos = read.id.find('/', rightPos + 1);
-					if (leftPos == std::string::npos) {
+					size_t slashPos = read.id.find('/', sharpPos + 1);
+					if (slashPos == std::string::npos) {
 						ss << read.barcode;
 					} else {
-						ss << read.id.substr(rightPos + 1, leftPos - 1 - rightPos);
+						ss << read.id.substr(sharpPos + 1, slashPos - 1 - sharpPos);
 					}
 				}
 			} else {
