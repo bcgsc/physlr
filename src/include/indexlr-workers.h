@@ -15,7 +15,6 @@ KSEQ_INIT(gzFile, gzread) // NOLINT
 #include <cstring>
 #include <fstream>
 #include <limits>
-#include <regex>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -89,8 +88,7 @@ class MinimizeWorker
 	    const BloomFilter& repeatBF,
 	    const BloomFilter& solidBF,
 	    InputWorker& inputWorker,
-	    OutputWorker& outputWorker,
-	    bool stlfr)
+	    OutputWorker& outputWorker)
 	  : k(k)
 	  , w(w)
 	  , withRepeat(withRepeat)
@@ -102,7 +100,6 @@ class MinimizeWorker
 	  , solidBF(solidBF)
 	  , inputWorker(inputWorker)
 	  , outputWorker(outputWorker)
-	  , stlfr(stlfr)
 	{}
 
 	MinimizeWorker(const MinimizeWorker& worker)
@@ -117,7 +114,6 @@ class MinimizeWorker
 	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
-	  , stlfr(worker.stlfr)
 	{}
 
 	MinimizeWorker(MinimizeWorker&& worker) noexcept
@@ -132,7 +128,6 @@ class MinimizeWorker
 	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
-	  , stlfr(worker.stlfr)
 	{}
 
 	MinimizeWorker& operator=(const MinimizeWorker& worker) = delete;
@@ -156,7 +151,6 @@ class MinimizeWorker
 	const BloomFilter& solidBF;
 	InputWorker& inputWorker;
 	OutputWorker& outputWorker;
-	bool stlfr = false;
 
 	inline void work();
 
@@ -338,15 +332,21 @@ MinimizeWorker::work()
 
 			auto minimizers = getMinimizers(hashes, w);
 
-			if (stlfr) {
-				std::regex right("^.*#+");
-				std::regex left("/.*");
-
-				read.barcode = std::regex_replace(read.id, right, "");
-				read.barcode = std::regex_replace(read.barcode, left, "");
+			if (read.id.find("BX:Z:") == read.id.npos) {
+				size_t rightPos = read.id.find("#");
+				if (rightPos == read.id.npos) {
+					ss << read.barcode;
+				} else {
+					size_t leftPos = read.id.find("/", rightPos + 1);
+					if (leftPos == read.id.npos) {
+						ss << read.barcode;
+					} else {
+						ss << read.id.substr(rightPos + 1, leftPos - 1 - rightPos);
+					}
+				}
+			} else {
+				ss << read.barcode;
 			}
-
-			ss << read.barcode;
 
 			char sep = '\t';
 			if (minimizers.empty()) {
