@@ -332,13 +332,13 @@ MinimizeWorker::work()
 
 			auto minimizers = getMinimizers(hashes, w);
 
-			if (read.id.find("BX:Z:") == read.id.npos) {
-				size_t rightPos = read.id.find("#");
-				if (rightPos == read.id.npos) {
+			if (read.id.find("BX:Z:") == std::string::npos) {
+				size_t rightPos = read.id.find('#');
+				if (rightPos == std::string::npos) {
 					ss << read.barcode;
 				} else {
-					size_t leftPos = read.id.find("/", rightPos + 1);
-					if (leftPos == read.id.npos) {
+					size_t leftPos = read.id.find('/', rightPos + 1);
+					if (leftPos == std::string::npos) {
 						ss << read.barcode;
 					} else {
 						ss << read.id.substr(rightPos + 1, leftPos - 1 - rightPos);
