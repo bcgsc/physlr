@@ -341,6 +341,7 @@ MinimizeWorker::work()
 					if (slashPos == std::string::npos) {
 						ss << read.barcode;
 					} else {
+						assert(slashPos > sharpPos);
 						ss << read.id.substr(sharpPos + 1, slashPos - 1 - sharpPos);
 					}
 				}
