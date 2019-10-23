@@ -228,6 +228,51 @@ ggsave(pdf_filename, width = 8, height = 10, units = "in")
 cat(pdf_filename)
 ```
 
+# Reference Coverage (Colour for 25 largest backbones, ideogram for remaining)
+```{r plot-q-ideogram, fig.width=8, fig.height=10}
+pafq_ideogram <- pafq %>%
+  arrange(desc(Qlength), Qname, Qstart, Barcodes) %>%
+  group_by(Qname) %>%
+  mutate(Colour = (Qindex + row_number()) %% 2 + 26) %>%
+  ungroup() %>%
+  mutate(Colour = factor(Colour))
+pal2 <- setNames(alphabet_colours, pafq_lumped$Tname %>% setdiff("Other") %>% unique())
+pal2["26"] <- "#808080"
+pal2["27"] <- "#c0c0c0"
+
+plot <- ggplot(pafq_ideogram) +
+  geom_rect(aes(
+    xmin = Qstart, xmax = Qend,
+    ymin = Qindex, ymax = Qindex + 1,
+    fill = Colour)) +
+  geom_point(aes(x = Qlength, y = 0.5 + Qindex),
+             data = distinct(pafq, Qlength, Qindex)) +
+  scale_x_continuous(name = "Position", labels = unit_format(unit = "M", scale = 1e-6)) +
+  scale_y_reverse(name = "Chromosome (Query)",
+                  breaks = 0.5 + seq_len(nlevels(pafq$Qname)),
+                  labels = levels(pafq$Qname)) +
+  scale_fill_manual(name = "Target", values = pal2) +
+  theme_bw() +
+  guides(fill = guide_legend(ncol = 1)) +
+  labs(caption = input_paf)
+plot  <- plot +
+  geom_rect(data=pafq[!(pafq$Tname=="Other"),], aes(
+    xmin = Qstart, xmax = Qend,
+    ymin = Qindex, ymax = Qindex + 1,
+    fill = Tname)) +
+  geom_rect(data = gaps, aes(
+	xmin = Start, xmax = End,
+	ymin = Index + 0.45, ymax = Index + 0.55),
+	fill = "darkred")
+plot
+```
+
+```{r save-plot-q-ideogram}
+pdf_filename <- paste0(input_paf, ".q+ideo.pdf")
+ggsave(pdf_filename, width = 8, height = 10, units = "in")
+cat(pdf_filename)
+```
+
 # Dot plot
 ```{r plot-dot, fig.width=6, fig.height=24}
 tlength_threshold <- 200
