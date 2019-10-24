@@ -110,7 +110,7 @@ class Physlr:
                     paf.append((
                         qname, int(qlength), int(qstart), int(qend), orientation,
                         tname, int(tlength), int(tstart), int(tend),
-                        int(score), int(length), float(mapq)))
+                        int(score), int(length), int(mapq)))
                 if Physlr.args.verbose >= 2:
                     progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
@@ -554,9 +554,9 @@ class Physlr:
         paths = []
         removed_count = 0
         for component in nx.connected_components(g):
-            gcomponents, rc =\
+            gcomponents, rem_count =\
                 Physlr.split_junctions_of_tree(prune_junctions, g.subgraph(component))
-            removed_count += rc
+            removed_count += rem_count
             for subcomponent in nx.connected_components(gcomponents):
                 gsubcomponent = g.subgraph(subcomponent)
                 u, v, _ = Physlr.diameter_of_tree(gsubcomponent, weight="n")
@@ -1296,9 +1296,10 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
         junctions = []
         for component in nx.connected_components(gmst):
-            junctions +=\
-                Physlr.detect_junctions_of_tree(gmst.subgraph(component), Physlr.args.prune_junctions)
-        print(int(timeit.default_timer() - t0), "Found", len(junctions), "junctions.", file=sys.stderr)
+            junctions += Physlr.detect_junctions_of_tree(
+                gmst.subgraph(component), Physlr.args.prune_junctions)
+        print(int(timeit.default_timer() - t0),
+              "Found", len(junctions), "junctions.", file=sys.stderr)
         gjunctions = nx.Graph()
         gjunctions.add_nodes_from(junctions)
         nx.set_node_attributes(gjunctions, 100, "n")
@@ -1722,24 +1723,31 @@ class Physlr:
                       "--separation-strategy: " + str(set(alg_list) - alg_white_list)
             sys.exit(exit_message)
         junctions = []
-        if self.args.prune_junctions > 0:
+        if len(self.args.FILES) > 1:
             gin = self.read_graph([self.args.FILES[0]])
             gjunctions = self.read_graph([self.args.FILES[1]])
             junctions = gjunctions.nodes()
+            print(
+                int(timeit.default_timer() - t0),
+                "Separating junction resulting barcodes into molecules"
+                "using the following algorithm(s):\n\t",
+                self.args.strategy.replace("+", " + "),
+                file=sys.stderr)
         else:
             gin = self.read_graph(self.args.FILES)
+            print(
+                int(timeit.default_timer() - t0),
+                "Separating barcodes into molecules using the following algorithm(s):\n\t",
+                self.args.strategy.replace("+", " + "),
+                file=sys.stderr)
 
         Physlr.filter_edges(gin, self.args.n)
-        print(
-            int(timeit.default_timer() - t0),
-            "Separating barcodes into molecules using the following algorithm(s):\n\t",
-            self.args.strategy.replace("+", " + "),
-            file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
         if self.args.threads == 1:
             molecules = dict(
-                self.determine_molecules(gin, u, junctions, self.args.strategy) for u in progress(gin))
+                self.determine_molecules(
+                    gin, u, junctions, self.args.strategy) for u in progress(gin))
         else:
             Physlr.graph = gin
             Physlr.junctions = junctions
