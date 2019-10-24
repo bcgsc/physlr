@@ -253,12 +253,6 @@ ggsave(pdf_filename, width = 8, height = 10, units = "in")
 cat(pdf_filename)
 ```
 
-```{r save-plot-q-ideogram}
-pdf_filename <- paste0(input_paf, ".q+ideo.pdf")
-ggsave(pdf_filename, width = 8, height = 10, units = "in")
-cat(pdf_filename)
-```
-
 # Dot plot
 ```{r plot-dot, fig.width=6, fig.height=24}
 tlength_threshold <- 200
