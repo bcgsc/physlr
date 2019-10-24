@@ -1732,6 +1732,7 @@ class Physlr:
                 "Separating junction resulting barcodes into molecules"
                 "using the following algorithm(s):\n\t",
                 self.args.strategy.replace("+", " + "),
+                "\n\tand other barcodes with bc.",
                 file=sys.stderr)
         else:
             gin = self.read_graph(self.args.FILES)
