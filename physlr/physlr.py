@@ -522,7 +522,7 @@ class Physlr:
         return junctions
 
     @staticmethod
-    def split_junctions_of_tree(prune_junctions, gin, keep_largest=0):
+    def split_junctions_of_tree(prune_junctions, gin, keep_largest=1):
         """"
         Detect and split junctions of trees, with at least 3 branches larger than prune_junctions.
         For each junction, keep the two incident edges with the largest weight, and remove the rest.
