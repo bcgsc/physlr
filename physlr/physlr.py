@@ -202,7 +202,7 @@ class Physlr:
                         print("Unexpected header:", line, file=sys.stderr)
                         sys.exit(1)
                     line = fin.readline()
-                    if not line:
+                    if not line: # a graph with no edges
                         print("Warning: input graph has no edges, input file:\n",
                               filename, file=sys.stderr)
                         break
