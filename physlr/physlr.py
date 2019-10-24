@@ -565,7 +565,7 @@ class Physlr:
         paths.sort(key=len, reverse=True)
         print(
             int(timeit.default_timer() - t0),
-            "Removed", removed_count, "junctions from the backbone",
+            "Pruned", removed_count, "junctions in the backbone",
             file=sys.stderr)
         return paths
 
