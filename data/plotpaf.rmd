@@ -180,7 +180,7 @@ pafq_ideogram <- pafq %>%
 
 legend_breaks <- c(seq(0, 25, 1), c("Other1", "Other2"))
 
-pafq_plot <- ggplot(pafq_ideogram) +
+ggplot(pafq_ideogram) +
   geom_rect(aes(
     xmin = Qstart, xmax = Qend,
     ymin = Qindex, ymax = Qindex + 1,
@@ -190,8 +190,7 @@ pafq_plot <- ggplot(pafq_ideogram) +
   scale_x_continuous(name = "Position", labels = unit_format(unit = "M", scale = 1e-6)) +
   scale_y_reverse(name = "Chromosome (Query)",
                   breaks = 0.5 + seq_len(nlevels(pafq$Qname)),
-                  labels = levels(pafq$Qname))
-pafq_plot  <- pafq_plot +
+                  labels = levels(pafq$Qname)) +
   geom_rect(data=pafq[!(pafq$Tname=="Other"),], aes(
     xmin = Qstart, xmax = Qend,
     ymin = Qindex, ymax = Qindex + 1,
@@ -204,7 +203,6 @@ pafq_plot  <- pafq_plot +
   theme_bw() +
   guides(fill = guide_legend(ncol = 1)) +
   labs(caption = input_paf)
-pafq_plot
 ```
 
 ```{r save-plot-q}
