@@ -280,6 +280,14 @@ MinimizeWorker::work()
 			} else {
 				// No barcode tag is present. For FASTA, use the sequence ID. For FASTQ, use NA.
 				read.barcode = inputWorker.fasta ? read.id : "NA";
+				if (read.barcode == "NA") {
+					size_t sharpPos = read.id.find('#');
+					if (sharpPos != std::string::npos) {
+						size_t slashPos = read.id.find('/', sharpPos + 1);
+						assert(slashPos > sharpPos);
+						read.barcode = read.id.substr(sharpPos + 1, slashPos - 1 - sharpPos);
+					}
+				}
 			}
 
 			if (read.sequence.size() < k) {
@@ -332,22 +340,7 @@ MinimizeWorker::work()
 
 			auto minimizers = getMinimizers(hashes, w);
 
-			if (read.id.find("BX:Z:") == std::string::npos) {
-				size_t sharpPos = read.id.find('#');
-				if (sharpPos == std::string::npos) {
-					ss << read.barcode;
-				} else {
-					size_t slashPos = read.id.find('/', sharpPos + 1);
-					if (slashPos == std::string::npos) {
-						ss << read.barcode;
-					} else {
-						assert(slashPos > sharpPos);
-						ss << read.id.substr(sharpPos + 1, slashPos - 1 - sharpPos);
-					}
-				}
-			} else {
-				ss << read.barcode;
-			}
+			ss << read.barcode;
 
 			char sep = '\t';
 			if (minimizers.empty()) {
