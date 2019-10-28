@@ -4,7 +4,7 @@ author: Shaun Jackman
 params:
   gap_bed:
     label: "BED file of gaps"
-    value: "gap.bed"
+    value: ""
     input: text
   input_paf:
     label: "Input PAF file"
@@ -63,11 +63,14 @@ qname_qindex <- paf %>%
 	transmute(Name = as.character(Qname), Index = Qindex) %>%
 	distinct() %>%
 	arrange(Index)
-
-gaps <- read_tsv(gap_bed, col_names = c("Name", "Start", "End", "Label"), col_types = "ciic") %>%
-	filter(End - Start >= gap_threshold) %>%
-	left_join(qname_qindex, by = "Name") %>%
-	drop_na()
+if (gap_bed == ""){
+	gaps <- tibble( Name=character(), Start=integer(), End=integer(), Label=character(), Index=double())
+} else {
+	gaps <- read_tsv(gap_bed, col_names = c("Name", "Start", "End", "Label"), col_types = "ciic") %>%
+		filter(End - Start >= gap_threshold) %>%
+		left_join(qname_qindex, by = "Name") %>%
+		drop_na()
+}
 ```
 
 # Chain alignments
