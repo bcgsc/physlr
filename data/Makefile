@@ -1092,7 +1092,7 @@ mol_strategy=bc
 
 # Plot a PAF file.
 %.paf.gz.pdf: %.paf.gz
-	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plotpaf.rmd", "html_document", "$*.paf.gz.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_paf="$<", gap_bed="dummy.bed"))'
+	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plotpaf.rmd", "html_document", "$*.paf.gz.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_paf="$<"))'
 
 # Compare assembly metrics.
 %.quast.html: %.quast.tsv
