@@ -522,7 +522,7 @@ class Physlr:
         return junctions
 
     @staticmethod
-    def split_junctions_of_tree(prune_junctions, gin, keep_largest=1):
+    def split_junctions_of_tree(prune_junctions, gin, keep_largest=0):
         """"
         Detect and split junctions of trees, with at least 3 branches larger than prune_junctions.
         For each junction, keep the two incident edges with the largest weight, and remove the rest.
@@ -538,7 +538,7 @@ class Physlr:
                 print("Junction:", junction, "Edges:", *edges, file=sys.stderr)
             # Keep the two incident edges with the largest weight, and remove the rest.
             if keep_largest:
-                for u, v, _ in edges[2:-1]:
+                for u, v, _ in edges[2:]:
                     g.remove_edge(u, v)
             else:
                 for u, v, _ in edges:
@@ -1302,7 +1302,7 @@ class Physlr:
               "Found", len(junctions), "junctions.", file=sys.stderr)
         for junction in junctions:
             print(junction, file=sys.stdout)
-        print(int(timeit.default_timer() - t0), "Wrote the junctions.", file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Wrote junctions to file.", file=sys.stderr)
 
     def physlr_remove_bridges_graph(self):
         """
@@ -1722,12 +1722,13 @@ class Physlr:
             sys.exit(exit_message)
         junctions = []
         if len(self.args.FILES) > 1:
+            gin = self.read_graph([self.args.FILES[0]])
             with open(self.args.FILES[1]) as fin:
                 for line in fin:
                     junctions.append(line.split()[0])
             print(
                 int(timeit.default_timer() - t0),
-                "Separating junction resulting barcodes into molecules"
+                "Separating junction-causing barcodes into molecules"
                 "using the following algorithm(s):\n\t",
                 self.args.strategy.replace("+", " + "),
                 "\n\tand other barcodes with bc.",
