@@ -1338,10 +1338,15 @@ class Physlr:
 
     def physlr_join_backbone_manually(self):
         backbones = self.read_paths(self.args.FILES)
-        #backbones[34].reverse()
-        backbones[8].reverse()
-        backbones[13].reverse()
-        backbones2 = [backbones[13]+backbones[34]+backbones[15],backbones[8]+backbones[11]]
+        # backbones[34].reverse()
+        # backbones[8].reverse()
+        # backbones[13].reverse()
+        backbones2 = [backbones[45] + backbones[9],
+                      backbones[47] + backbones[40],
+                      # backbones[50] + backbones[6],
+                      # backbones[55] + backbones[7]
+                      backbones[52] + backbones[17]
+                      ]
         for backbone in backbones2:
             print(*backbone)
 
