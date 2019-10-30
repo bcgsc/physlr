@@ -1300,10 +1300,8 @@ class Physlr:
                 gmst.subgraph(component), Physlr.args.prune_junctions)
         print(int(timeit.default_timer() - t0),
               "Found", len(junctions), "junctions.", file=sys.stderr)
-        gjunctions = nx.Graph()
-        gjunctions.add_nodes_from(junctions)
-        nx.set_node_attributes(gjunctions, 100, "n")
-        self.write_graph(gjunctions, sys.stdout, self.args.graph_format)
+        for junction in junctions:
+            print(junction, file=sys.stdout)
         print(int(timeit.default_timer() - t0), "Wrote the junctions.", file=sys.stderr)
 
     def physlr_remove_bridges_graph(self):
@@ -1724,9 +1722,12 @@ class Physlr:
             sys.exit(exit_message)
         junctions = []
         if len(self.args.FILES) > 1:
-            gin = self.read_graph([self.args.FILES[0]])
-            gjunctions = self.read_graph([self.args.FILES[1]])
-            junctions = gjunctions.nodes()
+            junctions = []
+            with open([self.args.FILES[1]]) as fin:
+                for line in fin:
+                    junctions.append(line)
+                    print(junctions[-1],file=sys.stderr)
+            exit()
             print(
                 int(timeit.default_timer() - t0),
                 "Separating junction resulting barcodes into molecules"
