@@ -1722,12 +1722,9 @@ class Physlr:
             sys.exit(exit_message)
         junctions = []
         if len(self.args.FILES) > 1:
-            junctions = []
-            with open([self.args.FILES[1]]) as fin:
+            with open(self.args.FILES[1]) as fin:
                 for line in fin:
-                    junctions.append(line)
-                    print(junctions[-1],file=sys.stderr)
-            exit()
+                    junctions.append(line.split()[0])
             print(
                 int(timeit.default_timer() - t0),
                 "Separating junction resulting barcodes into molecules"
