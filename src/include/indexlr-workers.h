@@ -277,17 +277,17 @@ MinimizeWorker::work()
 					read.barcode.erase(pos);
 				}
 				read.barcode.erase(0, 5);
+			} else if (inputWorker.fasta) {
+				// For FASTA, use the sequence ID.
+				read.barcode = read.id;
 			} else {
-				// No barcode tag is present. For FASTA, use the sequence ID. For FASTQ, use NA.
-				read.barcode = inputWorker.fasta ? read.id : "NA";
-				// If no barcode tag is present, look for stLFR barcode within read.id.
-				if (read.barcode == "NA") {
-					size_t sharpPos = read.id.find('#');
-					if (sharpPos != std::string::npos) {
-						size_t slashPos = read.id.rfind('/');
-						if (slashPos > sharpPos) {
-							read.barcode = read.id.substr(sharpPos + 1, slashPos - 1 - sharpPos);
-						}
+				// No barcode tag is present. Check for stLFR barcode within read.id.
+				read.barcode = "NA";
+				size_t sharpPos = read.id.find('#');
+				if (sharpPos != std::string::npos) {
+					size_t slashPos = read.id.rfind('/');
+					if (slashPos > sharpPos) {
+						read.barcode = read.id.substr(sharpPos + 1, slashPos - 1 - sharpPos);
 					}
 				}
 			}
