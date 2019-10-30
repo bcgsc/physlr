@@ -286,7 +286,7 @@ MinimizeWorker::work()
 				size_t sharpPos = read.id.find('#');
 				if (sharpPos != std::string::npos) {
 					size_t slashPos = read.id.rfind('/');
-					if (slashPos > sharpPos) {
+					if (slashPos != std::string::npos && slashPos > sharpPos) {
 						read.barcode = read.id.substr(sharpPos + 1, slashPos - 1 - sharpPos);
 					}
 				}
