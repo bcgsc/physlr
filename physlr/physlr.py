@@ -1451,6 +1451,7 @@ class Physlr:
             "JOINTS chosen - type 1:\n", file=sys.stderr)
         new_backs = []
         indices = []
+        used_backs = []
         joints.reverse()
         while len(joints) > 0:
             [i_b1, i_b2] = joints.pop()
@@ -1460,6 +1461,8 @@ class Physlr:
             # connect backbones:
             new_back = backbones[i_b1 // 2] if i_b1 % 2 == 0 else list(reversed(backbones[i_b1 // 2]))
             new_back += backbones[i_b2 // 2] if i_b2 % 2 == 0 else list(reversed(backbones[i_b2 // 2]))
+            used_backs += [backbones[i_b1 // 2]]
+            used_backs += [backbones[i_b2 // 2]]
             head_index = 0 if i_b1 % 2 == 0 else 0
             tail_index = 0 if i_b2 % 2 == 0 else 0
             if len(joints) > 0:
@@ -1474,6 +1477,7 @@ class Physlr:
                             new_back.reverse()
                         c_index = j_c2 if j_c1 == head_index or j_c1 == tail_index else j_c1
                         new_back += backbones[c_index // 2] if c_index % 2 == 0 else list(reversed(backbones[c_index // 2]))
+                        used_backs += [backbones[c_index // 2] if c_index % 2 == 0 else list(reversed(backbones[c_index // 2]))]
                         del backbones[c_index // 2]
                     indices += [j_c1, j_c2]
                     if sum([j_c1 == head_index,
@@ -1482,11 +1486,12 @@ class Physlr:
                             j_c1 == tail_index]) > 1:
                         print("\n***** LOOP IN JOINING BACKBONES... \n")
             new_backs.append(new_back)
+        for backbone in backbones:
+            if backbone not in used_backs:
+                new_backs += [backbone]
+        new_backs.sort(key=len, reverse=True)
         for back in new_backs:
             print(*back)
-
-
-
 
     def physlr_biconnected_components(self):
         "Separate a graph into its biconnected components by removing its cut vertices."
