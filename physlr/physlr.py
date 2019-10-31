@@ -538,7 +538,7 @@ class Physlr:
                 print("Junction:", junction, "Edges:", *edges, file=sys.stderr)
             # Keep the two incident edges with the largest weight, and remove the rest.
             if keep_largest:
-                for u, v, _ in edges[2:-1]:
+                for u, v, _ in edges[2:]:
                     g.remove_edge(u, v)
             else:
                 for u, v, _ in edges:
@@ -1356,17 +1356,21 @@ class Physlr:
         look over the initial overlap graph to see how well they're connected
         """
         import numpy as np
-
+        t1 = 10
+        t2 = 19
         g = self.read_graph([self.args.FILES[0]])
         gbackbones = self.read_graph([self.args.FILES[1]])
-        backbones = self.determine_backbones(gbackbones)
-        # backbones = self.read_paths([self.args.FILES[1]])
+        tbackbones = self.determine_backbones(gbackbones)
+        backbones = [backbone for backbone in tbackbones
+                     if len(backbone) > self.args.min_component_size]
         tails = []
         for backbone in backbones:
             tails.append(list(nx.bfs_tree(gbackbones, source=backbone[0], depth_limit=1)))
             tails.append(list(nx.bfs_tree(gbackbones, source=backbone[-1], depth_limit=1)))
-        hits = np.zeros((len(tails), len(tails)))
-        hits2 = np.zeros((len(tails), len(tails)))
+        hits_weighted = np.zeros((len(tails), len(tails)))
+        hits_count = np.zeros((len(tails), len(tails)))
+        hits2_weighted = np.zeros((len(tails), len(tails)))
+        hits2_count = np.zeros((len(tails), len(tails)))
         # for tail, i in zip(tails, range(len(tails))):
         #     for tail2, i2 in zip(tails, range(len(tails))):
         print(
@@ -1380,32 +1384,29 @@ class Physlr:
                     # hits[i][i2] += g.get_edge_data(
                     #     v1.split("_")[0], v2.split("_")[0], default=0)
                     if g.has_edge(v1.split("_")[0], v2.split("_")[0]):
-                        hits[i][i2] += g[v1.split("_")[0]][v2.split("_")[0]]["n"]
-                hits2[i][i2] = hits[i][i2]
-                hits[i][i2] = hits[i][i2]/(len(tail)*len(tail2))
-                if hits[i][i2] < 10:
-                    hits[i][i2] = 0
-                if hits[i][i2] > 0:
+                        hits_weighted[i][i2] += g[v1.split("_")[0]][v2.split("_")[0]]["n"]
+                        hits_count[i][i2] += 1
+                hits2_weighted[i][i2] = hits_weighted[i][i2]
+                hits2_count[i][i2] = hits_count[i][i2]
+                hits_weighted[i][i2] = hits_weighted[i][i2]/(len(tail)*len(tail2))
+                hits_count[i][i2] = hits_count[i][i2]/(len(tail)*len(tail2))
+                if hits_weighted[i][i2] < t1:
+                    hits_weighted[i][i2] = 0
+                if hits_weighted[i][i2] > 0:
                     print(
                         "____________________________\n",
                         "backbone", i//2, "head:" if i%2==0 else "tail:",
                         backbones[i//2][0 if i%2==0 else -1], "vs.\n",
                         "backbone", i2//2, "head:" if i2%2==0 else "tail:",
                         backbones[i2//2][0 if i2%2==0 else -1], ":\n",
-                        hits[i][i2], "\n", file=sys.stderr)
+                        hits_weighted[i][i2], "\n", file=sys.stderr)
         joints = []
         joints2 = []
         print(
             "____________________________\n",
             "TYPE 1 BACKBONE JOINTS:\n", file=sys.stderr)
         for i, tail in enumerate(tails):
-            index = [ind for ind, item in enumerate(hits[i]) if item > 0]
-            # if len(index) != 1:
-            #     continue
-            # index = index[0]
-            # reverse_index = [ind for ind, item in enumerate(hits[index]) if item > 0]
-            # if reverse_index != [i]:
-            #     continue
+            index = [ind for ind, item in enumerate(hits_weighted[i]) if item > t2]
             if len(index) >= 1:
                 print(
                     "____________________________\nbackbone", i//2, "head" if i % 2 == 0 else "tail",
@@ -1413,7 +1414,7 @@ class Physlr:
                     "\n", file=sys.stderr)
             if len(index) == 1:
                 index = index[0]
-                reverse_index = [ind for ind, item in enumerate([row[index] for row in hits]) if item > 0]
+                reverse_index = [ind for ind, item in enumerate([row[index] for row in hits_weighted]) if item > t1]
                 # reverse_index = [ind for ind, item in enumerate(hits[index]) if item > 0]
                 if reverse_index == [i]:
                     joints.append([i, index])
@@ -1423,29 +1424,19 @@ class Physlr:
                         backbones[i // 2][0 if i % 2 == 0 else -1], "vs.\n",
                         "backbone", index // 2, "head:" if index % 2 == 0 else "tail:",
                         backbones[index // 2][0 if index % 2 == 0 else -1], ":\n",
-                        hits[i][index], "\n", file=sys.stderr)
-                # else:
-                #     print(
-                #         "____________________________\nreverse not matched:\n",
-                #         "backbone", i // 2, "head:" if i % 2 == 0 else "tail:",
-                #         backbones[i // 2][0 if i % 2 == 0 else -1], "vs.\n",
-                #         "backbone", index // 2, "head:" if index % 2 == 0 else "tail:",
-                #         backbones[index // 2][0 if index % 2 == 0 else -1], ":\n",
-                #         hits[i][index],
-                #         "\n",
-                #         "but second matched with:\n",
-                #         "backbones:", [ri//2 for ri in reverse_index],"head/tail",[ri%2 for ri in reverse_index],
-                #         "\nwith values:", [hits[ri//2][index] for ri in reverse_index],
-                #         # backbones[index // 2][0 if index % 2 == 0 else -1], ":\n",
-                #         file=sys.stderr)
+                        hits_weighted[i][index], "\n", file=sys.stderr)
+                else:
+                    print(
+                        "____________________________\nSeem like a bug is found\n",
+                        file=sys.stderr)
         print(
             "____________________________\n",
             "TYPE 2 BACKBONE JOINTS:\n", file=sys.stderr)
         for i, tail in enumerate(tails):
-            index2 = [ind for ind, item in enumerate(hits2[i]) if item > 0]
+            index2 = [ind for ind, item in enumerate(hits2_weighted[i]) if item > 0]
             if len(index2) == 1:
                 index2 = index2[0]
-                reverse_index2 = [ind for ind, item in enumerate([row[index2] for row in hits2]) if item > 0]
+                reverse_index2 = [ind for ind, item in enumerate([row[index2] for row in hits2_weighted]) if item > 0]
                 if reverse_index2 == [i]:
                     joints2.append([i, index2])
                     print(
@@ -1454,7 +1445,48 @@ class Physlr:
                         backbones[i // 2][0 if i % 2 == 0 else -1], "vs.\n",
                         "backbone", index2 // 2, "head:" if index2 % 2 == 0 else "tail:",
                         backbones[index2 // 2][0 if index2 % 2 == 0 else -1], ":\n",
-                        hits2[i][index2], "\n", file=sys.stderr)
+                        hits2_weighted[i][index2], "\n", file=sys.stderr)
+        print(
+            "____________________________\n",
+            "JOINTS chosen - type 1:\n", file=sys.stderr)
+        new_backs = []
+        indices = []
+        joints.reverse()
+        while len(joints) > 0:
+            [i_b1, i_b2] = joints.pop()
+            # if [i_b1, i_b2] in indices:
+            #     continue
+            print([i_b1, i_b2], file=sys.stderr)
+            # connect backbones:
+            new_back = backbones[i_b1 // 2] if i_b1 % 2 == 0 else list(reversed(backbones[i_b1 // 2]))
+            new_back += backbones[i_b2 // 2] if i_b2 % 2 == 0 else list(reversed(backbones[i_b2 // 2]))
+            head_index = 0 if i_b1 % 2 == 0 else 0
+            tail_index = 0 if i_b2 % 2 == 0 else 0
+            if len(joints) > 0:
+                for [j_c1, j_c2] in joints:
+                    if [j_c1, j_c2] in indices:
+                        continue
+                    if sum([j_c1 == head_index,
+                            j_c2 == head_index,
+                            j_c1 == tail_index,
+                            j_c1 == tail_index]) == 1:
+                        if j_c1 == head_index or j_c2 == head_index:
+                            new_back.reverse()
+                        c_index = j_c2 if j_c1 == head_index or j_c1 == tail_index else j_c1
+                        new_back += backbones[c_index // 2] if c_index % 2 == 0 else list(reversed(backbones[c_index // 2]))
+                        del backbones[c_index // 2]
+                    indices += [j_c1, j_c2]
+                    if sum([j_c1 == head_index,
+                            j_c2 == head_index,
+                            j_c1 == tail_index,
+                            j_c1 == tail_index]) > 1:
+                        print("\n***** LOOP IN JOINING BACKBONES... \n")
+            new_backs.append(new_back)
+        for back in new_backs:
+            print(*back)
+
+
+
 
     def physlr_biconnected_components(self):
         "Separate a graph into its biconnected components by removing its cut vertices."
