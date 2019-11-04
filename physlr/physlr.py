@@ -522,13 +522,13 @@ class Physlr:
         return junctions
 
     @staticmethod
-    def split_junctions_of_tree(prune_junctions, gin):
+    def split_junctions_of_tree(prune_junctions, gin, keep_largest=0):
         """"
         Detect and split junctions of trees, with at least 3 branches larger than prune_junctions.
         For each junction, keep the two incident edges with the largest weight, and remove the rest.
         """
         if prune_junctions == 0:
-            return gin
+            return gin, 0
         junctions = Physlr.detect_junctions_of_tree(gin, prune_junctions)
         g = gin.copy()
         for junction in junctions:
@@ -537,9 +537,13 @@ class Physlr:
             if Physlr.args.verbose >= 3:
                 print("Junction:", junction, "Edges:", *edges, file=sys.stderr)
             # Keep the two incident edges with the largest weight, and remove the rest.
-            for u, v, _ in edges[2:-1]:
-                g.remove_edge(u, v)
-        return g
+            if keep_largest:
+                for u, v, _ in edges[2:]:
+                    g.remove_edge(u, v)
+            else:
+                for u, v, _ in edges:
+                    g.remove_edge(u, v)
+        return (g, len(junctions))
 
     @staticmethod
     def determine_backbones_of_trees(g, prune_junctions):
@@ -548,14 +552,21 @@ class Physlr:
         Resolve junctions of >=3 branches of size >= prune_junctions.
         """
         paths = []
+        removed_count = 0
         for component in nx.connected_components(g):
-            gcomponents = Physlr.split_junctions_of_tree(prune_junctions, g.subgraph(component))
+            gcomponents, rem_count =\
+                Physlr.split_junctions_of_tree(prune_junctions, g.subgraph(component))
+            removed_count += rem_count
             for subcomponent in nx.connected_components(gcomponents):
                 gsubcomponent = g.subgraph(subcomponent)
                 u, v, _ = Physlr.diameter_of_tree(gsubcomponent, weight="n")
                 path = nx.shortest_path(gsubcomponent, u, v, weight="n")
                 paths.append(path)
         paths.sort(key=len, reverse=True)
+        print(
+            int(timeit.default_timer() - t0),
+            "Pruned", removed_count, "junctions in the backbone",
+            file=sys.stderr)
         return paths
 
     @staticmethod
@@ -1276,6 +1287,23 @@ class Physlr:
         self.write_graph(gmst, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote the MST.", file=sys.stderr)
 
+    def physlr_report_junctions_graph(self):
+        """
+        Report junctions in the MST of the graph and output a list of junc barcodes.
+        """
+        g = self.read_graph(self.args.FILES)
+        gmst = Physlr.determine_pruned_mst(g)
+        print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
+        junctions = []
+        for component in nx.connected_components(gmst):
+            junctions += Physlr.detect_junctions_of_tree(
+                gmst.subgraph(component), Physlr.args.prune_junctions)
+        print(int(timeit.default_timer() - t0),
+              "Found", len(junctions), "junctions.", file=sys.stderr)
+        for junction in junctions:
+            print(junction, file=sys.stdout)
+        print(int(timeit.default_timer() - t0), "Wrote junctions to file.", file=sys.stderr)
+
     def physlr_remove_bridges_graph(self):
         """
         Iteratively remove bridges in the MST of the graph and output the graph.
@@ -1623,10 +1651,13 @@ class Physlr:
                 ]
 
     @staticmethod
-    def determine_molecules(g, u, strategy):
+    def determine_molecules(g, u, junctions, strategy):
         """Assign the neighbours of this vertex to molecules."""
-        alg_list = strategy.split("+")
         communities = [g[u].keys()]
+        if junctions:
+            if u not in junctions:
+                strategy = "bc"
+        alg_list = strategy.split("+")
         for algorithm in alg_list:
             communities_temp = []
             if algorithm == "bc":
@@ -1677,7 +1708,7 @@ class Physlr:
         Assign the neighbours of this vertex to molecules.
         The graph is passed in the class variable Physlr.graph.
         """
-        return Physlr.determine_molecules(Physlr.graph, u, Physlr.args.strategy)
+        return Physlr.determine_molecules(Physlr.graph, u, Physlr.junctions, Physlr.args.strategy)
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
@@ -1689,21 +1720,37 @@ class Physlr:
             exit_message = "Error: physlr molecule: wrong input parameter(s) " + \
                       "--separation-strategy: " + str(set(alg_list) - alg_white_list)
             sys.exit(exit_message)
+        junctions = []
+        if len(self.args.FILES) > 1:
+            gin = self.read_graph([self.args.FILES[0]])
+            with open(self.args.FILES[1]) as fin:
+                for line in fin:
+                    junctions.append(line.split()[0])
+            print(
+                int(timeit.default_timer() - t0),
+                "Separating junction-causing barcodes into molecules"
+                "using the following algorithm(s):\n\t",
+                self.args.strategy.replace("+", " + "),
+                "\n\tand other barcodes with bc.",
+                file=sys.stderr)
+        else:
+            gin = self.read_graph(self.args.FILES)
+            print(
+                int(timeit.default_timer() - t0),
+                "Separating barcodes into molecules using the following algorithm(s):\n\t",
+                self.args.strategy.replace("+", " + "),
+                file=sys.stderr)
 
-        gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
-        print(
-            int(timeit.default_timer() - t0),
-            "Separating barcodes into molecules using the following algorithm(s):\n\t",
-            self.args.strategy.replace("+", " + "),
-            file=sys.stderr)
 
         # Partition the neighbouring vertices of each barcode into molecules.
         if self.args.threads == 1:
             molecules = dict(
-                self.determine_molecules(gin, u, self.args.strategy) for u in progress(gin))
+                self.determine_molecules(
+                    gin, u, junctions, self.args.strategy) for u in progress(gin))
         else:
             Physlr.graph = gin
+            Physlr.junctions = junctions
             with multiprocessing.Pool(self.args.threads) as pool:
                 molecules = dict(pool.map(
                     self.determine_molecules_process, progress(gin), chunksize=100))
