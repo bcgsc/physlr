@@ -39,6 +39,10 @@ draft=$(name).supernova.scaftigs
 # Minimum number of overlapping minimizsers
 n=50
 
+# Minimum/Maximum barcode multiplicity
+n1=100
+n2=5000
+
 # Minimum component size for backbones
 min_component_size=50
 
@@ -851,39 +855,7 @@ min_path_size=200
 	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
 
 # Map the reference to the backbone graph and output PAF.
-%.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the k3-cliques backbone graph and output PAF.
-%.overlap.n$n.k3.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the (1:bc / 2:bc) backbone graph and output PAF.
-%.overlap.n$n.mol.mol2.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.mol2.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the (1:bc / 2:bc+cos+sqcos) backbone graph and output PAF.
-%.overlap.n$n.mol.mol2-bcs.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.mol2.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the (1:bc / 2:bc+k3+cos+sqcos) backbone graph and output PAF.
-%.overlap.n$n.mol.mol2-bkcs.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.mol2.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the (1:k3 / 2:bc+cos+sqcos) backbone graph and output PAF.
-%.overlap.n$n.k3.mol.mol2-bcs.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.mol2.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the (1:k3 / 2:bc+k3+cos+sqcos) backbone graph and output PAF.
-%.overlap.n$n.k3.mol.mol2-bkcs.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.mol2.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the Louvain backbone graph and output PAF.
-%.overlap.n$n.louvain.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the corrected backbone graph and output PAF.
-%.overlap.n$n.mol.s3.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.s3.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+%.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(n1)-$(n2).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
 # Lift over query coordinates of a PAF file from minimzer index to nucleotide coordinate.
