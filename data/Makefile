@@ -761,7 +761,7 @@ endif
 	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 -s0 $< >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
-%.remol.tsv: %.tsv %.junctions.tsv
+%.mol2.tsv: %.tsv %.junctions.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos $^ >$@
 
 # Determine the backbone graph from the overlap TSV.
@@ -850,8 +850,12 @@ min_path_size=200
 %.overlap.n$n.k3.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
-# Map the reference to the k3-cliques backbone graph and output PAF.
-%.overlap.n$n.k3.mol.remol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.remol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+# Map the reference to the k3-cliques (+ 2nd round of molecules) backbone graph and output PAF.
+%.overlap.n$n.mol.mol2.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.mol2.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
+
+# Map the reference to the k3-cliques (+ 2nd round of molecules) backbone graph and output PAF.
+%.overlap.n$n.k3.mol.mol2.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.mol2.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
 # Map the reference to the Louvain backbone graph and output PAF.
