@@ -1291,6 +1291,7 @@ class Physlr:
         """
         Report junctions in the MST of the graph and output a list of junc barcodes.
         """
+        depth = 1
         g = self.read_graph(self.args.FILES)
         gmst = Physlr.determine_pruned_mst(g)
         print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
@@ -1300,7 +1301,18 @@ class Physlr:
                 gmst.subgraph(component), Physlr.args.prune_junctions)
         print(int(timeit.default_timer() - t0),
               "Found", len(junctions), "junctions.", file=sys.stderr)
+        junctions2 = []
         for junction in junctions:
+
+
+        for junction in junctions:
+            neighs = [junction]
+            for _ in range(depth):
+                neighs = [m for n in neighs for m in g.neighbors(n)]
+                junction += neighs
+            junctions2 += list(set(junction))
+        junctions2 = list(set(junctions2))
+        for junction in junctions2:
             print(junction, file=sys.stdout)
         print(int(timeit.default_timer() - t0), "Wrote junctions to file.", file=sys.stderr)
 
