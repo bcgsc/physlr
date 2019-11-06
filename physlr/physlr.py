@@ -1291,28 +1291,32 @@ class Physlr:
         """
         Report junctions in the MST of the graph and output a list of junc barcodes.
         """
-        depth = 1
         g = self.read_graph(self.args.FILES)
         gmst = Physlr.determine_pruned_mst(g)
         print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
-        junctions = []
+        tree_junctions = []
         for component in nx.connected_components(gmst):
-            junctions += Physlr.detect_junctions_of_tree(
+            tree_junctions += Physlr.detect_junctions_of_tree(
                 gmst.subgraph(component), Physlr.args.prune_junctions)
         print(int(timeit.default_timer() - t0),
-              "Found", len(junctions), "junctions.", file=sys.stderr)
-        junctions2 = []
+              "Found", len(tree_junctions), "junctions.", file=sys.stderr)
+        junctions = []
+        if self.args.junction_depth > 0:
+            print(int(timeit.default_timer() - t0),
+                  "Exapnding junctions, depth:", self.args.junction_depth, ".", file=sys.stderr)
+            tree_junctions_expanded = []
+            for tree_junction in tree_junctions:
+                tree_junctions_expanded += list(nx.bfs_tree(
+                    gmst, source=tree_junction, depth_limit=self.args.junction_depth))
+            tree_junctions_expanded = list(set(tree_junctions_expanded))
+            junctions = [m for n in tree_junctions_expanded for m in g.neighbors(n)]
+            junctions += [n for n in tree_junctions_expanded]
+            junctions = list(set(junctions))
+            print(int(timeit.default_timer() - t0),
+                  "Exapnded to", len(junctions), "junctions.", file=sys.stderr)
+        else:
+            junctions = tree_junctions
         for junction in junctions:
-
-
-        for junction in junctions:
-            neighs = [junction]
-            for _ in range(depth):
-                neighs = [m for n in neighs for m in g.neighbors(n)]
-                junction += neighs
-            junctions2 += list(set(junction))
-        junctions2 = list(set(junctions2))
-        for junction in junctions2:
             print(junction, file=sys.stdout)
         print(int(timeit.default_timer() - t0), "Wrote junctions to file.", file=sys.stderr)
 
@@ -2449,6 +2453,9 @@ class Physlr:
             "--prune-junctions", action="store", dest="prune_junctions", type=int, default=0,
             help="split a backbone path when the alternative branch is longer than"
                  "prune-junctions [0]. set to 0 to skip.")
+        argparser.add_argument(
+            "--junction-depth", action="store", dest="junction_depth", type=int, default=0,
+            help="depth for expanding the junctions by collecting all neighbors of this depth [0].")
         return argparser.parse_args()
 
     def __init__(self):
