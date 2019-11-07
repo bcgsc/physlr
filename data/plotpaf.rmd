@@ -175,8 +175,7 @@ pafq_ideogram <- pafq %>%
   group_by(Qname) %>%
   mutate(Colour = (Qindex + row_number()) %% 2) %>%
   ungroup() %>%
-  mutate(Colour = factor(Colour)) %>%
-  mutate(Colour = fct_recode(Colour, "Other1" = "0", "Other2" = "1"))
+  mutate(Colour = fct_recode(factor(Colour), "Other1" = "0", "Other2" = "1"))
 
 legend_breaks <- c(seq(0, 25, 1), c("Other1", "Other2"))
 
