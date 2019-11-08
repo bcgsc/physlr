@@ -165,25 +165,43 @@ pafq_lumped <- paf_chained %>%
 	mutate(Tname = fct_inorder(fct_lump(Tname, n = 26, w = Barcodes, ties.method = "first")))
 
 pal <- setNames(alphabet_colours, pafq_lumped$Tname %>% setdiff("Other") %>% unique())
-pal["Other"] <- "#c0c0c0"
+pal["Other1"] <- "#808080"
+pal["Other2"] <- "#c0c0c0"
 
 pafq <- pafq_lumped %>% arrange(desc(Qlength), Qname, Qstart, Barcodes)
 
-ggplot(pafq) +
-	geom_rect(aes(
-		xmin = Qstart, xmax = Qend,
-		ymin = Qindex, ymax = Qindex + 1,
-		fill = Tname)) +
-	geom_point(aes(x = Qlength, y = 0.5 + Qindex),
-		data = distinct(pafq, Qlength, Qindex)) +
-	scale_x_continuous(name = "Position", labels = unit_format(unit = "M", scale = 1e-6)) +
-	scale_y_reverse(name = "Chromosome (Query)",
-		breaks = 0.5 + seq_len(nlevels(pafq$Qname)),
-		labels = levels(pafq$Qname)) +
-	scale_fill_manual(name = "Target", values = pal) +
-	theme_bw() +
-	guides(fill = guide_legend(ncol = 1)) +
-	labs(caption = input_paf)
+pafq_ideogram <- pafq %>%
+  arrange(desc(Qlength), Qname, Qstart, Barcodes) %>%
+  group_by(Qname) %>%
+  mutate(Colour = (Qindex + row_number()) %% 2) %>%
+  ungroup() %>%
+  mutate(Colour = fct_recode(factor(Colour), "Other1" = "0", "Other2" = "1"))
+
+legend_breaks <- c(seq(0, 25, 1), c("Other1", "Other2"))
+
+ggplot(pafq_ideogram) +
+  geom_rect(aes(
+    xmin = Qstart, xmax = Qend,
+    ymin = Qindex, ymax = Qindex + 1,
+    fill = Colour)) +
+  geom_point(aes(x = Qlength, y = 0.5 + Qindex),
+             data = distinct(pafq, Qlength, Qindex)) +
+  scale_x_continuous(name = "Position", labels = unit_format(unit = "M", scale = 1e-6)) +
+  scale_y_reverse(name = "Chromosome (Query)",
+                  breaks = 0.5 + seq_len(nlevels(pafq$Qname)),
+                  labels = levels(pafq$Qname)) +
+  geom_rect(data=pafq[!(pafq$Tname=="Other"),], aes(
+    xmin = Qstart, xmax = Qend,
+    ymin = Qindex, ymax = Qindex + 1,
+    fill = Tname)) +
+  geom_rect(data = gaps, aes(
+	xmin = Start, xmax = End,
+	ymin = Index + 0.45, ymax = Index + 0.55),
+	fill = "darkred") +
+  scale_fill_manual(name = "Target", values = pal, breaks = legend_breaks) +
+  theme_bw() +
+  guides(fill = guide_legend(ncol = 1)) +
+  labs(caption = input_paf)
 ```
 
 ```{r save-plot-q}

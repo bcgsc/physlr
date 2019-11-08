@@ -1857,6 +1857,8 @@ class Physlr:
             for pos, u in enumerate(path):
                 if u not in bxtomxs:
                     u = u.rsplit("_", 1)[0]
+                if u not in bxtomxs:
+                    u = u.rsplit("_", 1)[0]
                 for mx in bxtomxs[u]:
                     mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
@@ -2208,19 +2210,36 @@ class Physlr:
         num_scaffolds = 0
         num_contigs = 0
         num_bases = 0
+
+        used_seqs = {name[0:-1] for path in paths for name in path if name[-1] != "."}
+
+        gaps = "N" * self.args.gap_size
+
         for path in progress(paths):
-            # Remove unoriented sequences.
-            path = [name for name in path if name[-1] != "."]
             if not path:
                 continue
 
-            seq = "NNNNNNNNNN".join(Physlr.get_oriented_sequence(seqs, name) for name in path)
+            seq = gaps.join(Physlr.get_oriented_sequence(seqs, name)
+                            if name[-1] != "." else ("N" * len(seqs[name[0:-1]]))
+                            for name in path)
+
             if len(seq) < self.args.min_length:
                 continue
             num_scaffolds += 1
             print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
             num_contigs += len(path)
             num_bases += len(seq)
+
+        for name in seqs:
+            if name not in used_seqs:
+                seq = seqs[name]
+                if len(seq) < self.args.min_length:
+                    continue
+                num_scaffolds += 1
+                print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{1}\n{seq}")
+                num_contigs += 1
+                num_bases += len(seq)
+
         print(
             int(timeit.default_timer() - t0),
             f"Wrote {num_bases} bases in {num_contigs} contigs in {num_scaffolds} scaffolds.",
@@ -2456,6 +2475,9 @@ class Physlr:
         argparser.add_argument(
             "--junction-depth", action="store", dest="junction_depth", type=int, default=0,
             help="depth for expanding the junctions by collecting all neighbors of this depth [0].")
+        argparser.add_argument(
+            "--gap-size", action="store", dest="gap_size", type=int, default=100,
+            help="gap size used in scaffolding [100].")
         return argparser.parse_args()
 
     def __init__(self):
