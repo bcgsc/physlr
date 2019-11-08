@@ -649,11 +649,11 @@ minsize=2000
 	sed -n 's/^f//p' $< | tr '\t' ' ' >$@
 
 # Count k-mers using ntCard.
-%_k$(k).histogram.txt: %.fq.gz
+%_k$k.histogram.txt: %.fq.gz
 	$(time) ntcard -t $t -k $k -o $@ $<
 
 # Generate repetitive k-mers using ntHits.
-%_k$(k).rep: %.fq.gz %_k$(k).histogram.txt
+%_k$k.rep: %.fq.gz %_k$k.histogram.txt
 	$(eval mode := $(shell $(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram.txt ))
 	>&2 echo "The mode k-mer coverage is $(mode)."
 	$(eval repeat_threshold ?= $(shell (expr $(mode) \* 3 ) ))
