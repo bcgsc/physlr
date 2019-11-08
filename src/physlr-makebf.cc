@@ -1,11 +1,7 @@
-
-
-#include <cmath>
 #include <fstream>
 #include <getopt.h>
 #include <iomanip>
 #include <iostream>
-#include <math.h>
 #include <sstream>
 #include <string>
 #include <vector>
