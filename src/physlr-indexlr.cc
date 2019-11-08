@@ -141,10 +141,10 @@ main(int argc, char* argv[])
 			break;
 		case 't':
 			t = strtoul(optarg, &end, 10);
-			if (t > 5) {
-				t = 5;
+			if (t > 48) {
+				t = 48;
 				std::cerr << progname
-				          << ": Using more than 5 threads does not scale, reverting to 5.\n";
+				          << ": Using more than 48 threads does not scale, reverting to 48.\n";
 			}
 			break;
 		case 'r': {
