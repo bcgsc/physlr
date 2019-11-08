@@ -87,7 +87,6 @@ endif
 .PHONY: f1chr4 f1chr2R f1 fishchr25 fish
 all: f1chr4 f1chr2R f1 fishchr25 fish
 
-
 ################################################################################
 # Fly
 # See https://support.10xgenomics.com/de-novo-assembly/datasets/2.1.0/fly
