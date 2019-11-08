@@ -39,8 +39,15 @@ draft=$(name).supernova.scaftigs
 # Minimum number of overlapping minimizsers
 n=50
 
+# Minimum/Maximum barcode multiplicity
+n1=100
+n2=5000
+
 # Minimum component size for backbones
 min_component_size=50
+
+# Minimum size of 3rd largest branch of a node to be considered a junction
+prune_junctions = 200
 
 # Level of verbosity
 # 0: silent
@@ -753,14 +760,30 @@ endif
 %.bridge-removed.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr remove-bridges-graph --prune-branches=10 --prune-bridges=10 -s0 $< >$@
 
+# Report the junctions in a overlap/backbone graph TSV.
+%.junctions.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 -s0 $< >$@
+
+# Redo molecule separation on a list of junction-causing barcodes.
+%.mol2.tsv: %.tsv %.junctions.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc $^ >$@
+
+# Redo molecule separation on a list of junction-causing barcodes.
+%.mol2-bcs.tsv: %.tsv %.junctions.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos $^ >$@
+
+# Redo molecule separation on a list of junction-causing barcodes.
+%.mol2-bkcs.tsv: %.tsv %.junctions.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3+cos+sqcos $^ >$@
+
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 $< >$@
 
 # Determine the corrected backbone graph from the overlap TSV.
 min_path_size=200
 %.s3.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 -s3 --min-path-size=$(min_path_size) $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
@@ -832,19 +855,7 @@ min_path_size=200
 	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
 
 # Map the reference to the backbone graph and output PAF.
-%.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the k3-cliques backbone graph and output PAF.
-%.overlap.n$n.k3.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.k3.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the Louvain backbone graph and output PAF.
-%.overlap.n$n.louvain.mol.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-
-# Map the reference to the corrected backbone graph and output PAF.
-%.overlap.n$n.mol.s3.backbone.map.$(ref).n10.paf.gz: %.overlap.n$n.mol.s3.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+%.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(n1)-$(n2).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
 # Lift over query coordinates of a PAF file from minimzer index to nucleotide coordinate.
