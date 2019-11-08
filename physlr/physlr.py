@@ -2193,7 +2193,7 @@ class Physlr:
         num_contigs = 0
         num_bases = 0
 
-        unused_seqs = {name[0:-1] for path in paths for name in path if name[-1] == "."}
+        used_seqs = {name[0:-1] for path in paths for name in path if name[-1] != "."}
 
         gaps = "N" * self.args.gap_size
 
@@ -2213,7 +2213,7 @@ class Physlr:
             num_bases += len(seq)
 
         for name in seqs:
-            if name in unused_seqs:
+            if name not in used_seqs:
                 seq = seqs[name]
                 if len(seq) < self.args.min_length:
                     continue
