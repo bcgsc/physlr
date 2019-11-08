@@ -654,7 +654,10 @@ minsize=2000
 
 # Generate repetitive k-mers using ntHits.
 %_k$(k).rep: %.fq.gz %_k$(k).histogram.txt
-	$(eval repeat_threshold := $(shell $(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram.txt ))
+	$(eval mode := $(shell $(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram.txt ))
+	>&2 echo "The mode k-mer coverage is $(mode)."
+	$(eval repeat_threshold ?= $(shell (expr $(mode) \* 3 ) ))
+	>&2 echo "The repeat k-mer coverage is $(repeat_threshold)."
 	$(time) nthits -t $t -k $k -c $(repeat_threshold) -p $* $<
 
 ################################################################################
