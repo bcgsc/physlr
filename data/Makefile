@@ -686,6 +686,11 @@ minsize=2000
 ################################################################################
 # Physlr
 
+# Generate repetitive Bloom filter to select minimizers
+bloom_filter_size=10000000000 #10G
+%.k$k.bf: %_k$k.rep
+	$(time) $(physlr_path)/src/physlr-makebf -t $t  -k $k -b $(bloom_filter_size) -v -o $@ $<
+
 # Extract the coordinates in BED format of gaps in a FASTA file.
 %.fa.gap.bed: %.fa
 	$(python) $(bin)/physlr fasta-gaps $< >$@
