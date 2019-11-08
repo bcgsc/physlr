@@ -655,7 +655,7 @@ minsize=2000
 # Generate repetitive k-mers using ntHits.
 %_k$(k).rep: %.fq.gz %_k$(k).histogram.txt
 	$(eval repeat_threshold := $(shell $(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram.txt ))
-	$(time) nthits -t $t -k $k -c $(repeat_threshold) -p $* $<;
+	$(time) nthits -t $t -k $k -c $(repeat_threshold) -p $* $<
 
 ################################################################################
 # Unicycler
