@@ -1,0 +1,32 @@
+---
+title: Plot a histogram with ntCard output
+author: Johnathan Wong
+params:
+  input_histogram:
+    label: "Input ntCard histogram file"
+    value: ""
+    input: text
+---
+
+```{r setup, message=FALSE}
+library(ggplot2)
+
+input_histogram <- params$input_histogram
+
+input_histogram
+```
+# Read the histogram file
+```{r read-data}
+histogram_df <- data.frame(read.csv(input_histogram, sep = "\t" , header=T))
+```
+
+# Plot the histogram file
+```{r plot-histogram, fig.height=6, fig.width=6}
+ggplot(histogram_df, aes(x=f, y=n)) +
+    geom_bar(stat="identity") +
+    xlim(0, 100)
+```
+
+```{r save-plot}
+ggsave(paste0(input_histogram, ".pdf"))
+```

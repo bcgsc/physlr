@@ -649,15 +649,19 @@ minsize=2000
 	sed -n 's/^f//p' $< | tr '\t' ' ' >$@
 
 # Count k-mers using ntCard.
-%_k$k.histogram.txt: %.fq.gz
+%_k$k.histogram: %.fq.gz
 	$(time) ntcard -t $t -k $k -o $@ $<
 
+# Count k-mers using ntCard.
+%_k$k.histogram.pdf: %_k$k.histogram
+	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plothistogram.rmd", "html_document", "$*.bed.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_histogram="$<"))'
+
 # Generate repetitive k-mers using ntHits.
-%_k$k.rep: %.fq.gz %_k$k.histogram.txt
-	$(eval mode := $(shell $(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram.txt ))
-	>&2 echo "The mode k-mer coverage is $(mode)."
+%_k$k.rep: %.fq.gz %_k$k.histogram %_k$k.histogram.pdf
+	$(eval mode := $(shell $(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram))
+	@>&2 echo "The mode k-mer coverage is $(mode)."
 	$(eval repeat_threshold ?= $(shell (expr $(mode) \* 3 ) ))
-	>&2 echo "The repeat k-mer coverage is $(repeat_threshold)."
+	@>&2 echo "The repeat k-mer coverage is $(repeat_threshold)."
 	$(time) nthits -t $t -k $k -c $(repeat_threshold) -p $* $<
 
 ################################################################################
