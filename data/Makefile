@@ -87,6 +87,7 @@ endif
 .PHONY: f1chr4 f1chr2R f1 fishchr25 fish
 all: f1chr4 f1chr2R f1 fishchr25 fish
 
+
 ################################################################################
 # Fly
 # See https://support.10xgenomics.com/de-novo-assembly/datasets/2.1.0/fly
@@ -647,6 +648,15 @@ minsize=2000
 # Convert a .hist to a .histo file for GenomeScope.
 %.histo: %.hist
 	sed -n 's/^f//p' $< | tr '\t' ' ' >$@
+
+# Count k-mers using ntCard.
+%_k$(k).histogram.txt: %.fq.gz
+	ntcard -t $(t) -k $(k) -o $@ $<
+
+# Generate repetitive k-mers using ntHits.
+%_k$(k).rep: %.fq.gz %_k$(k).histogram.txt
+	$(eval repeat_threshold := $(shell $(python) $(bin)/physlr find-ntcard-mode $*_k$(k).histogram.txt ))
+	nthits -t $(t) -k $(k) -c $(repeat_threshold) -p $* $<;
 
 ################################################################################
 # Unicycler
