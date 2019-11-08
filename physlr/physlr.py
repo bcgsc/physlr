@@ -2195,7 +2195,7 @@ class Physlr:
 
         unused_seqs = {name[0:-1] for path in paths for name in path if name[-1] == "."}
 
-        gaps = ("N" * self.args.gap_size)
+        gaps = "N" * self.args.gap_size
 
         for path in progress(paths):
             if not path:
@@ -2456,7 +2456,7 @@ class Physlr:
                  "prune-junctions [0]. set to 0 to skip.")
         argparser.add_argument(
             "--gap-size", action="store", dest="gap_size", type=int, default=100,
-            help="gap size used in scaffolding [0].")
+            help="gap size used in scaffolding [100].")
         return argparser.parse_args()
 
     def __init__(self):
