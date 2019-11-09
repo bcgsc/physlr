@@ -2365,6 +2365,20 @@ class Physlr:
                 if match.end() - match.start() >= self.args.n:
                     print(name, match.start(), match.end(), f"gap{gap}", sep="\t")
 
+    def physlr_find_ntcard_mode(self):
+        """Find the first mode after minimum in ntCard histogram output."""
+        # Assumption: There is no negative slope to the right of the first local minimum
+        freq_count = [int(line.rstrip().split("\t")[2]) for line in open(self.args.FILES[0])
+                      if line[0] != "k"]
+        min_val = freq_count[0]
+        for idx, freq in enumerate(freq_count):
+            if freq > min_val:
+                min_idx = idx - 1
+                break
+            min_val = freq
+        freq_count = freq_count[min_idx:]
+        print(freq_count.index(max(freq_count)) + 1 + min_idx)
+
     @staticmethod
     def parse_arguments():
         "Parse the command line arguments."
