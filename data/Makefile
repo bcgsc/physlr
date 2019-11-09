@@ -762,7 +762,7 @@ endif
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.junctions.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=2 -s0 $< >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2.tsv: %.tsv %.junctions.tsv
