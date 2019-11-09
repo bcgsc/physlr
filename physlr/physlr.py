@@ -1311,7 +1311,7 @@ class Physlr:
             #tree_junctions_expanded = list(set(tree_junctions_expanded))
             junctions = {m for n in tree_junctions_expanded for m in g.neighbors(n)}
             junctions.update({n for n in tree_junctions_expanded})
-            junctions = list(junctions)
+            #junctions = list(junctions)
             print(int(timeit.default_timer() - t0),
                   "Exapnded to", len(junctions), "junctions.", file=sys.stderr)
         else:
