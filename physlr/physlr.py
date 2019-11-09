@@ -1304,21 +1304,21 @@ class Physlr:
         if self.args.junction_depth > 0:
             print(int(timeit.default_timer() - t0),
                   "Exapnding junctions, depth:", self.args.junction_depth, ".", file=sys.stderr)
-            tree_junctions_expanded = []
+            tree_junctions_expanded = {}
             for tree_junction in tree_junctions:
-                tree_junctions_expanded += list(nx.bfs_tree(
-                    gmst, source=tree_junction, depth_limit=self.args.junction_depth))
-            tree_junctions_expanded = list(set(tree_junctions_expanded))
-            junctions = [m for n in tree_junctions_expanded for m in g.neighbors(n)]
-            junctions += [n for n in tree_junctions_expanded]
-            junctions = list(set(junctions))
+                tree_junctions_expanded.update(
+                    nx.bfs_tree(gmst, source=tree_junction, depth_limit=self.args.junction_depth))
+            #tree_junctions_expanded = list(set(tree_junctions_expanded))
+            junctions = {m for n in tree_junctions_expanded for m in g.neighbors(n)}
+            junctions += {n for n in tree_junctions_expanded}
+            junctions = list(junctions)
             print(int(timeit.default_timer() - t0),
                   "Exapnded to", len(junctions), "junctions.", file=sys.stderr)
         else:
             junctions = tree_junctions
         for junction in junctions:
             print(junction, file=sys.stdout)
-        print(int(timeit.default_timer() - t0), "Wrote junctions to file.", file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Wrote junctions.", file=sys.stderr)
 
     def physlr_remove_bridges_graph(self):
         """
