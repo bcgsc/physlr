@@ -1304,7 +1304,7 @@ class Physlr:
         if self.args.junction_depth > 0:
             print(int(timeit.default_timer() - t0),
                   "Exapnding junctions, depth:", self.args.junction_depth, ".", file=sys.stderr)
-            tree_junctions_expanded = {}
+            tree_junctions_expanded = set()
             for tree_junction in tree_junctions:
                 tree_junctions_expanded.update(
                     nx.bfs_tree(gmst, source=tree_junction, depth_limit=self.args.junction_depth))
