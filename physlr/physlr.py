@@ -686,7 +686,7 @@ class Physlr:
     @staticmethod
     def determine_pruned_mst(g):
         """Return the pruned maximum spanning tree of the graph."""
-        gmst = nx.maximum_spanning_tree(g, weight="n")
+        gmst = nx.maximum_spanning_tree(g, algorithm="prim", weight="n")
         print(
             int(timeit.default_timer() - t0),
             "Determined the maximum spanning tree.", file=sys.stderr, flush=True)
