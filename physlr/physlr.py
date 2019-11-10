@@ -1746,7 +1746,7 @@ class Physlr:
                     junctions.append(line.split()[0])
             print(
                 int(timeit.default_timer() - t0),
-                "Separating junction-causing barcodes into molecules"
+                "Separating junction-causing barcodes into molecules "
                 "using the following algorithm(s):\n\t",
                 self.args.strategy.replace("+", " + "),
                 "\n\tand other barcodes with bc.",
