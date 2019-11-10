@@ -1317,7 +1317,7 @@ class Physlr:
             print(int(timeit.default_timer() - t0),
                   "Exapnded to", len(junctions), "junctions.", file=sys.stderr)
         else:
-             junctions = tree_junctions
+            junctions = tree_junctions
         for junction in junctions:
             print(junction, file=sys.stdout)
         print(int(timeit.default_timer() - t0), "Wrote junctions.", file=sys.stderr)
