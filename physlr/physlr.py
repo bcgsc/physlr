@@ -1303,17 +1303,21 @@ class Physlr:
         junctions = []
         if self.args.junction_depth > 0:
             print(int(timeit.default_timer() - t0),
-                  "Exapnding junctions, depth:", self.args.junction_depth, "(+1).", file=sys.stderr)
+                  "Exapnding junctions, depth:", self.args.junction_depth, file=sys.stderr)
             tree_junctions_expanded = set()
-            for tree_junction in tree_junctions:
-                tree_junctions_expanded.update(
-                    nx.bfs_tree(gmst, source=tree_junction, depth_limit=self.args.junction_depth))
+            if self.args.junction_depth > 1:
+                for tree_junction in tree_junctions:
+                    tree_junctions_expanded.update(
+                        nx.bfs_tree(gmst, source=tree_junction,
+                                    depth_limit=self.args.junction_depth-1))
+            else:
+                tree_junctions_expanded = set(tree_junctions)
             junctions = {m for n in tree_junctions_expanded for m in g.neighbors(n)}
             junctions.update(tree_junctions_expanded)
             print(int(timeit.default_timer() - t0),
                   "Exapnded to", len(junctions), "junctions.", file=sys.stderr)
         else:
-            junctions = tree_junctions
+             junctions = tree_junctions
         for junction in junctions:
             print(junction, file=sys.stdout)
         print(int(timeit.default_timer() - t0), "Wrote junctions.", file=sys.stderr)
