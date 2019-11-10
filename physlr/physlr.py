@@ -1309,7 +1309,7 @@ class Physlr:
                 tree_junctions_expanded.update(
                     nx.bfs_tree(gmst, source=tree_junction, depth_limit=self.args.junction_depth))
             junctions = {m for n in tree_junctions_expanded for m in g.neighbors(n)}
-            junctions.update({n for n in tree_junctions_expanded})
+            junctions.update(tree_junctions_expanded)
             print(int(timeit.default_timer() - t0),
                   "Exapnded to", len(junctions), "junctions.", file=sys.stderr)
         else:
