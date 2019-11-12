@@ -170,8 +170,17 @@ main(int argc, char* argv[])
 	}
 	if (t > 5 && !(withSolid || withRepeat)) {
 		t = 5;
-		std::cerr << progname << ": Using more than 5 threads does not scale, reverting to 5."
-		          << std::endl;
+		std::cerr
+		    << progname
+		    << ": Using more than 5 threads wihtout Bloom filter does not scale, reverting to 5."
+		    << std::endl;
+	} else {
+		if (t > 48) {
+			std::cerr
+			    << progname
+			    << ": Using more than 48 threads with Bloom filter does not scale, reverting to 48."
+			    << std::endl;
+		}
 	}
 	std::vector<std::string> infiles(&argv[optind], &argv[argc]);
 	if (argc < 2) {
