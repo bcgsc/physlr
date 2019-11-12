@@ -2201,20 +2201,16 @@ class Physlr:
             if not path:
                 continue
 
-            if len(path) == 1:
-                if path[0][-1] == ".":
-                    path[0] = path[0][:-1] + "+"
-            else:
-                all_unoriented = True
-                longest_seq = 0
-                for idx, name in enumerate(path):
-                    if name[-1] != ".":
-                        all_unoriented = False
-                        break
-                    if len(name) > len(path[longest_seq]):
-                        longest_seq = idx
-                if all_unoriented:
-                    path[longest_seq] = path[longest_seq][:-1] + "+"
+            all_unoriented = True
+            longest_seq = 0
+            for idx, name in enumerate(path):
+                if name[-1] != ".":
+                    all_unoriented = False
+                    break
+                if len(name) > len(path[longest_seq]):
+                    longest_seq = idx
+            if all_unoriented:
+                path[longest_seq] = path[longest_seq][:-1] + "+"
 
             seq = gaps.join(Physlr.get_oriented_sequence(seqs, name)
                             if name[-1] != "." else ("N" * len(seqs[name[0:-1]]))
