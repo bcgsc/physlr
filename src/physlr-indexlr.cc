@@ -141,11 +141,6 @@ main(int argc, char* argv[])
 			break;
 		case 't':
 			t = strtoul(optarg, &end, 10);
-			if (t > 48) {
-				t = 48;
-				std::cerr << progname
-				          << ": Using more than 48 threads does not scale, reverting to 48.\n";
-			}
 			break;
 		case 'r': {
 			withRepeat = true;
@@ -172,6 +167,11 @@ main(int argc, char* argv[])
 		default:
 			exit(EXIT_FAILURE);
 		}
+	}
+	if (t > 5 && !(withSolid || withRepeat)) {
+		t = 5;
+		std::cerr << progname << ": Using more than 5 threads does not scale, reverting to 5."
+		          << std::endl;
 	}
 	std::vector<std::string> infiles(&argv[optind], &argv[argc]);
 	if (argc < 2) {
