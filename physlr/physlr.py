@@ -2198,18 +2198,11 @@ class Physlr:
         gaps = "N" * self.args.gap_size
 
         for path in progress(paths):
-            all_unoriented = True
-            longest_seq = 0
-            for idx, name in enumerate(path):
-                if name[-1] != ".":
-                    all_unoriented = False
-                    break
-                if len(name) > len(path[longest_seq]):
-                    longest_seq = idx
-            if all_unoriented:
-                path = None
-
             if not path:
+                continue
+
+            all_unoriented = all([name[-1] == "." for name in path])
+            if all_unoriented:
                 continue
 
             seq = gaps.join(Physlr.get_oriented_sequence(seqs, name)
