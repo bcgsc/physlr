@@ -1012,7 +1012,7 @@ mol_strategy=bc
 
 # Produce sequences in FASTA format from paths.
 %.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
-	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=3000 $^ >$@
+	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=0 $^ >$@
 
 # Convert a PAF file to a BED file.
 %.paf.bed: %.paf.gz
