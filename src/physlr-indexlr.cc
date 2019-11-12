@@ -172,7 +172,7 @@ main(int argc, char* argv[])
 		t = 5;
 		std::cerr
 		    << progname
-		    << ": Using more than 5 threads wihtout Bloom filter does not scale, reverting to 5."
+		    << ": Using more than 5 threads without Bloom filter does not scale, reverting to 5."
 		    << std::endl;
 	} else {
 		if (t > 48) {
