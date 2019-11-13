@@ -17,7 +17,7 @@ physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 bin=$(physlr_path)/bin
 
 # Python interpreter.
-python=env PYTHONPATH=$(physlr_path) pypy3
+python=env PYTHONPATH=$(physlr_path) /projects/btl/aafshinfard/virtuEnv/pypy3/bin/pypy3
 
 # Reference genome.
 ref=Error_missing_parameter_ref
