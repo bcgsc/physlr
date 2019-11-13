@@ -1242,7 +1242,6 @@ class Physlr:
     def physlr_filter_overlap(self):
         "Read a Physlr overlap graph and filter edges."
 
-        edges = {}
         edge_weight = []
 
         at_edges = False
