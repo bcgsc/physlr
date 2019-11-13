@@ -54,3 +54,7 @@ check-physlr-filter-bxmx-second: all
 
 check-physlr-index-stLFR: all
 	./physlr-indexlr -t16 -k8 -w1 --stlfr data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.physlr.tsv.good
+
+check-physlr-makebf: all
+	./physlr-makebf -t16 -k8 -b1000 -o tiny.bf data/tiny_k8.rep
+	./physlr-indexlr -t16 -k8 -w1 -r tiny.bf --stlfr data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
