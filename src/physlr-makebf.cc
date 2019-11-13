@@ -25,12 +25,12 @@ printUsage(const std::string& progname)
 	std::cout << "Usage:  " << progname
 	          << "  -k K [-v] [-o FILE] FILE...\n\n"
 	             "  -k K       use K as k-mer size\n"
-	             "  -b B       Bloom Filter size in Bytes\n"
+	             "  -b B       Bloom filter size in Bytes\n"
 	             "  -v         enable verbose output\n"
 	             "  -o FILE    write Bloom filter to FILE [required]\n"
-	             "  -t N       use N number of threads\n"
+	             "  -t N       use N number of threads [1]\n"
 	             "  --help     display this help and exit\n"
-	             "  FILE       space separated list of ntHits output files\n";
+	             "  FILE       space separated list of ntHits tsv output files\n";
 }
 
 static void
