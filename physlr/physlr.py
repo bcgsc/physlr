@@ -1239,6 +1239,47 @@ class Physlr:
         self.write_tsv(g, sys.stdout)
         print(int(timeit.default_timer() - t0), "Wrote the graph", file=sys.stderr)
 
+    def physlr_filter_overlap(self):
+        "Read a Physlr overlap graph and filter edges."
+
+        edges = {}
+        edge_weight = []
+
+        at_edges = False
+        overlap_input = open(self.args.FILES[0], "r")
+        print(int(timeit.default_timer() - t0), "Processing Nodes", file=sys.stderr)
+        for line in overlap_input:
+            if at_edges:
+                columns = line.rstrip().split("\t")
+                edge_weight.append(int(columns[2]))
+            else:
+                print(line.rstrip())
+                if not line.strip():
+                    print(next(overlap_input).rstrip())
+                    print(int(timeit.default_timer() - t0), "Processing Edges", file=sys.stderr)
+                    at_edges = True
+        overlap_input.close()
+
+        print(int(timeit.default_timer() - t0), "Sorting Edges", file=sys.stderr)
+        edge_weight.sort()
+        lower_threshold = edge_weight[int(len(edge_weight) * self.args.minimizer_overlap / 100) - 1]
+
+        # Faster to read tsv again than to store edges as a dictionary
+        print(int(timeit.default_timer() - t0), "Filtering Edges", file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Lower Threshold", lower_threshold, file=sys.stderr)
+        at_edges = False
+        overlap_input = open(self.args.FILES[0], "r")
+        for line in overlap_input:
+            if at_edges:
+                columns = line.rstrip().split("\t")
+                if int(columns[2]) > lower_threshold:
+                    print(line.rstrip())
+            else:
+                if not line.strip():
+                    at_edges = True
+                    next(overlap_input)
+        overlap_input.close()
+
     def physlr_degree(self):
         "Print the degree of each vertex."
         g = self.read_graph(self.args.FILES)
@@ -2499,6 +2540,9 @@ class Physlr:
         argparser.add_argument(
             "--gap-size", action="store", dest="gap_size", type=int, default=100,
             help="gap size used in scaffolding [100].")
+        argparser.add_argument(
+            "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
+            help="Percent of edges to remove [0].")
         return argparser.parse_args()
 
     def __init__(self):
