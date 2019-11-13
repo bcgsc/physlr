@@ -50,7 +50,7 @@ n2=5000
 min_component_size=50
 
 # Minimum size of 3rd largest branch of a node to be considered a junction
-prune_junctions = 100
+prune_junctions = 50
 
 # Level of verbosity
 # 0: silent
