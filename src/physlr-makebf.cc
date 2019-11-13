@@ -133,12 +133,12 @@ main(int argc, char* argv[])
 		          << "kmer size                 = " << k << "\n"
 		          << "Bloom filter size         = " << filterSize << "\n"
 		          << std::endl;
-		std::cerr << "Inserting " << kmerVect.size() << " kmers to insert into bloom filter"
+		std::cerr << "Inserting " << kmerVect.size() << " kmers into Bloom filter"
 		          << "Using " << t << " threads." << std::endl;
 	}
 
 	uint64_t counter = 0;
-#pragma omp parallel for num_threads(t) ordered
+#pragma omp parallel for num_threads(t)
 	for (auto vectIt = kmerVect.begin(); vectIt < kmerVect.end(); ++vectIt) {
 		ntHashIterator itr(*vectIt, hashNum, k);
 		while (itr != ntHashIterator::end()) {
