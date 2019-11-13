@@ -47,7 +47,7 @@ n2=5000
 min_component_size=50
 
 # Minimum size of 3rd largest branch of a node to be considered a junction
-prune_junctions = 200
+prune_junctions = 100
 
 # Level of verbosity
 # 0: silent
@@ -766,7 +766,7 @@ endif
 
 # Determine the maximum spanning tree.
 %.mst.tsv: %.tsv
-	$(python) $(bin)/physlr mst -V$V --prune-branches=10 --prune-bridges=10 $< >$@
+	$(python) $(bin)/physlr mst -V$V --prune-branches=10 $< >$@
 
 # Separate a graph into its biconnected components by removing its cut vertices.
 %.bic.tsv: %.tsv
@@ -774,7 +774,7 @@ endif
 
 # Determine the bridge-removed graph from the overlap TSV.
 %.bridge-removed.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr remove-bridges-graph --prune-branches=10 --prune-bridges=10 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr remove-bridges-graph --prune-branches=10 -s0 $< >$@
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.junctions.tsv: %.tsv
@@ -794,12 +794,12 @@ endif
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-junctions=$(prune_junctions) -s0 $< >$@
 
 # Determine the corrected backbone graph from the overlap TSV.
 min_path_size=200
 %.s3.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
@@ -1012,7 +1012,7 @@ mol_strategy=bc
 
 # Produce sequences in FASTA format from paths.
 %.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
-	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=0 $^ >$@
+	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=3000 $^ >$@
 
 # Convert a PAF file to a BED file.
 %.paf.bed: %.paf.gz
