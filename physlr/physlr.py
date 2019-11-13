@@ -2213,12 +2213,14 @@ class Physlr:
         num_contigs = 0
         num_bases = 0
 
-        used_seqs = {name[0:-1] for path in paths for name in path if name[-1] != "."}
-
         gaps = "N" * self.args.gap_size
 
         for path in progress(paths):
             if not path:
+                continue
+
+            all_unoriented = all([name[-1] == "." for name in path])
+            if all_unoriented:
                 continue
 
             seq = gaps.join(Physlr.get_oriented_sequence(seqs, name)
@@ -2231,6 +2233,8 @@ class Physlr:
             print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
             num_contigs += len(path)
             num_bases += len(seq)
+
+        used_seqs = {name[0:-1] for path in paths for name in path if name[-1] != "."}
 
         for name in seqs:
             if name not in used_seqs:
