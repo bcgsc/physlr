@@ -686,7 +686,8 @@ class Physlr:
     @staticmethod
     def determine_pruned_mst(g):
         """Return the pruned maximum spanning tree of the graph."""
-        gmst = nx.maximum_spanning_tree(g, weight="n")
+        # having tested kruskal and prim, we found the former is faster in our case
+        gmst = nx.maximum_spanning_tree(g, algorithm="kruskal", weight="n")
         print(
             int(timeit.default_timer() - t0),
             "Determined the maximum spanning tree.", file=sys.stderr, flush=True)
@@ -1294,15 +1295,33 @@ class Physlr:
         g = self.read_graph(self.args.FILES)
         gmst = Physlr.determine_pruned_mst(g)
         print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
-        junctions = []
+        tree_junctions = []
         for component in nx.connected_components(gmst):
-            junctions += Physlr.detect_junctions_of_tree(
+            tree_junctions += Physlr.detect_junctions_of_tree(
                 gmst.subgraph(component), Physlr.args.prune_junctions)
         print(int(timeit.default_timer() - t0),
-              "Found", len(junctions), "junctions.", file=sys.stderr)
+              "Found", len(tree_junctions), "junctions.", file=sys.stderr)
+        junctions = []
+        if self.args.junction_depth > 0:
+            print(int(timeit.default_timer() - t0),
+                  "Exapnding junctions, depth:", self.args.junction_depth, file=sys.stderr)
+            if self.args.junction_depth > 1:
+                tree_junctions_expanded = set()
+                for tree_junction in tree_junctions:
+                    tree_junctions_expanded.update(
+                        nx.bfs_tree(gmst, source=tree_junction,
+                                    depth_limit=self.args.junction_depth-1))
+            else:
+                tree_junctions_expanded = set(tree_junctions)
+            junctions = {m for n in tree_junctions_expanded for m in g.neighbors(n)}
+            junctions.update(tree_junctions_expanded)
+            print(int(timeit.default_timer() - t0),
+                  "Exapnded to", len(junctions), "junctions.", file=sys.stderr)
+        else:
+            junctions = tree_junctions
         for junction in junctions:
             print(junction, file=sys.stdout)
-        print(int(timeit.default_timer() - t0), "Wrote junctions to file.", file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Wrote junctions.", file=sys.stderr)
 
     def physlr_remove_bridges_graph(self):
         """
@@ -1728,7 +1747,7 @@ class Physlr:
                     junctions.append(line.split()[0])
             print(
                 int(timeit.default_timer() - t0),
-                "Separating junction-causing barcodes into molecules"
+                "Separating junction-causing barcodes into molecules "
                 "using the following algorithm(s):\n\t",
                 self.args.strategy.replace("+", " + "),
                 "\n\tand other barcodes with bc.",
@@ -2474,6 +2493,9 @@ class Physlr:
             "--prune-junctions", action="store", dest="prune_junctions", type=int, default=0,
             help="split a backbone path when the alternative branch is longer than"
                  "prune-junctions [0]. set to 0 to skip.")
+        argparser.add_argument(
+            "--junction-depth", action="store", dest="junction_depth", type=int, default=0,
+            help="depth for expanding the junctions by collecting all neighbors of this depth [0].")
         argparser.add_argument(
             "--gap-size", action="store", dest="gap_size", type=int, default=100,
             help="gap size used in scaffolding [100].")
