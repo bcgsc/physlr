@@ -1,10 +1,10 @@
 CXXFLAGS=-g -O3 -Wall -Werror -Wno-error=unknown-pragmas -std=c++11 -pthread -I./include -I./vendor -fopenmp
 LDLIBS=-lz
 
-all: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx
+all: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf
 
 clean:
-	rm -f physlr-indexlr physlr-filter-barcodes physlr-filter-bxmx physlr-overlap
+	rm -f physlr-indexlr physlr-filter-barcodes physlr-filter-bxmx physlr-overlap physlr-makebf
 
 # Check the C++ source code for errors.
 lint: clang-format clang-tidy
@@ -54,3 +54,7 @@ check-physlr-filter-bxmx-second: all
 
 check-physlr-index-stLFR: all
 	./physlr-indexlr -t16 -k8 -w1 --stlfr data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.physlr.tsv.good
+
+check-physlr-makebf: all
+	./physlr-makebf -t16 -k8 -b1000 -o tiny.bf data/tiny_k8.rep
+	./physlr-indexlr -t16 -k8 -w1 -r tiny.bf --stlfr data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
