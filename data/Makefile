@@ -90,6 +90,36 @@ endif
 .PHONY: f1chr4 f1chr2R f1 fishchr25 fish
 all: f1chr4 f1chr2R f1 fishchr25 fish
 
+# Help
+help:
+	@echo "Usage: ./make [COMMAND] [OPTION=VALUE]..."
+	@echo "    Commands:"
+	@echo ""
+	@echo "	physical-map		run physlr and generate a physical map with linked reads (10X or stLFR)"
+	@echo "	scaffold	run physlr and scaffold an existing assembly with a physical map"
+	@echo "	help            display this help page"
+	@echo "	version         display the software version"
+	@echo ""
+	@echo "    Options:"
+	@echo "	draft           draft name [draft]. File must have .fa extension"
+	@echo "	ref           ref name [draft]. File must have .fa extension. If provided, will generate Quast metrics and backbone metrics relative to reference"
+	@echo "	lr           read name [reads]. File must have .fq.gz extension"
+	@echo "	t		number of threads used [16]"
+	@echo "	m		% of edges to remove in the overlap graph [90]. Available options are stLFR, 10X, or [0-100]."
+	@echo "	k		size of k-mers [32]."
+	@echo "	w		window size to choose k-mers [32]."
+	@echo "	min_component_size		minimum number of barcodes within a backbone to output [50]."
+	@echo "	minimum_barcode_multiplicity		minimum number of reads a barcode can have [10]."
+	@echo "	maximum_barcode_multiplicity		maximum number of reads a barcode can have [5000]."
+	@echo "	bloom_filter_size		size of bloom filter [10000000000]."
+	@echo ""
+	@echo "Example: To run physlr with myDraft.fa, myReads.fq.gz, and stLFR data, run:"
+	@echo "	./arcs-make arcs-tigmint draft=myDraft reads=myReads m=stLFR"
+	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast"
+
+version:
+	@echo "physlr v0.2.0"
+
 ################################################################################
 # Fly
 # See https://support.10xgenomics.com/de-novo-assembly/datasets/2.1.0/fly
