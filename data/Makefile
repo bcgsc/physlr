@@ -121,6 +121,7 @@ physical-map: \
 	$(lr).physlr.physical-map
 else
 physical-map: \
+	$(lr).physlr.physical-map \
 	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf
 endif
 # Help
