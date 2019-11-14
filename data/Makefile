@@ -39,9 +39,6 @@ name=$(ref)
 endif
 endif
 
-# Draft genome assembly.
-draft=$(name).supernova.scaftigs
-
 # Minimum number of overlapping minimizers
 ifndef minimizer_overlap
 m=90
@@ -104,7 +101,7 @@ endif
 .DELETE_ON_ERROR:
 .SECONDARY:
 
-.PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map
+.PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map scaffolds
 all: f1chr4 f1chr2R f1 fishchr25 fish
 
 $(lr).physlr.physical-map: $(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.mol2-bcs.backbone.path
@@ -113,6 +110,19 @@ $(lr).physlr.physical-map: $(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicit
 $(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.mol2-bcs.backbone.map.$(ref).n10.paf.gz.pdf
 	ln -sf $< $@
 
+$(draft).physlr.fa: $(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.mol2-bcs.backbone.map.$(draft).n10.sort.best.bed.path.fa
+
+scaffolds:
+
+ifndef ref
+scaffolds: \
+	physical-map \
+	$(draft).physlr.fa
+else
+scaffolds: \
+	physical-map \
+	$(draft).physlr.quast.tsv
+endif
 
 physical-map:
 
@@ -896,6 +906,10 @@ min_path_size=200
 # Map the barcodes to the backbone graph and output BED.
 %.backbone.map.$(lr).n100-2000.n10.bed: %.backbone.path $(lr).n100-2000.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ $(lr).n100-2000.physlr.tsv >$@
+
+# Map the draft assembly to the backbone graph and output BED.
+%.backbone.map.$(draft).n10.bed: %.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED.
 %.overlap.m$m.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
