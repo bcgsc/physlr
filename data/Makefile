@@ -967,6 +967,26 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 %.cn.tsv: %.tsv
 	$(python) $(bin)/physlr common-neighbours $< >$@
 
+# Filter edges n >= 10 using Miller.
+%.n10.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 10' $< >$@
+
+# Filter edges n >= 20 using Miller.
+%.n20.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 20' $< >$@
+
+# Filter edges n >= 50 using Miller.
+%.n50.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 50' $< >$@
+
+# Filter edges n >= 100 using Miller.
+%.n100.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 100' $< >$@
+
+# Filter edges by n using Miller.
+%.n$n.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= $n' $< >$@
+
 # Filter 10% of lowest weighted edges using python.
 %.m10.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap 10 $< >$@
