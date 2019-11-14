@@ -1863,6 +1863,8 @@ class Physlr:
                     u = u.rsplit("_", 1)[0]
                 if u not in bxtomxs:
                     u = u.rsplit("_", 1)[0]
+                if u not in bxtomxs:
+                    u = u.rsplit("_", 1)[0]
                 for mx in bxtomxs[u]:
                     mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
