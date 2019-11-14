@@ -803,6 +803,10 @@ endif
 %.mol2-bkcs.tsv: %.tsv %.junctions.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3+cos+sqcos --cosv=$(cosv) --sqcosv=$(sqcosv) $^ >$@
 
+# Redo molecule separation on a list of junction-causing barcodes (louvain).
+%.mol2-l.tsv: %.tsv %.junctions.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=louvain $^ >$@
+
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-junctions=$(prune_junctions) -s0 $< >$@
