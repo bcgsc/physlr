@@ -1245,19 +1245,18 @@ class Physlr:
         edge_weight = []
 
         at_edges = False
-        overlap_input = open(self.args.FILES[0], "r")
         print(int(timeit.default_timer() - t0), "Processing Nodes", file=sys.stderr)
-        for line in overlap_input:
-            if at_edges:
-                columns = line.rstrip().split("\t")
-                edge_weight.append(int(columns[2]))
-            else:
-                print(line.rstrip())
-                if not line.strip():
-                    print(next(overlap_input).rstrip())
-                    print(int(timeit.default_timer() - t0), "Processing Edges", file=sys.stderr)
-                    at_edges = True
-        overlap_input.close()
+        with open(self.args.FILES[0], "r") as overlap_input:
+            for line in overlap_input:
+                if at_edges:
+                    columns = line.rstrip().split("\t")
+                    edge_weight.append(int(columns[2]))
+                else:
+                    print(line.rstrip())
+                    if not line.strip():
+                        print(next(overlap_input).rstrip())
+                        print(int(timeit.default_timer() - t0), "Processing Edges", file=sys.stderr)
+                        at_edges = True
 
         print(int(timeit.default_timer() - t0), "Sorting Edges", file=sys.stderr)
         edge_weight.sort()
@@ -1267,17 +1266,16 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Filtering Edges", file=sys.stderr)
         print(int(timeit.default_timer() - t0), "Lower Threshold", lower_threshold, file=sys.stderr)
         at_edges = False
-        overlap_input = open(self.args.FILES[0], "r")
-        for line in overlap_input:
-            if at_edges:
-                columns = line.rstrip().split("\t")
-                if int(columns[2]) > lower_threshold:
-                    print(line.rstrip())
-            else:
-                if not line.strip():
-                    at_edges = True
-                    next(overlap_input)
-        overlap_input.close()
+        with open(self.args.FILES[0], "r") as overlap_input:
+            for line in overlap_input:
+                if at_edges:
+                    columns = line.rstrip().split("\t")
+                    if int(columns[2]) > lower_threshold:
+                        print(line.rstrip())
+                else:
+                    if not line.strip():
+                        at_edges = True
+                        next(overlap_input)
 
     def physlr_degree(self):
         "Print the degree of each vertex."
