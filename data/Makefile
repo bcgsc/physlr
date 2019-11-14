@@ -166,6 +166,8 @@ help:
 	@echo ""
 	@echo "Example: To get a physial map using physlr with stLFR reads myReads.fq.gz, run:"
 	@echo "	./make physical-map lr=myReads minimizer_overlap=stLFR"
+	@echo "Example: To scaffold a draft assembling using physlr with 10X reads myReads.fq.gz and draft.fa, run:"
+	@echo "	./make scaffolds lr=myReads minimizer_overlap=10X draft=draft"
 	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast"
 
 version:
