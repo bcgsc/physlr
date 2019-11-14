@@ -1703,11 +1703,12 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
-                            g, component, squaring=False, threshold=0.4))
+                            g, component, squaring=False, threshold=Physlr.args.cosv))
             elif algorithm == "sqcos":
                 for component in communities:
                     communities_temp.extend(
-                        Physlr.detect_communities_cosine_of_squared(g, component))
+                        Physlr.detect_communities_cosine_of_squared(
+                            g, component, squaring=True, threshold=Physlr.args.sqcosv))
             elif algorithm == "louvain":
                 for component in communities:
                     communities_temp.extend(
@@ -2498,6 +2499,12 @@ class Physlr:
             help="depth for expanding the junctions by collecting all neighbors of this depth [0].")
         argparser.add_argument(
             "--gap-size", action="store", dest="gap_size", type=int, default=100,
+            help="gap size used in scaffolding [100].")
+        argparser.add_argument(
+            "--cosv", action="store", dest="cosv", type=float, default=0.4,
+            help="gap size used in scaffolding [100].")
+        argparser.add_argument(
+            "--sqcosv", action="store", dest="sqcosv", type=float, default=0.7,
             help="gap size used in scaffolding [100].")
         return argparser.parse_args()
 
