@@ -928,18 +928,6 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 %.cn.tsv: %.tsv
 	$(python) $(bin)/physlr common-neighbours $< >$@
 
-# Filter 10% of lowest weighted edges using python.
-%.n10.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap 10 $< >$@
-
-# Filter 20% of lowest weighted edges using python.
-%.n20.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap 20 $< >$@
-
-# Filter 50% of lowest weighted edges using python.
-%.n50.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap 50 $< >$@
-
 # Filter n% of lowest weighted edges using python.
 %.n$n.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap $n $< >$@
