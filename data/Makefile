@@ -13,7 +13,7 @@ bloom_filter_size=10000000000 #10GB
 # Molecule separation stratergy
 mol_strategy=distributed
 
-# maximum number of edes an minimizer can contribute to
+# Maximum minimizer multiplicity
 minimizer_multiplicity=100
 
 # Path to the Physlr project.
@@ -42,7 +42,7 @@ endif
 # Draft genome assembly.
 draft=$(name).supernova.scaftigs
 
-# Minimum number of overlapping minimizsers
+# Minimum number of overlapping minimizers
 ifndef minimizer_overlap
 m=90
 endif
@@ -58,6 +58,12 @@ endif
 # Minimum/Maximum barcode multiplicity
 n1=100
 n2=5000
+ifdef minimum_barcode_multiplicity
+n1=$(minimum_barcode_multiplicity)
+endif
+ifdef maximum_barcode_multiplicity
+n2=$(maximum_barcode_multiplicity)
+endif
 
 # Minimum component size for backbones
 min_component_size=50
