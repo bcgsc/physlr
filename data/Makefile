@@ -10,6 +10,9 @@ t=16
 # Size of Bloom filter
 bloom_filter_size=10000000000 #10GB
 
+# Molecule separation stratergy
+mol_strategy=bc
+
 # Path to the Physlr project.
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 
@@ -37,7 +40,15 @@ endif
 draft=$(name).supernova.scaftigs
 
 # Minimum number of overlapping minimizsers
+ifndef minimizer_overlap
 m=90
+endif
+ifeq ($(minimizer_overlap), stLFR)
+m=80
+endif
+ifeq ($(minimizer_overlap), 10X)
+m=92.5
+endif
 
 # Minimum/Maximum barcode multiplicity
 n1=100
@@ -111,7 +122,7 @@ help:
 	@echo "	ref           ref name [draft]. File must have .fa extension. If provided, will generate Quast metrics and backbone metrics relative to reference"
 	@echo "	lr           read name [reads]. File must have .fq.gz extension"
 	@echo "	t		number of threads used [16]"
-	@echo "	m		% of edges to remove in the overlap graph [90]. Available options are stLFR, 10X, or [0-100]."
+	@echo "	minimizer_overlap		% of edges to remove in the overlap graph [90]. Available options are stLFR, 10X, or [0-100]."
 	@echo "	k		size of k-mers [32]."
 	@echo "	w		window size to choose k-mers [32]."
 	@echo "	min_component_size		minimum number of barcodes within a backbone to output [50]."
@@ -120,7 +131,7 @@ help:
 	@echo "	bloom_filter_size		size of bloom filter [10000000000]."
 	@echo ""
 	@echo "Example: To run physlr with myDraft.fa, myReads.fq.gz, and stLFR data, run:"
-	@echo "	./arcs-make arcs-tigmint draft=myDraft reads=myReads m=stLFR"
+	@echo "	./make physical draft=myDraft reads=myReads m=stLFR"
 	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast"
 
 version:
@@ -958,7 +969,7 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap 50 $< >$@
 
 # Filter n% of lowest weighted edges using python.
-%.n$n.tsv: %.tsv
+%.n$m.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap $n $< >$@
 
 # Keep the best edges of each vertex.
@@ -966,7 +977,6 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 	$(python) $(bin)/physlr best-edges --bestn=$(bestn) $< >$@
 
 # Separate barcodes into molecules.
-mol_strategy=bc
 %.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) $< >$@
 
