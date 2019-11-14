@@ -167,7 +167,7 @@ version:
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Assemble a physical map of fly chromosome 4.
-# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs n=50
+# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs n=50 minimizer_multiplicity=x
 f1chr4: \
 	f1chr4.k32-w32.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1chr4.k32-w32.n100-1000.physlr.depth.tsv.pdf \
@@ -179,7 +179,7 @@ f1chr4: \
 	f1chr4.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Assemble a physical map of fly chromosome 2R.
-# ref=fly lr=f1chr2R draft=f1.supernova.scaftigs n=50
+# ref=fly lr=f1chr2R draft=f1.supernova.scaftigs n=50 minimizer_multiplicity=x
 f1chr2R: \
 	f1chr2R.k32-w32.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1chr2R.k32-w32.n100-1000.physlr.depth.tsv.pdf \
@@ -191,7 +191,7 @@ f1chr2R: \
 	f1chr2R.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Assemble a physical map of the fly genome.
-# ref=fly lr=f1 draft=f1.supernova.scaftigs n=25
+# ref=fly lr=f1 draft=f1.supernova.scaftigs n=25 minimizer_multiplicity=x
 f1: \
 	f1.k32-w32.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1.k32-w32.n100-1000.physlr.depth.tsv.pdf \
@@ -205,7 +205,7 @@ f1: \
 	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Scaffold the ABySS assembly of the fly genome.
-# ref=fly lr=f1 draft=f1.abyss n=25
+# ref=fly lr=f1 draft=f1.abyss n=25 minimizer_multiplicity=x
 f1-abyss: \
 	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
 	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
@@ -309,7 +309,7 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Assemble a physical map of fish.
-# ref=z11 lr=fish draft=fish.supernova n=40 min_component_size=200
+# ref=z11 lr=fish draft=fish.supernova n=40 min_component_size=200 minimizer_multiplicity=x
 fish: \
 	fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.path.z11.molecule.bed.pdf \
 	fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.paf.gz.pdf \
@@ -328,7 +328,7 @@ fish.quast.tsv: \
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 # Assemble a physical map of fish chromosome 25.
-# ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=50
+# ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=50 minimizer_multiplicity=x
 fishchr25: \
 	fishchr25.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.label.gv.pdf \
 	fishchr25.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.path.z11chr25.molecule.bed.pdf \
@@ -391,7 +391,7 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Assemble a physical map of maize.
-# ref=b73 lr=maize draft=maize.supernova n=50 min_component_size=200
+# ref=b73 lr=maize draft=maize.supernova n=50 min_component_size=200 minimizer_multiplicity=x
 maize: \
 	maize.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
 	maize.k32-w32.n100-5000.physlr.depth.tsv.pdf \
@@ -445,7 +445,7 @@ maize.fq.gz: maize/maize.bx.trimadap.fq.gz
 # Human (HG004)
 
 # Assemble a physical map of hg004.
-# ref=grch38 lr=hg004 draft=hg004.supernova.scaftigs k=40 w=32 n=62 min_component_size=200
+# ref=grch38 lr=hg004 draft=hg004.supernova.scaftigs k=40 w=32 n=62 min_component_size=200 minimizer_multiplicity=x
 hg004: \
 	hg004.k40-w32.n100-5000.physlr.mxperbx.tsv.pdf \
 	hg004.k40-w32.n100-5000.physlr.depth.tsv.pdf \
@@ -457,7 +457,7 @@ hg004: \
 	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 
 # Scaffold the ABySS assembly with the physical map of hg004.
-# ref=grch38 lr=hg004 draft=hg004.abyss k=40 w=32 n=62 min_component_size=200
+# ref=grch38 lr=hg004 draft=hg004.abyss k=40 w=32 n=62 min_component_size=200 minimizer_multiplicity=x
 hg004-abyss: \
 	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.pdf \
 	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.grch38.minidot.pdf \
@@ -507,7 +507,7 @@ hg004.quast.tsv: \
 # and https://github.com/sjackman/thesis/blob/master/redcedar.md
 
 # Assemble a physical map of western redcedar.
-# lr=redcedar draft=redcedar.abyss n=10 min_component_size=200
+# lr=redcedar draft=redcedar.abyss n=10 min_component_size=200 minimizer_multiplicity=x
 redcedar: \
 	redcedar.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
 	redcedar.k32-w32.n100-5000.physlr.depth.tsv.pdf \
@@ -523,7 +523,7 @@ redcedar.fq.gz: redcedar.lrbasic.trimadap.fq.gz
 # White spruce (Picea glauca genotype WS77111)
 
 # Assemble a physical map of white spruce.
-# lr=ws77111 draft=ws77111.abyss n=50 min_component_size=200
+# lr=ws77111 draft=ws77111.abyss n=50 min_component_size=200 minimizer_multiplicity=x
 ws77111: \
 	ws77111.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
 	ws77111.k32-w32.n100-5000.physlr.depth.tsv.pdf \
