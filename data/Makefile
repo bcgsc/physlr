@@ -7,6 +7,9 @@ w=32
 # Number of threads.
 t=16
 
+# Size of Bloom filter
+bloom_filter_size=10000000000 #10GB
+
 # Path to the Physlr project.
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 
@@ -48,6 +51,10 @@ min_component_size=50
 
 # Minimum size of 3rd largest branch of a node to be considered a junction
 prune_junctions = 50
+
+# mol separation params:
+cosv=0.4
+sqcosv=0.7
 
 # Level of verbosity
 # 0: silent
@@ -686,6 +693,10 @@ minsize=2000
 ################################################################################
 # Physlr
 
+# Generate repetitive Bloom filter to select minimizers
+%.k$k.bf: %_k$k.rep
+	$(time) $(physlr_path)/src/physlr-makebf -t $t  -k $k -b $(bloom_filter_size) -v -o $@ $<
+
 # Extract the coordinates in BED format of gaps in a FASTA file.
 %.fa.gap.bed: %.fa
 	$(python) $(bin)/physlr fasta-gaps $< >$@
@@ -778,7 +789,7 @@ endif
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.junctions.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2.tsv: %.tsv %.junctions.tsv
@@ -786,11 +797,11 @@ endif
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2-bcs.tsv: %.tsv %.junctions.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos $^ >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos --cosv=$(cosv) --sqcosv=$(sqcosv) $^ >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2-bkcs.tsv: %.tsv %.junctions.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3+cos+sqcos $^ >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3+cos+sqcos --cosv=$(cosv) --sqcosv=$(sqcosv) $^ >$@
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv

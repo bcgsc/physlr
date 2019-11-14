@@ -15,7 +15,6 @@ KSEQ_INIT(gzFile, gzread) // NOLINT
 #include <cstring>
 #include <fstream>
 #include <limits>
-#include <regex>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -89,8 +88,7 @@ class MinimizeWorker
 	    const BloomFilter& repeatBF,
 	    const BloomFilter& solidBF,
 	    InputWorker& inputWorker,
-	    OutputWorker& outputWorker,
-	    bool stlfr)
+	    OutputWorker& outputWorker)
 	  : k(k)
 	  , w(w)
 	  , withRepeat(withRepeat)
@@ -102,7 +100,6 @@ class MinimizeWorker
 	  , solidBF(solidBF)
 	  , inputWorker(inputWorker)
 	  , outputWorker(outputWorker)
-	  , stlfr(stlfr)
 	{}
 
 	MinimizeWorker(const MinimizeWorker& worker)
@@ -117,7 +114,6 @@ class MinimizeWorker
 	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
-	  , stlfr(worker.stlfr)
 	{}
 
 	MinimizeWorker(MinimizeWorker&& worker) noexcept
@@ -132,7 +128,6 @@ class MinimizeWorker
 	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
-	  , stlfr(worker.stlfr)
 	{}
 
 	MinimizeWorker& operator=(const MinimizeWorker& worker) = delete;
@@ -156,7 +151,6 @@ class MinimizeWorker
 	const BloomFilter& solidBF;
 	InputWorker& inputWorker;
 	OutputWorker& outputWorker;
-	bool stlfr = false;
 
 	inline void work();
 
@@ -283,9 +277,19 @@ MinimizeWorker::work()
 					read.barcode.erase(pos);
 				}
 				read.barcode.erase(0, 5);
+			} else if (inputWorker.fasta) {
+				// For FASTA, use the sequence ID.
+				read.barcode = read.id;
 			} else {
-				// No barcode tag is present. For FASTA, use the sequence ID. For FASTQ, use NA.
-				read.barcode = inputWorker.fasta ? read.id : "NA";
+				// No barcode tag is present. Check for stLFR barcode within read.id.
+				read.barcode = "NA";
+				size_t sharpPos = read.id.find('#');
+				if (sharpPos != std::string::npos) {
+					size_t slashPos = read.id.rfind('/');
+					if (slashPos > sharpPos) {
+						read.barcode = read.id.substr(sharpPos + 1, slashPos - 1 - sharpPos);
+					}
+				}
 			}
 
 			if (read.sequence.size() < k) {
@@ -337,14 +341,6 @@ MinimizeWorker::work()
 			}
 
 			auto minimizers = getMinimizers(hashes, w);
-
-			if (stlfr) {
-				std::regex right("^.*#+");
-				std::regex left("/.*");
-
-				read.barcode = std::regex_replace(read.id, right, "");
-				read.barcode = std::regex_replace(read.barcode, left, "");
-			}
 
 			ss << read.barcode;
 
