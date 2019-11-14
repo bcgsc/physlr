@@ -1,5 +1,5 @@
 # Size of a k-mer.
-k=32
+k=40
 
 # Number of k-mers in a minimizer window.
 w=32
@@ -149,7 +149,7 @@ help:
 	@echo "	ref                 reference name [ref]. File must have .fa extension. If provided, will generate Quast metrics and backbone visualization relative to reference."
 	@echo "	lr                  read name [reads]. File must have .fq.gz extension"
 	@echo "	t		    number of threads used [16]"
-	@echo "	k		    size of k-mers [32]."
+	@echo "	k		    size of k-mers [40]."
 	@echo "	w		    window size to choose minimizers [32]."
 	@echo "	minimizer_overlap		% of edges to remove in the overlap graph [90]. Available options are stLFR, 10X, or [0-100]."
 	@echo "					Default values for stLFR and 10X were obtained by finding a value that work well across multiple datasets"
