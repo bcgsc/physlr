@@ -11,7 +11,10 @@ t=16
 bloom_filter_size=10000000000 #10GB
 
 # Molecule separation stratergy
-mol_strategy=bc
+mol_strategy=distributed
+
+# maximum number of edes an minimizer can contribute to
+minimizer_multiplicity=100
 
 # Path to the Physlr project.
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
@@ -44,10 +47,12 @@ ifndef minimizer_overlap
 m=90
 endif
 ifeq ($(minimizer_overlap), stLFR)
-m=80
+m=85
 endif
 ifeq ($(minimizer_overlap), 10X)
 m=92.5
+else
+m=minimizer_overlap
 endif
 
 # Minimum/Maximum barcode multiplicity
@@ -102,10 +107,10 @@ physical-map:
 
 ifndef ref
 physical-map: \
-	$(lr).k$k-w$w.n$(n1)-$(n2).c2-x.physlr.overlap.n$m.k3.mol.mol2-bcs.backbone.path
+	$(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicity).physlr.overlap.n$m.mol.mol2-bcs.backbone.path
 else
 physical-map: \
-	$(lr).k$k-w$w.n$(n1)-$(n2).c2-x.physlr.overlap.n$m.k3.mol.mol2-bcs.backbone.map.$(ref).n10.paf.gz.pdf
+	$(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicity).physlr.overlap.n$m.mol.mol2-bcs.backbone.map.$(ref).n10.paf.gz.pdf
 endif
 # Help
 help:
@@ -128,10 +133,12 @@ help:
 	@echo "	min_component_size		minimum number of barcodes within a backbone to output [50]."
 	@echo "	minimum_barcode_multiplicity		minimum number of reads a barcode can have [10]."
 	@echo "	maximum_barcode_multiplicity		maximum number of reads a barcode can have [5000]."
+	@echo "	minimizer_multiplicity		maximum number of edges an edges can contribute to [100]."
+	@echo "                             Alternatively, you can specify x, which uses the Q3 + IQR of the minimizer multiplicity distribution"
 	@echo "	bloom_filter_size		size of bloom filter [10000000000]."
 	@echo ""
 	@echo "Example: To run physlr with myDraft.fa, myReads.fq.gz, and stLFR data, run:"
-	@echo "	./make physical draft=myDraft reads=myReads m=stLFR"
+	@echo "	./make physical draft=myDraft reads=myReads minimizer_overlap=stLFR"
 	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast"
 
 version:
@@ -757,7 +764,7 @@ endif
 
 # Index a compressed FASTQ file of linked reads.
 %.k$k-w$w.physlr.tsv.gz: %.fq.gz %.k$k.bf
-	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r %.k$k.bf - | $(gzip) >$@
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(lr).k$k.bf - | $(gzip) >$@
 
 # Identify the overlapping minimizers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv
@@ -788,8 +795,12 @@ endif
 	$(zcat) $< | $(time) $(python) $(bin)/physlr count-minimizers -V$V - >$@
 
 # Filter minimizers by their frequency.
-%.c2-x.physlr.tsv: %.physlr.tsv.gz
+%.c2-$(minimizer_multiplicity).physlr.tsv: %.physlr.tsv.gz
+ifeq ($(minimizer_multiplicity),x)
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-bxmx -o $@ -
+else
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-bxmx -C $(minimizer_multiplicity) -o $@ -
+endif
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
@@ -970,7 +981,7 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 
 # Filter n% of lowest weighted edges using python.
 %.n$m.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap $n $< >$@
+	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap $m $< >$@
 
 # Keep the best edges of each vertex.
 %.best$(bestn).tsv: %.tsv
