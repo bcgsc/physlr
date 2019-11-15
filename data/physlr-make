@@ -1,3 +1,7 @@
+#!/usr/bin/make -f
+# Pipeline for the Physlr program
+# Written by Johnathan Wong, Shaun Jackman, Amirhossein Afshinfard, Lauren Coombe, and Vladimir Nikolic
+
 # Size of a k-mer.
 k=40
 
@@ -144,7 +148,7 @@ endif
 endif
 # Help
 help:
-	@echo "Usage: ./make [COMMAND] [OPTION=VALUE]..."
+	@echo "Usage: ./physlr-make [COMMAND] [OPTION=VALUE]..."
 	@echo "    Commands:"
 	@echo ""
 	@echo "	physical-map		run physlr and generate a physical map with linked reads (10X or stLFR)."
@@ -181,9 +185,9 @@ help:
 	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
 	@echo ""
 	@echo "Example: To generate a physical map using physlr with stLFR reads myReads.fq.gz, run:"
-	@echo "	./make physical-map lr=myReads minimizer_overlap=stLFR"
+	@echo "	./physlr-make physical-map lr=myReads minimizer_overlap=stLFR"
 	@echo "Example: To scaffold a draft assembly using physlr with 10X reads myReads.fq.gz and draft.fa, run:"
-	@echo "	./make scaffolds lr=myReads minimizer_overlap=10X draft=draft"
+	@echo "	./physlr-make scaffolds lr=myReads minimizer_overlap=10X draft=draft"
 	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast."
 
 version:
