@@ -107,7 +107,7 @@ all: f1chr4 f1chr2R f1 fishchr25 fish
 $(lr).physlr.physical-map: $(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.mol2-bcs.backbone.path
 	ln -sf $< $@
 
-$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.mol2-bcs.backbone.map.$(ref).n10.paf.gz.pdf
+$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.mol2-bcs.backbone.map.$(ref).n10.paf.gz
 	ln -sf $< $@
 
 $(draft).physlr.fa: $(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.mol2-bcs.backbone.map.$(draft).n10.sort.best.bed.path.fa
@@ -152,21 +152,23 @@ help:
 	@echo "	k		    size of k-mers [40]."
 	@echo "	w		    window size to choose minimizers [32]."
 	@echo "	minimizer_overlap		% of edges to remove in the overlap graph [90]. Available options are stLFR, 10X, or [0-100]."
+	@echo "					stLFR = 85"
+	@echo "					10X = 92.5"
 	@echo "					Default values for stLFR and 10X were obtained by finding a value that work well across multiple datasets"
 	@echo "					Increasing the parameter would generate more conservative results."
 	@echo "	min_component_size		minimum number of barcodes within a backbone to output [50]."
-	@echo "	minimum_barcode_multiplicity	minimum number of minimizers a barcode can have [10]."
-	@echo "	maximum_barcode_multiplicity	maximum number of minimizers a barcode can have [5000]."
+	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode [10]."
+	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode [5000]."
 	@echo "	minimizer_multiplicity		maximum number of edges a minimizer can contribute to [100]. Specify x to use the Q3 + IQR of the minimizer multiplicity distribution instead."
 	@echo "	mol_strategy			molecule separation strategy [distributed]. Available options are bc, bc+k3, distributed."
-	@echo "					bc is the least conservative and is only suitable for datasets with low barcode multiplicity"
-	@echo "					bc+k3 is most conservative and requires more time"
+	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity"
+	@echo "					bc+k3 (biconnected componenets + k-3 cliques)is most conservative and requires more time"
 	@echo "					distributed is a modified version of bc+k3 that is faster but less conservative"
 	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
 	@echo ""
-	@echo "Example: To get a physial map using physlr with stLFR reads myReads.fq.gz, run:"
+	@echo "Example: To generate a physical map using physlr with stLFR reads myReads.fq.gz, run:"
 	@echo "	./make physical-map lr=myReads minimizer_overlap=stLFR"
-	@echo "Example: To scaffold a draft assembling using physlr with 10X reads myReads.fq.gz and draft.fa, run:"
+	@echo "Example: To scaffold a draft assembly using physlr with 10X reads myReads.fq.gz and draft.fa, run:"
 	@echo "	./make scaffolds lr=myReads minimizer_overlap=10X draft=draft"
 	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast"
 
@@ -910,7 +912,7 @@ min_path_size=200
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ $(lr).n100-2000.physlr.tsv >$@
 
 # Map the draft assembly to the backbone graph and output BED.
-%.backbone.map.$(draft).n10.bed: %.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+%.backbone.map.$(draft).n10.bed: %.backbone.path $(lr).k$k-w$w.n$(n1)-$(n2).c2-$(minimizer_multiplicity).physlr.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED.
