@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 # Pipeline for the Physlr program
-# Written by Johnathan Wong, Shaun Jackman, Amirhossein Afshinfard, Lauren Coombe, and Vladimir Nikolic
+# Written by Shaun Jackman, Johnathan Wong, Amirhossein Afshinfard, Lauren Coombe, and Vladimir Nikolic
 
 # Size of a k-mer.
 k=40
