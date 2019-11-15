@@ -793,7 +793,7 @@ endif
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.mol2-bcs.junctions.tsv: %.mol2-bcs.tsv
-    $(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.mol3-bcs.junctions.tsv: %.mol3-bcs.tsv
