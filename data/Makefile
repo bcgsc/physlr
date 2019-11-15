@@ -135,7 +135,7 @@ help:
 	@echo "    Commands:"
 	@echo ""
 	@echo "	physical-map		run physlr and generate a physical map with linked reads (10X or stLFR)"
-	@echo "	scaffold	        run physlr and scaffold an existing assembly with a physical map"
+	@echo "	scaffolds	        run physlr and scaffold an existing assembly with a physical map"
 	@echo "	help                    display this help page"
 	@echo "	version                 display the software version"
 	@echo ""
