@@ -780,6 +780,11 @@ endif
 ################################################################################
 # Physlr
 
+# Generate soft link of reference fasta in a subdirectory
+$(ref)/$(ref).fa: $(ref).fa
+	mkdir -p $(ref)
+	ln -sf $(PWD)/$(ref).fa $(PWD)/$(ref)/$(ref).fa
+
 # Generate repetitive Bloom filter to select minimizers
 %.k$k.bf: %_k$k.rep
 	$(time) $(physlr_path)/src/physlr-makebf -t$t -k$k -b$(bloom_filter_size) -v -o $@ $<
