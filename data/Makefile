@@ -791,22 +791,33 @@ endif
 %.junctions.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
 
+# Report the junctions in a overlap/backbone graph TSV.
+%.mol2-bcs.junctions.tsv: %.mol2-bcs.tsv
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
+
+# Report the junctions in a overlap/backbone graph TSV.
+%.mol3-bcs.junctions.tsv: %.mol3-bcs.tsv
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
+
+# Report the junctions in a overlap/backbone graph TSV.
+%.mol4-bcs.junctions.tsv: %.mol4-bcs.tsv
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
+
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2.tsv: %.tsv %.junctions.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc $^ >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2-bcs.tsv: %.tsv %.junctions.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos --cosv=$(cosv) --sqcosv=$(sqcosv) $^ >$@
-	ifeq($cosv, 0.4)
-	cosv= 0.5
-	sqcosv=0.8
-	else
-	ifeq($cosv, 0.5)
-	cosv= 0.6
-	sqcosv=0.87
-	endif
-	endif
+    $(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos --cosv=0.4 --sqcosv=0.7 $^ >$@
+
+# Redo molecule separation on a list of junction-causing barcodes.
+%.mol3-bcs.tsv: %.mol2-bcs.tsv %.mol2-bcs.junctions.tsv
+    $(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos --cosv=0.5 --sqcosv=0.8 $^ >$@
+
+# Redo molecule separation on a list of junction-causing barcodes.
+%.mol4-bcs.tsv: %.mol3-bcs.tsv %.mol3-bcs.junctions.tsv
+    $(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos --cosv=0.6 --sqcosv=0.87 $^ >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2-bkcs.tsv: %.tsv %.junctions.tsv
@@ -815,6 +826,10 @@ endif
 # Redo molecule separation on a list of junction-causing barcodes (louvain).
 %.mol2-l.tsv: %.tsv %.junctions.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=louvain $^ >$@
+
+# Redo molecule separation on a list of junction-causing barcodes (louvain).
+%.molx.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr molecules-x -V$V -t$t --separation-strategy=louvain $^ >$@
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
