@@ -110,6 +110,10 @@ ifndef draft
 scaffolds: help
 	@echo ""
 	@echo "scaffolds rule requires the draft parameter to be set"
+else ifndef lr
+scaffolds: help
+	@echo ""
+	@echo "scaffolds rule requires the lr parameter to be set"
 else
 ifndef ref
 scaffolds: \
@@ -124,7 +128,7 @@ endif
 
 physical-map:
 
-ifeq ($(lr),)
+ifndef lr
 physical-map: help
 	@echo ""
 	@echo "physical-map rule requires the lr parameter to be set"
