@@ -25,9 +25,6 @@ bin=$(physlr_path)/bin
 # Python interpreter.
 python=env PYTHONPATH=$(physlr_path) pypy3
 
-# Linked reads.
-lr=Error_missing_parameter_lr
-
 # Name of the dataset.
 ifneq ($(filter z11%, $(ref)),)
 name=fish
@@ -109,6 +106,11 @@ $(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_bar
 
 scaffolds:
 
+ifndef draft
+scaffolds: help
+	@echo ""
+	@echo "scaffolds rule requires the draft parameter to be set"
+else
 ifndef ref
 scaffolds: \
 	physical-map \
@@ -118,9 +120,15 @@ scaffolds: \
 	physical-map \
 	$(draft).physlr.quast.tsv
 endif
+endif
 
 physical-map:
 
+ifeq ($(lr),)
+physical-map: help
+	@echo ""
+	@echo "physical-map rule requires the lr parameter to be set"
+else
 ifndef ref
 physical-map: \
 	$(lr).physlr.physical-map.path
@@ -128,6 +136,7 @@ else
 physical-map: \
 	$(lr).physlr.physical-map.path \
 	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf
+endif
 endif
 # Help
 help:
