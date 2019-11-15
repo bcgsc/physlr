@@ -1,5 +1,5 @@
 # Size of a k-mer.
-k=32
+k=40
 
 # Number of k-mers in a minimizer window.
 w=32
@@ -10,6 +10,12 @@ t=16
 # Size of Bloom filter
 bloom_filter_size=10000000000 #10GB
 
+# Molecule separation stratergy
+mol_strategy=distributed
+
+# Maximum minimizer multiplicity
+minimizer_multiplicity=100
+
 # Path to the Physlr project.
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 
@@ -18,12 +24,6 @@ bin=$(physlr_path)/bin
 
 # Python interpreter.
 python=env PYTHONPATH=$(physlr_path) pypy3
-
-# Reference genome.
-ref=Error_missing_parameter_ref
-
-# Linked reads.
-lr=Error_missing_parameter_lr
 
 # Name of the dataset.
 ifneq ($(filter z11%, $(ref)),)
@@ -36,15 +36,20 @@ name=$(ref)
 endif
 endif
 
-# Draft genome assembly.
-draft=$(name).supernova.scaftigs
-
-# Minimum number of overlapping minimizsers
-n=50
+# Minimum number of overlapping minimizers
+ifndef minimizer_overlap
+m=90
+else ifeq ($(minimizer_overlap), stLFR)
+m=85
+else ifeq ($(minimizer_overlap), 10X)
+m=92.5
+else
+m=$(minimizer_overlap)
+endif
 
 # Minimum/Maximum barcode multiplicity
-n1=100
-n2=5000
+minimum_barcode_multiplicity=100
+maximum_barcode_multiplicity=5000
 
 # Minimum component size for backbones
 min_component_size=50
@@ -87,8 +92,102 @@ endif
 .DELETE_ON_ERROR:
 .SECONDARY:
 
-.PHONY: f1chr4 f1chr2R f1 fishchr25 fish
+.PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map scaffolds
 all: f1chr4 f1chr2R f1 fishchr25 fish
+
+$(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.mol2-bcs.backbone.path
+	ln -sf $< $@
+
+$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.mol2-bcs.backbone.map.$(ref).n10.paf.gz
+	ln -sf $< $@
+
+$(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.mol2-bcs.backbone.map.$(draft).n10.sort.best.bed.path.fa
+	ln -sf $< $@
+
+scaffolds:
+
+ifndef draft
+scaffolds: help
+	@echo ""
+	@echo "scaffolds rule requires the draft parameter to be set"
+else ifndef lr
+scaffolds: help
+	@echo ""
+	@echo "scaffolds rule requires the lr parameter to be set"
+else
+ifndef ref
+scaffolds: \
+	physical-map \
+	$(draft).physlr.fa
+else
+scaffolds: \
+	physical-map \
+	$(draft).physlr.quast.tsv
+endif
+endif
+
+physical-map:
+
+ifndef lr
+physical-map: help
+	@echo ""
+	@echo "physical-map rule requires the lr parameter to be set"
+else
+ifndef ref
+physical-map: \
+	$(lr).physlr.physical-map.path
+else
+physical-map: \
+	$(lr).physlr.physical-map.path \
+	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf
+endif
+endif
+# Help
+help:
+	@echo "Usage: ./make [COMMAND] [OPTION=VALUE]..."
+	@echo "    Commands:"
+	@echo ""
+	@echo "	physical-map		run physlr and generate a physical map with linked reads (10X or stLFR)."
+	@echo "	scaffolds	        run physlr and scaffold an existing assembly with a physical map."
+	@echo "	help                    display this help page."
+	@echo "	version                 display the software version."
+	@echo ""
+	@echo "    Options:"
+	@echo "	draft               draft name [draft]. File must have .fa extension."
+	@echo "	ref                 reference name [ref]. File must have .fa extension. If provided, will generate Quast metrics and backbone visualization relative to reference."
+	@echo "	lr                  read name [reads]. File must have .fq.gz extension."
+	@echo "	t		    number of threads used [16]."
+	@echo "	k		    size of k-mers [40]."
+	@echo "	w		    window size to choose minimizers [32]."
+	@echo "	V		    verbose level [1]."
+	@echo " 		Level of verbosity:"
+	@echo " 			0: silent."
+	@echo " 			1: periodic messages."
+	@echo " 			2: progress bar."
+	@echo " 			3: verbose messages."
+	@echo "	minimizer_overlap		% of edges to remove in the overlap graph [90]. Available options are stLFR, 10X, or [0-100]."
+	@echo "					stLFR: 85."
+	@echo "					10X: 92.5."
+	@echo "					Default values for stLFR and 10X were obtained by finding a value that worked well across multiple data sets."
+	@echo "					Increasing this parameter would generate more conservative results."
+	@echo "	min_component_size		minimum number of barcodes in a backbone [50]."
+	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode [10]."
+	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode [5000]."
+	@echo "	minimizer_multiplicity		maximum minimizer multiplicity [100]. Specify x to use the Q3 + IQR of the minimizer multiplicity distribution instead."
+	@echo "	mol_strategy			molecule separation strategy [distributed]. Available options are bc, bc+k3, distributed."
+	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity."
+	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is most conservative and requires more time."
+	@echo "					distributed is a modified version of bc+k3 that is faster but less conservative."
+	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
+	@echo ""
+	@echo "Example: To generate a physical map using physlr with stLFR reads myReads.fq.gz, run:"
+	@echo "	./make physical-map lr=myReads minimizer_overlap=stLFR"
+	@echo "Example: To scaffold a draft assembly using physlr with 10X reads myReads.fq.gz and draft.fa, run:"
+	@echo "	./make scaffolds lr=myReads minimizer_overlap=10X draft=draft"
+	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast."
+
+version:
+	@echo "physlr v0.2.0"
 
 ################################################################################
 # Fly
@@ -96,50 +195,50 @@ all: f1chr4 f1chr2R f1 fishchr25 fish
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Assemble a physical map of fly chromosome 4.
-# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs n=50
+# ref=fly lr=f1chr4 draft=f1.supernova.scaftigs n=50 minimizer_multiplicity=x
 f1chr4: \
 	f1chr4.k32-w32.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1chr4.k32-w32.n100-1000.physlr.depth.tsv.pdf \
-	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
-	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
-	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
-	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1chr4.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
+	f1chr4.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr4.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
+	f1chr4.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1chr4.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
+	f1chr4.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr4.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Assemble a physical map of fly chromosome 2R.
-# ref=fly lr=f1chr2R draft=f1.supernova.scaftigs n=50
+# ref=fly lr=f1chr2R draft=f1.supernova.scaftigs n=50 minimizer_multiplicity=x
 f1chr2R: \
 	f1chr2R.k32-w32.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1chr2R.k32-w32.n100-1000.physlr.depth.tsv.pdf \
-	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
-	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
-	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
-	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1chr2R.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
+	f1chr2R.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1chr2R.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Assemble a physical map of the fly genome.
-# ref=fly lr=f1 draft=f1.supernova.scaftigs n=25
+# ref=fly lr=f1 draft=f1.supernova.scaftigs n=25 minimizer_multiplicity=x
 f1: \
 	f1.k32-w32.n100-1000.physlr.mxperbx.tsv.pdf \
 	f1.k32-w32.n100-1000.physlr.depth.tsv.pdf \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.sort.best.bed.path.quast.tsv \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.path.$(ref).molecule.bed.pdf \
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(ref).n10.paf.gz.pdf \
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.sort.best.bed.path.quast.tsv \
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(ref).n10.ann.gv.squish.pdf
 
 # Scaffold the ABySS assembly of the fly genome.
-# ref=fly lr=f1 draft=f1.abyss n=25
+# ref=fly lr=f1 draft=f1.abyss n=25 minimizer_multiplicity=x
 f1-abyss: \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.sort.best.bed.path.quast.tsv
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
+	f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.sort.best.bed.path.quast.tsv
 
 # Aggregate QUAST metrics.
 f1.quast.tsv: \
@@ -147,10 +246,10 @@ f1.quast.tsv: \
 		f1.abyss.scaftigs.quast.tsv \
 		f1.supernova.quast.tsv \
 		f1.supernova.scaftigs.quast.tsv \
-		f1.k32-w32.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv \
-		f1.k32-w32.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map-mkt.f1.abyss.n10.sort.best.bed.path.quast.tsv \
-		f1.k32-w32.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-		f1.k32-w32.n100-1000.c2-x.physlr.overlap.n25.mol.backbone.map-mkt.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+		f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n25.mol.backbone.map.f1.abyss.n10.sort.best.bed.path.quast.tsv \
+		f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n25.mol.backbone.map-mkt.f1.abyss.n10.sort.best.bed.path.quast.tsv \
+		f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n25.mol.backbone.map.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		f1.k32-w32.n100-1000.c2-$(minimizer_multiplicity).physlr.overlap.n25.mol.backbone.map-mkt.f1.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 # Download the fly genome from Ensembl.
@@ -238,34 +337,34 @@ f1chr2R-bx%.fq.gz: fly/fly.f1.chr2R.sortbxn.dropse.bx%.fq.gz
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Assemble a physical map of fish.
-# ref=z11 lr=fish draft=fish.supernova n=40 min_component_size=200
+# ref=z11 lr=fish draft=fish.supernova n=40 min_component_size=200 minimizer_multiplicity=x
 fish: \
-	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.path.z11.molecule.bed.pdf \
-	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.paf.gz.pdf \
-	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
-	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.minidot.pdf \
-	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
-	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv \
-	fish.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.ann.gv.squish.pdf
+	fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.path.z11.molecule.bed.pdf \
+	fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.paf.gz.pdf \
+	fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.pdf \
+	fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.z11.minidot.pdf \
+	fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
+	fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv \
+	fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.z11.n10.ann.gv.squish.pdf
 
 # Aggregate QUAST metrics.
 fish.quast.tsv: \
 		fish.supernova.scaftigs.quast.tsv \
 		fish.supernova.quast.tsv \
-		fish.k32-w32.n100-2000.c2-x.physlr.overlap.n40.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
-		fish.k32-w32.n100-2000.c2-x.physlr.overlap.n40.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv
+		fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n40.k3.mol.backbone.map.fish.supernova.n10.sort.best.bed.path.quast.tsv \
+		fish.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n40.k3.mol.backbone.map-mkt.fish.supernova.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 # Assemble a physical map of fish chromosome 25.
-# ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=50
+# ref=z11chr25 lr=fishchr25 draft=fish.supernova.chr25 n=50 minimizer_multiplicity=x
 fishchr25: \
-	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.label.gv.pdf \
-	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.path.z11chr25.molecule.bed.pdf \
-	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.paf.gz.pdf \
-	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.pdf \
-	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.z11chr25.minidot.pdf \
-	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.quast.tsv \
-	fishchr25.k32-w32.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.ann.gv.squish.pdf
+	fishchr25.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.label.gv.pdf \
+	fishchr25.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.path.z11chr25.molecule.bed.pdf \
+	fishchr25.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.paf.gz.pdf \
+	fishchr25.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.pdf \
+	fishchr25.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.z11chr25.minidot.pdf \
+	fishchr25.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.fish.supernova.chr25.n10.sort.best.bed.path.quast.tsv \
+	fishchr25.k32-w32.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.z11chr25.n10.ann.gv.squish.pdf
 
 # Download the zebrafish genome from NCBI.
 fish/z11.ncbi.fa:
@@ -320,23 +419,23 @@ fishchr25.fq.gz: fish/z11.fish.chr25.sortbxn.dropse.fq.gz
 # and https://support.10xgenomics.com/de-novo-assembly/software/overview/latest/performance
 
 # Assemble a physical map of maize.
-# ref=b73 lr=maize draft=maize.supernova n=50 min_component_size=200
+# ref=b73 lr=maize draft=maize.supernova n=50 min_component_size=200 minimizer_multiplicity=x
 maize: \
 	maize.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
 	maize.k32-w32.n100-5000.physlr.depth.tsv.pdf \
-	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.b73.n10.paf.gz.pdf \
-	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.pdf \
-	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.path.b73.minidot.pdf \
-	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.path.quast.tsv \
-	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map-mkt.maize.supernova.n10.sort.best.bed.path.quast.tsv \
-	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.b73.n10.ann.gv.squish.pdf
+	maize.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.b73.n10.paf.gz.pdf \
+	maize.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.pdf \
+	maize.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.path.b73.minidot.pdf \
+	maize.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.path.quast.tsv \
+	maize.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map-mkt.maize.supernova.n10.sort.best.bed.path.quast.tsv \
+	maize.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.k3.mol.backbone.map.b73.n10.ann.gv.squish.pdf
 
 # Aggregate QUAST metrics.
 maize.quast.tsv: \
 		maize.supernova.scaftigs.quast.tsv \
 		maize.supernova.quast.tsv \
-		maize.k32-w32.n200-10000.c2-x.physlr.overlap.n50.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.path.quast.tsv \
-		maize.k32-w32.n200-10000.c2-x.physlr.overlap.n50.k3.mol.backbone.map-mkt.maize.supernova.n10.sort.best.bed.path.quast.tsv
+		maize.k32-w32.n200-10000.c2-$(minimizer_multiplicity).physlr.overlap.n50.k3.mol.backbone.map.maize.supernova.n10.sort.best.bed.path.quast.tsv \
+		maize.k32-w32.n200-10000.c2-$(minimizer_multiplicity).physlr.overlap.n50.k3.mol.backbone.map-mkt.maize.supernova.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 # Download the maize genome from NCBI.
@@ -374,24 +473,24 @@ maize.fq.gz: maize/maize.bx.trimadap.fq.gz
 # Human (HG004)
 
 # Assemble a physical map of hg004.
-# ref=grch38 lr=hg004 draft=hg004.supernova.scaftigs k=40 w=32 n=62 min_component_size=200
+# ref=grch38 lr=hg004 draft=hg004.supernova.scaftigs k=40 w=32 n=62 min_component_size=200 minimizer_multiplicity=x
 hg004: \
 	hg004.k40-w32.n100-5000.physlr.mxperbx.tsv.pdf \
 	hg004.k40-w32.n100-5000.physlr.depth.tsv.pdf \
-	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.grch38.n10.paf.gz.pdf \
-	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.grch38.n10.ann.gv.squish.pdf \
-	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.pdf \
-	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.grch38.minidot.pdf \
-	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.grch38.n10.paf.gz.pdf \
+	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.grch38.n10.ann.gv.squish.pdf \
+	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.pdf \
+	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.grch38.minidot.pdf \
+	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 
 # Scaffold the ABySS assembly with the physical map of hg004.
-# ref=grch38 lr=hg004 draft=hg004.abyss k=40 w=32 n=62 min_component_size=200
+# ref=grch38 lr=hg004 draft=hg004.abyss k=40 w=32 n=62 min_component_size=200 minimizer_multiplicity=x
 hg004-abyss: \
-	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.pdf \
-	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.grch38.minidot.pdf \
-	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
-	hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv
+	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.pdf \
+	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.grch38.minidot.pdf \
+	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
+	hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv
 
 # Download the human genome from NCBI.
 grch38/grch38.all.fa:
@@ -423,11 +522,11 @@ hg004.quast.tsv: \
 		hg004.abyss.quast.tsv \
 		hg004.supernova.quast.tsv \
 		hg004.supernova.scaftigs.quast.tsv \
-		hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
-		hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
-		hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-		hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
-		hg004.k40-w32.n100-5000.c2-x.physlr.overlap.n62.k3.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.quast.tsv
+		hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
+		hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.abyss.n10.sort.best.bed.path.quast.tsv \
+		hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map-mkt.hg004.supernova.scaftigs.n10.sort.best.bed.path.quast.tsv \
+		hg004.k40-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n62.k3.mol.backbone.map.hg004.supernova.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 ################################################################################
@@ -436,13 +535,13 @@ hg004.quast.tsv: \
 # and https://github.com/sjackman/thesis/blob/master/redcedar.md
 
 # Assemble a physical map of western redcedar.
-# lr=redcedar draft=redcedar.abyss n=10 min_component_size=200
+# lr=redcedar draft=redcedar.abyss n=10 min_component_size=200 minimizer_multiplicity=x
 redcedar: \
 	redcedar.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
 	redcedar.k32-w32.n100-5000.physlr.depth.tsv.pdf \
-	redcedar.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path \
-	redcedar.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.redcedar.abyss.n10.sort.best.bed.path.fa \
-	redcedar.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.redcedar.abyss.n10.sort.best.bed.pdf
+	redcedar.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.path \
+	redcedar.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.redcedar.abyss.n10.sort.best.bed.path.fa \
+	redcedar.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.redcedar.abyss.n10.sort.best.bed.pdf
 
 # Symlink the linked reads.
 redcedar.fq.gz: redcedar.lrbasic.trimadap.fq.gz
@@ -452,13 +551,13 @@ redcedar.fq.gz: redcedar.lrbasic.trimadap.fq.gz
 # White spruce (Picea glauca genotype WS77111)
 
 # Assemble a physical map of white spruce.
-# lr=ws77111 draft=ws77111.abyss n=50 min_component_size=200
+# lr=ws77111 draft=ws77111.abyss n=50 min_component_size=200 minimizer_multiplicity=x
 ws77111: \
 	ws77111.k32-w32.n100-5000.physlr.mxperbx.tsv.pdf \
 	ws77111.k32-w32.n100-5000.physlr.depth.tsv.pdf \
-	ws77111.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.path \
-	ws77111.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.ws77111.abyss.n10.sort.best.bed.path.fa \
-	ws77111.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.mol.backbone.map.ws77111.abyss.n10.sort.best.bed.pdf
+	ws77111.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.path \
+	ws77111.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.ws77111.abyss.n10.sort.best.bed.path.fa \
+	ws77111.k32-w32.n100-5000.c2-$(minimizer_multiplicity).physlr.overlap.n$n.mol.backbone.map.ws77111.abyss.n10.sort.best.bed.pdf
 
 # Trim adapter sequences using trimadap.
 ws77111.lrbasic.trimadap.fq.gz: path=/projects/spruceup/pglauca/WS77111/data/reads/DNA/fastq/chromium
@@ -497,8 +596,8 @@ ws77111.fq.gz: ws77111.lrbasic.trimadap.fq.gz
 	bwa mem -t$t -pC $*.fa $(lr).fq.gz | samtools view -@$t -F4 -o $@
 
 # Align molecule-split linked reads to a target genome.
-%.$(lr).n100-2000.overlap.n$n.split.sortn.bam: %.fa.bwt $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz
-	bwa mem -t$t -pC $*.fa $(lr).n100-2000.physlr.overlap.n$n.split.fq.gz | samtools view -@$t -F4 -o $@
+%.$(lr).n100-2000.overlap.m$m.split.sortn.bam: %.fa.bwt $(lr).n100-2000.physlr.overlap.m$m.split.fq.gz
+	bwa mem -t$t -pC $*.fa $(lr).n100-2000.physlr.overlap.m$m.split.fq.gz | samtools view -@$t -F4 -o $@
 
 ################################################################################
 # EMA
@@ -655,17 +754,22 @@ minsize=2000
 %_k$k.histogram: %.fq.gz
 	$(time) ntcard -t $t -k $k -o $@ $<
 
-# Count k-mers using ntCard.
+# Visualize ntCard histogram output.
 %_k$k.histogram.pdf: %_k$k.histogram
 	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plothistogram.rmd", "html_document", "$*.bed.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_histogram="$<"))'
 
 # Generate repetitive k-mers using ntHits.
 %_k$k.rep: %.fq.gz %_k$k.histogram %_k$k.histogram.pdf
+ifeq (n,$(findstring n,$(firstword -$(MAKEFLAGS))))
+	mode=$(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram
+	repeat_threshold ?= expr mode * 3
+else
 	$(eval mode := $(shell $(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram))
-	@>&2 echo "The mode k-mer coverage is $(mode)."
 	$(eval repeat_threshold ?= $(shell (expr $(mode) \* 3 ) ))
+endif
+	@>&2 echo "The mode k-mer coverage is $(mode)."
 	@>&2 echo "The repeat k-mer coverage is $(repeat_threshold)."
-	$(time) nthits -t $t -k $k -c $(repeat_threshold) -p $* $<
+	$(time) nthits -t$t -k$k -c$(repeat_threshold) -p $* $<
 
 ################################################################################
 # Unicycler
@@ -689,47 +793,26 @@ minsize=2000
 ################################################################################
 # Physlr
 
+# Generate soft link of reference fasta in a subdirectory
+$(ref)/$(ref).fa: $(ref).fa
+	mkdir -p $(ref)
+	ln -sf $(PWD)/$(ref).fa $(PWD)/$(ref)/$(ref).fa
+
 # Generate repetitive Bloom filter to select minimizers
 %.k$k.bf: %_k$k.rep
-	$(time) $(physlr_path)/src/physlr-makebf -t $t  -k $k -b $(bloom_filter_size) -v -o $@ $<
+	$(time) $(physlr_path)/src/physlr-makebf -t$t -k$k -b$(bloom_filter_size) -v -o $@ $<
 
 # Extract the coordinates in BED format of gaps in a FASTA file.
 %.fa.gap.bed: %.fa
 	$(python) $(bin)/physlr fasta-gaps $< >$@
 
-# solid_bloom_path - path to Bloom Filter with solid kmers
-# repeat_bloom_path - path to Bloom Filter with repetitive kmers
 # Index a FASTA file.
-%.k$k-w$w.physlr.tsv: %.fa
-ifeq ($(repeat_bloom_path),)
-ifeq ($(solid_bloom_path),)
-	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w --pos -o $@ $<
-else
-	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -s $(solid_bloom_path) --pos -o $@ $<
-endif
-else
-ifeq ($(solid_bloom_path),)
-	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(repeat_bloom_path) --pos -o $@ $<
-else
-	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(repeat_bloom_path) -s $(solid_bloom_path) --pos -o $@ $<
-endif
-endif
+%.k$k-w$w.physlr.tsv: %.fa $(lr).k$k.bf
+	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(lr).k$k.bf --pos -o $@ $<
 
 # Index a compressed FASTQ file of linked reads.
-%.k$k-w$w.physlr.tsv.gz: %.fq.gz
-ifeq ($(repeat_bloom_path),)
-ifeq ($(solid_bloom_path),)
-	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w - | $(gzip) >$@
-else
-	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -s $(solid_bloom_path) - | $(gzip) >$@
-endif
-else
-ifeq ($(solid_bloom_path),)
-	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(repeat_bloom_path) - | $(gzip) >$@
-else
-	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(repeat_bloom_path) -s $(solid_bloom_path) - | $(gzip) >$@
-endif
-endif
+%.k$k-w$w.physlr.tsv.gz: %.fq.gz %.k$k.bf
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(lr).k$k.bf - | $(gzip) >$@
 
 # Identify the overlapping minimizers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv
@@ -751,6 +834,10 @@ endif
 %.n100-10000.physlr.tsv.gz: %.physlr.tsv.gz
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-barcodes -n100 -N10000 - | $(gzip) >$@
 
+# Filter barcodes by number of minimizers.
+%.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).physlr.tsv.gz: %.physlr.tsv.gz
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-barcodes -n$(minimum_barcode_multiplicity) -N$(maximum_barcode_multiplicity) - | $(gzip) >$@
+
 # Count the number of minimizers per barcode.
 %.physlr.mxperbx.tsv: %.physlr.tsv.gz
 	$(zcat) $< | awk 'BEGIN { print "Minimizers" } { print NF - 1 }' >$@
@@ -760,8 +847,12 @@ endif
 	$(zcat) $< | $(time) $(python) $(bin)/physlr count-minimizers -V$V - >$@
 
 # Filter minimizers by their frequency.
-%.c2-x.physlr.tsv: %.physlr.tsv.gz
+%.c2-$(minimizer_multiplicity).physlr.tsv: %.physlr.tsv.gz
+ifeq ($(minimizer_multiplicity),x)
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-bxmx -o $@ -
+else
+	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-bxmx -C $(minimizer_multiplicity) -o $@ -
+endif
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
@@ -777,15 +868,15 @@ endif
 
 # Separate a graph into its biconnected components by removing its cut vertices.
 %.bic.tsv: %.tsv
-	$(python) $(bin)/physlr biconnected-components $< >$@
+	$(python) $(bin)/physlr biconnected-components -V$V $< >$@
 
 # Determine the bridge-removed graph from the overlap TSV.
 %.bridge-removed.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr remove-bridges-graph --prune-branches=10 --prune-bridges=10 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr remove-bridges-graph --prune-branches=10 --prune-bridges=10 -s0 -V$V $< >$@
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.junctions.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 -V$V $< >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2.tsv: %.tsv %.junctions.tsv
@@ -801,16 +892,16 @@ endif
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
 
 # Determine the corrected backbone graph from the overlap TSV.
 min_path_size=200
 %.s3.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) -V$V $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
-	$(time) $(python) $(bin)/physlr backbone --prune-branches=0 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr backbone --prune-branches=0 -s0 -V$V $< >$@
 
 # Cut chimeric paths to correct misassemblies.
 %.backbone.depth.tsv: %.tsv %.backbone.path
@@ -822,63 +913,67 @@ min_path_size=200
 
 # Flesh out the backbone path
 %.backbone.fleshed.path: %.tsv %.backbone.path
-	$(python) $(bin)/physlr flesh-backbone --min-component-size=$(min_component_size) $< $*.backbone.path >$@
+	$(python) $(bin)/physlr flesh-backbone --min-component-size=$(min_component_size) -V$V $< $*.backbone.path >$@
 
 # Split the minimizers to molecules
-%.overlap.n$n.mol.split.tsv: %.overlap.n$n.mol.tsv %.tsv
-	$(python) $(bin)/physlr split-minimizers -t$t $< $*.tsv >$@
+%.overlap.m$m.mol.split.tsv: %.overlap.m$m.mol.tsv %.tsv
+	$(python) $(bin)/physlr split-minimizers -t$t -V$V $< $*.tsv >$@
 
 # Split the reads into molecules
 %.split.fq.gz: $(lr).fq.gz %.split.tsv $(lr).k$k-w$w.physlr.tsv
-	$(zcat) $< | $(python) $(bin)/physlr split-reads-molecules $*.split.tsv \
+	$(zcat) $< | $(python) $(bin)/physlr split-reads-molecules $*.split.tsv -V$V \
 		$(lr).k$k-w$w.physlr.tsv - | $(gzip) >$@
 
 # Determine the minimum tiling graph of the backbone graph.
 %.backbone.tiling.tsv: %.backbone.tsv
-	$(python) $(bin)/physlr tiling-graph $< >$@
+	$(python) $(bin)/physlr tiling-graph -V$V $< >$@
 
 # Map the barcodes to the backbone graph and output BED.
 %.backbone.map.$(lr).n100-2000.n10.bed: %.backbone.path $(lr).n100-2000.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ $(lr).n100-2000.physlr.tsv >$@
 
 # Map the draft assembly to the backbone graph and output BED.
-%.overlap.n$n.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+%.backbone.map.$(draft).n10.bed: %.backbone.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-$(minimizer_multiplicity).physlr.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+
+# Map the draft assembly to the backbone graph and output BED.
+%.overlap.m$m.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED (K3-cliques).
-%.overlap.n$n.k3.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+%.overlap.m$m.k3.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
 # Map the draft assembly to the Louvain backbone graph and output BED.
-%.overlap.n$n.louvain.mol.backbone.map.$(draft).n10.bed: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+%.overlap.m$m.louvain.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
 # Map the reference assembly to the backbone graph and output BED.
-%.overlap.n$n.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+%.overlap.m$m.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
 # Map the reference assembly to the backbone graph and output BED (K3-cliques).
-%.overlap.n$n.k3.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.k3.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+%.overlap.m$m.k3.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
 # Map the reference assembly to the Louvain backbone graph and output BED.
-%.overlap.n$n.louvain.mol.backbone.map.$(ref).n10.bed: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+%.overlap.m$m.louvain.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph using physlr map-mkt and output BED.
-%.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+%.overlap.m$m.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
 
 # Map the draft assembly to the k3-cliques backbone graph using physlr map-mkt and output BED.
-%.overlap.n$n.k3.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+%.overlap.m$m.k3.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
 
 # Map the draft assembly to the Louvain backbone graph using physlr map-mkt and output BED.
-%.overlap.n$n.louvain.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.louvain.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+%.overlap.m$m.louvain.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
 
 # Map the reference to the backbone graph and output PAF.
-%.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(n1)-$(n2).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+%.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-$(minimizer_multiplicity).physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
 # Lift over query coordinates of a PAF file from minimzer index to nucleotide coordinate.
@@ -900,17 +995,17 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 # Annotate a backbone graph with a BED file of mappings.
 # Filter out small components.
 %.map.$(ref).n10.sort.best.ann.gv: %.tsv %.path %.map.$(ref).n10.sort.best.bed
-	$(python) $(bin)/physlr annotate-graph --min-component-size=$(min_component_size) -Ogv $^ >$@
+	$(python) $(bin)/physlr annotate-graph --min-component-size=$(min_component_size) -Ogv -V$V $^ >$@
 
 # Annotate a backbone graph with a PAF file of mappings.
 # Filter out small components.
 %.backbone.map.$(ref).n10.ann.gv: %.backbone.map.$(ref).n10.paf.gz %.backbone.tsv %.backbone.path
-	gunzip -c $< | $(python) $(bin)/physlr annotate-graph -V$V --min-component-size=$(min_component_size) -Ogv $*.backbone.tsv $*.backbone.path - >$@
+	gunzip -c $< | $(python) $(bin)/physlr annotate-graph -V$V --min-component-size=$(min_component_size) -Ogv -V$V $*.backbone.tsv $*.backbone.path - >$@
 
 # Annotate a MST graph with a PAF file of mappings.
 # Filter out small components.
 %.mst.map.$(ref).n10.ann.gv: %.backbone.map.$(ref).n10.paf.gz %.mst.tsv %.backbone.path
-	gunzip -c $< | $(python) $(bin)/physlr annotate-graph -V$V --min-component-size=$(min_component_size) -Ogv $*.mst.tsv $*.backbone.path - >$@
+	gunzip -c $< | $(python) $(bin)/physlr annotate-graph -V$V --min-component-size=$(min_component_size) -Ogv -V$V $*.mst.tsv $*.backbone.path - >$@
 
 # Filter a BED file by score.
 %.n100.bed: %.n10.bed
@@ -918,26 +1013,45 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 
 # Estimate the number of molecules per barcode.
 %.physlr.overlap.n20.countmol.tsv: %.physlr.overlap.tsv
-	$(python) $(bin)/physlr count-molecules -n20 $< >$@
+	$(python) $(bin)/physlr count-molecules -n20 -V$V $< >$@
 
 # Remove barcodes with more than one molecule.
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
-	$(python) $(bin)/physlr filter -M2 $< >$@
+	$(python) $(bin)/physlr filter -M2 -V$V $< >$@
 
 # Count the number of common neighbours for each edge.
 %.cn.tsv: %.tsv
-	$(python) $(bin)/physlr common-neighbours $< >$@
+	$(python) $(bin)/physlr common-neighbours -V$V $< >$@
 
-# Filter n% of lowest weighted edges using python.
+# Filter edges n >= 10 using Miller.
+%.n10.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 10' $< >$@
+
+# Filter edges n >= 20 using Miller.
+%.n20.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 20' $< >$@
+
+# Filter edges n >= 50 using Miller.
+%.n50.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 50' $< >$@
+
+# Filter edges n >= 100 using Miller.
+%.n100.tsv: %.tsv
+	mlr --tsvlite filter '$$n >= 100' $< >$@
+
+# Filter edges by n using Miller.
 %.n$n.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap $n $< >$@
+	mlr --tsvlite filter '$$n >= $n' $< >$@
+
+# Filter m% of lowest weighted edges using python.
+%.m$m.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap $m -V$V $< >$@
 
 # Keep the best edges of each vertex.
 %.best$(bestn).tsv: %.tsv
-	$(python) $(bin)/physlr best-edges --bestn=$(bestn) $< >$@
+	$(python) $(bin)/physlr best-edges --bestn=$(bestn) -V$V $< >$@
 
 # Separate barcodes into molecules.
-mol_strategy=bc
 %.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) $< >$@
 
@@ -951,35 +1065,35 @@ mol_strategy=bc
 
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv
-	$(python) $(bin)/physlr subgraph -v$v -d$d $< >$@
+	$(python) $(bin)/physlr subgraph -v$v -d$d -V$V $< >$@
 
 # Make multiple vertex-induced subgraphs
 %.subgraphs: %.tsv
-	$(python) $(bin)/physlr subgraphs -v$v -d$d -o $*.subgraphs $<
+	$(python) $(bin)/physlr subgraphs -v$v -d$d -V$V -o $*.subgraphs $<
 
 # Extract statistics of the subgraphs
 %.subgraphs-stats.tsv: %.tsv
-	$(python) $(bin)/physlr subgraphs-stats -t$t $< >$@
+	$(python) $(bin)/physlr subgraphs-stats -t$t -V$V $< >$@
 
 # Convert a graph from TSV to GraphViz.
 # Filter out small components.
 %.gv: %.tsv
-	$(python) $(bin)/physlr filter --min-component-size=$(min_component_size) -Ogv $< >$@
+	$(python) $(bin)/physlr filter --min-component-size=$(min_component_size) -Ogv -V$V $< >$@
 
 # Extract a BED file of the backbone barcodes.
 # Filter out small components.
 %.path.$(ref).molecule.bed: $(name)/$(ref).$(lr).a0.65.d$(dist).n5.q1.s2000.molecule.bed %.path
-	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) $^ >$@
+	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) -V$V $^ >$@
 
 # Extract a BED file of the fleshed-out backbone barcodes.
 # Filter out small components.
 %.backbone.fleshed.path.$(ref).molecule.bed: $(name)/$(ref).$(lr).a0.65.d$(dist).n5.q1.s2000.molecule.bed %.backbone.fleshed.path
-	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) $^ >$@
+	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) -V$V $^ >$@
 
 # Extract a BED file of fleshed-out backbone barcodes from molecule-split reads
 # Filter out small components
-%.backbone.fleshed.path.$(ref).molecule.split.bed:  $(name)/$(ref).$(lr).n100-2000.overlap.n$n.split.a0.65.d$(dist).n5.q1.s2000.molecule.bed %.backbone.fleshed.path
-	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) --molecule-bed=1 $^ >$@
+%.backbone.fleshed.path.$(ref).molecule.split.bed:  $(name)/$(ref).$(lr).n100-2000.overlap.m$m.split.a0.65.d$(dist).n5.q1.s2000.molecule.bed %.backbone.fleshed.path
+	$(python) $(bin)/physlr filter-bed --min-component-size=$(min_component_size) --molecule-bed=1 -V$V $^ >$@
 
 # Sort a BED file.
 %.sort.bed: %.bed
@@ -991,7 +1105,7 @@ mol_strategy=bc
 
 # Extract scaffolds paths from a BED file.
 %.bed.path: %.bed
-	$(time) $(python) $(bin)/physlr bed-to-path $^ >$@
+	$(time) $(python) $(bin)/physlr bed-to-path -V$V $^ >$@
 
 # Sort a PAF file by target position.
 %.sort.paf.gz: %.paf.gz
@@ -1003,7 +1117,7 @@ mol_strategy=bc
 
 # Produce sequences in FASTA format from paths.
 %.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
-	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=0 $^ >$@
+	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=0 -V$V $^ >$@
 
 # Convert a PAF file to a BED file.
 %.paf.bed: %.paf.gz
@@ -1028,7 +1142,7 @@ mol_strategy=bc
 %.quast.tsv: \
 		%.supernova.scaftigs.quast.tsv \
 		%.supernova.quast.tsv \
-		%.n100-2000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(name).supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
+		%.n100-2000.c2-$(minimizer_multiplicity).physlr.overlap.m$m.mol.backbone.map.$(name).supernova.scaftigs.n10.sort.best.bed.path.quast.tsv
 	mlr --tsvlite cut -x -f NG75,NGA75,LG75,LGA75 $^ >$@
 
 ################################################################################
