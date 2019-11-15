@@ -817,7 +817,7 @@ endif
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol4-bcs.tsv: %.mol3-bcs.tsv %.mol3-bcs.junctions.tsv
-    $(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos --cosv=0.6 --sqcosv=0.87 $^ >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos --cosv=0.6 --sqcosv=0.87 $^ >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2-bkcs.tsv: %.tsv %.junctions.tsv
