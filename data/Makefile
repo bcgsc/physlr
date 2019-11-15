@@ -788,8 +788,6 @@ endif
 %.fa.gap.bed: %.fa
 	$(python) $(bin)/physlr fasta-gaps $< >$@
 
-# solid_bloom_path - path to Bloom Filter with solid kmers
-# repeat_bloom_path - path to Bloom Filter with repetitive kmers
 # Index a FASTA file.
 %.k$k-w$w.physlr.tsv: %.fa $(lr).k$k.bf
 	$(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(lr).k$k.bf --pos -o $@ $<
