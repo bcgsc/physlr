@@ -50,7 +50,7 @@ n2=5000
 min_component_size=50
 
 # Minimum size of 3rd largest branch of a node to be considered a junction
-prune_junctions = 15
+prune_junctions = 11
 
 # mol separation params:
 cosv=0.4
@@ -826,6 +826,11 @@ endif
 # Redo molecule separation on a list of junction-causing barcodes (louvain).
 %.mol2-l.tsv: %.tsv %.junctions.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=louvain $^ >$@
+
+# Redo molecule separation on a list of junction-causing barcodes (louvain).
+%.mol4-bcs.mol2-l.tsv: %.mol4-bcs.tsv %.mol4-bcs.junctions.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=louvain $^ >$@
+
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
