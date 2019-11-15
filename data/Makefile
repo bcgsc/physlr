@@ -793,7 +793,7 @@ endif
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.mol2-bcs.junctions.tsv: %.mol2-bcs.tsv
-	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
+    $(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.mol3-bcs.junctions.tsv: %.mol3-bcs.tsv
@@ -826,10 +826,6 @@ endif
 # Redo molecule separation on a list of junction-causing barcodes (louvain).
 %.mol2-l.tsv: %.tsv %.junctions.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=louvain $^ >$@
-
-# Redo molecule separation on a list of junction-causing barcodes (louvain).
-%.molx.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr molecules-x -V$V -t$t --separation-strategy=louvain $^ >$@
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
