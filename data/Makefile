@@ -1004,7 +1004,7 @@ mol_strategy=bc
 
 # Make a vertex-induced subgraph
 %.junctions.subgraph.tsv: %.tsv %.junctions.tsv
-	$(python) $(bin)/physlr subgraph-file -v$v -d$d $^ >$@
+	$(python) $(bin)/physlr subgraph-file -d$d $^ >$@
 
 # Make multiple vertex-induced subgraphs
 %.subgraphs: %.tsv
