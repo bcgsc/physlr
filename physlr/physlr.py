@@ -970,6 +970,30 @@ class Physlr:
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
+    def physlr_subgraph_file(self):
+        "Extract a vertex-induced subgraph."
+        if self.args.d not in (0, 1):
+            sys.exit("physlr subgraph: error: Only -d0 and -d1 are currently supported.")
+        g = self.read_graph([self.args.FILES[0]])
+        vertices = []
+        with open(self.args.FILES[1]) as fin:
+            for line in fin:
+                if not line.strip():
+                    break
+                vertices.append(line.split()[0])
+                print(vertices[-1], file=sys.stderr)
+        #vertices = set(self.args.v.split(","))
+        vertices = set(vertices)
+        # if not self.args.exclude_vertices and len(vertices) == 1 and self.args.d == 1:
+        #     self.args.exclude_vertices = self.args.v
+        # exclude_vertices = set(self.args.exclude_vertices.split(","))
+        # if self.args.d == 1:
+        #     vertices.update(v for u in vertices for v in g.neighbors(u))
+        subgraph = g.subgraph(vertices)
+        print(int(timeit.default_timer() - t0), "Extracted subgraph", file=sys.stderr)
+        self.write_graph(subgraph, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
+
     def physlr_subgraphs(self):
         "Extract multiple vertex-induced subgraphs."
         if self.args.output is None:
