@@ -984,6 +984,8 @@ class Physlr:
                 print(vertices[-1], file=sys.stderr)
         #vertices = set(self.args.v.split(","))
         vertices = set(vertices)
+        if self.args.d == 1:
+            vertices.update(v for u in vertices for v in g.neighbors(u))
         # if not self.args.exclude_vertices and len(vertices) == 1 and self.args.d == 1:
         #     self.args.exclude_vertices = self.args.v
         # exclude_vertices = set(self.args.exclude_vertices.split(","))
