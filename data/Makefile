@@ -52,6 +52,9 @@ min_component_size=50
 # Minimum size of 3rd largest branch of a node to be considered a junction
 prune_junctions = 11
 
+# depth of neighborhood for extracting junction-causing candidate barcodes
+junction_depth=1
+
 # mol separation params:
 cosv=0.4
 sqcosv=0.7
@@ -789,19 +792,19 @@ endif
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.junctions.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=$(junction_depth) -s0 $< >$@
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.mol2-bcs.junctions.tsv: %.mol2-bcs.tsv
-	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=$(junction_depth) -s0 $< >$@
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.mol3-bcs.junctions.tsv: %.mol3-bcs.tsv
-	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=$(junction_depth) -s0 $< >$@
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.mol4-bcs.junctions.tsv: %.mol4-bcs.tsv
-	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 $< >$@
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=$(junction_depth) -s0 $< >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2.tsv: %.tsv %.junctions.tsv
