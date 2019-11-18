@@ -52,7 +52,7 @@ bin/physlr-make physical-map lr=linkedReads ref=ref minimizer_overlap=stLFR
 ## Scaffolding a draft assembly with Physlr Physical Map
 
 To scaffold a draft assembly, you need linked reads from 10X Genomics or stLFR, and an existing assembly. In addition, to obtain Quast metrics for the Physlr scaffolded assembly, you need a reference genome.
-In this example, the linked reads, draft assembly, and reference genome are called `linkedReads.fq.gz`, `draft.fa`, `reference.fa`, respectively. The linked reads are from 10X so we specify `minimizer_overlap=10X` to use the default value for 10X reads.
+In this example, the linked reads, draft assembly, and reference genome are called `linkedReads.fq.gz`, `draft.fa`, `reference.fa`, respectively. The linked reads are from 10X Genomics so we specify `minimizer_overlap=10X` to use the default value for 10X Genomics reads.
 
 ```
 cd experiment
