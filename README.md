@@ -60,9 +60,9 @@ make scaffolds lr=lr ref=ref draft=draft minimizer_overlap=10X
 # Output files
 
 * `lr.physlr.physical-map.path`: Paths of barcodes (backbones) describing chromosomal length sequences.
-* `lr.physlr.physical-map.ref.n10.paf.gz.*.pdf`: Various visualizations of backbones against the reference.
-* `draft.physlr.fa`: Physlr scaffolded assembly with physical-map.
-* `draft.physlr.quast.tsv`: Quast metrics using the Physlr scaffolded assembly as query against the reference.
+* `lr.physlr.physical-map.ref.n10.paf.gz.*.pdf`: Various graphs showing the contiguity and correctness of the backbones with respect to the reference.
+* `draft.physlr.fa`: Physlr scaffolded assembly using the physical map.
+* `draft.physlr.quast.tsv`: Quast metrics comparing the Physlr scaffolded assembly against the reference.
 
 # Testing Compiled Physlr executables
 
