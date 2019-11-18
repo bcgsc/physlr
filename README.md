@@ -66,7 +66,7 @@ See the help page for further information.
 
 # Output files
 
-* `lr.physlr.physical-map.path`: Paths of barcodes (backbones) describing chromosomal length sequences.
+* `lr.physlr.physical-map.path`: Paths of barcodes (backbones).
 * `lr.physlr.physical-map.ref.n10.paf.gz.*.pdf`: Various graphs showing the contiguity and correctness of the backbones with respect to the reference.
 * `draft.physlr.fa`: Physlr scaffolded assembly using the physical map.
 * `draft.physlr.quast.tsv`: Quast metrics comparing the Physlr scaffolded assembly against the reference.
