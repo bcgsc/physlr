@@ -45,7 +45,7 @@ In this example, the linked reads and reference genome are called `linkedReads.f
 ```
 cd experiment
 ls
-Makefile    linkedReads.fq.gz #stLFR   reference.fa
+linkedReads.fq.gz #stLFR   reference.fa
 bin/physlr-make physical-map lr=linkedReads ref=ref minimizer_overlap=stLFR
 ```
 
@@ -57,7 +57,7 @@ In this example, the linked reads, draft assembly, and reference genome are call
 ```
 cd experiment
 ls
-Makefile    linkedReads.fq.gz #10X   reference.fa    draft.fa
+linkedReads.fq.gz #10X   reference.fa    draft.fa
 bin/physlr-make scaffolds lr=linkedReads ref=reference draft=draft minimizer_overlap=10X
 ```
 
