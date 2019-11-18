@@ -31,7 +31,7 @@ Additionally, we recommend using pypy3 over regular python3 for speed.
 # Compiling Physlr from source
 
 ```
-cd ~/physlr/src
+cd src
 make
 ```
 
@@ -40,8 +40,8 @@ make
 ## Generating Physlr Physical Map with stLFR reads
 
 ```
-cd ~/experiment
-ln -s ~/physlr/data/Makefile
+cd experiment
+ln -s data/Makefile
 ls
 Makefile    lr.fq.gz #stLFR   ref.fa
 make physical-map lr=lr ref=ref minimizer_overlap=stLFR
@@ -50,8 +50,8 @@ make physical-map lr=lr ref=ref minimizer_overlap=stLFR
 ## Scaffolding a draft assembly with Physlr Physical Map
 
 ```
-cd ~/experiment
-ln -s ~/physlr/data/Makefile
+cd experiment
+ln -s data/Makefile
 ls
 Makefile    lr.fq.gz #10X   ref.fa    draft.fa
 make scaffolds lr=lr ref=ref draft=draft minimizer_overlap=10X
@@ -67,7 +67,7 @@ make scaffolds lr=lr ref=ref draft=draft minimizer_overlap=10X
 # Testing Compiled Physlr executables
 
 ```
-cd ~/physlr/src
+cd src
 make check
 ```
 
