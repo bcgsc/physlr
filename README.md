@@ -44,10 +44,9 @@ In this example, the linked reads and reference genome are called `linkedReads.f
 
 ```
 cd experiment
-ln -s data/Makefile
 ls
 Makefile    linkedReads.fq.gz #stLFR   reference.fa
-make physical-map lr=linkedReads ref=ref minimizer_overlap=stLFR
+bin/physlr-make physical-map lr=linkedReads ref=ref minimizer_overlap=stLFR
 ```
 
 ## Scaffolding a draft assembly with Physlr Physical Map
@@ -57,13 +56,13 @@ In this example, the linked reads, draft assembly, and reference genome are call
 
 ```
 cd experiment
-ln -s data/Makefile
 ls
 Makefile    linkedReads.fq.gz #10X   reference.fa    draft.fa
-make scaffolds lr=linkedReads ref=reference draft=draft minimizer_overlap=10X
+bin/physlr-make scaffolds lr=linkedReads ref=reference draft=draft minimizer_overlap=10X
 ```
 
 See the help page for further information.
+```bin/physlr-make help```
 
 # Output files
 
