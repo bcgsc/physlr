@@ -12,12 +12,12 @@ Physlr constructs a *de novo* physical map using linked reads from 10X Genomics 
 * [ntHits](https://github.com/bcgsc/ntHits)
 * GCC 5 or newer with openmp
 * Python 3.5 or newer and the following packages
-    * community
-    * networkx
-    * numpy
-    * scipy
-    * sklearn
-    * tqdm
+    * [community](https://python-louvain.readthedocs.io/en/latest/api.html)
+    * [networkx](https://networkx.github.io/)
+    * [numpy](https://numpy.org/)
+    * [scipy](https://www.scipy.org/)
+    * [sklearn](https://scikit-learn.org/stable/)
+    * [tqdm](https://tqdm.github.io/)
 
 Additionally, we recommend using pypy3 over regular python3 for speed.
 
