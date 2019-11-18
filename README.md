@@ -43,8 +43,8 @@ make
 cd experiment
 ln -s data/Makefile
 ls
-Makefile    lr.fq.gz #stLFR   ref.fa
-make physical-map lr=lr ref=ref minimizer_overlap=stLFR
+Makefile    linkedReads.fq.gz #stLFR   reference.fa
+make physical-map lr=linkedReads ref=ref minimizer_overlap=stLFR
 ```
 
 ## Scaffolding a draft assembly with Physlr Physical Map
@@ -53,9 +53,11 @@ make physical-map lr=lr ref=ref minimizer_overlap=stLFR
 cd experiment
 ln -s data/Makefile
 ls
-Makefile    lr.fq.gz #10X   ref.fa    draft.fa
-make scaffolds lr=lr ref=ref draft=draft minimizer_overlap=10X
+Makefile    linkedReads.fq.gz #10X   reference.fa    draft.fa
+make scaffolds lr=linkedReads ref=reference draft=draft minimizer_overlap=10X
 ```
+
+See the help page for further information.
 
 # Output files
 
