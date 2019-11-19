@@ -27,6 +27,7 @@ Additionally, we recommend using pypy3 over regular python3 for speed.
 # Compiling Physlr from source
 
 ```
+pip3 install --user git+https://github.com/bcgsc/physlr
 cd src
 make
 ```
