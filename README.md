@@ -2,10 +2,6 @@
 
 Physlr constructs a *de novo* physical map using linked reads from 10X Genomics or stLFR. This physical map can then be used to scaffold an existing assembly to yield chromosomal level contiguity.
 
-## Build Status
-[![Build Status](https://dev.azure.com/bcgsc/btl/_apis/build/status/bcgsc.physlr?branchName=master)](https://dev.azure.com/bcgsc/btl/_build/latest?definitionId=1&branchName=master)
-
-
 # Dependencies
 
 * [ntCard](https://github.com/bcgsc/ntCard)
