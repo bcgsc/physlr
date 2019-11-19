@@ -68,13 +68,6 @@ See the help page for further information.
 * `draft.physlr.fa`: Physlr scaffolded assembly using the physical map.
 * `draft.physlr.quast.tsv`: Quast metrics comparing the Physlr scaffolded assembly against the reference.
 
-# Testing Compiled Physlr executables
-
-```
-cd src
-make check
-```
-
 # Acknowledgements
 
 This projects uses:
