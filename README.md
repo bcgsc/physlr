@@ -78,7 +78,6 @@ make check
 
 This projects uses:
 * [btl_bloomfilter](https://github.com/bcgsc/btl_bloomfilter) BTL C/C++ Common bloom filters for bioinformatics projects implemented by Justin Chu
-* [klib](https://github.com/attractivechaos/klib) A standalone and lightweight C library implemented by Attractive Chaos
 * [nthash](https://github.com/bcgsc/ntHash) rolling hash implementation by Hamid Mohamadi
 * [readfq](https://github.com/lh3/readfq) Fast multi-line FASTA/Q reader API implemented by Heng Li
 * [robin-map](https://github.com/Tessil/robin-map) C++ implementation of a fast hash map and hash set using robin hood hashing by Thibaut G.
