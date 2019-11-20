@@ -168,9 +168,13 @@ main(int argc, char* argv[])
 	// barcode to ID table (index in vector)
 	tsl::robin_map<std::string, BarcodeID> barcodes;
 
-	// vector of barcodes
+	// barcodeID to minimizer table
 	tsl::robin_map<BarcodeID, tsl::robin_set<Minimizer>> barcodeToMinimizer;
+
+	// minimizer to barcode ID table
 	tsl::robin_map<Minimizer, tsl::robin_set<BarcodeID>> minimizerToBarcode;
+
+	// vector of barcodes
 	std::vector<std::string> barcodeToStr;
 
 #if _OPENMP
