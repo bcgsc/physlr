@@ -174,6 +174,7 @@ main(int argc, char* argv[])
 	tsl::robin_map<std::string, BarcodeID> barcodes;
 
 	// vector of barcodes
+	tsl::robin_map<BarcodeID, tsl::robin_set<Minimizer>> barcodeToMinimizer;
 	tsl::robin_map<Minimizer, tsl::robin_set<BarcodeID>> minimizerToBarcode;
 	std::vector<std::string> barcodeToStr;
 
@@ -200,10 +201,12 @@ main(int argc, char* argv[])
 				barcodeToStr.emplace_back(barcodeBuffer);
 				barcodes[barcodeBuffer] = barcodeToStr.size() - 1;
 				while (ss >> minimizerBuffer) {
+					barcodeToMinimizer[barcodeToStr.size() - 1].insert(minimizerBuffer);
 					minimizerToBarcode[minimizerBuffer].insert(barcodeToStr.size() - 1);
 				}
 			} else {
 				while (ss >> minimizerBuffer) {
+					barcodeToMinimizer[barcode->second].insert(minimizerBuffer);
 					minimizerToBarcode[minimizerBuffer].insert(barcode->second);
 				}
 			}
@@ -211,74 +214,66 @@ main(int argc, char* argv[])
 	}
 
 #if _OPENMP
-	std::cerr << "Finished constructing minimizerToBarcodes in sec: " << omp_get_wtime() - sTime
-	          << std::endl;
+	std::cerr << "Finished constructing barcodeToMinimizer and minimizerToBarcode in sec: "
+	          << omp_get_wtime() - sTime << std::endl;
 	sTime = omp_get_wtime();
 #endif
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 
 	// store into 2d matrix / hash table
-	// todo revisit Counts? -> can be smaller
 	using SimMat = tsl::robin_map<uint64_t, Count, fastHash>;
-	SimMat barcodeSimMat;
-
-	// counts of vector
-	std::vector<Count> barcodeCount(barcodes.size(), 0);
 
 	std::cerr << "Populating Overlaps" << std::endl;
 	std::cerr << "Total Minimizers: " << minimizerToBarcode.size() << std::endl;
 	std::cerr << "Total Barcodes: " << barcodes.size() << std::endl;
 
-	for (const auto& itr : minimizerToBarcode) {
-		for (auto barcode_i = itr.second.begin(); barcode_i != itr.second.end(); barcode_i++) {
-			barcodeCount[*barcode_i]++;
-			auto barcode_j = tsl::robin_set<BarcodeID>::const_iterator(barcode_i);
-			for (barcode_j++; barcode_j != itr.second.end(); barcode_j++) {
-				// assign "canonical edge"
-				barcodeSimMat
-				    [*barcode_i > *barcode_j
-				         ? (static_cast<size_t>(*barcode_i) << 32u | *barcode_j)
-				         : (static_cast<size_t>(*barcode_j) << 32u | *barcode_i)]++;
+	uint64_t edgeCount = 0;
+	uint64_t filteredEdgeCount = 0;
+
+#if _OPENMP
+#pragma omp parallel for
+#endif
+	for (BarcodeID barcode1 = 0; barcode1 < barcodeToStr.size(); barcode1++) {
+		SimMat barcodeSimMat;
+		std::string edgesBuffer;
+		tsl::robin_set<Minimizer>& minimizerSet = barcodeToMinimizer.find(barcode1).value();
+		for (const auto& minimizer : minimizerSet) {
+			tsl::robin_set<BarcodeID>& barcodeSet = minimizerToBarcode.find(minimizer).value();
+			for (const auto& barcode2 : barcodeSet) {
+				if (barcode1 > barcode2) {
+					barcodeSimMat[(static_cast<size_t>(barcode1) << 32u | barcode2)]++;
+				}
 			}
 		}
+		for (const auto& itr : barcodeSimMat) {
+#if _OPENMP
+#pragma omp atomic
+#endif
+			edgeCount += 1;
+			// filter by n
+			if (opt::minN <= itr.second) {
+#if _OPENMP
+#pragma omp atomic
+#endif
+				filteredEdgeCount += 1;
+				edgesBuffer += barcodeToStr[itr.first >> 32u];
+				edgesBuffer += "\t";
+				edgesBuffer += barcodeToStr[static_cast<uint32_t>(itr.first)];
+				edgesBuffer += "\t";
+				edgesBuffer += std::to_string(itr.second);
+				edgesBuffer += "\n";
+			}
+		}
+#if _OPENMP
+#pragma omp critical
+#endif
+		std::cout << edgesBuffer;
 	}
-
 #if _OPENMP
 	std::cerr << "Finished computing overlaps in sec: " << omp_get_wtime() - sTime << std::endl;
 #endif
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
-	std::cerr << "Total number of unfiltered edges: " << barcodeSimMat.size() << std::endl;
-
-	std::cout << "U\tn\n";
-	std::string bufferString;
-	// print out vertexes + counts
-#pragma omp parallel
-	for (const auto& itr : barcodes) {
-		bufferString.clear();
-		bufferString += itr.first;
-		bufferString += "\t";
-		bufferString += std::to_string(barcodeCount[itr.second]);
-		bufferString += "\n";
-		std::cout << bufferString;
-	}
-
-	size_t edgeCount = 0;
-	std::cout << "\nU\tV\tn\n";
-#pragma omp parallel
-	for (const auto& itr : barcodeSimMat) {
-		// filter by n
-		if (opt::minN <= itr.second) {
-			bufferString.clear();
-			bufferString += barcodeToStr[itr.first >> 32u];
-			bufferString += "\t";
-			bufferString += barcodeToStr[static_cast<uint32_t>(itr.first)];
-			bufferString += "\t";
-			bufferString += std::to_string(itr.second);
-			bufferString += "\n";
-			std::cout << bufferString;
-			++edgeCount;
-		}
-	}
+	std::cerr << "Total number of unfiltered edges: " << filteredEdgeCount << std::endl;
 	std::cerr << "Total number of filtered edges: " << edgeCount << std::endl;
 
 	return 0;
