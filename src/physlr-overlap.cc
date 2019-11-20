@@ -145,12 +145,6 @@ main(int argc, char* argv[])
 	omp_set_num_threads(opt::threads);
 #endif
 
-	// Threads currently not supported.
-	if (opt::threads > 1) {
-		std::cerr << "Error: physlr-overlap: Threads not yet supported.\n";
-		die = true;
-	}
-
 	// Stores fasta input file names
 	std::vector<std::string> inputFiles;
 
