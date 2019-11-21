@@ -219,6 +219,19 @@ main(int argc, char* argv[])
 #endif
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 
+	std::cout << "U\tn\n";
+	std::string bufferString;
+	// print out vertexes + counts
+	for (const auto& itr : barcodes) {
+		bufferString.clear();
+		bufferString += itr.first;
+		bufferString += "\t";
+		bufferString += std::to_string(barcodeToMinimizer[itr.second].size());
+		bufferString += "\n";
+		std::cout << bufferString;
+	}
+	std::cout << "\nU\tV\tn" << std::endl;
+
 	// store into 2d matrix / hash table
 	using SimMat = tsl::robin_map<uint64_t, Count, fastHash>;
 
