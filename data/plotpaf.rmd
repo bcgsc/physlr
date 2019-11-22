@@ -41,7 +41,7 @@ paf_orig <- read_tsv(input_paf,
 		"Orientation",
 		"Tname", "Tlength", "Tstart", "Tend",
 		"Matches", "Length", "Mapq"),
-	col_types = "ciiicciiiiii")
+	col_types = "ciiicciiiiid")
 
 paf <- paf_orig %>%
 	filter(
