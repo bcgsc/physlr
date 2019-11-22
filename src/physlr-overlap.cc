@@ -192,7 +192,7 @@ main(int argc, char* argv[])
 		std::ifstream fh;
 		fh.open(itr->c_str());
 		std::string line;
-		std::cerr << "Loading file" << *itr << std::endl;
+		std::cerr << "Loading file " << *itr << std::endl;
 		while (getline(fh, line)) {
 			std::stringstream ss(line);
 			ss >> barcodeBuffer;
