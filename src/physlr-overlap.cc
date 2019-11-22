@@ -199,8 +199,7 @@ main(int argc, char* argv[])
 			if (barcode == barcodes.end()) {
 				barcodeToStr.emplace_back(barcodeBuffer);
 				barcodes[barcodeBuffer] = barcodeToStr.size() - 1;
-				std::vector<Minimizer> v;
-				barcodeToMinimizer.push_back(v);
+				barcodeToMinimizer.push_back(std::vector<Minimizer>());
 				while (ss >> minimizerBuffer) {
 					barcodeToMinimizer[barcodeToStr.size() - 1].emplace_back(minimizerBuffer);
 					minimizerToBarcode[minimizerBuffer].insert(barcodeToStr.size() - 1);
