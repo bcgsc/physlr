@@ -250,7 +250,7 @@ main(int argc, char* argv[])
 	for (BarcodeID barcode1 = 0; barcode1 < barcodeToStr.size(); barcode1++) {
 		SimMat barcodeSimMat;
 		std::string edgesBuffer;
-		tsl::robin_set<Minimizer>& minimizerSet = barcodeToMinimizer.find(barcode1).value();
+		std::vector<Minimizer>& minimizerSet = barcodeToMinimizer[barcode1];
 		for (const auto& minimizer : minimizerSet) {
 			tsl::robin_set<BarcodeID>& barcodeSet = minimizerToBarcode.find(minimizer).value();
 			for (const auto& barcode2 : barcodeSet) {
