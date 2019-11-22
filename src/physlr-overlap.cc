@@ -169,6 +169,7 @@ main(int argc, char* argv[])
 	tsl::robin_map<std::string, BarcodeID> barcodes;
 
 	// barcodeID (index) to minimizer vector of vector
+	// Note: Because a vector isn't a set, the input cannot have duplicates.
 	std::vector<std::vector<Minimizer>> barcodeToMinimizer;
 
 	// minimizer to barcode ID table
