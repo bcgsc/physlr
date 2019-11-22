@@ -168,8 +168,8 @@ main(int argc, char* argv[])
 	// barcode to ID table (index in vector)
 	tsl::robin_map<std::string, BarcodeID> barcodes;
 
-	// barcodeID to minimizer table
-	tsl::robin_map<BarcodeID, tsl::robin_set<Minimizer>> barcodeToMinimizer;
+	// barcodeID (index) to minimizer vector of vector
+	std::vector<std::vector<Minimizer>> barcodeToMinimizer;
 
 	// minimizer to barcode ID table
 	tsl::robin_map<Minimizer, tsl::robin_set<BarcodeID>> minimizerToBarcode;
@@ -199,13 +199,15 @@ main(int argc, char* argv[])
 			if (barcode == barcodes.end()) {
 				barcodeToStr.emplace_back(barcodeBuffer);
 				barcodes[barcodeBuffer] = barcodeToStr.size() - 1;
+				std::vector<Minimizer> v;
+				barcodeToMinimizer.push_back(v);
 				while (ss >> minimizerBuffer) {
-					barcodeToMinimizer[barcodeToStr.size() - 1].insert(minimizerBuffer);
+					barcodeToMinimizer[barcodeToStr.size() - 1].emplace_back(minimizerBuffer);
 					minimizerToBarcode[minimizerBuffer].insert(barcodeToStr.size() - 1);
 				}
 			} else {
 				while (ss >> minimizerBuffer) {
-					barcodeToMinimizer[barcode->second].insert(minimizerBuffer);
+					barcodeToMinimizer[barcode->second].emplace_back(minimizerBuffer);
 					minimizerToBarcode[minimizerBuffer].insert(barcode->second);
 				}
 			}
