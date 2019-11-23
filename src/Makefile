@@ -23,7 +23,7 @@ clang-format:
 fix:
 	for i in *.cc; do clang-format -i -style=file $$i; done
 
-check: check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf
+check: check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf check-physlr-overlap
 
 check-physlr-index-fasta: all
 	./physlr-indexlr -t16 -k100 -w5 data/mt.fa | diff -q - data/mt.physlr.tsv.good
@@ -61,3 +61,7 @@ check-physlr-index-stLFR-10X: all
 check-physlr-makebf: all
 	./physlr-makebf -t16 -k8 -b1000 -o tiny.bf data/tiny_k8.rep
 	./physlr-indexlr -t16 -k8 -w1 -r tiny.bf data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
+
+check-physlr-overlap: all
+	./physlr-overlap -t1 -n1 data/tiny.overlap.input.tsv | sort | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
+	./physlr-overlap -t1 -n2 data/tiny.overlap.input.tsv | sort | diff -q - data/tiny.physlr.overlap.n2.sorted.tsv
