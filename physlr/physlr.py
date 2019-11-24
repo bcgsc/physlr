@@ -1903,7 +1903,7 @@ class Physlr:
                 int(timeit.default_timer() - t0),
                 "Identified", gout.number_of_nodes(), "molecules in",
                 gin.number_of_nodes(), "barcodes.",
-                round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
+                #round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
                 file=sys.stderr)
             # Add edges.
             for (u, v), prop in gin.edges.items():
