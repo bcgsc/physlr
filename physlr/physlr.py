@@ -1767,8 +1767,11 @@ class Physlr:
                 strategy = "bc"
         # alg_list = strategy.split("+")
         alg_list = strategy
+        alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
         for algorithm in alg_list:
             communities_temp = []
+            if algorithm not in alg_white_list:
+                sys.exit("Error: strategy not valid")
             if algorithm == "bc":
                 for component in communities:
                     communities_temp.extend(
@@ -1894,7 +1897,6 @@ class Physlr:
                 nmolecules = 1 + max(vs.values()) if vs else 0
                 for i in range(nmolecules):
                     gout.add_node(f"{u}_{i}", n=n)
-
             print(
                 int(timeit.default_timer() - t0),
                 "Identified", gout.number_of_nodes(), "molecules in",
@@ -1910,7 +1912,6 @@ class Physlr:
                 v_molecule = molecules[v][u]
                 gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
             print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
-
             num_singletons = Physlr.remove_singletons(gout)
             print(
                 int(timeit.default_timer() - t0),
