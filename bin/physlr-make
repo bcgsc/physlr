@@ -27,7 +27,7 @@ physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 bin=$(physlr_path)/bin
 
 # Python interpreter.
-python=env PYTHONPATH=$(physlr_path) pypy3
+python=env PYTHONPATH=$(physlr_path) /projects/btl/aafshinfard/virtuEnv/pypy3/bin/pypy3
 
 # Name of the dataset.
 ifneq ($(filter z11%, $(ref)),)
@@ -868,7 +868,7 @@ endif
 
 # Determine the maximum spanning tree.
 %.mst.tsv: %.tsv
-	$(python) $(bin)/physlr mst -V$V --prune-branches=10 --prune-bridges=10 $< >$@
+	$(python) $(bin)/physlr mst -V$V --prune-branches=10 $< >$@
 
 # Separate a graph into its biconnected components by removing its cut vertices.
 %.bic.tsv: %.tsv
@@ -1070,6 +1070,10 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 # Make a vertex-induced subgraph
 %.subgraph.tsv: %.tsv
 	$(python) $(bin)/physlr subgraph -v$v -d$d -V$V $< >$@
+
+# Make a vertex-induced subgraph
+%.junctions.subgraph.tsv: %.tsv %.junctions.tsv
+	$(python) $(bin)/physlr subgraph-file -d$d $^ >$@
 
 # Make multiple vertex-induced subgraphs
 %.subgraphs: %.tsv

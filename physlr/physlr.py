@@ -546,6 +546,36 @@ class Physlr:
         return (g, len(junctions))
 
     @staticmethod
+    def report_junctions_graph(g, prune_junctions, junction_depth):
+        gmst = Physlr.determine_pruned_mst(g)
+        print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
+        tree_junctions = []
+        for component in nx.connected_components(gmst):
+            tree_junctions += Physlr.detect_junctions_of_tree(
+                gmst.subgraph(component), Physlr.args.prune_junctions)
+        print(int(timeit.default_timer() - t0),
+              "Found", len(tree_junctions), "junctions.", file=sys.stderr)
+        junctions = []
+        if self.args.junction_depth > 0:
+            print(int(timeit.default_timer() - t0),
+                  "Exapnding junctions, depth:", self.args.junction_depth, file=sys.stderr)
+            if self.args.junction_depth > 1:
+                tree_junctions_expanded = set()
+                for tree_junction in tree_junctions:
+                    tree_junctions_expanded.update(
+                        nx.bfs_tree(gmst, source=tree_junction,
+                                    depth_limit=self.args.junction_depth - 1))
+            else:
+                tree_junctions_expanded = set(tree_junctions)
+            junctions = {m for n in tree_junctions_expanded for m in g.neighbors(n)}
+            junctions.update(tree_junctions_expanded)
+            print(int(timeit.default_timer() - t0),
+                  "Exapnded to", len(junctions), "junctions.", file=sys.stderr)
+        else:
+            junctions = tree_junctions
+        return junctions
+
+    @staticmethod
     def determine_backbones_of_trees(g, prune_junctions):
         """"
         Determine backbones of the MSTs.
@@ -966,6 +996,27 @@ class Physlr:
         if self.args.d == 1:
             vertices.update(v for u in vertices for v in g.neighbors(u))
         subgraph = g.subgraph(vertices - exclude_vertices)
+        print(int(timeit.default_timer() - t0), "Extracted subgraph", file=sys.stderr)
+        self.write_graph(subgraph, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
+
+    def physlr_subgraph_file(self):
+        "Extract a vertex-induced subgraph."
+        if self.args.d not in (0, 1):
+            sys.exit("physlr subgraph: error: Only -d0 and -d1 are currently supported.")
+        g = self.read_graph([self.args.FILES[0]])
+        vertices = []
+        with open(self.args.FILES[1]) as fin:
+            for line in fin:
+                if not line.strip():
+                    break
+                vertices.append(line.split()[0])
+                print(vertices[-1], file=sys.stderr)
+        # vertices = set(self.args.v.split(","))
+        vertices = set(vertices)
+        if self.args.d == 1:
+            vertices.update(v for u in vertices for v in g.neighbors(u))
+        subgraph = g.subgraph(vertices)
         print(int(timeit.default_timer() - t0), "Extracted subgraph", file=sys.stderr)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
@@ -1741,11 +1792,12 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
-                            g, component, squaring=False, threshold=0.4))
+                            g, component, squaring=False, threshold=self.args.cost))
             elif algorithm == "sqcos":
                 for component in communities:
                     communities_temp.extend(
-                        Physlr.detect_communities_cosine_of_squared(g, component))
+                        Physlr.detect_communities_cosine_of_squared(
+                            g, component, squaring=True, threshold=self.args.sqcost))
             elif algorithm == "louvain":
                 for component in communities:
                     communities_temp.extend(
@@ -1770,13 +1822,15 @@ class Physlr:
     def physlr_molecules(self):
         "Separate barcodes into molecules."
         alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
-        alg_list = self.args.strategy.split("+")
+        #alg_list_2d = self.args.strategy.split("++")
+        alg_list_2d = [t.split("+") for t in self.args.strategy.split("++")]
         if not alg_list:
             sys.exit("Error: physlr molecule: missing parameter --separation-strategy")
-        if not set(alg_list).issubset(alg_white_list):
-            exit_message = "Error: physlr molecule: wrong input parameter(s) " + \
-                      "--separation-strategy: " + str(set(alg_list) - alg_white_list)
-            sys.exit(exit_message)
+        for alg_list in alg_list_2d:
+            if not set(alg_list).issubset(alg_white_list):
+                exit_message = "Error: physlr molecule: wrong input parameter(s) " + \
+                               "--separation-strategy: " + str(set(alg_list) - alg_white_list)
+                sys.exit(exit_message)
         junctions = []
         if len(self.args.FILES) > 1:
             gin = self.read_graph([self.args.FILES[0]])
@@ -1787,7 +1841,7 @@ class Physlr:
                 int(timeit.default_timer() - t0),
                 "Separating junction-causing barcodes into molecules "
                 "using the following algorithm(s):\n\t",
-                self.args.strategy.replace("+", " + "),
+                self.args.strategy.replace("++"," / ").replace("+", " + "),
                 "\n\tand other barcodes with bc.",
                 file=sys.stderr)
         else:
@@ -1795,54 +1849,59 @@ class Physlr:
             print(
                 int(timeit.default_timer() - t0),
                 "Separating barcodes into molecules using the following algorithm(s):\n\t",
-                self.args.strategy.replace("+", " + "),
+                self.args.strategy.replace("++"," / ").replace("+", " + "),
                 file=sys.stderr)
-
-        Physlr.filter_edges(gin, self.args.n)
-
+        # Physlr.filter_edges(gin, self.args.n)
         # Partition the neighbouring vertices of each barcode into molecules.
-        if self.args.threads == 1:
-            molecules = dict(
-                self.determine_molecules(
-                    gin, u, junctions, self.args.strategy) for u in progress(gin))
-        else:
-            Physlr.graph = gin
-            Physlr.junctions = junctions
-            with multiprocessing.Pool(self.args.threads) as pool:
-                molecules = dict(pool.map(
-                    self.determine_molecules_process, progress(gin), chunksize=100))
-            Physlr.graph = None
-        print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
+        for alg_list in alg_list_2d:
+            if junctions:
+                nodes_to_process = junctions
+            else:
+                nodes_to_process = gin
+            if self.args.threads == 1:
+                molecules = dict(
+                    self.determine_molecules(
+                        gin, u, junctions, self.args.strategy) for u in progress(nodes_to_process))
+            else:
+                Physlr.graph = gin
+                Physlr.junctions = junctions
+                with multiprocessing.Pool(self.args.threads) as pool:
+                    molecules = dict(pool.map(
+                        self.determine_molecules_process, progress(nodes_to_process), chunksize=100))
+                Physlr.graph = None
+            print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
+            # Add vertices.
+            gout = nx.Graph()
+            for u, vs in sorted(molecules.items()):
+                n = gin.nodes[u]["n"]
+                nmolecules = 1 + max(vs.values()) if vs else 0
+                for i in range(nmolecules):
+                    gout.add_node(f"{u}_{i}", n=n)
 
-        # Add vertices.
-        gout = nx.Graph()
-        for u, vs in sorted(molecules.items()):
-            n = gin.nodes[u]["n"]
-            nmolecules = 1 + max(vs.values()) if vs else 0
-            for i in range(nmolecules):
-                gout.add_node(f"{u}_{i}", n=n)
+            print(
+                int(timeit.default_timer() - t0),
+                "Identified", gout.number_of_nodes(), "molecules in",
+                gin.number_of_nodes(), "barcodes.",
+                round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
+                file=sys.stderr)
+            # Add edges.
+            for (u, v), prop in gin.edges.items():
+                # Skip singleton and cut vertices, which are excluded from the partition.
+                if v not in molecules[u] or u not in molecules[v]:
+                    continue
+                u_molecule = molecules[u][v]
+                v_molecule = molecules[v][u]
+                gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
+            print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
 
-        print(
-            int(timeit.default_timer() - t0),
-            "Identified", gout.number_of_nodes(), "molecules in",
-            gin.number_of_nodes(), "barcodes.",
-            round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
-            file=sys.stderr)
+            num_singletons = Physlr.remove_singletons(gout)
+            print(
+                int(timeit.default_timer() - t0),
+                "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
+            gin = gout
+            junctions = Physlr.report_junctions_graph(
+                gin, self.args.prune_junctions, self.args.junction_depth)
 
-        # Add edges.
-        for (u, v), prop in gin.edges.items():
-            # Skip singleton and cut vertices, which are excluded from the partition.
-            if v not in molecules[u] or u not in molecules[v]:
-                continue
-            u_molecule = molecules[u][v]
-            v_molecule = molecules[v][u]
-            gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
-        print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
-
-        num_singletons = Physlr.remove_singletons(gout)
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
@@ -1896,6 +1955,12 @@ class Physlr:
         mxtopos = {}
         for tid, path in enumerate(progress(backbones)):
             for pos, u in enumerate(path):
+                if u not in bxtomxs:
+                    u = u.rsplit("_", 1)[0]
+                if u not in bxtomxs:
+                    u = u.rsplit("_", 1)[0]
+                if u not in bxtomxs:
+                    u = u.rsplit("_", 1)[0]
                 if u not in bxtomxs:
                     u = u.rsplit("_", 1)[0]
                 if u not in bxtomxs:
@@ -2537,6 +2602,12 @@ class Physlr:
         argparser.add_argument(
             "--gap-size", action="store", dest="gap_size", type=int, default=100,
             help="gap size used in scaffolding [100].")
+        argparser.add_argument(
+            "--cost", action="store", dest="cost", type=float, default=0.4,
+            help="threshold for `cos` mol-sep [0.4].")
+        argparser.add_argument(
+            "--sqcost", action="store", dest="sqcost", type=float, default=0.7,
+            help="threshold for `cos` mol-sep [0.7].")
         argparser.add_argument(
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
