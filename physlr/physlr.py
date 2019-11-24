@@ -1854,7 +1854,8 @@ class Physlr:
             print(
                 int(timeit.default_timer() - t0),
                 "Separating barcodes into molecules using the following algorithm(s):\n\t",
-                self.args.strategy.replace("++"," / ").replace("+", " + "),
+                alg_list_2d,
+                # self.args.strategy.replace("++"," / ").replace("+", " + "),
                 file=sys.stderr)
         # Physlr.filter_edges(gin, self.args.n)
         # Partition the neighbouring vertices of each barcode into molecules.
