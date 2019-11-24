@@ -1824,7 +1824,7 @@ class Physlr:
         alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
         #alg_list_2d = self.args.strategy.split("++")
         alg_list_2d = [t.split("+") for t in self.args.strategy.split("++")]
-        if not alg_list:
+        if not alg_list_2d:
             sys.exit("Error: physlr molecule: missing parameter --separation-strategy")
         for alg_list in alg_list_2d:
             if not set(alg_list).issubset(alg_white_list):
