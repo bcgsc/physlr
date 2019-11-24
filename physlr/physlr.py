@@ -1841,7 +1841,8 @@ class Physlr:
                 int(timeit.default_timer() - t0),
                 "Separating junction-causing barcodes into molecules "
                 "using the following algorithm(s):\n\t",
-                self.args.strategy.replace("++"," / ").replace("+", " + "),
+                alg_list_2d,
+                #self.args.strategy.replace("++"," / ").replace("+", " + "),
                 "\n\tand other barcodes with bc.",
                 file=sys.stderr)
         else:
@@ -1853,10 +1854,23 @@ class Physlr:
                 file=sys.stderr)
         # Physlr.filter_edges(gin, self.args.n)
         # Partition the neighbouring vertices of each barcode into molecules.
+        round = 1
         for alg_list in alg_list_2d:
+            if round > 1:
+                junctions = Physlr.report_junctions_graph(
+                    gin, self.args.prune_junctions, self.args.junction_depth)
+            round = round + 1
             if junctions:
+                print(
+                    int(timeit.default_timer() - t0),
+                    "Working on the junction-causing barcodes with algs:", alg_list,
+                    file=sys.stderr)
                 nodes_to_process = junctions
             else:
+                print(
+                    int(timeit.default_timer() - t0),
+                    "Working on the whole overlap graph with algs:", alg_list,
+                    file=sys.stderr)
                 nodes_to_process = gin
             if self.args.threads == 1:
                 molecules = dict(
@@ -1899,8 +1913,6 @@ class Physlr:
                 int(timeit.default_timer() - t0),
                 "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
             gin = gout
-            junctions = Physlr.report_junctions_graph(
-                gin, self.args.prune_junctions, self.args.junction_depth)
 
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
