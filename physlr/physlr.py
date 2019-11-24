@@ -1765,7 +1765,8 @@ class Physlr:
         if junctions:
             if u not in junctions:
                 strategy = "bc"
-        alg_list = strategy.split("+")
+        # alg_list = strategy.split("+")
+        alg_list = strategy
         for algorithm in alg_list:
             communities_temp = []
             if algorithm == "bc":
@@ -1822,7 +1823,6 @@ class Physlr:
     def physlr_molecules(self):
         "Separate barcodes into molecules."
         alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
-        #alg_list_2d = self.args.strategy.split("++")
         alg_list_2d = [t.split("+") for t in self.args.strategy.split("++")]
         if not alg_list_2d:
             sys.exit("Error: physlr molecule: missing parameter --separation-strategy")
@@ -1875,10 +1875,11 @@ class Physlr:
             if self.args.threads == 1:
                 molecules = dict(
                     self.determine_molecules(
-                        gin, u, junctions, self.args.strategy) for u in progress(nodes_to_process))
+                        gin, u, junctions, alg_list) for u in progress(nodes_to_process))
             else:
                 Physlr.graph = gin
                 Physlr.junctions = junctions
+                Physlr.args.strategy = alg_list
                 with multiprocessing.Pool(self.args.threads) as pool:
                     molecules = dict(pool.map(
                         self.determine_molecules_process, progress(nodes_to_process), chunksize=100))
