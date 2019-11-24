@@ -1771,6 +1771,7 @@ class Physlr:
         for algorithm in alg_list:
             communities_temp = []
             if algorithm not in alg_white_list:
+                print("Strategy: ", algorithm, file=sys.stderr)
                 sys.exit("Error: strategy not valid")
             if algorithm == "bc":
                 for component in communities:
