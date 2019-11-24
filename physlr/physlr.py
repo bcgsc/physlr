@@ -1884,6 +1884,8 @@ class Physlr:
                         self.determine_molecules_process, progress(nodes_to_process), chunksize=100))
                 Physlr.graph = None
             print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
+            if not molecules:
+                print(int(timeit.default_timer() - t0), "Not working!!!", file=sys.stderr)
             # Add vertices.
             gout = nx.Graph()
             for u, vs in sorted(molecules.items()):
