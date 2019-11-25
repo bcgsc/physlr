@@ -20,6 +20,7 @@ library(Polychrome)
 library(readr)
 library(scales)
 library(tidyr)
+library(stringr)
 
 knit_print.data.frame <- function(x, ...) kable(x) %>% paste(collapse = "\n") %>% asis_output
 gap_bed <- params$gap_bed
@@ -49,7 +50,8 @@ paf <- paf_orig %>%
 		!startsWith(Qname, "NW_")) %>%
 	arrange(desc(Tlength), Tname, Tstart, desc(Matches)) %>%
 	distinct(Tname, Tstart, .keep_all = TRUE) %>%
-	arrange(desc(Qlength), Qname, Qstart, desc(Matches)) %>%
+	mutate(Qname = fct_relevel(Qname, unique(str_sort(Qname, numeric = TRUE)))) %>%
+	arrange(Qname, Qstart, desc(Matches)) %>%
 	mutate(Qname = fct_inorder(Qname), Qindex = as.numeric(Qname),
 		Tindex = as.numeric(Tname)) %>%
 	arrange(desc(Tlength), Tname, Tstart, desc(Matches))
