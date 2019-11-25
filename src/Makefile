@@ -70,5 +70,4 @@ check-physlr-overlap: all
 	./physlr-overlap -t4 -n2 data/tiny.overlap.input.tsv | sort | diff -q - data/tiny.physlr.overlap.n2.sorted.tsv
 
 install: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf
-	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	for f in $^; do cp $$f $(DESTDIR)$(PREFIX)/bin; done
+	install $^ -t $(DESTDIR)$(PREFIX)/bin
