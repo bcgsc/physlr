@@ -110,7 +110,7 @@ class Physlr:
                     paf.append((
                         qname, int(qlength), int(qstart), int(qend), orientation,
                         tname, int(tlength), int(tstart), int(tend),
-                        int(score), int(length), float(mapq)))
+                        int(score), int(length), int(mapq)))
                 if Physlr.args.verbose >= 2:
                     progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
