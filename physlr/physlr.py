@@ -1862,6 +1862,10 @@ class Physlr:
         round = 1
         for alg_list in alg_list_2d:
             if round > 1:
+                print(
+                    int(timeit.default_timer() - t0),
+                    "Detecting junction-causing barcodes",
+                    file=sys.stderr)
                 junctions = Physlr.report_junctions_graph(
                     gin, self.args.prune_junctions, self.args.junction_depth)
             round = round + 1
@@ -1918,8 +1922,10 @@ class Physlr:
             print(
                 int(timeit.default_timer() - t0),
                 "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
-            gin = gout
-
+            gin.clear()
+            gin = gout.copy()
+            gout.clear()
+        gout = gin
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
