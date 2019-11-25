@@ -1,5 +1,8 @@
 CXXFLAGS=-g -O3 -Wall -Werror -Wno-error=unknown-pragmas -std=c++11 -pthread -I./include -I./vendor -fopenmp
 LDLIBS=-lz
+PREFIX = $(HOME)/.local
+
+.PHONY: all clean check install lint clang-format clang-tidy fix check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf check-physlr-overlap
 
 all: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf
 
@@ -65,3 +68,7 @@ check-physlr-makebf: all
 check-physlr-overlap: all
 	./physlr-overlap -t4 -n1 data/tiny.overlap.input.tsv | sort | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
 	./physlr-overlap -t4 -n2 data/tiny.overlap.input.tsv | sort | diff -q - data/tiny.physlr.overlap.n2.sorted.tsv
+
+install: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	for f in $^; do cp $$f $(DESTDIR)$(PREFIX)/bin; done
