@@ -32,6 +32,14 @@ git clone https://github.com/bcgsc/physlr
 cd physlr/src && make install
 ```
 
+To install Physlr in a specified directory:
+
+```
+pip3 install --user git+https://github.com/bcgsc/physlr
+git clone https://github.com/bcgsc/physlr
+cd physlr/src && make install PREFIX=/opt/physlr
+```
+
 # Running Physlr
 
 ## Generating Physlr Physical Map with stLFR reads
