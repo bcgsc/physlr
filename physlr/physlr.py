@@ -1764,7 +1764,8 @@ class Physlr:
         communities = [g[u].keys()]
         if junctions:
             if u not in junctions:
-                strategy = "bc"
+                # strategy = "nothing"
+                return u, {0: i for i in communities}
         # alg_list = strategy.split("+")
         alg_list = strategy
         alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
@@ -1874,24 +1875,24 @@ class Physlr:
                     int(timeit.default_timer() - t0),
                     "Working on the junction-causing barcodes with algs:", alg_list,
                     file=sys.stderr)
-                nodes_to_process = junctions
+                # nodes_to_process = junctions
             else:
                 print(
                     int(timeit.default_timer() - t0),
                     "Working on the whole overlap graph with algs:", alg_list,
                     file=sys.stderr)
-                nodes_to_process = gin
+                # nodes_to_process = gin
             if self.args.threads == 1:
                 molecules = dict(
                     self.determine_molecules(
-                        gin, u, junctions, alg_list) for u in progress(nodes_to_process))
+                        gin, u, junctions, alg_list) for u in progress(gin))
             else:
                 Physlr.graph = gin
                 Physlr.junctions = junctions
                 Physlr.args.strategy = alg_list
                 with multiprocessing.Pool(self.args.threads) as pool:
                     molecules = dict(pool.map(
-                        self.determine_molecules_process, progress(nodes_to_process), chunksize=100))
+                        self.determine_molecules_process, progress(gin), chunksize=100))
                 Physlr.graph = None
             print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
             if not molecules:
