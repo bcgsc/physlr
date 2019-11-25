@@ -67,7 +67,7 @@ bin/physlr-make scaffolds lr=linkedReads ref=reference draft=draft minimizer_ove
 ```
 
 See the help page for further information.
-```bin/physlr-make help```
+`bin/physlr-make help`
 
 # Output files
 
