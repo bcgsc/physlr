@@ -28,8 +28,8 @@ Additionally, we recommend using pypy3 over regular python3 for speed.
 
 ```
 pip3 install --user git+https://github.com/bcgsc/physlr
-cd src
-make
+git clone https://github.com/bcgsc/physlr
+cd physlr/src && make install
 ```
 
 # Running Physlr
