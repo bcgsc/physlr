@@ -315,26 +315,26 @@ MinimizeWorker::work()
 
 			if (withRepeat && withSolid) {
 				for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
-					vector<uint64_t> vect{ (*hashesIt).hash };
+					vector<uint64_t> vect{ (*hashesIt).hash1 };
 					if (repeatBF.contains(vect) || !solidBF.contains(vect)) {
-						(*hashesIt).hash = UINT64_MAX;
+						(*hashesIt).hash1 = UINT64_MAX;
 					}
 				}
 			} else {
 				if (withRepeat) {
 					for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
-						vector<uint64_t> vect{ (*hashesIt).hash };
+						vector<uint64_t> vect{ (*hashesIt).hash1 };
 						if (repeatBF.contains(vect)) {
-							(*hashesIt).hash = UINT64_MAX;
+							(*hashesIt).hash1 = UINT64_MAX;
 						}
 					}
 				}
 
 				if (withSolid) {
 					for (auto hashesIt = hashes.begin(); hashesIt < hashes.end(); ++hashesIt) {
-						vector<uint64_t> vect{ (*hashesIt).hash };
+						vector<uint64_t> vect{ (*hashesIt).hash1 };
 						if (!solidBF.contains(vect)) {
-							(*hashesIt).hash = UINT64_MAX;
+							(*hashesIt).hash1 = UINT64_MAX;
 						}
 					}
 				}
@@ -349,8 +349,8 @@ MinimizeWorker::work()
 				ss << sep;
 			}
 			for (auto& m : minimizers) {
-				if (m.hash != UINT64_MAX) {
-					ss << sep << m.hash;
+				if (m.hash1 != UINT64_MAX) {
+					ss << sep << m.hash2;
 					if (withPositions) {
 						ss << ':' << m.pos;
 					}
