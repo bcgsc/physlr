@@ -1623,6 +1623,9 @@ class Physlr:
     @staticmethod
     def detect_communities_biconnected_components(g, node_set):
         """Separate bi-connected components. Return components."""
+        if len(node_set) < Physlr.subgraph_size:
+            return node_set
+            # return list(nx.connected_components(g.subgraph(node_set)))
         cut_vertices = set(nx.articulation_points(g.subgraph(node_set)))
         components = list(nx.connected_components(g.subgraph(node_set - cut_vertices)))
         return components
@@ -1644,6 +1647,8 @@ class Physlr:
     @staticmethod
     def detect_communities_k_clique(g, node_set, k):
         """Apply k-clique community detection. Return communities."""
+        if len(node_set) < Physlr.subgraph_size:
+            return node_set
         return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
 
     @staticmethod
@@ -1662,6 +1667,8 @@ class Physlr:
         Square the adjacency matrix and then use cosine similarity to detect communities.
         Return communities.
         """
+        if len(node_set) < Physlr.subgraph_size:
+            return node_set
         import scipy as sp
         import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity
@@ -1692,6 +1699,8 @@ class Physlr:
         Partition the subgraph into bins randomly for faster processing. Return bins.
         Warning: This function is not deterministic.
         """
+        if len(node_set) < max_size:
+            return node_set
         bins_count = 1 + len(node_set) // max_size
         node_list = list(node_set)
         random.shuffle(node_list)
@@ -1711,7 +1720,7 @@ class Physlr:
         if len(communities) == 1 and (node_set == 0 or strategy != 1):
             return communities
         if strategy == 1:  # Merge by Initializing Louvain with the communities
-            return Physlr.detect_communities_louvain(g, node_set, communities)
+            return Physlr.detect_communities_louvain(g, communities, node_set)
         # Ad-hoc Merge (default - strategy = 0)
         merge_network = nx.Graph()
         for i in range(len(communities)):
@@ -1726,7 +1735,7 @@ class Physlr:
                             nx.number_of_edges(g.subgraph(com1)) - \
                             nx.number_of_edges(g.subgraph(com2)) > cutoff:
                         merge_network.add_edge(i, j)
-                else:  # overlapping input communities.
+                else:  # overlapping input communities (when using k3 or ?louvain)
                     if nx.number_of_edges(
                             g.subgraph(com1.union(com2))) - \
                             len(set(g.subgraph(com1).edges()).union(
@@ -1779,6 +1788,20 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_biconnected_components(g, component))
+            if algorithm == "bcbin":
+                for component in communities:
+                    communities_temp.extend(
+                        [merged for merged in Physlr.merge_communities(
+                            g, [cluster
+                                for bin_set in
+                                Physlr.partition_subgraph_into_bins_randomly(
+                                    component)
+                                for cluster in
+                                Physlr.detect_communities_biconnected_components(g, bin_set)
+                                ]
+                        )
+                        ]
+                    )
             elif algorithm == "cn2":
                 for component in communities:
                     communities_temp.extend(
@@ -1828,6 +1851,7 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
+        Physlr.subgraph.size = 5
         alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
         alg_list_2d = [t.split("+") for t in self.args.strategy.split("++")]
         if not alg_list_2d:
