@@ -42,9 +42,9 @@ endif
 
 # Minimum number of overlapping minimizers
 ifdef protocol
-ifeq ($(protocol), stLFR)
+ifeq ($(protocol), stlfr)
 m=85
-else ifeq ($(protocol), 10X)
+else ifeq ($(protocol), 10x)
 m=92.5
 endif
 else
@@ -175,10 +175,10 @@ help:
 	@echo " 			3: verbose messages."
 	@echo "	minimizer_overlap, protocol	% of edges to remove in the overlap graph [90]. Available options are [0-100]."
 	@echo "					Alternatively, you can specify the protocol option where the default minimizer_overlap value is used for the respective linked read protocol."
-	@echo "					Available options are stLFR and 10X."
-	@echo "					stLFR: 85."
-	@echo "					10X: 92.5."
-	@echo "					Default values for stLFR and 10X were obtained by finding a value that worked well across multiple data sets."
+	@echo "					Available options are stlfr and 10x."
+	@echo "					stlfr: 85."
+	@echo "					10x: 92.5."
+	@echo "					Default values for stlfr and 10x were obtained by finding a value that worked well across multiple data sets."
 	@echo "					Increasing this parameter would generate more conservative results."
 	@echo "	min_component_size		minimum number of barcodes in a backbone [50]."
 	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode [10]."
