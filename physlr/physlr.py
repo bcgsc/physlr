@@ -1923,9 +1923,9 @@ class Physlr:
             print(
                 int(timeit.default_timer() - t0),
                 "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
-            gin.clear()
+            #gin.clear()
             gin = gout.copy()
-            gout.clear()
+            #gout.clear()
         gout = gin
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
