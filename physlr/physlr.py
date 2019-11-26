@@ -13,7 +13,7 @@ import statistics
 import sys
 import timeit
 from collections import Counter
-
+import gc
 
 import networkx as nx
 import tqdm
@@ -1983,6 +1983,8 @@ class Physlr:
             gin = gout.copy()
             Physlr.graph.clear()
             gout.clear()
+            gc.collect()
+
         gout = gin
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
