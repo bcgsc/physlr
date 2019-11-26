@@ -1778,7 +1778,8 @@ class Physlr:
                 #return u, {v: i for i, vs in enumerate(communities) for v in vs}
         # alg_list = strategy.split("+")
         alg_list = strategy
-        alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
+        alg_white_list = {"bc", "bcbin", "cn2", "cn3", "k3", "k3bin", "k4",
+                          "cos", "cosbin", "sqcos", "sqcosbin", "louvain", "distributed"}
         for algorithm in alg_list:
             communities_temp = []
             if algorithm not in alg_white_list:
@@ -1881,7 +1882,8 @@ class Physlr:
     def physlr_molecules(self):
         "Separate barcodes into molecules."
         Physlr.subgraph_size = 5
-        alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
+        alg_white_list = {"bc", "bcbin", "cn2", "cn3", "k3", "k3bin", "k4",
+                          "cos", "cosbin", "sqcos", "sqcosbin", "louvain", "distributed"}
         alg_list_2d = [t.split("+") for t in self.args.strategy.split("++")]
         if not alg_list_2d:
             sys.exit("Error: physlr molecule: missing parameter --separation-strategy")
