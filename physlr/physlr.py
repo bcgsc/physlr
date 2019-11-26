@@ -1765,7 +1765,8 @@ class Physlr:
         if junctions:
             if u not in junctions:
                 # strategy = "nothing"
-                return u, {v: i for i, vs in enumerate(communities) for v in vs}
+                return u, {i: 0 for i in g[u].keys()}
+                #return u, {v: i for i, vs in enumerate(communities) for v in vs}
         # alg_list = strategy.split("+")
         alg_list = strategy
         alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
