@@ -1858,7 +1858,7 @@ class Physlr:
                 alg_list_2d,
                 # self.args.strategy.replace("++"," / ").replace("+", " + "),
                 file=sys.stderr)
-        # Physlr.filter_edges(gin, self.args.n)
+        Physlr.filter_edges(gin, self.args.n)
         # Partition the neighbouring vertices of each barcode into molecules.
         round = 1
         for alg_list in alg_list_2d:
@@ -1923,9 +1923,10 @@ class Physlr:
             print(
                 int(timeit.default_timer() - t0),
                 "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
-            #gin.clear()
+            gin.clear()
             gin = gout.copy()
-            #gout.clear()
+            Physlr.graph.clear()
+            gout.clear()
         gout = gin
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
