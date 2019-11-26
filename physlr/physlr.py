@@ -1814,6 +1814,20 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_k_clique(g, component, k=3))
+            elif algorithm == "k3bin":
+                for component in communities:
+                    communities_temp.extend(
+                        [merged for merged in Physlr.merge_communities(
+                            g, [cluster
+                                for bin_set in
+                                Physlr.partition_subgraph_into_bins_randomly(
+                                    component)
+                                for cluster in
+                                Physlr.detect_communities_k_clique(g, bin_set, k=3)
+                                ]
+                        )
+                        ]
+                    )
             elif algorithm == "k4":
                 for component in communities:
                     communities_temp.extend(
@@ -1822,12 +1836,27 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
-                            g, component, squaring=False, threshold=self.args.cost))
+                            g, component, squaring=False, threshold=Physlr.args.cost))
+            elif algorithm == "cosbin":
+                for component in communities:
+                    communities_temp.extend(
+                        [merged for merged in Physlr.merge_communities(
+                            g, [cluster
+                                for bin_set in
+                                Physlr.partition_subgraph_into_bins_randomly(
+                                    component)
+                                for cluster in
+                                Physlr.detect_communities_cosine_of_squared(
+                                    g, bin_set, squaring=False, threshold=Physlr.args.cost)
+                                ]
+                        )
+                        ]
+                    )
             elif algorithm == "sqcos":
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
-                            g, component, squaring=True, threshold=self.args.sqcost))
+                            g, component, squaring=True, threshold=Physlr.args.sqcost))
             elif algorithm == "louvain":
                 for component in communities:
                     communities_temp.extend(
