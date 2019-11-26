@@ -41,14 +41,18 @@ endif
 endif
 
 # Minimum number of overlapping minimizers
-ifndef minimizer_overlap
-m=90
-else ifeq ($(minimizer_overlap), stLFR)
+ifdef protocol
+ifeq ($(protocol), stLFR)
 m=85
-else ifeq ($(minimizer_overlap), 10X)
+else ifeq ($(protocol), 10X)
 m=92.5
+endif
 else
+ifdef minimizer_overlap
 m=$(minimizer_overlap)
+else
+m=90
+endif
 endif
 
 # Minimum/Maximum barcode multiplicity
