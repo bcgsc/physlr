@@ -1624,7 +1624,7 @@ class Physlr:
     def detect_communities_biconnected_components(g, node_set):
         """Separate bi-connected components. Return components."""
         if len(node_set) < Physlr.subgraph_size:
-            return list(node_set)
+            return [set(node_set)]
             # return list(nx.connected_components(g.subgraph(node_set)))
         cut_vertices = set(nx.articulation_points(g.subgraph(node_set)))
         components = list(nx.connected_components(g.subgraph(node_set - cut_vertices)))
@@ -1648,7 +1648,7 @@ class Physlr:
     def detect_communities_k_clique(g, node_set, k):
         """Apply k-clique community detection. Return communities."""
         if len(node_set) < Physlr.subgraph_size:
-            return list(node_set)
+            return [set(node_set)]
         return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
 
     @staticmethod
@@ -1668,7 +1668,7 @@ class Physlr:
         Return communities.
         """
         if len(node_set) < Physlr.subgraph_size:
-            return list(node_set)
+            return [set(node_set)]
         import scipy as sp
         import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity
@@ -1700,7 +1700,7 @@ class Physlr:
         Warning: This function is not deterministic.
         """
         if len(node_set) < max_size:
-            return list(node_set)
+            return [set(node_set)]
         bins_count = 1 + len(node_set) // max_size
         node_list = list(node_set)
         random.shuffle(node_list)
