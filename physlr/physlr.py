@@ -546,7 +546,7 @@ class Physlr:
         return (g, len(junctions))
 
     @staticmethod
-    def report_junctions_graph(g, prune_junctions, junction_depth, include_bridges=True):
+    def identify_junctions_graph(g, prune_junctions, junction_depth, include_bridges=True):
         gmst = Physlr.determine_pruned_mst(g)
         print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
         tree_junctions = []
@@ -557,7 +557,7 @@ class Physlr:
               "Found", len(tree_junctions), "junctions.", file=sys.stderr)
         junctions = []
         if include_bridges:
-            bridges = Physlr.identify_bridges(gmst)
+            bridges = Physlr.identify_bridges(gmst, Physlr.args.prune_bridges)
             tree_junctions.update(node for edge in bridges for node in edge)
         if Physlr.args.junction_depth > 0:
             print(int(timeit.default_timer() - t0),
@@ -1783,13 +1783,17 @@ class Physlr:
                 #return u, {v: i for i, vs in enumerate(communities) for v in vs}
         # alg_list = strategy.split("+")
         alg_list = strategy
-        alg_white_list = {"bc", "bcbin", "cn2", "cn3", "k3", "k3bin", "k4",
+        alg_white_list = {"cc","bc", "bcbin", "cn2", "cn3", "k3", "k3bin", "k4",
                           "cos", "cosbin", "sqcos", "sqcosbin", "louvain", "distributed"}
         for algorithm in alg_list:
             communities_temp = []
             if algorithm not in alg_white_list:
                 print("Strategy: ", algorithm, file=sys.stderr)
                 sys.exit("Error: strategy not valid")
+            if algorithm == "cc":
+                for component in communities:
+                    communities_temp.extend(
+                        list(nx.connected_components(g.subgraph(component))))
             if algorithm == "bc":
                 for component in communities:
                     communities_temp.extend(
@@ -1914,7 +1918,7 @@ class Physlr:
     def physlr_molecules(self):
         "Separate barcodes into molecules."
         Physlr.subgraph_size = 5
-        alg_white_list = {"bc", "bcbin", "cn2", "cn3", "k3", "k3bin", "k4",
+        alg_white_list = {"cc", "bc", "bcbin", "cn2", "cn3", "k3", "k3bin", "k4",
                           "cos", "cosbin", "sqcos", "sqcosbin", "louvain", "distributed"}
         alg_list_2d = [t.split("+") for t in self.args.strategy.split("++")]
         if not alg_list_2d:
@@ -1956,7 +1960,7 @@ class Physlr:
                     int(timeit.default_timer() - t0),
                     "Detecting junction-causing barcodes",
                     file=sys.stderr)
-                junctions = Physlr.report_junctions_graph(
+                junctions = Physlr.identify_junctions_graph(
                     gin, self.args.prune_junctions, self.args.junction_depth)
             round = round + 1
             if junctions:
