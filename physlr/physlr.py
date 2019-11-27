@@ -1754,6 +1754,8 @@ class Physlr:
         Assign the neighbours of this vertex to molecules using fast heuristic community detection.
         Pipeline: bi-connected (bc) + partition + bc + k-cliques communities + merge.
         """
+        if len(node_set) < Physlr.subgraph_size:
+            return [set(node_set)]
         return [merged
                 for bi_connected_component in
                 Physlr.detect_communities_biconnected_components(g, component)
