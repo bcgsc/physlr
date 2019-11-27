@@ -177,7 +177,7 @@ help:
 	@echo "	min_component_size		minimum number of barcodes in a backbone [50]."
 	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode [10]."
 	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode [5000]."
-	@echo "	minimizer_multiplicity		maximum minimizer multiplicity [100]. Specify x to use the Q3 + IQR of the minimizer multiplicity distribution instead."
+	@echo "	minimizer_multiplicity		Available option is x. Specify x to use the Q3 + IQR of the minimizer multiplicity distribution instead of the repetitive k-mer threshold."
 	@echo "	mol_strategy			molecule separation strategy [distributed]. Available options are bc, bc+k3, distributed."
 	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity."
 	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is most conservative and requires more time."
@@ -855,6 +855,14 @@ $(ref)/$(ref).fa: $(ref).fa
 ifeq ($(minimizer_multiplicity),x)
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-bxmx -o $@ -
 else
+ifeq (n,$(findstring n,$(firstword -$(MAKEFLAGS))))
+	mode=$(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram
+	minimizer_multiplicity ?= expr mode * 3
+else
+	$(eval mode := $(shell $(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram))
+	$(eval minimizer_multiplicity ?= $(shell (expr $(mode) \* 3 ) ))
+endif
+	@>&2 echo "The minimizer multiplicity is $(minimizer_multiplicity)."
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-bxmx -C $(minimizer_multiplicity) -o $@ -
 endif
 
