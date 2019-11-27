@@ -1891,26 +1891,28 @@ class Physlr:
     @staticmethod
     def set_settings(round):
         if round == 1:
-            Physlr.args.strategy = ["bc"]
+            #Physlr.args.strategy = ["distributed"]
             Physlr.args.junction_depth = 0
         if round == 2:
-            Physlr.args.strategy = ["bc+k3bin"]
-            Physlr.args.junction_depth = 0
-        if round == 3:
-            Physlr.args.strategy = ["bcbin+cos+sqcos"]
+            #Physlr.args.strategy = ["cos+sqcos"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.4
             Physlr.args.sqcost = 0.7
-        if round == 4:
-            Physlr.args.strategy = ["bcbin+cos+sqcos"]
+        if round == 3:
+            #Physlr.args.strategy = ["cos+sqcos"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.8
+        if round == 4:
+            #Physlr.args.strategy = ["cos+sqcos"]
+            Physlr.args.junction_depth = 0
+            Physlr.args.cost = 0.55
+            Physlr.args.sqcost = 0.85
         if round == 5:
-            Physlr.args.strategy = ["bcbin+k3"]
+            #Physlr.args.strategy = ["bc+k3"]
             Physlr.args.junction_depth = 1
         if round == 6:
-            Physlr.args.strategy = ["bcbin+cos+sqcos"]
+            #Physlr.args.strategy = ["bcbin+cos+sqcos"]
             Physlr.args.junction_depth = 1
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.8
@@ -1954,7 +1956,7 @@ class Physlr:
         # Partition the neighbouring vertices of each barcode into molecules.
         round = 1
         for alg_list in alg_list_2d:
-            #Physlr.set_settings(round)
+            Physlr.set_settings(round)
             if round > 1:
                 print(
                     int(timeit.default_timer() - t0),
