@@ -546,7 +546,7 @@ class Physlr:
         return (g, len(junctions))
 
     @staticmethod
-    def report_junctions_graph(g, include_bridges=True):
+    def report_junctions_graph(g, prune_junctions, junction_depth, include_bridges=True):
         gmst = Physlr.determine_pruned_mst(g)
         print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
         tree_junctions = []
@@ -1697,7 +1697,7 @@ class Physlr:
         return communities
 
     @staticmethod
-    def partition_subgraph_into_bins_randomly(node_set, max_size=50):
+    def partition_subgraph_into_bins_randomly(node_set, max_size=70):
         """
         Partition the subgraph into bins randomly for faster processing. Return bins.
         Warning: This function is not deterministic.
@@ -1715,7 +1715,7 @@ class Physlr:
         return [set(x) for x in bins]
 
     @staticmethod
-    def merge_communities(g, communities, node_set=0, strategy=0, cutoff=20):
+    def merge_communities(g, communities, node_set=0, strategy=0, cutoff=15):
         """Merge communities if appropriate."""
         mode = 1
         if cutoff == -1:  # no merging
@@ -1887,10 +1887,10 @@ class Physlr:
     @staticmethod
     def set_settings(round):
         if round == 1:
-            Physlr.args.strategy = ["bcbin"]
+            Physlr.args.strategy = ["bc"]
             Physlr.args.junction_depth = 0
         if round == 2:
-            Physlr.args.strategy = ["bcbin+k3bin"]
+            Physlr.args.strategy = ["bc+k3bin"]
             Physlr.args.junction_depth = 0
         if round == 3:
             Physlr.args.strategy = ["bcbin+cos+sqcos"]
@@ -1950,6 +1950,7 @@ class Physlr:
         # Partition the neighbouring vertices of each barcode into molecules.
         round = 1
         for alg_list in alg_list_2d:
+            #Physlr.set_settings(round)
             if round > 1:
                 print(
                     int(timeit.default_timer() - t0),
@@ -1975,7 +1976,6 @@ class Physlr:
                     self.determine_molecules(
                         gin, u, junctions, alg_list) for u in progress(gin))
             else:
-                # Physlr.set_settings(round)
                 Physlr.graph = gin
                 Physlr.junctions = junctions
                 Physlr.args.strategy = alg_list
