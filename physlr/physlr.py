@@ -1957,6 +1957,9 @@ class Physlr:
         round = 1
         for alg_list in alg_list_2d:
             Physlr.set_settings(round)
+            Physlr.args.prune_bridges = 10
+            Physlr.args.prune_branches = 10
+            Physlr.args.prune_junctions = 10
             if round > 1:
                 print(
                     int(timeit.default_timer() - t0),
