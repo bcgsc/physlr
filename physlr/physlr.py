@@ -546,7 +546,7 @@ class Physlr:
         return (g, len(junctions))
 
     @staticmethod
-    def report_junctions_graph(g, prune_junctions, junction_depth):
+    def report_junctions_graph(g, include_bridges=True):
         gmst = Physlr.determine_pruned_mst(g)
         print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
         tree_junctions = []
@@ -556,6 +556,9 @@ class Physlr:
         print(int(timeit.default_timer() - t0),
               "Found", len(tree_junctions), "junctions.", file=sys.stderr)
         junctions = []
+        if include_bridges:
+            bridges = Physlr.identify_bridges(gmst)
+            tree_junctions.update(node for edge in bridges for node in edge)
         if Physlr.args.junction_depth > 0:
             print(int(timeit.default_timer() - t0),
                   "Exapnding junctions, depth:", Physlr.args.junction_depth, file=sys.stderr)
@@ -1879,6 +1882,33 @@ class Physlr:
         """
         return Physlr.determine_molecules(Physlr.graph, u, Physlr.junctions, Physlr.args.strategy)
 
+    @staticmethod
+    def set_settings(round):
+        if round == 1:
+            Physlr.args.strategy = ["bcbin"]
+            Physlr.args.junction_depth = 0
+        if round == 2:
+            Physlr.args.strategy = ["bcbin+k3bin"]
+            Physlr.args.junction_depth = 0
+        if round == 3:
+            Physlr.args.strategy = ["bcbin+cos+sqcos"]
+            Physlr.args.junction_depth = 0
+            Physlr.args.cost = 0.4
+            Physlr.args.sqcost = 0.7
+        if round == 4:
+            Physlr.args.strategy = ["bcbin+cos+sqcos"]
+            Physlr.args.junction_depth = 0
+            Physlr.args.cost = 0.5
+            Physlr.args.sqcost = 0.8
+        if round == 5:
+            Physlr.args.strategy = ["bcbin+k3"]
+            Physlr.args.junction_depth = 1
+        if round == 6:
+            Physlr.args.strategy = ["bcbin+cos+sqcos"]
+            Physlr.args.junction_depth = 1
+            Physlr.args.cost = 0.5
+            Physlr.args.sqcost = 0.8
+
     def physlr_molecules(self):
         "Separate barcodes into molecules."
         Physlr.subgraph_size = 5
@@ -1943,9 +1973,10 @@ class Physlr:
                     self.determine_molecules(
                         gin, u, junctions, alg_list) for u in progress(gin))
             else:
+                Physlr.set_settings(round)
                 Physlr.graph = gin
                 Physlr.junctions = junctions
-                Physlr.args.strategy = alg_list
+                # Physlr.args.strategy = alg_list
                 with multiprocessing.Pool(self.args.threads) as pool:
                     molecules = dict(pool.map(
                         self.determine_molecules_process, progress(gin), chunksize=100))
@@ -1981,7 +2012,7 @@ class Physlr:
                 "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
             gin.clear()
             gin = gout.copy()
-            Physlr.graph.clear()
+            # Physlr.graph.clear()
             gout.clear()
             gc.collect()
 
