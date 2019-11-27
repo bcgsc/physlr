@@ -185,12 +185,12 @@ help:
 	@echo "					distributed is a modified version of bc+k3 that is faster but less conservative."
 	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
 	@echo ""
-	@echo "Example: To generate a physical map using physlr with stLFR reads myReads.fq.gz, run:"
-	@echo "	./physlr-make physical-map lr=myReads protocol=stLFR"
-	@echo "Example: To generate a physical map using physlr with linked reads myReads.fq.gz and a specified m threshold, run:"
-	@echo "	./physlr-make physical-map lr=myReads m=86"
-	@echo "Example: To scaffold a draft assembly using physlr with 10X reads myReads.fq.gz and draft.fa, run:"
-	@echo "	./physlr-make scaffolds lr=myReads protocol=10X draft=draft"
+	@echo "Example: To generate a physical map using physlr with stLFR reads myreads.fq.gz, run:"
+	@echo "	./physlr-make physical-map lr=myreads protocol=stlfr"
+	@echo "Example: To generate a physical map using physlr with linked reads myreads.fq.gz and a specified m threshold, run:"
+	@echo "	./physlr-make physical-map lr=myreads m=86"
+	@echo "Example: To scaffold a draft assembly using physlr with 10X reads myreads.fq.gz and draft.fa, run:"
+	@echo "	./physlr-make scaffolds lr=myreads protocol=10x draft=draft"
 	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast."
 
 version:
