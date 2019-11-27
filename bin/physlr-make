@@ -174,7 +174,7 @@ help:
 	@echo "					10x: m=92.5."
 	@echo "					Default values for stlfr and 10x were obtained by finding a value that worked well across multiple data sets."
 	@echo "					Increasing this parameter would generate more conservative results."
-	@echo "					NOTE: protocol option overrides m option."
+	@echo "					NOTE: protocol option overrides 'm'."
 	@echo "	min_component_size		minimum number of barcodes in a backbone [50]."
 	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode [10]."
 	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode [5000]."
