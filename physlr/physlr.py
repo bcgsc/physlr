@@ -1973,10 +1973,10 @@ class Physlr:
                     self.determine_molecules(
                         gin, u, junctions, alg_list) for u in progress(gin))
             else:
-                Physlr.set_settings(round)
+                # Physlr.set_settings(round)
                 Physlr.graph = gin
                 Physlr.junctions = junctions
-                # Physlr.args.strategy = alg_list
+                Physlr.args.strategy = alg_list
                 with multiprocessing.Pool(self.args.threads) as pool:
                     molecules = dict(pool.map(
                         self.determine_molecules_process, progress(gin), chunksize=100))
