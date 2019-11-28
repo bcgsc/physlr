@@ -1893,27 +1893,30 @@ class Physlr:
     @staticmethod
     def set_settings(round):
         if round == 1:
-            #Physlr.args.strategy = ["distributed"]
+            #Physlr.args.strategy = ["bc"]
             Physlr.args.junction_depth = 0
         if round == 2:
+            #Physlr.args.strategy = ["k3bin"]
+            Physlr.args.junction_depth = 0
+        if round == 3:
             #Physlr.args.strategy = ["cos+sqcos"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.4
             Physlr.args.sqcost = 0.7
-        if round == 3:
+        if round == 4:
             #Physlr.args.strategy = ["cos+sqcos"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.8
-        if round == 4:
+        if round == 5:
             #Physlr.args.strategy = ["cos+sqcos"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.55
             Physlr.args.sqcost = 0.85
-        if round == 5:
+        if round == 6:
             #Physlr.args.strategy = ["bc+k3"]
             Physlr.args.junction_depth = 1
-        if round == 6:
+        if round == 7:
             #Physlr.args.strategy = ["bcbin+cos+sqcos"]
             Physlr.args.junction_depth = 1
             Physlr.args.cost = 0.5
@@ -1975,6 +1978,11 @@ class Physlr:
                     int(timeit.default_timer() - t0),
                     "Working on the junction-causing barcodes with algs:", alg_list,
                     file=sys.stderr)
+                if "sqcos" in alg_list or "cos" in alg_list:
+                    print(
+                        int(timeit.default_timer() - t0),
+                        "cost:", Physlr.args.cost, "sqcost:",Physlr.args.sqcost,
+                        file=sys.stderr)
                 # nodes_to_process = junctions
             else:
                 print(
