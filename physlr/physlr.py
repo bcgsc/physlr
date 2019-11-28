@@ -1978,7 +1978,8 @@ class Physlr:
                     int(timeit.default_timer() - t0),
                     "Working on the junction-causing barcodes with algs:", alg_list,
                     file=sys.stderr)
-                if "sqcos" in alg_list or "cos" in alg_list:
+                if "sqcos" in alg_list or "cos" in alg_list\
+                        or "sqcosbin" in alg_list or "cosbin" in alg_list:
                     print(
                         int(timeit.default_timer() - t0),
                         "cost:", Physlr.args.cost, "sqcost:",Physlr.args.sqcost,
