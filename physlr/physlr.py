@@ -1699,7 +1699,7 @@ class Physlr:
         return communities
 
     @staticmethod
-    def partition_subgraph_into_bins_randomly(node_set, max_size=70):
+    def partition_subgraph_into_bins_randomly(node_set, max_size=50):
         """
         Partition the subgraph into bins randomly for faster processing. Return bins.
         Warning: This function is not deterministic.
@@ -2031,12 +2031,14 @@ class Physlr:
             print(
                 int(timeit.default_timer() - t0),
                 "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
-            gin.clear()
-            gin = gout.copy()
+            #gin.clear()
+            #gin = gout.copy()
+            gin = gout
+            gout = 0
             # Physlr.graph.clear()
-            gout.clear()
-            molecules = 0
-            gc.collect()
+            #gout.clear()
+            #molecules = 0
+            #gc.collect()
 
         Physlr.identify_junctions_graph(
             gin, self.args.prune_junctions, self.args.junction_depth)
