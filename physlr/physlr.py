@@ -2131,22 +2131,12 @@ class Physlr:
         mxtopos = {}
         for tid, path in enumerate(progress(backbones)):
             for pos, u in enumerate(path):
-                if u not in bxtomxs:
+                iter_c = 0
+                while u not in bxtomxs and iter_c <100:
                     u = u.rsplit("_", 1)[0]
+                    iter_c += 1
                 if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
-                if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
-                if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
-                if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
-                if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
-                if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
-                if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
+                    sys.exit("Couldnot find barcode", u)
                 for mx in bxtomxs[u]:
                     mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
