@@ -2035,6 +2035,7 @@ class Physlr:
             gin = gout.copy()
             # Physlr.graph.clear()
             gout.clear()
+            molecules = 0
             gc.collect()
 
         Physlr.identify_junctions_graph(
