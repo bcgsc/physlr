@@ -2009,18 +2009,30 @@ class Physlr:
             print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
             if not molecules:
                 print(int(timeit.default_timer() - t0), "Not working!!!", file=sys.stderr)
-
+            print("DEEEEEEEBUG:", file=sys.stderr)
+            for u, vs in sorted(molecules.items()):
+                if vs and max(vs.values()) > 0:
+                    print("u:", u, file=sys.stderr)
+                    print("vs:", vs, file=sys.stderr)
+                    print("type vs.:", type(vs), file=sys.stderr)
+                    exit("BYE")
+            print("END OF DEEEEEEEBUG:", file=sys.stderr)
             if round > 1000:
                 # Add vertices.
-                gout = gin
+                if round > 1:
+                    gout = gin
+                else:
+                    gout = nx.Graph()
                 for u, vs in sorted(molecules.items()):
                      n = gin.nodes[u]["n"]
                      nmolecules = 1 + max(vs.values()) if vs else 0
                      for i in range(nmolecules):
                          if round > 1:
                              gout.add_node(f"{u}-{i}", n=n)
+
                          else:
                              gout.add_node(f"{u}_{i}", n=n)
+
                 # Add edges.
                 # for (u, v), prop in gin.edges.items():
                 #     # Skip singleton and cut vertices, which are excluded from the partition.
@@ -2071,7 +2083,7 @@ class Physlr:
             gout = 0
             # Physlr.graph.clear()
             #gout.clear()
-            old_molecules = molecules
+            #old_molecules = molecules
             #gc.collect()
 
 
