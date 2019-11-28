@@ -1699,7 +1699,7 @@ class Physlr:
         return communities
 
     @staticmethod
-    def partition_subgraph_into_bins_randomly(node_set, max_size=100):
+    def partition_subgraph_into_bins_randomly(node_set, max_size=70):
         """
         Partition the subgraph into bins randomly for faster processing. Return bins.
         Warning: This function is not deterministic.
@@ -1896,7 +1896,7 @@ class Physlr:
             #Physlr.args.strategy = ["bc"]
             Physlr.args.junction_depth = 0
         if round == 2:
-            #Physlr.args.strategy = ["k3"]
+            #Physlr.args.strategy = ["k3bin"]
             Physlr.args.junction_depth = 0
         if round == 3:
             #Physlr.args.strategy = ["cos+sqcos"]
@@ -1914,7 +1914,7 @@ class Physlr:
             Physlr.args.cost = 0.55
             Physlr.args.sqcost = 0.85
         if round == 6:
-            #Physlr.args.strategy = ["k3"]
+            #Physlr.args.strategy = ["k3bin"]
             Physlr.args.junction_depth = 1
         if round == 7:
             #Physlr.args.strategy = ["bc+cos+sqcos"]
@@ -2037,6 +2037,8 @@ class Physlr:
             gout.clear()
             gc.collect()
 
+        Physlr.identify_junctions_graph(
+            gin, self.args.prune_junctions, self.args.junction_depth)
         gout = gin
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
