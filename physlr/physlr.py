@@ -1895,32 +1895,35 @@ class Physlr:
         if round == 1:
             #Physlr.args.strategy = ["distributed"]
             Physlr.args.junction_depth = 0
+        # if round == 2:
+        #     #Physlr.args.strategy = ["k3bin"]
+        #     Physlr.args.junction_depth = 0
         if round == 2:
-            #Physlr.args.strategy = ["k3bin"]
-            Physlr.args.junction_depth = 0
-        if round == 3:
             #Physlr.args.strategy = ["cos+sqcos"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.4
             Physlr.args.sqcost = 0.7
-        if round == 4:
+        if round == 3:
             #Physlr.args.strategy = ["cos+sqcos"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.8
-        if round == 5:
+        if round == 4:
             #Physlr.args.strategy = ["cos+sqcos"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.55
             Physlr.args.sqcost = 0.85
-        if round == 6:
+        if round == 5:
             #Physlr.args.strategy = ["bc+k3bin"]
             Physlr.args.junction_depth = 1
-        if round == 7:
+        if round == 6:
             #Physlr.args.strategy = ["bc+cos+sqcos"]
             Physlr.args.junction_depth = 1
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.8
+        if round == 7:
+            #Physlr.args.strategy = ["k3bin"]
+            Physlr.args.junction_depth = 2
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
