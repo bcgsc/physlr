@@ -176,7 +176,7 @@ help:
 	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode [5000]."
 	@echo "	minimizer_multiplicity		maximum minimizer multiplicity [repetitive k-mer threshold based on ntCard]."
 	@echo "					Specify x to use the Q3 + IQR of the minimizer multiplicity distribution instead."
-	@echo "					Specify x to use the Q3 + IQR of the minimizer multiplicity distribution instead."
+	@echo "					Alternatively, you can specify an integer threshold of your choosing."
 	@echo "	mol_strategy			molecule separation strategy [distributed]. Available options are bc, bc+k3, distributed."
 	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity."
 	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is most conservative and requires more time."
