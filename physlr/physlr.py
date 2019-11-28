@@ -2024,13 +2024,29 @@ class Physlr:
                 else:
                     gout = nx.Graph()
                 for u, vs in sorted(molecules.items()):
-                     n = gin.nodes[u]["n"]
-                     nmolecules = 1 + max(vs.values()) if vs else 0
-                     for i in range(nmolecules):
-                         if round > 1:
-                             gout.add_node(f"{u}-{i}", n=n)
-                         else:
-                             gout.add_node(f"{u}_{i}", n=n)
+                    n = gin.nodes[u]["n"]
+                    nmolecules = 1 + max(vs.values()) if vs else 0
+                    for i in range(nmolecules):
+                        if round > 1:
+                            gout.add_node(f"{u}-{i}", n=n)
+                        else:
+                            gout.add_node(f"{u}_{i}", n=n)
+                    # set([cluster for v, cluster in a.items()])
+                # add edges round 2+
+                if roun > 1:
+                    for u, vs in sorted(molecules.items()):
+                        for v, cluster in vs.items():
+                            if v in molecules:
+                                # Complicate:
+                                x = x
+                            else:
+                                # just connect it normally
+                                t = t
+                    # for i in range(nmolecules):
+                    #     if round > 1:
+                    #         gout.add_node(f"{u}-{i}", n=n)
+                    #     else:
+                    #         gout.add_node(f"{u}_{i}", n=n)
                 # Add edges.
                 # for (u, v), prop in gin.edges.items():
                 #     # Skip singleton and cut vertices, which are excluded from the partition.
