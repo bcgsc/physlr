@@ -555,10 +555,12 @@ class Physlr:
                 gmst.subgraph(component), Physlr.args.prune_junctions)
         print(int(timeit.default_timer() - t0),
               "Found", len(tree_junctions), "junctions.", file=sys.stderr)
-        junctions = []
         if include_bridges:
             bridges = Physlr.identify_bridges(gmst, Physlr.args.prune_bridges)
-            tree_junctions.update(node for edge in bridges for node in edge)
+            tree_junctions.extend(node for edge in bridges for node in edge)
+        print(int(timeit.default_timer() - t0),
+              "Expanded to", len(tree_junctions), "with bridges.", file=sys.stderr)
+        junctions = []
         if Physlr.args.junction_depth > 0:
             print(int(timeit.default_timer() - t0),
                   "Exapnding junctions, depth:", Physlr.args.junction_depth, file=sys.stderr)
