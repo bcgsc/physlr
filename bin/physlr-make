@@ -17,9 +17,6 @@ bloom_filter_size=10000000000 #10GB
 # Molecule separation stratergy
 mol_strategy=distributed
 
-# Maximum minimizer multiplicity
-minimizer_multiplicity=100
-
 # Path to the Physlr project.
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 
@@ -177,7 +174,9 @@ help:
 	@echo "	min_component_size		minimum number of barcodes in a backbone [50]."
 	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode [10]."
 	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode [5000]."
-	@echo "	minimizer_multiplicity		Available option is x. Specify x to use the Q3 + IQR of the minimizer multiplicity distribution instead of the repetitive k-mer threshold."
+	@echo "	minimizer_multiplicity		maximum minimizer multiplicity [repetitive k-mer threshold based on ntCard]."
+	@echo "					Specify x to use the Q3 + IQR of the minimizer multiplicity distribution instead."
+	@echo "					Specify x to use the Q3 + IQR of the minimizer multiplicity distribution instead."
 	@echo "	mol_strategy			molecule separation strategy [distributed]. Available options are bc, bc+k3, distributed."
 	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity."
 	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is most conservative and requires more time."
@@ -856,13 +855,17 @@ ifeq ($(minimizer_multiplicity),x)
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-bxmx -o $@ -
 else
 ifeq (n,$(findstring n,$(firstword -$(MAKEFLAGS))))
+ifndef minimizer_multiplicity
 	mode=$(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram
 	minimizer_multiplicity ?= expr mode * 3
+endif
 else
+ifndef minimizer_multiplicity
 	$(eval mode := $(shell $(python) $(bin)/physlr find-ntcard-mode $*_k$k.histogram))
 	$(eval minimizer_multiplicity ?= $(shell (expr $(mode) \* 3 ) ))
-endif
 	@>&2 echo "The minimizer multiplicity is $(minimizer_multiplicity)."
+endif
+endif
 	$(zcat) $< | $(time) $(physlr_path)/src/physlr-filter-bxmx -C $(minimizer_multiplicity) -o $@ -
 endif
 
