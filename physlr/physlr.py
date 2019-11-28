@@ -2033,6 +2033,11 @@ class Physlr:
                             gout.add_node(f"{u}_{i}", n=n)
                     # set([cluster for v, cluster in a.items()])
                 # add edges round 2+
+                # DEEEEEEEBUG:
+                # u: AAACACCAGAAACCTA - 1
+                # vs: {'AGTGAGGTCATAAGCC-1': 0, 'AAGCGAGCAGCTGCAC-1': 0, 'CGGTTTCAGCACCGTC-1': 0, 'CTCGTACAGGGCGAAG-1': 0,
+                #      'CATTATCAGATTAGGT-1': 0, 'AAGACCTGTGTGTGCC-1': 0, 'TCTTACAAGGTCAAGC-1': 0, 'TTTGT
+                #          CAGTACATCGT - 1': 1, 'GACAACTTCTGGAGCC - 1': 1}
                 if roun > 1:
                     for u, vs in sorted(molecules.items()):
                         for v, cluster in vs.items():
