@@ -1972,7 +1972,7 @@ class Physlr:
                     file=sys.stderr)
                 junctions = Physlr.identify_junctions_graph(
                     gin, self.args.prune_junctions, self.args.junction_depth)
-            round = round + 1
+            # round = round + 1
             if junctions:
                 print(
                     int(timeit.default_timer() - t0),
@@ -2006,12 +2006,24 @@ class Physlr:
             if not molecules:
                 print(int(timeit.default_timer() - t0), "Not working!!!", file=sys.stderr)
             # Add vertices.
+            # gout = gin
+            # for u, vs in sorted(molecules.items()):
+            #     n = gin.nodes[u]["n"]
+            #     nmolecules = 1 + max(vs.values()) if vs else 0
+            #     for i in range(nmolecules):
+            #         if round > 1:
+            #             gout.add_node(f"{u}-{i}", n=n)
+            #         else:
+            #             gout.add_node(f"{u}_{i}", n=n)
             gout = nx.Graph()
             for u, vs in sorted(molecules.items()):
                 n = gin.nodes[u]["n"]
                 nmolecules = 1 + max(vs.values()) if vs else 0
                 for i in range(nmolecules):
-                    gout.add_node(f"{u}_{i}", n=n)
+                    if round > 1:
+                        gout.add_node(f"{u}-{i}", n=n)
+                    else:
+                        gout.add_node(f"{u}_{i}", n=n)
             print(
                 int(timeit.default_timer() - t0),
                 "Identified", gout.number_of_nodes(), "molecules in",
@@ -2019,13 +2031,26 @@ class Physlr:
                 #round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
                 file=sys.stderr)
             # Add edges.
+            # for (u, v), prop in gin.edges.items():
+            #     # Skip singleton and cut vertices, which are excluded from the partition.
+            #     if v not in molecules[u] or u not in molecules[v]:
+            #         continue
+            #     u_molecule = molecules[u][v]
+            #     v_molecule = molecules[v][u]
+            #     if round > 1:
+            #         gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}", n=prop["n"])
+            #     else:
+            #         gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
             for (u, v), prop in gin.edges.items():
                 # Skip singleton and cut vertices, which are excluded from the partition.
                 if v not in molecules[u] or u not in molecules[v]:
                     continue
                 u_molecule = molecules[u][v]
                 v_molecule = molecules[v][u]
-                gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
+                if round > 1:
+                    gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}", n=prop["n"])
+                else:
+                    gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
             print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
             num_singletons = Physlr.remove_singletons(gout)
             print(
@@ -2034,11 +2059,13 @@ class Physlr:
             #gin.clear()
             #gin = gout.copy()
             gin = gout
+            round = round + 1
             gout = 0
             # Physlr.graph.clear()
             #gout.clear()
             #molecules = 0
             #gc.collect()
+
 
         Physlr.identify_junctions_graph(
             gin, self.args.prune_junctions, self.args.junction_depth)
