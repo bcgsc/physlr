@@ -1699,7 +1699,7 @@ class Physlr:
         return communities
 
     @staticmethod
-    def partition_subgraph_into_bins_randomly(node_set, max_size=70):
+    def partition_subgraph_into_bins_randomly(node_set, max_size=100):
         """
         Partition the subgraph into bins randomly for faster processing. Return bins.
         Warning: This function is not deterministic.
