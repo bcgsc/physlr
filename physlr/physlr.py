@@ -1914,7 +1914,7 @@ class Physlr:
             Physlr.args.cost = 0.55
             Physlr.args.sqcost = 0.85
         if round == 5:
-            #Physlr.args.strategy = ["bc+k3bin"]
+            #Physlr.args.strategy = ["k3bin"]
             Physlr.args.junction_depth = 1
         if round == 6:
             #Physlr.args.strategy = ["bc+cos+sqcos"]
