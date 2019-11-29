@@ -1628,7 +1628,7 @@ class Physlr:
     @staticmethod
     def detect_communities_biconnected_components(g, node_set):
         """Separate bi-connected components. Return components."""
-        if len(node_set) < Physlr.subgraph_size:
+        if len(node_set) < Physlr.subgraph_size and Physlr.args.skip_small:
             return [set(node_set)]
             # return list(nx.connected_components(g.subgraph(node_set)))
         cut_vertices = set(nx.articulation_points(g.subgraph(node_set)))
@@ -1652,7 +1652,7 @@ class Physlr:
     @staticmethod
     def detect_communities_k_clique(g, node_set, k):
         """Apply k-clique community detection. Return communities."""
-        if len(node_set) < Physlr.subgraph_size:
+        if len(node_set) < Physlr.subgraph_size and Physlr.args.skip_small:
             return [set(node_set)]
         return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
 
@@ -1672,7 +1672,7 @@ class Physlr:
         Square the adjacency matrix and then use cosine similarity to detect communities.
         Return communities.
         """
-        if len(node_set) < Physlr.subgraph_size:
+        if len(node_set) < Physlr.subgraph_size and Physlr.args.skip_small:
             return [set(node_set)]
         import scipy as sp
         import numpy as np
@@ -1756,7 +1756,7 @@ class Physlr:
         Assign the neighbours of this vertex to molecules using fast heuristic community detection.
         Pipeline: bi-connected (bc) + partition + bc + k-cliques communities + merge.
         """
-        if len(component) < Physlr.subgraph_size:
+        if len(component) < Physlr.subgraph_size and Physlr.args.skip_small:
             return [set(component)]
         return [merged
                 for bi_connected_component in
@@ -1893,12 +1893,14 @@ class Physlr:
     @staticmethod
     def set_settings(round):
         if round == 1:
+            Physlr.args.skip_small = True
             #Physlr.args.strategy = ["distributed"]
             Physlr.args.junction_depth = 0
         # if round == 2:
         #     #Physlr.args.strategy = ["k3bin"]
         #     Physlr.args.junction_depth = 0
         if round == 2:
+            Physlr.args.skip_small = False
             #Physlr.args.strategy = ["cos+sqcos"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.4
