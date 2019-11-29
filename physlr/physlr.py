@@ -2170,11 +2170,16 @@ class Physlr:
         for tid, path in enumerate(progress(backbones)):
             for pos, u in enumerate(path):
                 iter_c = 0
-                while u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
-                    if iter_c > 500:
-                        break
-                    iter_c += 1
+                myid = u.split("_")[0]
+                if myid not in bxtomxs:
+                    print(myid, file=sys.stderr)
+                    sys.exit("Not in dictionary!")
+                u = myid
+                # while u not in bxtomxs:
+                #     u = u.rsplit("_", 1)[0]
+                #     if iter_c > 500:
+                #         break
+                #     iter_c += 1
                 if u not in bxtomxs:
                     sys.exit("Couldnot find barcode", u)
                 for mx in bxtomxs[u]:
