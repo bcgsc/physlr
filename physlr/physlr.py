@@ -2058,6 +2058,8 @@ class Physlr:
                     for u, vs in sorted(molecules.items()):
                         for v, cluster in vs.items():
                             if v in molecules:
+                                if v not in molecules[u] or u not in molecules[v]:
+                                    continue
                                 u_molecule = molecules[u][v]
                                 v_molecule = molecules[v][u]
                                 gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}", n=gin[u][v]["n"])
