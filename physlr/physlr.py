@@ -2166,8 +2166,10 @@ class Physlr:
         for tid, path in enumerate(progress(backbones)):
             for pos, u in enumerate(path):
                 iter_c = 0
-                while u not in bxtomxs and iter_c <100:
+                while u not in bxtomxs:
                     u = u.rsplit("_", 1)[0]
+                    if iter_c > 500:
+                        break
                     iter_c += 1
                 if u not in bxtomxs:
                     sys.exit("Couldnot find barcode", u)
