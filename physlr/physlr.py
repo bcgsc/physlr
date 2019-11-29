@@ -2017,62 +2017,68 @@ class Physlr:
             #         print("type vs.:", type(vs), file=sys.stderr)
             #         exit("BYE")
             # print("END OF DEEEEEEEBUG:", file=sys.stderr)
-            if round > 1000:
+            self.args.new_method = True
+            if self.args.new_method:
                 # Add vertices.
                 if round > 1:
-                    gout = gin
+                    gout = gin.copy()
                 else:
                     gout = nx.Graph()
+                cumul_nmolecules = 0
+                cumul_junctions = 0
                 for u, vs in sorted(molecules.items()):
                     n = gin.nodes[u]["n"]
                     nmolecules = 1 + max(vs.values()) if vs else 0
+                    if nmolecules > 1:
+                        cumul_nmolecules += (nmolecules-1)
+                        cumul_junctions += 1
                     for i in range(nmolecules):
                         if round > 1:
                             gout.add_node(f"{u}-{i}", n=n)
-                        else:
+                        elif round ==1:
                             gout.add_node(f"{u}_{i}", n=n)
                     # set([cluster for v, cluster in a.items()])
-                # add edges round 2+
+                print(
+                    int(timeit.default_timer() - t0),
+                    "Identified", cumul_nmolecules, "new molecules in",
+                    gin.number_of_nodes(), "barcodes and Solved", cumul_junctions, "barcode re-uses.",
+                    # round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
+                    file=sys.stderr)
+
                 # DEEEEEEEBUG:
                 # u: AAACACCAGAAACCTA - 1
                 # vs: {'AGTGAGGTCATAAGCC-1': 0, 'AAGCGAGCAGCTGCAC-1': 0, 'CGGTTTCAGCACCGTC-1': 0, 'CTCGTACAGGGCGAAG-1': 0,
                 #      'CATTATCAGATTAGGT-1': 0, 'AAGACCTGTGTGTGCC-1': 0, 'TCTTACAAGGTCAAGC-1': 0, 'TTTGT
                 #          CAGTACATCGT - 1': 1, 'GACAACTTCTGGAGCC - 1': 1}
-                if roun > 1:
+
+                # Add edges
+                if round > 1:
                     for u, vs in sorted(molecules.items()):
                         for v, cluster in vs.items():
                             if v in molecules:
-                                # Complicate:
-                                x = x
+                                u_molecule = molecules[u][v]
+                                v_molecule = molecules[v][u]
+                                gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}", n=gin[u][v]["n"])
                             else:
-                                # just connect it normally
-                                t = t
-                    # for i in range(nmolecules):
-                    #     if round > 1:
-                    #         gout.add_node(f"{u}-{i}", n=n)
-                    #     else:
-                    #         gout.add_node(f"{u}_{i}", n=n)
-                # Add edges.
-                # for (u, v), prop in gin.edges.items():
-                #     # Skip singleton and cut vertices, which are excluded from the partition.
-                #     if v not in molecules[u] or u not in molecules[v]:
-                #         continue
-                #     u_molecule = molecules[u][v]
-                #     v_molecule = molecules[v][u]
-                #     if round > 1:
-                #         gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}", n=prop["n"])
-                #     else:
-                #         gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
-            else:
+                                u_molecule = molecules[u][v]
+                                gout.add_edge(f"{u}-{u_molecule}", f"{v}", n=gin[u][v]["n"])
+                    # remove older nodes
+                    gout.remove_nodes_from([u for u, _ in molecules.items()])
+                elif round ==1:
+                    for (u, v), prop in gin.edges.items():
+                        # Skip singleton and cut vertices, which are excluded from the partition.
+                        if v not in molecules[u] or u not in molecules[v]:
+                            continue
+                        u_molecule = molecules[u][v]
+                        v_molecule = molecules[v][u]
+                        gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
+            else:  # old method
                 gout = nx.Graph()
                 for u, vs in sorted(molecules.items()):
                     n = gin.nodes[u]["n"]
                     nmolecules = 1 + max(vs.values()) if vs else 0
                     for i in range(nmolecules):
-                        if round > 1:
-                            gout.add_node(f"{u}-{i}", n=n)
-                        else:
-                          gout.add_node(f"{u}_{i}", n=n)
+                        gout.add_node(f"{u}_{i}", n=n)
                 print(
                     int(timeit.default_timer() - t0),
                     "Identified", gout.number_of_nodes(), "molecules in",
@@ -2085,10 +2091,7 @@ class Physlr:
                         continue
                     u_molecule = molecules[u][v]
                     v_molecule = molecules[v][u]
-                    if round > 1:
-                        gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}", n=prop["n"])
-                    else:
-                        gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
+                    gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
 
             print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
             num_singletons = Physlr.remove_singletons(gout)
