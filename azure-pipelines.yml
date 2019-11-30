@@ -33,5 +33,5 @@ jobs:
     displayName: Test C++ executables
   - script: |
       export python_executable=python
-      make -C data check
+      make -C data check python_executable=python
     displayName: Test Python modules
