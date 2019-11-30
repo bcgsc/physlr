@@ -23,13 +23,15 @@ jobs:
     displayName: Install Python packages
   - script: make lint
     displayName: Run pylint
-  - script: pypy3 -m pip3 install --upgrade pip networkx numpy scipy community
-    displayName: 'Install tools'
+  - script: pip3 install --upgrade pip networkx numpy scipy community
+    displayName: Install tools
   - script: make -C src all
     displayName: Compile C++ executables
   - script: make -C src lint
     displayName: Run clang-format and clang-tidy
   - script: make -C src check
     displayName: Test C++ executables
-  - script: make -C data check
+  - script: |
+      export python_executable=python
+      make -C data check
     displayName: Test Python modules
