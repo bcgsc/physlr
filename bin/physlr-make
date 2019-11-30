@@ -97,6 +97,8 @@ endif
 .PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map scaffolds
 all: test
 
+check: test
+
 $(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.path
 	ln -sf $< $@
 
