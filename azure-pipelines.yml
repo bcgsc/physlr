@@ -23,7 +23,7 @@ jobs:
     displayName: Install Python packages
   - script: make lint
     displayName: Run pylint
-  - script: python -m pip install --upgrade pip netowrkx scipy numpy community
+  - script: pypy3 -m pip install --upgrade pip networkx scipy numpy community
     displayName: 'Install tools'
   - script: make -C src all
     displayName: Compile C++ executables
