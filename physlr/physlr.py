@@ -2171,6 +2171,7 @@ class Physlr:
             for pos, u in enumerate(path):
                 iter_c = 0
                 myid = u.split("_")[0]
+                print(u, file=sys.stderr)
                 print(myid, file=sys.stderr)
                 print(bxtomxs[myid], file=sys.stderr)
                 sys.exit()
