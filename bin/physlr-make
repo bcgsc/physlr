@@ -15,7 +15,8 @@ t=16
 bloom_filter_size=10000000000 #10GB
 
 # Molecule separation stratergy
-mol_strategy=distributed
+# mol_strategy=distributed
+mol_strategy=distributed++cosbin+sqcosbin++cosbin+sqcosbin++cosbin+sqcosbin++distributed++cosbin+sqcosbin++distributed++cosbin+sqcosbin
 
 # Maximum minimizer multiplicity
 minimizer_multiplicity=100
