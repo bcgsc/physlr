@@ -95,7 +95,7 @@ endif
 .SECONDARY:
 
 .PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map scaffolds
-all: test
+all: f1chr4 f1chr2R f1 fishchr25 fish
 
 check: test
 
@@ -198,7 +198,7 @@ version:
 	@echo "physlr v0.2.0"
 
 ################################################################################
-# Test
+# Test m=0
 test: \
 	test.k1-w1.n1-2.c2-x.physlr.overlap.m0.mol.backbone0.path
 
