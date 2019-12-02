@@ -2371,6 +2371,18 @@ class Physlr:
                         qmedian_before, qmedian, qmedian_after)
                     qlength = len(mxs)
                     tlength = len(backbones[tid])
+                    if not (qend - qstart):
+                        print("n:",self.args.n, file=sys.stderr)
+                        print("qid, tid:", qid, " ", tid, file=sys.stderr)
+                        print("qstart, qend:", qstart," ",qend, file=sys.stderr)
+                        print("score:", score, file=sys.stderr)
+                        print("other:", file=sys.stderr)
+                        print(
+                            qid, qlength, qstart, qend,
+                            orientation,
+                            tid, tlength, tpos, tpos + 1,
+                            score, qend - qstart, sep="\t", file=sys.stderr)
+                        sys.exit()
                     mapq = int(100 * score / (qend - qstart))
                     print(
                         qid, qlength, qstart, qend,
