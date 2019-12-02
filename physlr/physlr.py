@@ -9,6 +9,7 @@ import multiprocessing
 import os
 import random
 import re
+import shutil
 import statistics
 import sys
 import timeit
@@ -1248,15 +1249,20 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Processing Nodes", file=sys.stderr)
         with open(self.args.FILES[0], "r") as overlap_input:
             for line in overlap_input:
-                if at_edges:
+                if at_edges and self.args.minimizer_overlap != 0:
                     columns = line.rstrip().split("\t")
                     edge_weight.append(int(columns[2]))
+                elif at_edges and self.args.minimizer_overlap == 0:
+                    print(line.rstrip())
                 else:
                     print(line.rstrip())
                     if not line.strip():
                         print(next(overlap_input).rstrip())
                         print(int(timeit.default_timer() - t0), "Processing Edges", file=sys.stderr)
                         at_edges = True
+
+        if self.args.minimizer_overlap == 0:
+            return 0
 
         print(int(timeit.default_timer() - t0), "Sorting Edges", file=sys.stderr)
         edge_weight.sort()
