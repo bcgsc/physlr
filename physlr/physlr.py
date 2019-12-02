@@ -2371,7 +2371,7 @@ class Physlr:
                         qmedian_before, qmedian, qmedian_after)
                     qlength = len(mxs)
                     tlength = len(backbones[tid])
-                    if not (qend - qstart):
+                    if qend-qstart==0 or int(qend - qstart)==0:
                         print("n:",self.args.n, file=sys.stderr)
                         print("qid, tid:", qid, " ", tid, file=sys.stderr)
                         print("qstart, qend:", qstart," ",qend, file=sys.stderr)
