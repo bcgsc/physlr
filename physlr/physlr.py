@@ -1928,7 +1928,7 @@ class Physlr:
             Physlr.args.junction_depth = 2
         if round == 8:
             # Physlr.args.strategy = ["bc+cos+sqcos"]
-            Physlr.args.junction_depth = 1
+            Physlr.args.junction_depth = 2
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.8
 
