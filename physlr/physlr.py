@@ -9,7 +9,6 @@ import multiprocessing
 import os
 import random
 import re
-import shutil
 import statistics
 import sys
 import timeit
