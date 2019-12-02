@@ -1261,7 +1261,7 @@ class Physlr:
                         at_edges = True
 
         if self.args.minimizer_overlap == 0:
-            return 0
+            return
 
         print(int(timeit.default_timer() - t0), "Sorting Edges", file=sys.stderr)
         edge_weight.sort()
