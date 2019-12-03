@@ -1869,6 +1869,21 @@ class Physlr:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
                             g, component, squaring=True, threshold=Physlr.args.sqcost))
+            elif algorithm == "sqcosbin":
+                for component in communities:
+                    communities_temp.extend(
+                        [merged for merged in Physlr.merge_communities(
+                            g, [cluster
+                                for bin_set in
+                                Physlr.partition_subgraph_into_bins_randomly(
+                                    component)
+                                for cluster in
+                                Physlr.detect_communities_cosine_of_squared(
+                                    g, bin_set, squaring=True, threshold=Physlr.args.sqcost)
+                                ]
+                        )
+                         ]
+                    )
             elif algorithm == "louvain":
                 for component in communities:
                     communities_temp.extend(
@@ -1969,7 +1984,7 @@ class Physlr:
                 file=sys.stderr)
         Physlr.filter_edges(gin, self.args.n)
         # Partition the neighbouring vertices of each barcode into molecules.
-        round = 2
+        round = self.args.round
         for alg_list in alg_list_2d:
             Physlr.set_settings(round)
             Physlr.args.prune_bridges = 10
@@ -2152,6 +2167,22 @@ class Physlr:
 
     def physlr_subgraphs_stats(self):
         "Retrieve subgraphs' stats."
+        if len(self.args.FILES) > 1:
+            gin = self.read_graph([self.args.FILES[0]])
+            with open(self.args.FILES[1]) as fin:
+                for line in fin:
+                    junctions.append(line.split()[0])
+            print(
+                int(timeit.default_timer() - t0),
+                "Separating junction-causing barcodes into molecules "
+                "using the following algorithm(s):\n\t",
+                alg_list_2d,
+                #self.args.strategy.replace("++"," / ").replace("+", " + "),
+                "\n\tand other barcodes with bc.",
+                file=sys.stderr)
+        else:
+            gin = self.read_graph(self.args.FILES)
+
         gin = self.read_graph(self.args.FILES)
         Physlr.filter_edges(gin, self.args.n)
         print(
@@ -2181,7 +2212,8 @@ class Physlr:
                         break
                     iter_c += 1
                 if u not in bxtomxs:
-                    sys.exit("Could not find barcode", u, file=sys.stderr)
+                    print("Could not find barcode", u, file=sys.stderr)
+                    sys.exit()
                 for mx in bxtomxs[u]:
                     mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
@@ -2840,6 +2872,9 @@ class Physlr:
         argparser.add_argument(
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
+        argparser.add_argument(
+            "--round", action="store", dest="round", type=int, default=1,
+            help="which round of mol-sep to start from.")
         return argparser.parse_args()
 
     def __init__(self):

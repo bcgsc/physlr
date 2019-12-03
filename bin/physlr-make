@@ -56,7 +56,11 @@ maximum_barcode_multiplicity=5000
 min_component_size=50
 
 # Minimum size of 3rd largest branch of a node to be considered a junction
-prune_junctions = 200
+prune_junctions=30
+
+# Round of molecule separation to start from
+round=1
+
 
 # Level of verbosity
 # 0: silent
@@ -1073,7 +1077,7 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 
 # Separate barcodes into molecules.
 %.mol.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) --prune-junctions=$(prune_junctions) --prune-branches=10 --prune-bridges=0 $< >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) --round=$(round)--prune-junctions=$(prune_junctions) --prune-branches=10 --prune-bridges=0 $< >$@
 
 # Separate barcodes into molecules using K3-clique community detection.
 %.k3.mol.tsv: %.tsv
