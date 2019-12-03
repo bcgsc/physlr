@@ -1717,7 +1717,7 @@ class Physlr:
         return [set(x) for x in bins]
 
     @staticmethod
-    def merge_communities(g, communities, node_set=0, strategy=0, cutoff=15):
+    def merge_communities(g, communities, node_set=0, strategy=0, cutoff=20):
         """Merge communities if appropriate."""
         mode = 1
         if cutoff == -1:  # no merging
