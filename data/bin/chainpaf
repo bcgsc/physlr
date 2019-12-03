@@ -74,7 +74,7 @@ paf_chained <- paf_segmented %>%
 		Tend = max(Tend),
 		Matches = sum(Matches),
 		Length = sum(Length),
-		Mapq = median(Mapq),
+		Mapq = as.integer(median(Mapq)),
 		Barcodes = n()) %>%
 	ungroup() %>%
 	select(Qname, Qlength, Qstart, Qend, Orientation,
