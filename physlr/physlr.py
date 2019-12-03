@@ -1969,7 +1969,7 @@ class Physlr:
                 file=sys.stderr)
         Physlr.filter_edges(gin, self.args.n)
         # Partition the neighbouring vertices of each barcode into molecules.
-        round = 2
+        round = 1
         for alg_list in alg_list_2d:
             Physlr.set_settings(round)
             Physlr.args.prune_bridges = 10
