@@ -556,8 +556,9 @@ class Physlr:
         print(int(timeit.default_timer() - t0),
               "Found", len(tree_junctions), "junctions.", file=sys.stderr)
         if include_bridges:
-            bridges = Physlr.identify_bridges(gmst, Physlr.args.prune_bridges)
+            bridges, bridge_juncs = Physlr.identify_bridges(gmst, Physlr.args.prune_bridges, True)
             tree_junctions.extend(node for edge in bridges for node in edge)
+            tree_junctions.extend(node for node in bridge_juncs)
         print(int(timeit.default_timer() - t0),
               "Expanded to", len(tree_junctions), "with bridges.", file=sys.stderr)
         junctions = []
@@ -740,13 +741,16 @@ class Physlr:
         return paths, junctions
 
     @staticmethod
-    def identify_bridges(g, bridge_length):
+    def identify_bridges(g, bridge_length, include_junctions=False):
         """Return the bridges of the graph"""
         paths, junctions = Physlr.identify_contiguous_paths(g)
         bridges = [path for path in paths if len(path) < bridge_length
                    and all(g.degree(u) == 2 for u in path)]
         bridges += g.subgraph(junctions).edges
+        if include_junctions:
+            return bridges, junctions
         return bridges
+
 
     @staticmethod
     def remove_bridges_once(g, bridge_length):
