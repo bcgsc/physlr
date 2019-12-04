@@ -1950,6 +1950,11 @@ class Physlr:
             Physlr.args.junction_depth = 2
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.8
+        if round == 8:
+            # Physlr.args.strategy = ["bc+cos+sqcos"]
+            Physlr.args.junction_depth = 10
+            Physlr.args.cost = 0.5
+            Physlr.args.sqcost = 0.8
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
