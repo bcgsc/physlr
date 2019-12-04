@@ -904,6 +904,7 @@ endif
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2.tsv: %.tsv %.junctions.tsv
+    mol_strategy=cos+sqcos++cos+sqcos++cos+sqcos++distributed++cos+sqcos++distributed++cos+sqcos
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc $^ >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
@@ -1078,6 +1079,9 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 # Separate barcodes into molecules.
 %.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) --round=$(round) --prune-junctions=$(prune_junctions) --prune-branches=10 --prune-bridges=10 $< >$@
+# Separate barcodes into molecules.
+%.mol2.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) --round=2 --prune-junctions=$(prune_junctions) --prune-branches=10 --prune-bridges=10 $< >$@
 
 # Separate barcodes into molecules using K3-clique community detection.
 %.k3.mol.tsv: %.tsv
