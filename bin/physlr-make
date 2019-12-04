@@ -139,7 +139,8 @@ physical-map: \
 else
 physical-map: \
 	$(lr).physlr.physical-map.path \
-	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf
+	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf \
+	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv 
 endif
 endif
 # Help
