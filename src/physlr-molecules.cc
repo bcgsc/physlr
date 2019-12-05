@@ -26,7 +26,7 @@ struct vertexProperties
 {
 	std::string name;
 	int weight;
-	int indexOriginal;
+	size_t indexOriginal;
 };
 
 struct edgeProperties
@@ -88,14 +88,14 @@ printUsage(const std::string& progname)
 }
 
 void
-printGraph(graph_t& g, indexToBarcode_t& indexToBarcode)
+printGraph(graph_t& g)
 {
 	std::cout << "U\tn" << std::endl;
 	std::string node1, node2;
 	int weight;
 	auto vertexItRange = vertices(g);
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
-		node1 = indexToBarcode[*vertexIt];
+		node1 = g[*vertexIt].name;
 		weight = g[*vertexIt].weight;
 		std::cout << node1 << "\t" << weight << "\n";
 	}
@@ -103,8 +103,8 @@ printGraph(graph_t& g, indexToBarcode_t& indexToBarcode)
 	auto edgeItRange = edges(g);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
 		weight = g[*edgeIt].weight;
-		node1 = indexToBarcode[boost::source(*edgeIt, g)];
-		node2 = indexToBarcode[boost::target(*edgeIt, g)];
+		node1 = g[boost::source(*edgeIt, g)].name;
+		node2 = g[boost::target(*edgeIt, g)].name;
 		std::cout << node1 << "\t" << node2 << "\t" << weight << "\n";
 	}
 }
@@ -181,7 +181,7 @@ main(int argc, char* argv[])
 	indexToBarcode_t indexToBarcode;
 	for (auto& infile : infiles) {
 		infile == "-" ? "/dev/stdin" : infile;
-		vertex_t U;
+		vertex_t u;
 		edge_t E;
 		std::ifstream infileStream(infile);
 		std::string line;
@@ -201,12 +201,12 @@ main(int argc, char* argv[])
 			ss >> node1;
 			if (!atEdges) {
 				ss >> weight;
-				U = add_vertex(g);
-				g[U].name = node1;
-				g[U].weight = weight;
-				g[U].indexOriginal = U;
-				barcodeToIndex[node1] = U;
-				indexToBarcode[U] = node1;
+				u = add_vertex(g);
+				g[u].name = node1;
+				g[u].weight = weight;
+				g[u].indexOriginal = u;
+				barcodeToIndex[node1] = u;
+				indexToBarcode[u] = node1;
 			} else {
 				ss >> node2 >> weight;
 				E = add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
@@ -216,32 +216,116 @@ main(int argc, char* argv[])
 	}
 	// barcodeToIndex.clear();
 	// boost::print_graph(g);
+	using vertexSet_t = std::unordered_set<vertex_t>;
+	using componentVertexSet_t = std::vector<vertexSet_t>;
+
+	std::vector<std::unordered_map<vertex_t, size_t>> componentsOfVertices;
+	componentsOfVertices.resize(indexToBarcode.size());
 	auto vertexItRange = vertices(g);
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
-		std::cout << "Index: " << *vertexIt << std::endl;
+		// std::cout << "Index: " << *vertexIt << std::endl;
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
 		/*graph_t& g1 = g.create_subgraph();
 		for (auto vd : make_iterator_range(neighbours))
 		    boost::add_vertex(vd, g1);
 		boost::print_graph(g1);
 		std::cout << "Index: " << *vertexIt << std::endl;*/
-		graph_t& g2 = g.create_subgraph(neighbours.first, neighbours.second);
-		// boost::print_graph(g2);
-		property_map<graph_t, edge_component_t>::type component = get(edge_component, g2);
-		std::size_t num_comps = biconnected_components(g2, component);
-		std::cerr << "Found " << num_comps << " biconnected components.\n";
+		graph_t& g1 = g.create_subgraph(neighbours.first, neighbours.second);
+		// boost::print_graph(g1);
+		property_map<graph_t, edge_component_t>::type component = get(edge_component, g1);
+		// std::size_t num_comps = biconnected_components(g1, component);
+		// std::cerr << "Found " << num_comps << " biconnected components.\n";
 
-		std::vector<vertex_t> art_points;
-		articulation_points(g2, std::back_inserter(art_points));
-		std::cerr << "Found " << art_points.size() << " articulation points.\n";
+		std::vector<vertex_t> art_points_vec;
+		articulation_points(g1, std::back_inserter(art_points_vec));
+		std::unordered_set<vertex_t> art_points(art_points_vec.begin(), art_points_vec.end());
+		// std::cerr << "Found " << art_points.size() << " articulation points.\n";
+		// for (auto&& x : art_points)
+		//	std::cerr << g1[x].indexOriginal << std::endl;
 		graph_traits<graph_t>::edge_iterator ei, ei_end;
-		for (boost::tie(ei, ei_end) = edges(g2); ei != ei_end; ++ei)
-			std::cout << g2[source(*ei, g2)].indexOriginal << " -- "
-			          << g2[target(*ei, g2)].indexOriginal << "[label=\"" << component[*ei]
-			          << "\"]\n";
-		std::cout << "}\n";
+		componentVertexSet_t componentVertices;
+		for (boost::tie(ei, ei_end) = edges(g1); ei != ei_end; ++ei) {
+			size_t componentNum = component[*ei];
+			if (componentNum + 1 > componentVertices.size()) {
+				componentVertices.resize(componentNum + 1);
+			}
+			vertex_t node1 = source(*ei, g1);
+			vertex_t node2 = target(*ei, g1);
+			if (art_points.find(node1) == art_points.end()) {
+				// std::cout << g1[node1].indexOriginal << " " << componentNum << std::endl;
+				componentVertices[componentNum].insert(g1[node1].indexOriginal);
+			}
+			if (art_points.find(node2) == art_points.end()) {
+				// std::cout << g1[node2].indexOriginal << " " << componentNum << std::endl;
+				componentVertices[componentNum].insert(g1[node2].indexOriginal);
+			}
+			/*vertex_t node1 = source(*ei, g1);
+			vertex_t node2 = target(*ei, g1);*/
+			/*std::cout << g1[source(*ei, g1)].indexOriginal << " -- "
+			          << g1[target(*ei, g1)].indexOriginal << "[label=\"" << component[*ei]
+			          << "\"]\n";*/
+		}
+		// std::cout << "}\n";
+		size_t moleculeNum = 0;
+		std::unordered_map<vertex_t, size_t> vertexToComponent;
+		for (auto&& vertexSet : componentVertices) {
+			// std::cout << "size: " << vertexSet.size() << std::endl;
+			if (vertexSet.size() <= 1) {
+				continue;
+			}
+			for (auto&& vertex : vertexSet) {
+				vertexToComponent[vertex] = moleculeNum;
+				// std::cout << vertex << std::endl;
+			}
+			moleculeNum++;
+		}
+
+		componentsOfVertices[*vertexIt] = vertexToComponent;
 		// std::cout << "len of component: " << component.size() << std::endl;
 	}
 
-	printGraph(g, indexToBarcode);
+	// printGraph(g);
+	graph_t outG;
+	barcodeToIndex_t outGBarcodeToIndex;
+	for (size_t i = 0; i < componentsOfVertices.size(); i++) {
+		/*std::pair<vertex_t, size_t> result;
+		result = *std::max_element(
+		    componentsOfVertices[i].begin(),
+		    componentsOfVertices[i].end(),
+		    [](const std::pair<vertex_t, size_t>& p1, const std::pair<vertex_t, size_t>& p2) {
+		        return p1.second < p2.second;
+		    });*/
+
+		size_t maxVal = 0;
+		for (auto&& val : componentsOfVertices[i]) {
+			if (val.second > maxVal) {
+				maxVal = val.second;
+			}
+		}
+		for (size_t j = 0; j < maxVal + 1; j++) {
+
+			vertex_t u = add_vertex(outG);
+			outG[u].name = g[i].name + "_" + std::to_string(j);
+			outG[u].weight = g[i].weight;
+			outG[u].indexOriginal = u;
+			outGBarcodeToIndex[outG[u].name] = u;
+		}
+	}
+	auto edgeItRange = edges(g);
+	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
+		vertex_t u, v;
+		u = g[boost::source(*edgeIt, g)].indexOriginal;
+		v = g[boost::target(*edgeIt, g)].indexOriginal;
+		if (componentsOfVertices[u].find(v) == componentsOfVertices[u].end() ||
+		    componentsOfVertices[v].find(u) == componentsOfVertices[v].end()) {
+			continue;
+		}
+		size_t uMolecule = componentsOfVertices[u][v];
+		size_t vMolecule = componentsOfVertices[v][u];
+		std::string uName = g[u].name + "_" + std::to_string(uMolecule);
+		std::string vName = g[v].name + "_" + std::to_string(vMolecule);
+		edge_t e = add_edge(outGBarcodeToIndex[uName], outGBarcodeToIndex[vName], outG).first;
+		outG[e].weight = g[*edgeIt].weight;
+	}
+	printGraph(outG);
 }
