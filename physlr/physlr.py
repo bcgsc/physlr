@@ -1964,6 +1964,7 @@ class Physlr:
             Physlr.args.junction_depth = 0
         if round == 2:
             # Physlr.args.strategy = ["sqcosbin"]
+            Physlr.args.skip_small = False
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.8
@@ -1972,27 +1973,32 @@ class Physlr:
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.55
             Physlr.args.sqcost = 0.87
+        # if round == 4:
+        #     # Physlr.args.strategy = ["distributed"]
+        #     Physlr.args.junction_depth = 2
         if round == 4:
-            # Physlr.args.strategy = ["distributed"]
-            Physlr.args.junction_depth = 2
+            # Physlr.args.strategy = ["sqcosbin"]
+            Physlr.args.junction_depth = 3
+            Physlr.args.cost = 0.5
+            Physlr.args.sqcost = 0.8
+        # if round == 6:
+        #     # Physlr.args.strategy = ["distributed"]
+        #     Physlr.args.junction_depth = 10
         if round == 5:
             # Physlr.args.strategy = ["sqcosbin"]
-            Physlr.args.junction_depth = 1
+            Physlr.args.junction_depth = 10
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.8
         if round == 6:
-            # Physlr.args.strategy = ["distributed"]
-            Physlr.args.junction_depth = 10
-        if round == 7:
-            # Physlr.args.strategy = ["sqcosbin"]
-            Physlr.args.junction_depth = 2
-            Physlr.args.cost = 0.5
-            Physlr.args.sqcost = 0.8
-        if round == 8:
             # Physlr.args.strategy = ["sqcosbin"]
             Physlr.args.junction_depth = 10
-            Physlr.args.cost = 0.5
-            Physlr.args.sqcost = 0.8
+            Physlr.args.cost = 0.55
+            Physlr.args.sqcost = 0.87
+        # if round == 8:
+        #     # Physlr.args.strategy = ["sqcosbin"]
+        #     Physlr.args.junction_depth = 10
+        #     Physlr.args.cost = 0.5
+        #     Physlr.args.sqcost = 0.8
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
