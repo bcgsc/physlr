@@ -1087,6 +1087,7 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 # Separate barcodes into molecules from round 2
 %.mol.molr2.tsv: %.mol.tsv
     $(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=sqcosbin++sqcosbin++sqcosbin++sqcosbin++sqcosbin --round=2 --prune-junctions=$(prune_junctions) --prune-branches=10 --prune-bridges=10 $< >$@
+
 # $(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=sqcosbin++sqcosbin++distributed++sqcosbin++distributed++sqcosbin --round=2 --prune-junctions=$(prune_junctions) --prune-branches=10 --prune-bridges=10 $< >$@
 # $(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=cos+sqcos++cos+sqcos++cos+sqcos++distributed++cos+sqcos++distributed++cos+sqcos --round=2 --prune-junctions=$(prune_junctions) --prune-branches=10 --prune-bridges=10 $< >$@
 
