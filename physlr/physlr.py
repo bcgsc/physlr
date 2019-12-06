@@ -1686,10 +1686,10 @@ class Physlr:
             # >> candidates4= zip(*np.where((adj_array > 0) == (squared_adj > 0)))
             candidates = candidates3
             connectors = []
-            for i, j in zip(candidates[0], candidates[1]):
-                if i < j:
-                    # print("for i, j:", i, j)
-                    connectors.append([sorted([i, j, k]) for k in np.where((adj_array[i] > 0) & (adj_array[j] > 0))[0]])
+            # for i, j in zip(candidates[0], candidates[1]):
+            #     if i < j:
+            #         # print("for i, j:", i, j)
+            #         connectors.append([sorted([i, j, k]) for k in np.where((adj_array[i] > 0) & (adj_array[j] > 0))[0]])
             clique_graph_nodes = set()
             # perc_edges = []
             # clique_graph = nx.Graph()
