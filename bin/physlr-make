@@ -931,7 +931,7 @@ min_path_size=200
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
-	$(time) $(python) $(bin)/physlr backbone --prune-branches=0 -s0 -V$V $< >$@
+	$(time) $(python) $(bin)/physlr backbone --prune-branches=0 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
 
 # Cut chimeric paths to correct misassemblies.
 %.backbone.depth.tsv: %.tsv %.backbone.path
