@@ -1691,22 +1691,22 @@ class Physlr:
                     # print("for i, j:", i, j)
                     connectors.append([sorted([i, j, k]) for k in np.where((adj_array[i] > 0) & (adj_array[j] > 0))[0]])
             clique_graph_nodes = set()
-            perc_edges = []
-            clique_graph = nx.Graph()
-            for connector in connectors:
-                for clique in connector:
-                    clique_graph_nodes.add(tuple(clique))
-                    if len(connector) > 1:
-                        for clique2 in connector:
-                            if not (clique2 == clique):
-                                perc_edges.append((tuple(clique), tuple(clique2)))
-            clique_graph.add_nodes_from(clique_graph_nodes)
-            clique_graph.add_edges_from(perc_edges)
-            concomps = list(nx.connected_components(clique_graph))
-            communities = []
-            for sets in concomps:
-                communities.append({i for j in sets for i in j})
-        return communities
+            # perc_edges = []
+            # clique_graph = nx.Graph()
+            # for connector in connectors:
+            #     for clique in connector:
+            #         clique_graph_nodes.add(tuple(clique))
+            #         if len(connector) > 1:
+            #             for clique2 in connector:
+            #                 if not (clique2 == clique):
+            #                     perc_edges.append((tuple(clique), tuple(clique2)))
+            # clique_graph.add_nodes_from(clique_graph_nodes)
+            # clique_graph.add_edges_from(perc_edges)
+            # concomps = list(nx.connected_components(clique_graph))
+            # communities = []
+            # for sets in concomps:
+            #     communities.append({i for j in sets for i in j})
+        return [set(node_set)]
 
     @staticmethod
     def detect_communities_louvain(g, node_set, init_communities=None):
