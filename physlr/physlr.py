@@ -1897,6 +1897,7 @@ class Physlr:
                     communities_temp.extend(
                         Physlr.determine_molecules_partition_split_merge(g, component))
             communities = communities_temp
+            print(" - Done with ", algorithm, file=sys.stderr)
 
         communities.sort(key=len, reverse=True)
         return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
