@@ -1661,6 +1661,58 @@ class Physlr:
         return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
 
     @staticmethod
+    def detect_communities_k3_clique(g, node_set, k=3):
+        """
+        Apply our own k3-clique percolation algorithm. Return communities.
+        by Amirhossein Afshinfard
+        """
+        if k > 3:
+            sys.exit(" k > 3 is not supported for this function."
+                     "Switch to the other function and re-run")
+        if len(node_set) < Physlr.subgraph_size and Physlr.args.skip_small:
+            return [set(node_set)]
+        import scipy as sp
+        import numpy as np
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        communities = []
+        if len(node_set) > 1:
+            adj_array = nx.adjacency_matrix(g.subgraph(node_set)).toarray()
+            squared_adj = sp.linalg.blas.sgemm(1.0, adj_array, adj_array)
+            candidates1 = np.nonzero(np.multiply(adj_array, squared_adj))
+            # candidates2 = np.nonzero((adj_array > 0) == (squared_adj > 0))
+            candidates3 = np.where((adj_array > 0) & (squared_adj > 0))
+            # hard to use with the current style :
+            # >> candidates4= zip(*np.where((adj_array > 0) == (squared_adj > 0)))
+            candidates = candidates3
+            connectors = []
+            for i, j in zip(candidates[0], candidates[1]):
+                if i < j:
+                    # print("for i, j:", i, j)
+                    connectors.append([sorted([i, j, k]) for k in np.where((adj_array[i] > 0) & (adj_array[j] > 0))[0]])
+            clique_graph_nodes = set()
+            perc_edges = []
+            clique_graph = nx.Graph()
+            for connector in connectors:
+                for clique in connector:
+                    clique_graph_nodes.add(tuple(clique))
+                    if len(connector) > 1:
+                        for clique2 in connector:
+                            if not (clique2 == clique):
+                                perc_edges.append((tuple(clique), tuple(clique2)))
+            clique_graph.add_nodes_from(clique_graph_nodes)
+            clique_graph.add_edges_from(perc_edges)
+            concomps = list(nx.connected_components(clique_graph))
+            communities = []
+            for sets in concomps:
+                communities.append(list({i for j in sets for i in j}))
+            # we still need some codes here
+        return communities
+
+
+        return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
+
+    @staticmethod
     def detect_communities_louvain(g, node_set, init_communities=None):
         """Apply Louvain community detection on a single component. Return communities."""
         if len(node_set) < 2:
