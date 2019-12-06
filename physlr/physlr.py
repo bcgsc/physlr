@@ -1708,9 +1708,6 @@ class Physlr:
                 communities.append({i for j in sets for i in j})
         return communities
 
-
-        return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
-
     @staticmethod
     def detect_communities_louvain(g, node_set, init_communities=None):
         """Apply Louvain community detection on a single component. Return communities."""
