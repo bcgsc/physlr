@@ -1654,7 +1654,7 @@ class Physlr:
         return list(nx.connected_components(subgraph))
 
     @staticmethod
-    def detect_communities_k_clique(g, node_set, k):
+    def detect_communities_k_clique(g, node_set, k=3):
         """Apply k-clique community detection. Return communities."""
         if len(node_set) < Physlr.subgraph_size and Physlr.args.skip_small:
             return [set(node_set)]
@@ -1706,6 +1706,32 @@ class Physlr:
             # communities = []
             # for sets in concomps:
             #     communities.append({i for j in sets for i in j})
+        return [set(node_set)]
+
+    @staticmethod
+    def detect_communities_k3_clique2(g, node_set, k=3):
+        """
+        Apply our own k3-clique percolation algorithm based on edge to node.
+        by Amirhossein Afshinfard
+        """
+        if k > 3:
+            sys.exit(" k > 3 is not supported for this function."
+                     "Switch to the other function and re-run")
+        if len(node_set) < Physlr.subgraph_size and Physlr.args.skip_small:
+            return [set(node_set)]
+        #import scipy as sp
+        #import numpy as np
+        #from sklearn.metrics.pairwise import cosine_similarity
+
+        communities = []
+        triangles = set()
+        if len(node_set) > 1:
+            subgraph = g.subgraph(node_set)
+            for u, v in subgraph.edges():
+                for w in subgraph.nodes():
+                    if u != w and v != w:
+                        if subgraph.has_edge(u, w) and subgraph.has_edge(v, w):
+                            triangles.add(frozenset([u, v, w]))
         return [set(node_set)]
 
     @staticmethod
@@ -1823,7 +1849,7 @@ class Physlr:
                         Physlr.detect_communities_biconnected_components(g, bin_set)
                         for cluster in
                         #Physlr.detect_communities_k_clique(g, bi_con2, k=3)],
-                        Physlr.detect_communities_k3_clique(g, bi_con2)],
+                        Physlr.detect_communities_k_clique(g, bi_con2)],
                     bi_connected_component, strategy=0)
                 ]
 
@@ -2052,13 +2078,14 @@ class Physlr:
     @staticmethod
     def set_settings(round):
         if round == 1:
-            Physlr.args.skip_small = True
+            Physlr.args.skip_small = False
             # Physlr.args.strategy = ["distributed+sqcosbin"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.8
         if round == 2:
             # Physlr.args.strategy = ["sqcosbin"]
+            Physlr.args.skip_small = False
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.55
             Physlr.args.sqcost = 0.87
@@ -2069,7 +2096,7 @@ class Physlr:
             Physlr.args.sqcost = 0.8
         if round == 4:
             # Physlr.args.strategy = ["sqcosbin"]
-            Physlr.args.junction_depth = 10
+            Physlr.args.junction_depth = 15
             Physlr.args.cost = 0.55
             Physlr.args.sqcost = 0.87
 
