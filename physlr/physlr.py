@@ -1856,8 +1856,8 @@ class Physlr:
                         for bi_con2 in
                         Physlr.detect_communities_biconnected_components(g, bin_set)
                         for cluster in
-                        #Physlr.detect_communities_k_clique(g, bi_con2, k=3)],
-                        Physlr.detect_communities_k3_clique2(g, bi_con2)],
+                        Physlr.detect_communities_k_clique(g, bi_con2, k=3)],
+                        # Physlr.detect_communities_k3_clique2(g, bi_con2)],
                     bi_connected_component, strategy=0)
                 ]
 
