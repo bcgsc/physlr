@@ -1719,19 +1719,27 @@ class Physlr:
                      "Switch to the other function and re-run")
         if len(node_set) < Physlr.subgraph_size and Physlr.args.skip_small:
             return [set(node_set)]
-        #import scipy as sp
-        #import numpy as np
-        #from sklearn.metrics.pairwise import cosine_similarity
+        # import scipy as sp
+        # import numpy as np
+        # from sklearn.metrics.pairwise import cosine_similarity
 
         communities = []
         triangles = set()
         if len(node_set) > 1:
             subgraph = g.subgraph(node_set)
             for u, v in subgraph.edges():
-                for w in subgraph.nodes():
-                    if u != w and v != w:
-                        if subgraph.has_edge(u, w) and subgraph.has_edge(v, w):
+                # for w in subgraph.nodes():
+                for w in subgraph.neighbors(u):
+                    if v != w:
+                        if subgraph.has_edge(v, w):
                             triangles.add(frozenset([u, v, w]))
+        # members_dict = defaultdict(list)
+        # for triangle in triangles:
+        #     for node in triangle:
+        #         members_dict[node].append(triangle)
+
+        # for triangle in triangles:
+        #     for u, v in itertools.combinations(triangle,2):
         return [set(node_set)]
 
     @staticmethod
