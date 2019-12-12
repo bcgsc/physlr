@@ -2098,7 +2098,7 @@ class Physlr:
         if round == 2:
             print("Settings for round 2:")
             # Physlr.args.strategy = ["sqcosbin"]
-            Physlr.args.threads = Physlr.args.threads/2
+            Physlr.args.threads = int(Physlr.args.threads/2)
             Physlr.args.skip_small = False
             Physlr.args.junction_depth = 10
             Physlr.args.cost = 0.55
