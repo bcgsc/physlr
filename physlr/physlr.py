@@ -2086,7 +2086,7 @@ class Physlr:
     @staticmethod
     def set_settings(round):
         if round == 1:
-            print("Settings for round 1:")
+            print("Settings for round 1:", file=sys.stderr)
             Physlr.args.skip_small = False
             # Physlr.args.strategy = ["distributed+sqcosbin"]
             Physlr.args.junction_depth = 0
@@ -2096,7 +2096,7 @@ class Physlr:
                   "|  junction_depth ", Physlr.args.junction_depth, "| Skip small:", Physlr.args.skip_small,
                   file=sys.stderr)
         if round == 2:
-            print("Settings for round 2:")
+            print("Settings for round 2:", file=sys.stderr)
             # Physlr.args.strategy = ["sqcosbin"]
             Physlr.args.threads = int(Physlr.args.threads/2)
             Physlr.args.skip_small = False
@@ -2107,7 +2107,7 @@ class Physlr:
                   "|  junction_depth ", Physlr.args.junction_depth, "| Skip small:", Physlr.args.skip_small,
                   file=sys.stderr)
         if round == 3:
-            print("Settings for round 1:")
+            print("Settings for round 3:", file=sys.stderr)
             # Physlr.args.strategy = ["sqcosbin"]
             Physlr.args.junction_depth = 10
             Physlr.args.cost = 0.55
