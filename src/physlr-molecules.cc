@@ -20,6 +20,24 @@
 #define PACKAGE_NAME "physlr"
 #define GIT_REVISION "pre-autotools"
 
+static int
+memory_usage()
+{
+	int mem = 0;
+	std::ifstream proc("/proc/self/status");
+	std::string s;
+	while (getline(proc, s), !proc.fail()) {
+		if (s.substr(0, 6) == "VmSize") {
+			std::stringstream convert(s.substr(s.find_last_of('\t'), s.find_last_of('k') - 1));
+			if (!(convert >> mem)) {
+				return 0;
+			}
+			return mem;
+		}
+	}
+	return mem;
+}
+
 using namespace boost;
 
 struct vertexProperties
@@ -117,6 +135,7 @@ main(int argc, char* argv[])
 	int c;
 	int optindex = 0;
 	char* end = nullptr;
+	static int benchmark = 0;
 	static int help = 0;
 	std::string separationStrategy;
 	// bool verbose = false;
@@ -124,6 +143,7 @@ main(int argc, char* argv[])
 	// bool failed = false;
 	static const struct option longopts[] = {
 		{ "help", no_argument, &help, 1 },
+		{ "benchmark", no_argument, &benchmark, 1 },
 		{ "separation-strategy", required_argument, nullptr, 's' },
 		{ nullptr, 0, nullptr, 0 }
 	};
@@ -176,6 +196,11 @@ main(int argc, char* argv[])
 */
 
 	graph_t g;
+#if _OPENMP
+	double sTime = omp_get_wtime();
+#endif
+	std::cerr << "Using bgl" << std::endl;
+	std::cerr << "Loading Graph" << std::endl;
 
 	barcodeToIndex_t barcodeToIndex;
 	indexToBarcode_t indexToBarcode;
@@ -192,6 +217,11 @@ main(int argc, char* argv[])
 			}
 			if (line == "" or line == "U\tV\tn") {
 				atEdges = true;
+				std::cerr << "Added vertices to graph" << std::endl;
+#if _OPENMP
+				std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+				sTime = omp_get_wtime();
+#endif
 				continue;
 			}
 
@@ -214,26 +244,56 @@ main(int argc, char* argv[])
 			}
 		}
 	}
+	std::cerr << "Added edges to graph" << std::endl;
+#if _OPENMP
+	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+	sTime = omp_get_wtime();
+#endif
+	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 	// barcodeToIndex.clear();
 	// boost::print_graph(g);
 	using vertexSet_t = std::unordered_set<vertex_t>;
 	using componentVertexSet_t = std::vector<vertexSet_t>;
+	uint64_t vertexNum = indexToBarcode.size();
 
 	std::vector<std::unordered_map<vertex_t, size_t>> componentsOfVertices;
 	componentsOfVertices.resize(indexToBarcode.size());
-	auto vertexItRange = vertices(g);
-	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
+	// double subgraphTime = 0, biconnectedTime = 0, cleanupTime = 0, componentTime = 0,
+	//       insertMapTime = 0;
+	if (benchmark != 0) {
+		if (vertexNum > 100000) {
+			vertexNum = 100000;
+		}
+		sTime = omp_get_wtime();
+	}
+#if _OPENMP
+	sTime = omp_get_wtime();
+#endif
+	double totalBiconnectedTime = 0, totalSubgraphTime = 0;
+	// auto vertexItRange = vertices(g);
+	for (uint64_t vertexId = 0; vertexId < vertexNum; ++vertexId) {
+		// for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		// std::cout << "Index: " << *vertexIt << std::endl;
-		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+		// auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+#if _OPENMP
+		double subgraphTime = omp_get_wtime();
+#endif
+		auto neighbours = boost::adjacent_vertices(vertexId, g);
 		/*graph_t& g1 = g.create_subgraph();
 		for (auto vd : make_iterator_range(neighbours))
 		    boost::add_vertex(vd, g1);
 		boost::print_graph(g1);
 		std::cout << "Index: " << *vertexIt << std::endl;*/
 		graph_t& g1 = g.create_subgraph(neighbours.first, neighbours.second);
+#if _OPENMP
+		totalSubgraphTime += (omp_get_wtime() - subgraphTime);
+#endif
 		// boost::print_graph(g1);
+#if _OPENMP
+		double biconnectedTime = omp_get_wtime();
+#endif
 		property_map<graph_t, edge_component_t>::type component = get(edge_component, g1);
-		// std::size_t num_comps = biconnected_components(g1, component);
+		biconnected_components(g1, component);
 		// std::cerr << "Found " << num_comps << " biconnected components.\n";
 
 		std::vector<vertex_t> art_points_vec;
@@ -242,6 +302,9 @@ main(int argc, char* argv[])
 		// std::cerr << "Found " << art_points.size() << " articulation points.\n";
 		// for (auto&& x : art_points)
 		//	std::cerr << g1[x].indexOriginal << std::endl;
+#if _OPENMP
+		totalBiconnectedTime += (omp_get_wtime() - biconnectedTime);
+#endif
 		graph_traits<graph_t>::edge_iterator ei, ei_end;
 		componentVertexSet_t componentVertices;
 		for (boost::tie(ei, ei_end) = edges(g1); ei != ei_end; ++ei) {
@@ -259,13 +322,7 @@ main(int argc, char* argv[])
 				// std::cout << g1[node2].indexOriginal << " " << componentNum << std::endl;
 				componentVertices[componentNum].insert(g1[node2].indexOriginal);
 			}
-			/*vertex_t node1 = source(*ei, g1);
-			vertex_t node2 = target(*ei, g1);*/
-			/*std::cout << g1[source(*ei, g1)].indexOriginal << " -- "
-			          << g1[target(*ei, g1)].indexOriginal << "[label=\"" << component[*ei]
-			          << "\"]\n";*/
 		}
-		// std::cout << "}\n";
 		size_t moleculeNum = 0;
 		std::unordered_map<vertex_t, size_t> vertexToComponent;
 		for (auto&& vertexSet : componentVertices) {
@@ -279,11 +336,31 @@ main(int argc, char* argv[])
 			}
 			moleculeNum++;
 		}
+		// std::cerr << g.m_children.size() << std::endl;
+		for (auto i = g.m_children.begin(); i != g.m_children.end(); ++i) {
+			delete *i;
+		}
+		g.m_children.clear();
+		// auto edgeItRange = edges(g1);
+		// for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
+		//		remove_edge(*edgeIt, g1);
+		//	}
 
-		componentsOfVertices[*vertexIt] = vertexToComponent;
+		componentsOfVertices[vertexId] = vertexToComponent;
 		// std::cout << "len of component: " << component.size() << std::endl;
 	}
+	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
+	std::cerr << "Finish mol sep " << std::endl;
+#if _OPENMP
+	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+	sTime = omp_get_wtime();
+#endif
 
+	if (benchmark != 0) {
+		std::cerr << "biconnected time: " << totalBiconnectedTime << std::endl;
+		std::cerr << "subgraph time: " << totalSubgraphTime << std::endl;
+		exit(0);
+	}
 	// printGraph(g);
 	graph_t outG;
 	barcodeToIndex_t outGBarcodeToIndex;
@@ -327,5 +404,6 @@ main(int argc, char* argv[])
 		edge_t e = add_edge(outGBarcodeToIndex[uName], outGBarcodeToIndex[vName], outG).first;
 		outG[e].weight = g[*edgeIt].weight;
 	}
+	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 	printGraph(outG);
 }
