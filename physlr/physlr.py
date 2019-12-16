@@ -1269,6 +1269,41 @@ class Physlr:
             mol_list.append((bxmol, molec_mxs))
             mol += 1
         return mol_list
+ 
+    @staticmethod
+    def split_minimizers_bx2(bx, g, bxtomxs):
+        "Partition the minimizers of the given barcode"
+        bx_match = re.compile(r'^(\S+)_\d+_\d+$')
+        mxs = bxtomxs[bx]
+        mol = 0
+        mol2 = 0
+        mol_list = []
+        while g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
+            while g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
+                bxmol = bx + "_" + str(mol)+ "_" + str(mol2)
+                neighbour_mxs_list = [bxtomxs[re.search(bx_match, v).group(1)] \
+                                      for v in g.neighbors(bxmol) \
+                                      if re.search(bx_match, v).group(1) in bxtomxs]
+                if not neighbour_mxs_list:
+                    neighbour_mxs_list = [set()]
+                neighbour_mxs_set = set.union(*neighbour_mxs_list)
+                molec_mxs = set.intersection(mxs, neighbour_mxs_set)
+                mol_list.append((bxmol, molec_mxs))
+                mol2 += 1
+                if not g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
+                    for i in range(1,11):
+                        if g.has_node(bx + "_" + str(mol)+ "_" + str(mol2+i)):
+                            mol2 += i
+                            break
+            mol2 = 0
+            mol += 1
+            if not g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
+                for i in range(1,11):
+                    if g.has_node(bx + "_" + str(mol+i)+ "_" + str(mol2)):
+                        mol += i
+                        break
+            #mol += 1
+        return mol_list
 
     @staticmethod
     def split_minimizers_bx_process(bx):
@@ -1277,6 +1312,14 @@ class Physlr:
         The Graph and bx->min dictionary are passed as class variables.
         """
         return Physlr.split_minimizers_bx(bx, Physlr.graph, Physlr.bxtomxs)
+
+    @staticmethod
+    def split_minimizers_bx_process2(bx):
+        """
+        Partition the minimizers of this barcode.
+        The Graph and bx->min dictionary are passed as class variables.
+        """
+        return Physlr.split_minimizers_bx2(bx, Physlr.graph, Physlr.bxtomxs)
 
     def physlr_split_minimizers(self):
         "Given the molecule overlap graph, split the minimizers into molecules"
@@ -1295,6 +1338,36 @@ class Physlr:
             Physlr.bxtomxs = bxtomxs
             with multiprocessing.Pool(self.args.threads) as pool:
                 moltomxs = dict(x for l in pool.map(self.split_minimizers_bx_process,
+                                                    progress(bxtomxs), chunksize=100) for x in l)
+            Physlr.graph = None
+            Physlr.bxtomxs = None
+
+        empty_ct = 0
+        for mol in moltomxs:
+            if not moltomxs[mol]:
+                empty_ct += 1
+                print("%s\t%s" % (mol, ""), file=sys.stdout)
+                print("Warning:", mol, "has no associated minimizers", file=sys.stderr)
+            else:
+                print("%s\t%s" % (mol, " ".join(map(str, moltomxs[mol]))), file=sys.stdout)
+                
+    def physlr_split_minimizers2(self):
+        "Given the molecule overlap graph, split the minimizers into molecules"
+        if len(self.args.FILES) < 2:
+            msg = "physlr split-minimizers: error: graph file and bx to minimizer inputs required"
+            sys.exit(msg)
+        g = self.read_graph([self.args.FILES[0]])
+        bxtomxs = self.read_minimizers([self.args.FILES[1]])
+
+        if self.args.threads == 1:
+            moltomxs = [self.split_minimizers_bx2(bx, g, bxtomxs) for bx in progress(bxtomxs)]
+            moltomxs = dict(x for l in moltomxs for x in l)
+
+        else:
+            Physlr.graph = g
+            Physlr.bxtomxs = bxtomxs
+            with multiprocessing.Pool(self.args.threads) as pool:
+                moltomxs = dict(x for l in pool.map(self.split_minimizers_bx_process2,
                                                     progress(bxtomxs), chunksize=100) for x in l)
             Physlr.graph = None
             Physlr.bxtomxs = None
@@ -1731,6 +1804,40 @@ class Physlr:
         return mxtopos
 
     @staticmethod
+    def index_minimizers_in_backbones_split(backbones, bxtomxs):
+        "Index the positions of the minimizers in the backbones."
+        mxtopos = {}
+        for tid, path in enumerate(progress(backbones)):
+            for pos, u in enumerate(path):
+                for mx in bxtomxs[u]:
+                    mxtopos.setdefault(mx, set()).add((tid, pos))
+        print(
+            int(timeit.default_timer() - t0),
+            "Indexed", len(mxtopos), "minimizers", file=sys.stderr)
+        return mxtopos
+
+    @staticmethod
+    def index_minimizers_in_backbones_edges(backbones, bxtomxs):
+        "Index the positions of the minimizers in the backbones."
+        mxtopos = {}
+        for tid, path in enumerate(progress(backbones)):
+            for pos, (u, v) in enumerate(zip(path, path[1:])):
+                if u not in bxtomxs:
+                    u = u.rsplit("_", 1)[0]
+                if u not in bxtomxs:
+                    u = u.rsplit("_", 1)[0]
+                if v not in bxtomxs:
+                    v = v.rsplit("_", 1)[0]
+                if v not in bxtomxs:
+                    v = v.rsplit("_", 1)[0]
+                for mx in bxtomxs[u] & bxtomxs[v]:
+                    mxtopos.setdefault(mx, set()).add((tid, pos))
+        print(
+            int(timeit.default_timer() - t0),
+            "Indexed", len(mxtopos), "minimizers", file=sys.stderr)
+        return mxtopos
+
+    @staticmethod
     def determine_orientation(x, y, z):
         "Determine the orientation of an alignment."
         if x is not None and z is not None:
@@ -1759,6 +1866,48 @@ class Physlr:
         backbones = [backbone for backbone in backbones
                      if len(backbone) >= self.args.min_component_size]
         mxtopos = Physlr.index_minimizers_in_backbones(backbones, moltomxs)
+
+        return query_mxs, mxtopos, backbones
+
+    def map_indexing_edges(self):
+        "Load data structures and indexes required for mapping."
+        if len(self.args.FILES) < 3:
+            sys.exit("physlr map: error: at least three file arguments are required")
+        path_filenames = [self.args.FILES[0]]
+        target_filenames = [self.args.FILES[1]]
+        query_filenames = self.args.FILES[2:]
+
+        # Index the positions of the minimizers in the backbone.
+        moltomxs = Physlr.read_minimizers(target_filenames)
+        query_mxs = moltomxs if target_filenames == query_filenames else \
+            Physlr.read_minimizers_list(query_filenames)
+
+        # Index the positions of the markers in the backbone.
+        backbones = Physlr.read_paths(path_filenames)
+        backbones = [backbone for backbone in backbones
+                     if len(backbone) >= self.args.min_component_size]
+        mxtopos = Physlr.index_minimizers_in_backbones_edges(backbones, moltomxs)
+
+        return query_mxs, mxtopos, backbones
+
+    def map_indexing_split(self):
+        "Load data structures and indexes required for mapping."
+        if len(self.args.FILES) < 3:
+            sys.exit("physlr map: error: at least three file arguments are required")
+        path_filenames = [self.args.FILES[0]]
+        target_filenames = [self.args.FILES[1]]
+        query_filenames = self.args.FILES[2:]
+
+        # Index the positions of the minimizers in the backbone.
+        moltomxs = Physlr.read_minimizers(target_filenames)
+        query_mxs = moltomxs if target_filenames == query_filenames else \
+            Physlr.read_minimizers_list(query_filenames)
+
+        # Index the positions of the markers in the backbone.
+        backbones = Physlr.read_paths(path_filenames)
+        backbones = [backbone for backbone in backbones
+                     if len(backbone) >= self.args.min_component_size]
+        mxtopos = Physlr.index_minimizers_in_backbones_split(backbones, moltomxs)
 
         return query_mxs, mxtopos, backbones
 
@@ -1852,9 +2001,21 @@ class Physlr:
             tidpos_to_qpos = {}
             for qpos, mx in enumerate(mxs):
                 for tidpos in mxtopos.get(mx, ()):
+                    #print("qid:", qid)
+                    #print("mx:", mx)
+                    #print("qpos:", qpos)
+                    #print("tidpos:", tidpos)
                     tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
+                    #print("tidpos_to_qpos:", tidpos_to_qpos)
+                    #sys.exit(0)
+            #print("tidpos_to_qpos[()]", tidpos_to_qpos[()])
             for tidpos, qpos in tidpos_to_qpos.items():
+                #print("tidpos:", tidpos)
+                #print("qpos:", qpos)
+                #print("tidpos_to_qpos[tidpos]", tidpos_to_qpos[tidpos])
                 tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
+                #print("tidpos_to_qpos[tidpos]", tidpos_to_qpos[tidpos])
+                #sys.exit()
 
             # Count the number of minimizers mapped to each target position.
             tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
@@ -1867,6 +2028,136 @@ class Physlr:
                         tidpos_to_qpos.get((tid, tpos - 1), None),
                         tidpos_to_qpos.get((tid, tpos + 0), None),
                         tidpos_to_qpos.get((tid, tpos + 1), None))
+                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
+            if mapped:
+                num_mapped += 1
+        print(
+            int(timeit.default_timer() - t0),
+            "Mapped", num_mapped, "sequences of", len(query_mxs),
+            f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
+
+    def physlr_map_edges(self):
+        """
+        Map sequences to a physical map.
+        Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
+        """
+
+        query_mxs, mxtopos, _backbones = self.map_indexing_edges()
+
+        # Map the query sequences to the physical map.
+        num_mapped = 0
+        for qid, mxs in progress(query_mxs.items()):
+            # Map each target position to a query position.
+            tidpos_to_qpos = {}
+            for qpos, mx in enumerate(mxs):
+                for tidpos in mxtopos.get(mx, ()):
+                    #print("qid:", qid)
+                    #print("mx:", mx)
+                    #print("qpos:", qpos)
+                    #print("tidpos:", tidpos)
+                    tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
+                    #print("tidpos_to_qpos:", tidpos_to_qpos)
+                    #sys.exit(0)
+            #print("tidpos_to_qpos[()]", tidpos_to_qpos[()])
+            for tidpos, qpos in tidpos_to_qpos.items():
+                #print("tidpos:", tidpos)
+                #print("qpos:", qpos)
+                #print("tidpos_to_qpos[tidpos]", tidpos_to_qpos[tidpos])
+                tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
+                #print("tidpos_to_qpos[tidpos]", tidpos_to_qpos[tidpos])
+                #sys.exit()
+
+            # Count the number of minimizers mapped to each target position.
+            tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
+
+            mapped = False
+            for (tid, tpos), score in tidpos_to_n.items():
+                if score >= self.args.n:
+                    mapped = True
+                    orientation = Physlr.determine_orientation(
+                        tidpos_to_qpos.get((tid, tpos - 1), None),
+                        tidpos_to_qpos.get((tid, tpos + 0), None),
+                        tidpos_to_qpos.get((tid, tpos + 1), None))
+                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
+            if mapped:
+                num_mapped += 1
+        print(
+            int(timeit.default_timer() - t0),
+            "Mapped", num_mapped, "sequences of", len(query_mxs),
+            f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
+
+    def physlr_map_split(self):
+        """
+        Map sequences to a physical map.
+        Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
+        """
+
+        query_mxs, mxtopos, _backbones = self.map_indexing_split()
+
+        # Map the query sequences to the physical map.
+        num_mapped = 0
+        for qid, mxs in progress(query_mxs.items()):
+            tidpos_to_qpos = {}
+            for qpos, mx in enumerate(mxs):
+                for tidpos in mxtopos.get(mx, ()):
+                    tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
+            for tidpos, qpos in tidpos_to_qpos.items():
+                tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
+            # Count the number of minimizers mapped to each target position.
+            tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
+
+            mapped = False
+            for (tid, tpos), score in tidpos_to_n.items():
+                if score >= self.args.n:
+                    mapped = True
+                    orientation = Physlr.determine_orientation(
+                        tidpos_to_qpos.get((tid, tpos - 1), None),
+                        tidpos_to_qpos.get((tid, tpos + 0), None),
+                        tidpos_to_qpos.get((tid, tpos + 1), None))
+                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
+            if mapped:
+                num_mapped += 1
+        print(
+            int(timeit.default_timer() - t0),
+            "Mapped", num_mapped, "sequences of", len(query_mxs),
+            f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
+
+    def physlr_map_splitv2(self):
+        """
+        Map sequences to a physical map.
+        Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
+        """
+
+        query_mxs, mxtopos, _backbones = self.map_indexing_split()
+
+        # Map the query sequences to the physical map.
+        num_mapped = 0
+        for qid, mxs in progress(query_mxs.items()):
+            tidpos_to_qpos = {}
+            for qpos, mx in enumerate(mxs):
+                for tidpos in mxtopos.get(mx, ()):
+                    tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
+            for tidpos, qpos in tidpos_to_qpos.items():
+                tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
+            # Count the number of minimizers mapped to each target position.
+            tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
+
+            mapped = False
+            for (tid, tpos), score in tidpos_to_n.items():
+                if score >= self.args.n:
+                    mapped = True
+                    before = [tidpos_to_qpos.get((tid, tpos - i), None)
+                              for i in range(10)
+                              if tidpos_to_qpos.get((tid, tpos - i), None) is not None]
+                    before_median = statistics.median_low(before)
+                    after = [tidpos_to_qpos.get((tid, tpos + i), None)
+                             for i in range(10)
+                             if tidpos_to_qpos.get((tid, tpos + i), None) is not None]
+                    after_median = statistics.median_high(after)
+                    orientation = Physlr.determine_orientation(
+                        before_median,
+                        tidpos_to_qpos.get((tid, tpos + 0), None),
+                        after_median)
                     print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
             if mapped:
                 num_mapped += 1
