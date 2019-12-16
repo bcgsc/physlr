@@ -953,9 +953,19 @@ min_path_size=200
 %.backbone.fleshed.path: %.tsv %.backbone.path
 	$(python) $(bin)/physlr flesh-backbone --min-component-size=$(min_component_size) -V$V $< $*.backbone.path >$@
 
+
+# Split the minimizers to molecules
+%.overlap.m$m.mol.mol2-bcs.split.tsv: %.overlap.m$m.mol.mol2-bcs.tsv %.tsv
+	$(time) $(python) $(bin)/physlr split-minimizers2 -t$t -V$V $< $*.tsv >$@
+
+
 # Split the minimizers to molecules
 %.overlap.m$m.mol.split.tsv: %.overlap.m$m.mol.tsv %.tsv
-	$(python) $(bin)/physlr split-minimizers -t$t -V$V $< $*.tsv >$@
+	$(time) $(python) $(bin)/physlr split-minimizers -t$t -V$V $< $*.tsv >$@
+
+# Split the minimizers to molecules
+%.overlap.n$n.mol.split.tsv: %.overlap.n$n.mol.tsv %.tsv
+	$(time) $(python) $(bin)/physlr split-minimizers -t$t -V$V $< $*.tsv >$@
 
 # Split the reads into molecules
 %.split.fq.gz: $(lr).fq.gz %.split.tsv $(lr).k$k-w$w.physlr.tsv
@@ -973,6 +983,14 @@ min_path_size=200
 # Map the draft assembly to the backbone graph and output BED.
 %.backbone.map.$(draft).n10.bed: %.backbone.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+
+# Map the draft assembly to the backbone graph and output BED.
+%.backbone.map-split.$(draft).n10.bed: %.backbone.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.split.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-split -V$V -n10 $^ >$@
+
+# Map the draft assembly to the backbone graph and output BED.
+%.backbone.map-splitv2.$(draft).n10.bed: %.backbone.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.split.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-splitv2 -V$V -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED.
 %.overlap.m$m.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
@@ -1001,6 +1019,23 @@ min_path_size=200
 # Map the draft assembly to the backbone graph using physlr map-mkt and output BED.
 %.overlap.m$m.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
+
+# Map the draft assembly to the backbone graph using physlr map-mkt and output BED.
+%.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
+
+# Map the draft assembly to the backbone graph using physlr map-mkt and output BED.
+%.overlap.n$n.mol.backbone.map-edges.$(draft).n10.bed: %.overlap.n$n.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-edges -V$V -n10 $^ >$@
+
+%.overlap.n$n.mol.backbone.map-split.$(draft).n10.bed: %.overlap.n$n.mol.backbone.path %.overlap.n$n.mol.split.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-split -V$V -n10 $^ >$@
+
+%.overlap.n$m.mol.backbone.map-splitv2.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.overlap.m$m.mol.split.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-splitv2 -V$V -n10 $^ >$@
+
+%.overlap.m$m.mol.backbone.map-splitv2.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.overlap.m$m.mol.split.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-splitv2 -V$V -n10 $^ >$@
 
 # Map the draft assembly to the k3-cliques backbone graph using physlr map-mkt and output BED.
 %.overlap.m$m.k3.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
