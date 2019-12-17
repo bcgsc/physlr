@@ -183,12 +183,11 @@ main(int argc, char* argv[])
 		std::cerr << "physlr-molecules does not support multithreading currently." << std::endl;
 		t = 1;
 	}
-	if (separationStrategy.compare("bc")) {
+	if (separationStrategy != "bc") {
 		std::cerr << "physlr-molecules only supports biconnected components currently."
 		          << std::endl;
 		separationStrategy = "bc";
 	}
-	// TODO add checks for separation strategy
 	if (failed) {
 		printUsage(progname);
 		exit(EXIT_FAILURE);
@@ -256,6 +255,7 @@ main(int argc, char* argv[])
 #endif
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 
+	std::cerr << "Using " << t << " threads" << std::endl;
 	uint64_t vertexNum = indexToBarcode.size();
 
 	vecVertexToComponent_t vecVertexToComponent;
@@ -315,8 +315,8 @@ main(int argc, char* argv[])
 		}
 
 		// Delete subgraph to keep memory in control
-		for (auto i = g.m_children.begin(); i != g.m_children.end(); ++i) {
-			delete *i;
+		for (auto& i : g.m_children) {
+			delete i;
 		}
 		g.m_children.clear();
 
