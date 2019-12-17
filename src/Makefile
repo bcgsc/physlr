@@ -4,10 +4,10 @@ PREFIX=$(HOME)/.local
 
 .PHONY: all clean check install lint clang-format clang-tidy fix check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf check-physlr-overlap
 
-all: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf
+all: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-molecules
 
 clean:
-	rm -f physlr-indexlr physlr-filter-barcodes physlr-filter-bxmx physlr-overlap physlr-makebf
+	rm -f physlr-indexlr physlr-filter-barcodes physlr-filter-bxmx physlr-overlap physlr-makebf physlr-molecules
 
 # Check the C++ source code for errors.
 lint: clang-format clang-tidy
