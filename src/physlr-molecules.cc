@@ -37,18 +37,16 @@ memory_usage()
 	return mem;
 }
 
-using namespace boost;
-
 struct vertexProperties
 {
-	std::string name;
-	int weight;
-	size_t indexOriginal;
+	std::string name = "";
+	int weight = 0;
+	size_t indexOriginal = 0;
 };
 
 struct edgeProperties
 {
-	int weight;
+	int weight = 0;
 };
 
 struct edge_component_t
@@ -57,15 +55,18 @@ struct edge_component_t
 	{
 		num = 555
 	};
-	using kind = edge_property_tag;
+	using kind = boost::edge_property_tag;
 } edge_component;
 
-using graph_t = subgraph<adjacency_list<
-    vecS,
-    vecS,
-    undirectedS,
+using graph_t = boost::subgraph<boost::adjacency_list<
+    boost::vecS,
+    boost::vecS,
+    boost::undirectedS,
     vertexProperties,
-    property<edge_index_t, int, property<edge_component_t, std::size_t, edgeProperties>>>>;
+    boost::property<
+        boost::edge_index_t,
+        int,
+        boost::property<edge_component_t, std::size_t, edgeProperties>>>>;
 using vertex_t = graph_t::vertex_descriptor;
 using edge_t = graph_t::edge_descriptor;
 using barcodeToIndex_t = std::unordered_map<std::string, vertex_t>;
@@ -107,19 +108,19 @@ printUsage(const std::string& progname)
 }
 
 void
-printGraph(graph_t& g)
+printGraph(const graph_t& g)
 {
 	std::cout << "U\tn" << std::endl;
 	std::string node1, node2;
 	int weight;
-	auto vertexItRange = vertices(g);
+	auto vertexItRange = boost::vertices(g);
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		node1 = g[*vertexIt].name;
 		weight = g[*vertexIt].weight;
 		std::cout << node1 << "\t" << weight << "\n";
 	}
 	std::cout << "\nU\tV\tn" << std::endl;
-	auto edgeItRange = edges(g);
+	auto edgeItRange = boost::edges(g);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
 		weight = g[*edgeIt].weight;
 		node1 = g[boost::source(*edgeIt, g)].name;
@@ -210,10 +211,10 @@ main(int argc, char* argv[])
 		std::string line;
 		bool atEdges = false;
 		while (std::getline(infileStream, line)) {
-			if (line == "" or line == "U\tn") {
+			if (line.empty() or line == "U\tn") {
 				continue;
 			}
-			if (line == "" or line == "U\tV\tn") {
+			if (line.empty() or line == "U\tV\tn") {
 				atEdges = true;
 				if (verbose) {
 					std::cerr << "Loaded vertices to graph ";
@@ -231,7 +232,7 @@ main(int argc, char* argv[])
 			ss >> node1;
 			if (!atEdges) {
 				ss >> weight;
-				u = add_vertex(g);
+				u = boost::add_vertex(g);
 				g[u].name = node1;
 				g[u].weight = weight;
 				g[u].indexOriginal = u;
@@ -239,7 +240,7 @@ main(int argc, char* argv[])
 				indexToBarcode[u] = node1;
 			} else {
 				ss >> node2 >> weight;
-				E = add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
+				E = boost::add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
 				g[E].weight = weight;
 			}
 		}
@@ -270,18 +271,19 @@ main(int argc, char* argv[])
 		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
 
 		// Find biconnected components
-		property_map<graph_t, edge_component_t>::type component = get(edge_component, subgraph);
-		biconnected_components(subgraph, component);
+		boost::property_map<graph_t, edge_component_t>::type component =
+		    boost::get(edge_component, subgraph);
+		boost::biconnected_components(subgraph, component);
 
 		std::vector<vertex_t> art_points_vec;
 		articulation_points(subgraph, std::back_inserter(art_points_vec));
 		std::unordered_set<vertex_t> art_points(art_points_vec.begin(), art_points_vec.end());
 
 		// Remove articulation points from biconnected components
-		graph_traits<graph_t>::edge_iterator ei, ei_end;
+		boost::graph_traits<graph_t>::edge_iterator ei, ei_end;
 		componentToVertexSet_t componentToVertexSet;
 
-		for (boost::tie(ei, ei_end) = edges(subgraph); ei != ei_end; ++ei) {
+		for (boost::tie(ei, ei_end) = boost::edges(subgraph); ei != ei_end; ++ei) {
 			size_t componentNum = component[*ei];
 			if (componentNum + 1 > componentToVertexSet.size()) {
 				componentToVertexSet.resize(componentNum + 1);
@@ -342,7 +344,7 @@ main(int argc, char* argv[])
 		}
 
 		for (size_t j = 0; j < maxVal + 1; j++) {
-			vertex_t u = add_vertex(outG);
+			vertex_t u = boost::add_vertex(outG);
 			outG[u].name = g[i].name + "_" + std::to_string(j);
 			outG[u].weight = g[i].weight;
 			outG[u].indexOriginal = u;
@@ -350,7 +352,7 @@ main(int argc, char* argv[])
 		}
 	}
 
-	auto edgeItRange = edges(g);
+	auto edgeItRange = boost::edges(g);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
 		vertex_t u, v;
 		u = g[boost::source(*edgeIt, g)].indexOriginal;
@@ -365,7 +367,8 @@ main(int argc, char* argv[])
 		size_t vMolecule = vecVertexToComponent[v][u];
 		std::string uName = g[u].name + "_" + std::to_string(uMolecule);
 		std::string vName = g[v].name + "_" + std::to_string(vMolecule);
-		edge_t e = add_edge(outGBarcodeToIndex[uName], outGBarcodeToIndex[vName], outG).first;
+		edge_t e =
+		    boost::add_edge(outGBarcodeToIndex[uName], outGBarcodeToIndex[vName], outG).first;
 		outG[e].weight = g[*edgeIt].weight;
 	}
 
