@@ -51,7 +51,6 @@ struct edgeProperties
 	int weight;
 };
 
-namespace boost {
 struct edge_component_t
 {
 	enum
@@ -60,7 +59,6 @@ struct edge_component_t
 	};
 	using kind = edge_property_tag;
 } edge_component;
-}
 
 using graph_t = subgraph<adjacency_list<
     vecS,
