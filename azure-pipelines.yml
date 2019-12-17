@@ -17,8 +17,7 @@ jobs:
       sudo ln -s clang-format-7 /usr/bin/clang-format
       sudo ln -s clang-tidy-7 /usr/bin/clang-tidy
     displayName: Install clang-format and clang-tidy
-  - script: |
-    sudo apt-get install -qq libboost-dev
+  - script: sudo apt-get install -qq libboost-dev
     displayName: Install boost
   - script: pip3 install pylint .
     displayName: Install Python packages
