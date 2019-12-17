@@ -1996,14 +1996,15 @@ class Physlr:
     def set_settings(round):
         if round == 1:
             print("Settings for round 1:", file=sys.stderr)
-            Physlr.args.skip_small = False
             Physlr.args.skip_small = True
             # Physlr.args.strategy = ["distributed+sqcosbin"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.5
             Physlr.args.sqcost = 0.85
-            print("# threads: ",Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
-                  "|  junction_depth ", Physlr.args.junction_depth, "| Skip small:", Physlr.args.skip_small,
+            print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
+                  "\n |  junction_depth ", Physlr.args.junction_depth,
+                  " |  prune_junctions ", Physlr.args.prune_junctions,
+                  "\n | Skip small:", Physlr.args.skip_small,
                   file=sys.stderr)
         if round == 2:
             print("Settings for round 2:", file=sys.stderr)
@@ -2013,17 +2014,21 @@ class Physlr:
             Physlr.args.junction_depth = 10
             Physlr.args.cost = 0.55
             Physlr.args.sqcost = 0.87
-            print("# threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
-                  "|  junction_depth ", Physlr.args.junction_depth, "| Skip small:", Physlr.args.skip_small,
+            print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
+                  "\n |  junction_depth ", Physlr.args.junction_depth,
+                  " |  prune_junctions ", Physlr.args.prune_junctions,
+                  "\n | Skip small:", Physlr.args.skip_small,
                   file=sys.stderr)
         if round == 3:
             print("Settings for round 3:", file=sys.stderr)
             # Physlr.args.strategy = ["sqcosbin"]
             Physlr.args.junction_depth = 10
-            Physlr.args.cost = 0.55
+            Physlr.args.cost = 0.6
             Physlr.args.sqcost = 0.90
-            print("# threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
-                  "|  junction_depth ", Physlr.args.junction_depth, "| Skip small:", Physlr.args.skip_small,
+            print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
+                  "\n |  junction_depth ", Physlr.args.junction_depth,
+                  " |  prune_junctions ", Physlr.args.prune_junctions,
+                  "\n | Skip small:", Physlr.args.skip_small,
                   file=sys.stderr)
         # if round == 4:
         #     # Physlr.args.strategy = ["sqcosbin"]
@@ -2073,7 +2078,7 @@ class Physlr:
             Physlr.set_settings(round)
             Physlr.args.prune_bridges = 10
             Physlr.args.prune_branches = 10
-            Physlr.args.prune_junctions = 30
+            Physlr.args.prune_junctions = 10
             if round > 1:
                 print(
                     int(timeit.default_timer() - t0),
@@ -2216,9 +2221,11 @@ class Physlr:
             #old_molecules = molecules
             #gc.collect()
 
-
-        Physlr.identify_junctions_graph(
-            gin, self.args.prune_junctions, self.args.junction_depth)
+        if True:
+            # No effect on results
+            # only set to True for reporting the number of junctions after last round of mol-sep
+            Physlr.identify_junctions_graph(
+                gin, self.args.prune_junctions, self.args.junction_depth)
         gout = gin
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
