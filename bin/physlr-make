@@ -20,7 +20,7 @@ bloom_filter_size=10000000000 #10GB
 # mol_strategy=distributed
 #mol_strategy=distributed++cosbin+sqcosbin++cosbin+sqcosbin++cosbin+sqcosbin++distributed++cosbin+sqcosbin++distributed++cosbin+sqcosbin
 #mol_strategy=distributed++sqcosbin++sqcosbin++distributed++sqcosbin++distributed++sqcosbin
-mol_strategy=distributed+sqcosbin++sqcosbin++sqcosbin++sqcosbin
+mol_strategy=distributed+sqcosbin++sqcosbin++sqcosbin
 
 # Path to the Physlr project.
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
@@ -67,7 +67,7 @@ prune_bridges=10
 # Round of molecule separation to start from
 round=1
 
-ccc=x
+ccc=
 
 # Level of verbosity
 # 0: silent
@@ -1005,7 +1005,7 @@ min_path_size=200
 	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
 
 # Map the reference to the backbone graph and output PAF.
-%.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-$(ccc).physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+%.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
 # Lift over query coordinates of a PAF file from minimzer index to nucleotide coordinate.
