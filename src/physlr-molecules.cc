@@ -316,6 +316,7 @@ main(int argc, char* argv[])
 
 		// Delete subgraph to keep memory in control
 		for (auto& i : g.m_children) {
+			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
 			delete i;
 		}
 		g.m_children.clear();
