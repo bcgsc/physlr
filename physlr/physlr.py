@@ -2000,7 +2000,7 @@ class Physlr:
             # Physlr.args.strategy = ["distributed+sqcosbin"]
             Physlr.args.junction_depth = 0
             Physlr.args.cost = 0.5
-            Physlr.args.sqcost = 0.85
+            Physlr.args.sqcost = 0.80
             print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
                   "\n |  junction_depth ", Physlr.args.junction_depth,
                   " |  prune_junctions ", Physlr.args.prune_junctions,
@@ -2013,7 +2013,7 @@ class Physlr:
             Physlr.args.skip_small = False
             Physlr.args.junction_depth = 10
             Physlr.args.cost = 0.55
-            Physlr.args.sqcost = 0.87
+            Physlr.args.sqcost = 0.85
             print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
                   "\n |  junction_depth ", Physlr.args.junction_depth,
                   " |  prune_junctions ", Physlr.args.prune_junctions,
@@ -2024,7 +2024,7 @@ class Physlr:
             # Physlr.args.strategy = ["sqcosbin"]
             Physlr.args.junction_depth = 10
             Physlr.args.cost = 0.6
-            Physlr.args.sqcost = 0.90
+            Physlr.args.sqcost = 0.88
             print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
                   "\n |  junction_depth ", Physlr.args.junction_depth,
                   " |  prune_junctions ", Physlr.args.prune_junctions,
