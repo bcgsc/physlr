@@ -395,7 +395,7 @@ main(int argc, char* argv[])
 #endif
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 
-	std::cerr << "Generating new graph" << std::endl;
+	std::cerr << "Generating molecule overlap graph" << std::endl;
 
 	graph_t newG;
 	componentsToNewGraph(g, newG, vecVertexToComponent);
