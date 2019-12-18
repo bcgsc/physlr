@@ -104,7 +104,8 @@ printUsage(const std::string& progname)
 	             "  -s --separation-strategy   \n"
 	             "  -t N       use N number of threads [1]\n"
 	             "  --help     display this help and exit\n"
-	             "  SEPARATION-STRATEGY      + separated list of molecule separation strategies [bc, k3, distributed, cosq2]\n";
+	             "  SEPARATION-STRATEGY      + separated list of molecule separation strategies "
+	             "[bc, k3, distributed, cosq2]\n";
 }
 
 void
