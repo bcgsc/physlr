@@ -305,7 +305,6 @@ main(int argc, char* argv[])
 	int c;
 	int optindex = 0;
 	char* end = nullptr;
-	static int benchmark = 0;
 	static int help = 0;
 	std::string separationStrategy = "bc";
 	bool verbose = false;
@@ -313,7 +312,6 @@ main(int argc, char* argv[])
 	bool failed = false;
 	static const struct option longopts[] = {
 		{ "help", no_argument, &help, 1 },
-		{ "benchmark", no_argument, &benchmark, 1 },
 		{ "separation-strategy", required_argument, nullptr, 's' },
 		{ nullptr, 0, nullptr, 0 }
 	};
@@ -379,8 +377,10 @@ main(int argc, char* argv[])
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
 		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
+
 		vertexToComponent_t vertexToComponent;
 		biconnectedComponents(subgraph, vertexToComponent);
+
 		// Delete subgraph to keep memory in control
 		for (auto& i : g.m_children) {
 			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
