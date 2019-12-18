@@ -2009,7 +2009,9 @@ class Physlr:
         if round == 2:
             print("Settings for round 2:", file=sys.stderr)
             # Physlr.args.strategy = ["sqcosbin"]
-            Physlr.args.threads = int(Physlr.args.threads/2)
+            Physlr.args.threads = int(Physlr.args.threads/8)
+            if Physlr.args.threads < 1:
+                Physlr.args.threads = 1
             Physlr.args.skip_small = False
             Physlr.args.junction_depth = 10
             Physlr.args.cost = 0.55
