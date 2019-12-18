@@ -2290,12 +2290,12 @@ class Physlr:
         return dist
 
     @staticmethod
-    def normal_estimation(x, p, n):
+    def normal_estimation(x, probability, n):
         """
-        Read arks pair tsv
+        Compute binomial estimation
         """
-        mean_val = n * p
-        std_dev = float(math.sqrt(mean_val * (1 - p)))
+        mean_val = n * probability
+        std_dev = float(math.sqrt(mean_val * (1 - probability)))
         return 0.5 * (1 + math.erf((x - mean_val) / (std_dev * math.sqrt(2))))
 
     @staticmethod
@@ -2313,13 +2313,65 @@ class Physlr:
         return -1
 
     @staticmethod
+    def orient_part_of_path_backward(pairs, path, unoriented, curr_pos, name):
+        """
+        Orient small part of path based on ARCS scaffold pairing information going backwards
+        """
+        idxtojoin = {0:"-+", 1:"--", 2:"++", 3:"+-"}
+        while unoriented:
+            prev_pos = curr_pos - 1
+            pair = (path[prev_pos][:-1], name[:-1])
+            if pair in pairs:
+                join_ori = pairs[pair]
+                max_idx = Physlr.is_link_significant(join_ori)
+                if max_idx != -1:
+                    curr_ori = idxtojoin[max_idx][1]
+                    if curr_ori == name[-1]:
+                        prev_ori = idxtojoin[max_idx][0]
+                        path[prev_pos] = path[prev_pos][0:-1] + prev_ori
+                        del unoriented[-1]
+                        curr_pos = prev_pos
+                        name = path[prev_pos]
+                    else:
+                        unoriented.clear()
+                else:
+                    unoriented.clear()
+            else:
+                unoriented.clear()
+
+        return path, unoriented
+
+
+    @staticmethod
+    def orient_part_of_path_forward(pairs, path, unoriented, curr_pos, name):
+        """
+        Orient small part of path based on ARCS scaffold pairing information going forwards
+        """
+        idxtojoin = {0:"-+", 1:"--", 2:"++", 3:"+-"}
+        prev_pos = curr_pos - 1
+        prev_name = path[prev_pos]
+        pair = (prev_name[:-1], name[:-1])
+        if pair in pairs:
+            join_orientation = pairs[pair]
+            max_idx = Physlr.is_link_significant(join_orientation)
+            if max_idx != -1:
+                if idxtojoin[max_idx][0] == prev_name[-1]:
+                    path[curr_pos] = name[:-1] + idxtojoin[max_idx][1]
+                else:
+                    unoriented.append(curr_pos)
+            else:
+                unoriented.append(curr_pos)
+        else:
+            unoriented.append(curr_pos)
+
+        return path, unoriented
+
+    @staticmethod
     def orient_path(path, pairs):
         """
         Orient path based on ARCS scaffold pairing information
         """
         unoriented = []
-        prev_pos = 1
-        idxtojoin = {0:"-+", 1:"--", 2:"++", 3:"+-"}
 
         if len(path) == 1 and path[0][-1] == ".":
             path[0] = path[0][0:-1] + "+"
@@ -2335,47 +2387,18 @@ class Physlr:
                         temp_curr_pos = curr_pos
                         temp_name = name
 
-                        while unoriented:
-                            prev_pos = curr_pos - 1
-                            pair = (path[prev_pos][:-1], name[:-1])
-                            if pair in pairs:
-                                join_ori = pairs[pair]
-                                max_idx = Physlr.is_link_significant(join_ori)
-                                if max_idx != -1:
-                                    curr_ori = idxtojoin[max_idx][1]
-                                    if curr_ori == name[-1]:
-                                        prev_ori = idxtojoin[max_idx][0]
-                                        path[prev_pos] = path[prev_pos][0:-1] + prev_ori
-                                        del unoriented[-1]
-                                        curr_pos = prev_pos
-                                        name = path[prev_pos]
-                                    else:
-                                        unoriented.clear()
-                                else:
-                                    unoriented.clear()
+                        path, unoriented = Physlr.orient_part_of_path_backward(pairs, path,
+                                                                               unoriented, curr_pos,
+                                                                               name)
 
-                            else:
-                                unoriented.clear()
                         curr_pos = temp_curr_pos
                         name = temp_name
                 else:
                     if not unoriented:
-                        prev_pos = curr_pos - 1
-                        prev_name = path[prev_pos]
-                        pair = (prev_name[:-1], name[:-1])
-                        if pair in pairs:
-                            join_orientation = pairs[pair]
-                            max_idx = Physlr.is_link_significant(join_orientation)
-                            if max_idx != -1:
-                                if idxtojoin[max_idx][0] == prev_name[-1]:
-                                    path[curr_pos] = name[:-1] + idxtojoin[max_idx][1]
-                                else:
-                                    unoriented.append(curr_pos)
-                            else:
-                                unoriented.append(curr_pos)
+                        path, unoriented = Physlr.orient_part_of_path_forward(pairs, path,
+                                                                               unoriented, curr_pos,
+                                                                               name)
 
-                        else:
-                            unoriented.append(curr_pos)
                     else:
                         unoriented.append(curr_pos)
         return path
