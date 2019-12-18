@@ -102,7 +102,6 @@ printUsage(const std::string& progname)
 	          << "  [-s SEPARATION-STRATEGY] [-v -t T] FILE...\n\n"
 	             "  -v         enable verbose output\n"
 	             "  -s --separation-strategy   \n"
-	             "  -t N       use N number of threads [1]\n"
 	             "  --help     display this help and exit\n"
 	             "  SEPARATION-STRATEGY      `+` separated list of molecule separation strategies "
 	             "[bc]\n";
@@ -305,18 +304,16 @@ main(int argc, char* argv[])
 	auto progname = "physlr-molecules";
 	int c;
 	int optindex = 0;
-	char* end = nullptr;
 	static int help = 0;
 	std::string separationStrategy = "bc";
 	bool verbose = false;
-	unsigned t = 1;
 	bool failed = false;
 	static const struct option longopts[] = {
 		{ "help", no_argument, &help, 1 },
 		{ "separation-strategy", required_argument, nullptr, 's' },
 		{ nullptr, 0, nullptr, 0 }
 	};
-	while ((c = getopt_long(argc, argv, "s:vt:", longopts, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, "s:v", longopts, &optindex)) != -1) {
 		switch (c) {
 		case 0:
 			break;
@@ -325,9 +322,6 @@ main(int argc, char* argv[])
 			break;
 		case 'v':
 			verbose = true;
-			break;
-		case 't':
-			t = strtoul(optarg, &end, 10);
 			break;
 		default:
 			exit(EXIT_FAILURE);
@@ -345,10 +339,6 @@ main(int argc, char* argv[])
 		printErrorMsg(progname, "missing file operand");
 		failed = true;
 	}
-	if (t > 1) {
-		std::cerr << "physlr-molecules does not support multithreading currently." << std::endl;
-		t = 1;
-	}
 	if (separationStrategy != "bc") {
 		printErrorMsg(progname, "unsupported molecule separation strategy");
 		failed = true;
@@ -360,8 +350,6 @@ main(int argc, char* argv[])
 
 	graph_t g;
 	readTSV(g, infiles, verbose);
-
-	std::cerr << "Using " << t << " threads" << std::endl;
 
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
