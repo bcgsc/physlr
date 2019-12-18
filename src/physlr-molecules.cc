@@ -105,7 +105,7 @@ printUsage(const std::string& progname)
 	             "  -t N       use N number of threads [1]\n"
 	             "  --help     display this help and exit\n"
 	             "  SEPARATION-STRATEGY      + separated list of molecule separation strategies "
-	             "[bc, k3, distributed, cosq2]\n";
+	             "[bc]\n";
 }
 
 void
@@ -335,8 +335,7 @@ main(int argc, char* argv[])
 	}
 	std::vector<std::string> infiles(&argv[optind], &argv[argc]);
 	if (argc < 1) {
-		printUsage(progname);
-		exit(EXIT_FAILURE);
+		failed = true;
 	}
 	if (help != 0) {
 		printVersion();
@@ -351,9 +350,8 @@ main(int argc, char* argv[])
 		t = 1;
 	}
 	if (separationStrategy != "bc") {
-		std::cerr << "physlr-molecules only supports biconnected components currently."
-		          << std::endl;
-		separationStrategy = "bc";
+		printErrorMsg(progname, "unsupported molecule separation strategy");
+		failed = true;
 	}
 	if (failed) {
 		printUsage(progname);
