@@ -193,6 +193,7 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
+// Generate a new graph from an old graph using component information from molecule separation
 void
 componentsToNewGraph(
     const graph_t& oldG,
