@@ -99,7 +99,7 @@ static void
 printUsage(const std::string& progname)
 {
 	std::cout << "Usage:  " << progname
-	          << "  [-s SEPARATION-STRATEGY] [-v -t T] FILE...\n\n"
+	          << "  [-s SEPARATION-STRATEGY] [-v] FILE...\n\n"
 	             "  -v         enable verbose output\n"
 	             "  -s --separation-strategy   \n"
 	             "  --help     display this help and exit\n"
