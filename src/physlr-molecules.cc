@@ -250,6 +250,53 @@ componentsToNewGraph(
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
+void
+biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
+{
+	// Find biconnected components
+	boost::property_map<graph_t, edgeComponent_t>::type component =
+	    boost::get(edgeComponent, subgraph);
+	boost::biconnected_components(subgraph, component);
+
+	std::vector<vertex_t> art_points_vec;
+	articulation_points(subgraph, std::back_inserter(art_points_vec));
+	std::unordered_set<vertex_t> art_points(art_points_vec.begin(), art_points_vec.end());
+
+	// Remove articulation points from biconnected components
+	boost::graph_traits<graph_t>::edge_iterator ei, ei_end;
+	componentToVertexSet_t componentToVertexSet;
+
+	for (boost::tie(ei, ei_end) = boost::edges(subgraph); ei != ei_end; ++ei) {
+		size_t componentNum = component[*ei];
+		if (componentNum + 1 > componentToVertexSet.size()) {
+			componentToVertexSet.resize(componentNum + 1);
+		}
+
+		vertex_t node1 = source(*ei, subgraph);
+		vertex_t node2 = target(*ei, subgraph);
+
+		if (art_points.find(node1) == art_points.end()) {
+			componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
+		}
+		if (art_points.find(node2) == art_points.end()) {
+			componentToVertexSet[componentNum].insert(subgraph[node2].indexOriginal);
+		}
+	}
+
+	size_t moleculeNum = 0;
+
+	// Remove components with size less than 1
+	for (auto&& vertexSet : componentToVertexSet) {
+		if (vertexSet.size() <= 1) {
+			continue;
+		}
+		for (auto&& vertex : vertexSet) {
+			vertexToComponent[vertex] = moleculeNum;
+		}
+		moleculeNum++;
+	}
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -332,51 +379,8 @@ main(int argc, char* argv[])
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
 		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
-
-		// Find biconnected components
-		boost::property_map<graph_t, edgeComponent_t>::type component =
-		    boost::get(edgeComponent, subgraph);
-		boost::biconnected_components(subgraph, component);
-
-		std::vector<vertex_t> art_points_vec;
-		articulation_points(subgraph, std::back_inserter(art_points_vec));
-		std::unordered_set<vertex_t> art_points(art_points_vec.begin(), art_points_vec.end());
-
-		// Remove articulation points from biconnected components
-		boost::graph_traits<graph_t>::edge_iterator ei, ei_end;
-		componentToVertexSet_t componentToVertexSet;
-
-		for (boost::tie(ei, ei_end) = boost::edges(subgraph); ei != ei_end; ++ei) {
-			size_t componentNum = component[*ei];
-			if (componentNum + 1 > componentToVertexSet.size()) {
-				componentToVertexSet.resize(componentNum + 1);
-			}
-
-			vertex_t node1 = source(*ei, subgraph);
-			vertex_t node2 = target(*ei, subgraph);
-
-			if (art_points.find(node1) == art_points.end()) {
-				componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
-			}
-			if (art_points.find(node2) == art_points.end()) {
-				componentToVertexSet[componentNum].insert(subgraph[node2].indexOriginal);
-			}
-		}
-
-		size_t moleculeNum = 0;
 		vertexToComponent_t vertexToComponent;
-
-		// Remove components with size less than 1
-		for (auto&& vertexSet : componentToVertexSet) {
-			if (vertexSet.size() <= 1) {
-				continue;
-			}
-			for (auto&& vertex : vertexSet) {
-				vertexToComponent[vertex] = moleculeNum;
-			}
-			moleculeNum++;
-		}
-
+		biconnectedComponents(subgraph, vertexToComponent);
 		// Delete subgraph to keep memory in control
 		for (auto& i : g.m_children) {
 			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
