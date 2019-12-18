@@ -2419,6 +2419,72 @@ class Physlr:
                     seq += ("N" * len(seqs[name[0:-1]]))
         return seq
 
+    @staticmethod
+    def path_to_fasta_no_arcs(seqs, paths, gaps):
+        """
+        Convert path to fasta when --arcs-pair isn't used
+        """
+
+        num_scaffolds = 0
+        num_contigs = 0
+        num_bases = 0
+
+        for path in progress(paths):
+            if not path:
+                continue
+
+            all_unoriented = all([name[-1] == "." for name in path])
+            if all_unoriented:
+                continue
+
+            seq = gaps.join(Physlr.get_oriented_sequence(seqs, name)
+                            if name[-1] != "." else ("N" * len(seqs[name[0:-1]]))
+                            for name in path)
+
+            if len(seq) < Physlr.args.min_length:
+                continue
+            num_scaffolds += 1
+            print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
+            num_contigs += len(path)
+            num_bases += len(seq)
+
+        return num_scaffolds, num_contigs, num_bases
+
+    @staticmethod
+    def path_to_fasta_with_arcs(seqs, paths, gaps):
+        """
+        Convert path to fasta when --arcs-pair is used
+        """
+
+        pairs = Physlr.read_arcs_pair(Physlr.args.arcs_pair)
+        dist = Physlr.read_dist_est(Physlr.args.dist_est, Physlr.args.dist_type)
+
+        num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
+        print(num_unoriented, "unoriented pieces at the beginning", file=sys.stderr)
+
+        paths = Physlr.orient_paths(paths, pairs)
+
+        num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
+        print(num_unoriented, "unoriented pieces at the end", file=sys.stderr)
+
+        for path in paths:
+            if not dist:
+                seq = gaps.join(Physlr.get_oriented_sequence(seqs, name)
+                                if name[-1] != "." else ("N" * len(seqs[name[0:-1]]))
+                                for name in path)
+            else:
+                seq = Physlr.generate_seq_with_dist(seqs, dist, path, gaps)
+
+            if len(seq) < Physlr.args.min_length:
+                continue
+            num_scaffolds += 1
+            print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
+            num_contigs += len(path)
+            num_bases += len(seq)
+
+        return num_scaffolds, num_contigs, num_bases, paths
+
+
 
     def physlr_path_to_fasta(self):
         """
@@ -2432,57 +2498,13 @@ class Physlr:
         seqs = Physlr.read_fastas(fasta_filenames)
         paths = Physlr.read_paths(path_filenames)
 
-        num_scaffolds = 0
-        num_contigs = 0
-        num_bases = 0
-
         gaps = "N" * self.args.gap_size
 
         if self.args.arcs_pair == "":
-            for path in progress(paths):
-                if not path:
-                    continue
-
-                all_unoriented = all([name[-1] == "." for name in path])
-                if all_unoriented:
-                    continue
-
-                seq = gaps.join(Physlr.get_oriented_sequence(seqs, name)
-                                if name[-1] != "." else ("N" * len(seqs[name[0:-1]]))
-                                for name in path)
-
-                if len(seq) < self.args.min_length:
-                    continue
-                num_scaffolds += 1
-                print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
-                num_contigs += len(path)
-                num_bases += len(seq)
+            num_scaffolds, num_contigs, num_bases = Physlr.path_to_fasta_no_arcs(seqs, paths, gaps)
         else:
-            pairs = Physlr.read_arcs_pair(self.args.arcs_pair)
-            dist = Physlr.read_dist_est(self.args.dist_est, self.args.dist_type)
-
-            num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
-            print(num_unoriented, "unoriented pieces at the beginning", file=sys.stderr)
-
-            paths = Physlr.orient_paths(paths, pairs)
-
-            num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
-            print(num_unoriented, "unoriented pieces at the end", file=sys.stderr)
-
-            for path in paths:
-                if not dist:
-                    seq = gaps.join(Physlr.get_oriented_sequence(seqs, name)
-                                    if name[-1] != "." else ("N" * len(seqs[name[0:-1]]))
-                                    for name in path)
-                else:
-                    seq = Physlr.generate_seq_with_dist(seqs, dist, path, gaps)
-
-                if len(seq) < self.args.min_length:
-                    continue
-                num_scaffolds += 1
-                print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
-                num_contigs += len(path)
-                num_bases += len(seq)
+            num_scaffolds, num_contigs, num_bases, paths = \
+                Physlr.path_to_fasta_with_arcs(seqs, paths, gaps)
 
         used_seqs = {name[0:-1] for path in paths for name in path if name[-1] != "."}
 
