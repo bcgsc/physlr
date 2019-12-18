@@ -2396,8 +2396,8 @@ class Physlr:
                 else:
                     if not unoriented:
                         path, unoriented = Physlr.orient_part_of_path_forward(pairs, path,
-                                                                               unoriented, curr_pos,
-                                                                               name)
+                                                                              unoriented, curr_pos,
+                                                                              name)
 
                     else:
                         unoriented.append(curr_pos)
