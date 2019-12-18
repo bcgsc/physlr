@@ -258,9 +258,9 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 	    boost::get(edgeComponent, subgraph);
 	boost::biconnected_components(subgraph, component);
 
-	std::vector<vertex_t> art_points_vec;
-	articulation_points(subgraph, std::back_inserter(art_points_vec));
-	std::unordered_set<vertex_t> art_points(art_points_vec.begin(), art_points_vec.end());
+	std::vector<vertex_t> artPointsVec;
+	articulation_points(subgraph, std::back_inserter(artPointsVec));
+	std::unordered_set<vertex_t> art_points(artPointsVec.begin(), artPointsVec.end());
 
 	// Remove articulation points from biconnected components
 	boost::graph_traits<graph_t>::edge_iterator ei, ei_end;
