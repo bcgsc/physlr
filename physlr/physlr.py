@@ -219,7 +219,11 @@ class Physlr:
                         sys.exit(1)
                 else:
                     if len(xs) == 3:
+<<<<<<< HEAD
                         g.add_edge(xs[0], xs[1], m=int(xs[2]))
+=======
+                        g.add_edge(xs[0], xs[1], n=int(xs[2]))
+>>>>>>> physlr: clean code
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
                         sys.exit(1)
@@ -1901,21 +1905,9 @@ class Physlr:
             tidpos_to_qpos = {}
             for qpos, mx in enumerate(mxs):
                 for tidpos in mxtopos.get(mx, ()):
-                    #print("qid:", qid)
-                    #print("mx:", mx)
-                    #print("qpos:", qpos)
-                    #print("tidpos:", tidpos)
                     tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
-                    #print("tidpos_to_qpos:", tidpos_to_qpos)
-                    #sys.exit(0)
-            #print("tidpos_to_qpos[()]", tidpos_to_qpos[()])
             for tidpos, qpos in tidpos_to_qpos.items():
-                #print("tidpos:", tidpos)
-                #print("qpos:", qpos)
-                #print("tidpos_to_qpos[tidpos]", tidpos_to_qpos[tidpos])
                 tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
-                #print("tidpos_to_qpos[tidpos]", tidpos_to_qpos[tidpos])
-                #sys.exit()
 
             # Count the number of minimizers mapped to each target position.
             tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
