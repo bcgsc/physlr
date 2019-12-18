@@ -131,7 +131,7 @@ printGraph(const graph_t& g)
 }
 
 void
-readTSV(graph_t& g, std::vector<std::string> infiles, bool verbose)
+readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 {
 #if _OPENMP
 	double sTime = omp_get_wtime();
@@ -190,6 +190,63 @@ readTSV(graph_t& g, std::vector<std::string> infiles, bool verbose)
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
 	sTime = omp_get_wtime();
 #endif
+	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
+}
+
+void
+componentsToNewGraph(
+    const graph_t& oldG,
+    graph_t& newG,
+    vecVertexToComponent_t& vecVertexToComponent)
+{
+	barcodeToIndex_t newGBarcodeToIndex;
+#if _OPENMP
+	double sTime = omp_get_wtime();
+#endif
+	for (size_t i = 0; i < vecVertexToComponent.size(); i++) {
+
+		size_t maxVal = 0;
+		for (auto&& val : vecVertexToComponent[i]) {
+			if (val.second > maxVal) {
+				maxVal = val.second;
+			}
+		}
+
+		for (size_t j = 0; j < maxVal + 1; j++) {
+			vertex_t u = boost::add_vertex(newG);
+			newG[u].name = oldG[i].name + "_" + std::to_string(j);
+			newG[u].weight = oldG[i].weight;
+			newG[u].indexOriginal = u;
+			newGBarcodeToIndex[newG[u].name] = u;
+		}
+	}
+
+	auto edgeItRange = boost::edges(oldG);
+	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
+		vertex_t u, v;
+		u = oldG[boost::source(*edgeIt, oldG)].indexOriginal;
+		v = oldG[boost::target(*edgeIt, oldG)].indexOriginal;
+
+		if (vecVertexToComponent[u].find(v) == vecVertexToComponent[u].end() ||
+		    vecVertexToComponent[v].find(u) == vecVertexToComponent[v].end()) {
+			continue;
+		}
+
+		size_t uMolecule = vecVertexToComponent[u][v];
+		size_t vMolecule = vecVertexToComponent[v][u];
+		std::string uName = oldG[u].name + "_" + std::to_string(uMolecule);
+		std::string vName = oldG[v].name + "_" + std::to_string(vMolecule);
+		edge_t e =
+		    boost::add_edge(newGBarcodeToIndex[uName], newGBarcodeToIndex[vName], newG).first;
+		newG[e].weight = oldG[*edgeIt].weight;
+	}
+
+	std::cerr << "Generated new graph ";
+#if _OPENMP
+	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+	sTime = omp_get_wtime();
+#endif
+
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
@@ -339,55 +396,9 @@ main(int argc, char* argv[])
 
 	std::cerr << "Generating new graph" << std::endl;
 
-	graph_t outG;
-	barcodeToIndex_t outGBarcodeToIndex;
-	for (size_t i = 0; i < vecVertexToComponent.size(); i++) {
-
-		size_t maxVal = 0;
-		for (auto&& val : vecVertexToComponent[i]) {
-			if (val.second > maxVal) {
-				maxVal = val.second;
-			}
-		}
-
-		for (size_t j = 0; j < maxVal + 1; j++) {
-			vertex_t u = boost::add_vertex(outG);
-			outG[u].name = g[i].name + "_" + std::to_string(j);
-			outG[u].weight = g[i].weight;
-			outG[u].indexOriginal = u;
-			outGBarcodeToIndex[outG[u].name] = u;
-		}
-	}
-
-	auto edgeItRange = boost::edges(g);
-	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
-		vertex_t u, v;
-		u = g[boost::source(*edgeIt, g)].indexOriginal;
-		v = g[boost::target(*edgeIt, g)].indexOriginal;
-
-		if (vecVertexToComponent[u].find(v) == vecVertexToComponent[u].end() ||
-		    vecVertexToComponent[v].find(u) == vecVertexToComponent[v].end()) {
-			continue;
-		}
-
-		size_t uMolecule = vecVertexToComponent[u][v];
-		size_t vMolecule = vecVertexToComponent[v][u];
-		std::string uName = g[u].name + "_" + std::to_string(uMolecule);
-		std::string vName = g[v].name + "_" + std::to_string(vMolecule);
-		edge_t e =
-		    boost::add_edge(outGBarcodeToIndex[uName], outGBarcodeToIndex[vName], outG).first;
-		outG[e].weight = g[*edgeIt].weight;
-	}
-
-	std::cerr << "Generated new graph ";
-#if _OPENMP
-	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-	sTime = omp_get_wtime();
-#endif
-
-	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
-
-	printGraph(outG);
+	graph_t newG;
+	componentsToNewGraph(g, newG, vecVertexToComponent);
+	printGraph(newG);
 	if (verbose) {
 		std::cerr << "Printed graph" << std::endl;
 #if _OPENMP
