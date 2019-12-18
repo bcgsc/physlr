@@ -389,9 +389,9 @@ main(int argc, char* argv[])
 
 	std::cerr << "Generating molecule overlap graph" << std::endl;
 
-	graph_t newG;
-	componentsToNewGraph(g, newG, vecVertexToComponent);
-	printGraph(newG);
+	graph_t molSeparatedG;
+	componentsToNewGraph(g, molSeparatedG, vecVertexToComponent);
+	printGraph(molSeparatedG);
 	if (verbose) {
 		std::cerr << "Printed graph" << std::endl;
 #if _OPENMP
