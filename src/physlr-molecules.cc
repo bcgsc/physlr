@@ -102,9 +102,9 @@ printUsage(const std::string& progname)
 	          << "  [-s SEPARATION-STRATEGY] [-v] FILE...\n\n"
 	             "  -v         enable verbose output\n"
 	             "  -s --separation-strategy   \n"
-	             "  --help     display this help and exit\n"
 	             "  SEPARATION-STRATEGY      `+` separated list of molecule separation strategies "
-	             "[bc]\n";
+	             "[bc]\n"
+	             "  --help     display this help and exit\n";
 }
 
 void
