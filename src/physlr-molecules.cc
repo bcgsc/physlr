@@ -133,6 +133,7 @@ printGraph(const graph_t& g)
 void
 readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 {
+	std::cerr << "Loading graph" << std::endl;
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
@@ -360,8 +361,6 @@ main(int argc, char* argv[])
 	}
 
 	graph_t g;
-	std::cerr << "Loading graph" << std::endl;
-
 	readTSV(g, infiles, verbose);
 
 	std::cerr << "Using " << t << " threads" << std::endl;
