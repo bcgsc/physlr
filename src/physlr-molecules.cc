@@ -193,17 +193,17 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
-/* Generate a molecule separated graph (newG) using component/community information from molecule
+/* Generate a molecule separated graph (outG) using component/community information from molecule
 separation (vecVertexToComponent).
-The input graph (oldG) is the barcode overlap graph or a molecule separated graph from the previous
+The input graph (inG) is the barcode overlap graph or a molecule separated graph from the previous
 round of molecule separation.*/
 void
 componentsToNewGraph(
-    const graph_t& oldG,
-    graph_t& newG,
+    const graph_t& inG,
+    graph_t& outG,
     vecVertexToComponent_t& vecVertexToComponent)
 {
-	barcodeToIndex_t newGBarcodeToIndex;
+	barcodeToIndex_t outGBarcodeToIndex;
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
@@ -217,19 +217,19 @@ componentsToNewGraph(
 		}
 
 		for (size_t j = 0; j < maxVal + 1; j++) {
-			vertex_t u = boost::add_vertex(newG);
-			newG[u].name = oldG[i].name + "_" + std::to_string(j);
-			newG[u].weight = oldG[i].weight;
-			newG[u].indexOriginal = u;
-			newGBarcodeToIndex[newG[u].name] = u;
+			vertex_t u = boost::add_vertex(outG);
+			outG[u].name = inG[i].name + "_" + std::to_string(j);
+			outG[u].weight = inG[i].weight;
+			outG[u].indexOriginal = u;
+			outGBarcodeToIndex[outG[u].name] = u;
 		}
 	}
 
-	auto edgeItRange = boost::edges(oldG);
+	auto edgeItRange = boost::edges(inG);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
 		vertex_t u, v;
-		u = oldG[boost::source(*edgeIt, oldG)].indexOriginal;
-		v = oldG[boost::target(*edgeIt, oldG)].indexOriginal;
+		u = inG[boost::source(*edgeIt, inG)].indexOriginal;
+		v = inG[boost::target(*edgeIt, inG)].indexOriginal;
 
 		if (vecVertexToComponent[u].find(v) == vecVertexToComponent[u].end() ||
 		    vecVertexToComponent[v].find(u) == vecVertexToComponent[v].end()) {
@@ -238,11 +238,11 @@ componentsToNewGraph(
 
 		size_t uMolecule = vecVertexToComponent[u][v];
 		size_t vMolecule = vecVertexToComponent[v][u];
-		std::string uName = oldG[u].name + "_" + std::to_string(uMolecule);
-		std::string vName = oldG[v].name + "_" + std::to_string(vMolecule);
+		std::string uName = inG[u].name + "_" + std::to_string(uMolecule);
+		std::string vName = inG[v].name + "_" + std::to_string(vMolecule);
 		edge_t e =
-		    boost::add_edge(newGBarcodeToIndex[uName], newGBarcodeToIndex[vName], newG).first;
-		newG[e].weight = oldG[*edgeIt].weight;
+		    boost::add_edge(outGBarcodeToIndex[uName], outGBarcodeToIndex[vName], outG).first;
+		outG[e].weight = inG[*edgeIt].weight;
 	}
 
 	std::cerr << "Generated new graph ";
