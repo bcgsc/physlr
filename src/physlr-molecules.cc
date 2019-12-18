@@ -56,7 +56,7 @@ struct edgeComponent_t
 		num = 555
 	};
 	using kind = boost::edge_property_tag;
-} edge_component;
+} edgeComponent;
 
 using graph_t = boost::subgraph<boost::adjacency_list<
     boost::vecS,
@@ -271,8 +271,8 @@ main(int argc, char* argv[])
 		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
 
 		// Find biconnected components
-		boost::property_map<graph_t, edge_component_t>::type component =
-		    boost::get(edge_component, subgraph);
+		boost::property_map<graph_t, edgeComponent_t>::type component =
+		    boost::get(edgeComponent, subgraph);
 		boost::biconnected_components(subgraph, component);
 
 		std::vector<vertex_t> art_points_vec;
