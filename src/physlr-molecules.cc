@@ -49,7 +49,7 @@ struct edgeProperties
 	int weight = 0;
 };
 
-struct edge_component_t
+struct edgeComponent_t
 {
 	enum
 	{
@@ -66,7 +66,7 @@ using graph_t = boost::subgraph<boost::adjacency_list<
     boost::property<
         boost::edge_index_t,
         int,
-        boost::property<edge_component_t, std::size_t, edgeProperties>>>>;
+        boost::property<edgeComponent_t, std::size_t, edgeProperties>>>>;
 using vertex_t = graph_t::vertex_descriptor;
 using edge_t = graph_t::edge_descriptor;
 using barcodeToIndex_t = std::unordered_map<std::string, vertex_t>;
