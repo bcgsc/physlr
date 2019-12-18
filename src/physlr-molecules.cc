@@ -130,6 +130,69 @@ printGraph(const graph_t& g)
 	}
 }
 
+void
+readTSV(graph_t& g, std::vector<std::string> infiles, bool verbose)
+{
+#if _OPENMP
+	double sTime = omp_get_wtime();
+#endif
+
+	barcodeToIndex_t barcodeToIndex;
+	indexToBarcode_t indexToBarcode;
+	for (auto& infile : infiles) {
+		infile == "-" ? "/dev/stdin" : infile;
+		vertex_t u;
+		edge_t E;
+		std::ifstream infileStream(infile);
+		std::string line;
+		bool atEdges = false;
+		while (std::getline(infileStream, line)) {
+			if (line.empty() or line == "U\tn") {
+				continue;
+			}
+			if (line.empty() or line == "U\tV\tn") {
+				atEdges = true;
+				if (verbose) {
+					std::cerr << "Loaded vertices to graph ";
+#if _OPENMP
+					std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+					sTime = omp_get_wtime();
+#endif
+				}
+				continue;
+			}
+
+			std::string node1, node2;
+			int weight;
+			std::istringstream ss(line);
+			ss >> node1;
+			if (!atEdges) {
+				ss >> weight;
+				u = boost::add_vertex(g);
+				g[u].name = node1;
+				g[u].weight = weight;
+				g[u].indexOriginal = u;
+				barcodeToIndex[node1] = u;
+				indexToBarcode[u] = node1;
+			} else {
+				ss >> node2 >> weight;
+				E = boost::add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
+				g[E].weight = weight;
+			}
+		}
+	}
+	if (verbose) {
+		std::cerr << "Loaded edges to graph ";
+	} else {
+		std::cerr << "Loaded graph ";
+	}
+#if _OPENMP
+	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+	sTime = omp_get_wtime();
+#endif
+	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -197,78 +260,20 @@ main(int argc, char* argv[])
 	graph_t g;
 	std::cerr << "Loading graph" << std::endl;
 
+	readTSV(g, infiles, verbose);
+
+	std::cerr << "Using " << t << " threads" << std::endl;
+
+	vecVertexToComponent_t vecVertexToComponent;
+	vecVertexToComponent.resize(boost::num_vertices(g));
+
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
-
-	barcodeToIndex_t barcodeToIndex;
-	indexToBarcode_t indexToBarcode;
-	for (auto& infile : infiles) {
-		infile == "-" ? "/dev/stdin" : infile;
-		vertex_t u;
-		edge_t E;
-		std::ifstream infileStream(infile);
-		std::string line;
-		bool atEdges = false;
-		while (std::getline(infileStream, line)) {
-			if (line.empty() or line == "U\tn") {
-				continue;
-			}
-			if (line.empty() or line == "U\tV\tn") {
-				atEdges = true;
-				if (verbose) {
-					std::cerr << "Loaded vertices to graph ";
-#if _OPENMP
-					std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-					sTime = omp_get_wtime();
-#endif
-				}
-				continue;
-			}
-
-			std::string node1, node2;
-			int weight;
-			std::istringstream ss(line);
-			ss >> node1;
-			if (!atEdges) {
-				ss >> weight;
-				u = boost::add_vertex(g);
-				g[u].name = node1;
-				g[u].weight = weight;
-				g[u].indexOriginal = u;
-				barcodeToIndex[node1] = u;
-				indexToBarcode[u] = node1;
-			} else {
-				ss >> node2 >> weight;
-				E = boost::add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
-				g[E].weight = weight;
-			}
-		}
-	}
-	if (verbose) {
-		std::cerr << "Loaded edges to graph ";
-	} else {
-		std::cerr << "Loaded graph ";
-	}
-#if _OPENMP
-	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-	sTime = omp_get_wtime();
-#endif
-	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
-
-	std::cerr << "Using " << t << " threads" << std::endl;
-	uint64_t vertexNum = indexToBarcode.size();
-
-	vecVertexToComponent_t vecVertexToComponent;
-	vecVertexToComponent.resize(vertexNum);
-
-#if _OPENMP
-	sTime = omp_get_wtime();
-#endif
-
-	for (uint64_t vertexId = 0; vertexId < vertexNum; ++vertexId) {
+	auto vertexItRange = vertices(g);
+	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		// Find neighbour of vertex and generate neighbour induced subgraph
-		auto neighbours = boost::adjacent_vertices(vertexId, g);
+		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
 		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
 
 		// Find biconnected components
@@ -322,7 +327,7 @@ main(int argc, char* argv[])
 		}
 		g.m_children.clear();
 
-		vecVertexToComponent[vertexId] = vertexToComponent;
+		vecVertexToComponent[*vertexIt] = vertexToComponent;
 	}
 
 	std::cerr << "Finished molecule separation ";
