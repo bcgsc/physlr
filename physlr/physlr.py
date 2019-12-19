@@ -2574,6 +2574,9 @@ class Physlr:
             "--gap-size", action="store", dest="gap_size", type=int, default=100,
             help="gap size used in scaffolding [100].")
         argparser.add_argument(
+            "--sqcost", action="store", dest="sqcost", type=float, default=0.7,
+            help="threshold for `cos` mol-sep [0.7].")
+        argparser.add_argument(
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
         return argparser.parse_args()
