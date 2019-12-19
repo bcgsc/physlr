@@ -1614,7 +1614,7 @@ class Physlr:
         import scipy as sp
         import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity
-        if len(node_set) < Physlr.skip_small:
+        if len(node_set) < Physlr.args.skip_small:
             return [set(node_set)]
         communities = []
         if len(node_set) == 1:
