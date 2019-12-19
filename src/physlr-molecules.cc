@@ -201,7 +201,7 @@ componentsToNewGraph(
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
-	for (size_t i = 0; i < vecVertexToComponent.size(); i++) {
+	for (size_t i = 0; i < vecVertexToComponent.size(); ++i) {
 
 		size_t maxVal = 0;
 		for (auto&& val : vecVertexToComponent[i]) {
@@ -210,7 +210,7 @@ componentsToNewGraph(
 			}
 		}
 
-		for (size_t j = 0; j < maxVal + 1; j++) {
+		for (size_t j = 0; j < maxVal + 1; ++j) {
 			auto u = boost::add_vertex(molSepG);
 			molSepG[u].name = inG[i].name + "_" + std::to_string(j);
 			molSepG[u].weight = inG[i].weight;
@@ -291,7 +291,7 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 		for (auto&& vertex : vertexSet) {
 			vertexToComponent[vertex] = moleculeNum;
 		}
-		moleculeNum++;
+		++moleculeNum;
 	}
 }
 
