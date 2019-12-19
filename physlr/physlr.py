@@ -1785,6 +1785,67 @@ class Physlr:
         return communities
 
     @staticmethod
+    def return_values_cosine_of_squared(g, node_set, squaring=True, threshold=0.7):
+        """
+        Square the adjacency matrix and then use cosine similarity to detect communities.
+        Return communities.
+        """
+        if len(node_set) < Physlr.subgraph_size and Physlr.args.skip_small:
+            return False
+        import scipy as sp
+        import numpy as np
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        cos_mat = 0
+        communities = []
+        if len(node_set) > 1:
+            adj_array = nx.adjacency_matrix(g.subgraph(node_set)).toarray()
+            if squaring:
+                cos_mat = cosine_similarity(
+                        sp.linalg.blas.sgemm(1.0, adj_array, adj_array))
+                # new_adj = np.multiply(
+                #     cosine_similarity(
+                #         sp.linalg.blas.sgemm(1.0, adj_array, adj_array)) >= threshold, adj_array)
+            else:
+                cos_mat = cosine_similarity(adj_array)
+                # new_adj = np.multiply(cosine_similarity(adj_array) >= threshold, adj_array)
+            # edges_to_remove = np.argwhere(new_adj != adj_array)
+            # barcode_dict = dict(zip(range(len(node_set)), list(node_set)))
+            # edges_to_remove_barcode = [(barcode_dict[i], barcode_dict[j])
+            #                            for i, j in edges_to_remove]
+            # sub_graph_copy = nx.Graph(g.subgraph(node_set))
+            # sub_graph_copy.remove_edges_from(edges_to_remove_barcode)
+            # cos_components = list(nx.connected_components(sub_graph_copy))
+            # for com in cos_components:
+            #     communities.append(com)
+
+        # all values
+        cos_mat_hist = [0] * 101
+        for row in cos_mat:
+            for v in row:
+                cos_mat_hist[int(v*100)] += 1
+        cos_mat_hist_accum = cos_mat_hist
+        for i, _ in enumerate(cos_mat_hist_accum):
+            if i > 0:
+                cos_mat_hist_accum[i] = cos_mat_hist_accum[i-1] + cos_mat_hist_accum[i]
+
+        # only when there's edge
+        cos_mat_edges = np.multiply(cos_mat, adj_array)
+        cos_mat_edges_hist = [0] * 101
+        for row in cos_mat_edges:
+            for v in row:
+                cos_mat_edges_hist[int(v*100)] += 1
+        cos_mat_edges_hist_accum = cos_mat_edges_hist
+        for i, _ in enumerate(cos_mat_edges_hist_accum ):
+            if i > 0:
+                cos_mat_edges_hist_accum [i] =\
+                    cos_mat_edges_hist_accum [i-1] + cos_mat_edges_hist_accum [i]
+
+        # Do include the value where there is edge in adj_array:
+
+        return communities
+
+    @staticmethod
     def partition_subgraph_into_bins_randomly(node_set, max_size=50):
         """
         Partition the subgraph into bins randomly for faster processing. Return bins.
