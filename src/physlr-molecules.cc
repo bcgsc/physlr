@@ -142,21 +142,21 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 		for (std::string line; std::getline(infileStream, line);) {
 			if (line == "U\tn") {
 				continue;
-			} else if (line.empty()) {
-				break;
-			} else {
-				std::string node1;
-				int weight;
-				std::istringstream ss(line);
-				ss >> node1;
-				ss >> weight;
-				auto u = boost::add_vertex(g);
-				g[u].name = node1;
-				g[u].weight = weight;
-				g[u].indexOriginal = u;
-				barcodeToIndex[node1] = u;
-				indexToBarcode[u] = node1;
 			}
+			if (line.empty()) {
+				break;
+			}
+			std::string node1;
+			int weight;
+			std::istringstream ss(line);
+			ss >> node1;
+			ss >> weight;
+			auto u = boost::add_vertex(g);
+			g[u].name = node1;
+			g[u].weight = weight;
+			g[u].indexOriginal = u;
+			barcodeToIndex[node1] = u;
+			indexToBarcode[u] = node1;
 		}
 		if (verbose) {
 			std::cerr << "Loaded vertices to graph ";
@@ -168,17 +168,17 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 		for (std::string line; std::getline(infileStream, line);) {
 			if (line == "U\tV\tn") {
 				continue;
-			} else if (line.empty()) {
-				break;
-			} else {
-				std::string node1, node2;
-				int weight;
-				std::istringstream ss(line);
-				ss >> node1;
-				ss >> node2 >> weight;
-				auto E = boost::add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
-				g[E].weight = weight;
 			}
+			if (line.empty()) {
+				break;
+			}
+			std::string node1, node2;
+			int weight;
+			std::istringstream ss(line);
+			ss >> node1;
+			ss >> node2 >> weight;
+			auto E = boost::add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
+			g[E].weight = weight;
 		}
 
 		if (verbose) {
