@@ -129,11 +129,11 @@ printGraph(const graph_t& g)
 void
 readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 {
+	auto progname = "physlr-molecules";
 	std::cerr << "Loading graph" << std::endl;
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
-
 	barcodeToIndex_t barcodeToIndex;
 	indexToBarcode_t indexToBarcode;
 	for (auto& infile : infiles) {
@@ -149,15 +149,19 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 			std::string node1;
 			int weight;
 			std::istringstream ss(line);
-			ss >> node1;
-			ss >> weight;
-			auto u = boost::add_vertex(g);
-			g[u].name = node1;
-			g[u].weight = weight;
-			g[u].indexOriginal = u;
-			barcodeToIndex[node1] = u;
-			indexToBarcode[u] = node1;
+			if (ss >> node1 >> weight) {
+				auto u = boost::add_vertex(g);
+				g[u].name = node1;
+				g[u].weight = weight;
+				g[u].indexOriginal = u;
+				barcodeToIndex[node1] = u;
+				indexToBarcode[u] = node1;
+			} else {
+				printErrorMsg(progname, "unknown graph format");
+				exit(EXIT_FAILURE);
+			}
 		}
+
 		if (verbose) {
 			std::cerr << "Loaded vertices to graph ";
 #if _OPENMP
@@ -170,15 +174,19 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 				continue;
 			}
 			if (line.empty()) {
-				break;
+				printErrorMsg(progname, "unknown graph format");
+				exit(EXIT_FAILURE);
 			}
 			std::string node1, node2;
 			int weight;
 			std::istringstream ss(line);
-			ss >> node1;
-			ss >> node2 >> weight;
-			auto E = boost::add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
-			g[E].weight = weight;
+			if (ss >> node1 >> node2 >> weight) {
+				auto E = boost::add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
+				g[E].weight = weight;
+			} else {
+				printErrorMsg(progname, "unknown graph format");
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		if (verbose) {
