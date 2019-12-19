@@ -2141,7 +2141,7 @@ class Physlr:
             Physlr.set_settings(round)
             Physlr.args.prune_bridges = 10
             Physlr.args.prune_branches = 10
-            Physlr.args.prune_junctions = 30
+            Physlr.args.prune_junctions = 50
             if round > 1:
                 print(
                     int(timeit.default_timer() - t0),
