@@ -1433,9 +1433,10 @@ class Physlr:
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
     @staticmethod
-    def split_minimizers_bx(bx, g, bxtomxs):
+    def split_minimizers_bx(bx, g, bxtomxs, bxtocount):
         "Partition the minimizers of the given barcode"
         bx_match = re.compile(r'^(\S+)_\d+_\d+$')
+        count = bxtocount[bx]
         mxs = bxtomxs[bx]
         mol = 0
         mol2 = 0
@@ -1453,14 +1454,14 @@ class Physlr:
                 mol_list.append((bxmol, molec_mxs))
                 mol2 += 1
                 if not g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
-                    for i in range(1,11):
+                    for i in range(1, count):
                         if g.has_node(bx + "_" + str(mol)+ "_" + str(mol2+i)):
                             mol2 += i
                             break
             mol2 = 0
             mol += 1
             if not g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
-                for i in range(1,11):
+                for i in range(1, count):
                     if g.has_node(bx + "_" + str(mol+i)+ "_" + str(mol2)):
                         mol += i
                         break
@@ -1472,7 +1473,7 @@ class Physlr:
         Partition the minimizers of this barcode.
         The Graph and bx->min dictionary are passed as class variables.
         """
-        return Physlr.split_minimizers_bx(bx, Physlr.graph, Physlr.bxtomxs)
+        return Physlr.split_minimizers_bx(bx, Physlr.graph, Physlr.bxtomxs, Physlr.bxtocount)
 
     def physlr_split_minimizers(self):
         "Given the molecule overlap graph, split the minimizers into molecules"
@@ -1481,19 +1482,23 @@ class Physlr:
             sys.exit(msg)
         g = self.read_graph([self.args.FILES[0]])
         bxtomxs = self.read_minimizers([self.args.FILES[1]])
+        bxtocount = self.count_molecules_per_bx(bxtomxs)
 
         if self.args.threads == 1:
-            moltomxs = [self.split_minimizers_bx(bx, g, bxtomxs) for bx in progress(bxtomxs)]
+            moltomxs = [self.split_minimizers_bx(bx, g, bxtomxs, bxtocount)
+                        for bx in progress(bxtomxs)]
             moltomxs = dict(x for l in moltomxs for x in l)
 
         else:
             Physlr.graph = g
             Physlr.bxtomxs = bxtomxs
+            Physlr.bxtocount = bxtocount
             with multiprocessing.Pool(self.args.threads) as pool:
                 moltomxs = dict(x for l in pool.map(self.split_minimizers_bx_process,
                                                     progress(bxtomxs), chunksize=100) for x in l)
             Physlr.graph = None
             Physlr.bxtomxs = None
+            Physlr.bxtocount = None
 
         empty_ct = 0
         for mol in moltomxs:
