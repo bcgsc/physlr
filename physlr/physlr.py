@@ -1618,7 +1618,7 @@ class Physlr:
             return [set(node_set)]
         communities = []
         if len(node_set) == 1:
-            return node_set
+            return [set(node_set)]
         if len(node_set) > 1:
             adj_array = nx.adjacency_matrix(g.subgraph(node_set)).toarray()
             if squaring:
