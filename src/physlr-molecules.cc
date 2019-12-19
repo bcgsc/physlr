@@ -212,7 +212,7 @@ componentsToNewGraph(
 		}
 
 		for (size_t j = 0; j < maxVal + 1; j++) {
-			vertex_t u = boost::add_vertex(molSepG);
+			auto u = boost::add_vertex(molSepG);
 			molSepG[u].name = inG[i].name + "_" + std::to_string(j);
 			molSepG[u].weight = inG[i].weight;
 			molSepG[u].indexOriginal = u;
@@ -230,11 +230,11 @@ componentsToNewGraph(
 			continue;
 		}
 
-		size_t uMolecule = vecVertexToComponent[u][v];
-		size_t vMolecule = vecVertexToComponent[v][u];
-		std::string uName = inG[u].name + "_" + std::to_string(uMolecule);
-		std::string vName = inG[v].name + "_" + std::to_string(vMolecule);
-		edge_t e =
+		auto& uMolecule = vecVertexToComponent[u][v];
+		auto& vMolecule = vecVertexToComponent[v][u];
+		auto uName = inG[u].name + "_" + std::to_string(uMolecule);
+		auto vName = inG[v].name + "_" + std::to_string(vMolecule);
+		auto e =
 		    boost::add_edge(molSepGBarcodeToIndex[uName], molSepGBarcodeToIndex[vName], molSepG)
 		        .first;
 		molSepG[e].weight = inG[*edgeIt].weight;
@@ -271,8 +271,8 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 			componentToVertexSet.resize(componentNum + 1);
 		}
 
-		vertex_t node1 = source(*ei, subgraph);
-		vertex_t node2 = target(*ei, subgraph);
+		auto node1 = source(*ei, subgraph);
+		auto node2 = target(*ei, subgraph);
 
 		if (artPoints.find(node1) == artPoints.end()) {
 			componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
