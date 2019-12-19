@@ -219,11 +219,7 @@ class Physlr:
                         sys.exit(1)
                 else:
                     if len(xs) == 3:
-<<<<<<< HEAD
                         g.add_edge(xs[0], xs[1], m=int(xs[2]))
-=======
-                        g.add_edge(xs[0], xs[1], n=int(xs[2]))
->>>>>>> physlr: clean code
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
                         sys.exit(1)
@@ -1274,6 +1270,7 @@ class Physlr:
                 neighbour_mxs_set = set.union(*neighbour_mxs_list)
                 molec_mxs = set.intersection(mxs, neighbour_mxs_set)
                 mol_list.append((bxmol, molec_mxs))
+                count -= 1
                 mol2 += 1
                 if not g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
                     for i in range(1, count):
