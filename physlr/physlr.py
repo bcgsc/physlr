@@ -2477,7 +2477,7 @@ class Physlr:
                  " of bc, k3, k3bin, cos, sqcos, sqcosbin, louvain, and distributed"
                  " concatenated via plus sign (example:bc+k3+bc)")
         argparser.add_argument(
-            "--separation-skip-small", action="store", dest="skip_small", default=0,
+            "--separation-skip-small", action="store", dest="skip_small", type=int, default=0,
             help="Skip splitting the barcode if neighborhood subgraph is smaller than this [0]")
         argparser.add_argument(
             "--coef", action="store", dest="coef", type=float, default=1.5,
