@@ -24,8 +24,7 @@ memory_usage()
 {
 	int mem = 0;
 	std::ifstream proc("/proc/self/status");
-	std::string s;
-	while (getline(proc, s), !proc.fail()) {
+	for (std::string s; std::getline(proc, s);) {
 		if (s.substr(0, 6) == "VmSize") {
 			std::stringstream convert(s.substr(s.find_last_of('\t'), s.find_last_of('k') - 1));
 			if (!(convert >> mem)) {
@@ -142,7 +141,7 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 		std::ifstream infileStream(infile);
 		std::string line;
 		bool atEdges = false;
-		while (std::getline(infileStream, line)) {
+		for (std::string line; std::getline(infileStream, line);) {
 			if (line.empty() or line == "U\tn") {
 				continue;
 			}
@@ -301,7 +300,6 @@ main(int argc, char* argv[])
 {
 
 	auto progname = "physlr-molecules";
-	int c;
 	int optindex = 0;
 	static int help = 0;
 	std::string separationStrategy = "bc";
@@ -312,7 +310,7 @@ main(int argc, char* argv[])
 		{ "separation-strategy", required_argument, nullptr, 's' },
 		{ nullptr, 0, nullptr, 0 }
 	};
-	while ((c = getopt_long(argc, argv, "s:v", longopts, &optindex)) != -1) {
+	for (int c; (c = getopt_long(argc, argv, "s:v", longopts, &optindex)) != -1;) {
 		switch (c) {
 		case 0:
 			break;
