@@ -139,29 +139,16 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 	for (auto& infile : infiles) {
 		infile == "-" ? "/dev/stdin" : infile;
 		std::ifstream infileStream(infile);
-		std::string line;
-		bool atEdges = false;
 		for (std::string line; std::getline(infileStream, line);) {
-			if (line.empty() or line == "U\tn") {
+			if (line == "U\tn") {
 				continue;
-			}
-			if (line.empty() or line == "U\tV\tn") {
-				atEdges = true;
-				if (verbose) {
-					std::cerr << "Loaded vertices to graph ";
-#if _OPENMP
-					std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-					sTime = omp_get_wtime();
-#endif
-				}
-				continue;
-			}
-
-			std::string node1, node2;
-			int weight;
-			std::istringstream ss(line);
-			ss >> node1;
-			if (!atEdges) {
+			} else if (line.empty()) {
+				break;
+			} else {
+				std::string node1;
+				int weight;
+				std::istringstream ss(line);
+				ss >> node1;
 				ss >> weight;
 				auto u = boost::add_vertex(g);
 				g[u].name = node1;
@@ -169,28 +156,48 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 				g[u].indexOriginal = u;
 				barcodeToIndex[node1] = u;
 				indexToBarcode[u] = node1;
+			}
+		}
+		if (verbose) {
+			std::cerr << "Loaded vertices to graph ";
+#if _OPENMP
+			std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+			sTime = omp_get_wtime();
+#endif
+		}
+		for (std::string line; std::getline(infileStream, line);) {
+			if (line == "U\tV\tn") {
+				continue;
+			} else if (line.empty()) {
+				break;
 			} else {
+				std::string node1, node2;
+				int weight;
+				std::istringstream ss(line);
+				ss >> node1;
 				ss >> node2 >> weight;
 				auto E = boost::add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
 				g[E].weight = weight;
 			}
 		}
-	}
-	if (verbose) {
-		std::cerr << "Loaded edges to graph ";
-	} else {
-		std::cerr << "Loaded graph ";
-	}
+
+		if (verbose) {
+			std::cerr << "Loaded edges to graph ";
+		} else {
+			std::cerr << "Loaded graph ";
+		}
 #if _OPENMP
-	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-	sTime = omp_get_wtime();
+		std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+		sTime = omp_get_wtime();
 #endif
-	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
+		std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB"
+		          << std::endl;
+	}
 }
 
 /* Generate a molecule separated graph (molSepG) using component/community information from
-molecule separation (vecVertexToComponent). The input graph (inG) is the barcode overlap graph or a
-molecule separated graph from the previous round of molecule separation.*/
+molecule separation (vecVertexToComponent). The input graph (inG) is the barcode overlap graph
+or a molecule separated graph from the previous round of molecule separation.*/
 void
 componentsToNewGraph(
     const graph_t& inG,
