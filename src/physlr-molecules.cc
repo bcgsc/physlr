@@ -111,20 +111,18 @@ void
 printGraph(const graph_t& g)
 {
 	std::cout << "U\tn" << std::endl;
-	std::string node1, node2;
-	int weight;
 	auto vertexItRange = boost::vertices(g);
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
-		node1 = g[*vertexIt].name;
-		weight = g[*vertexIt].weight;
+		auto& node1 = g[*vertexIt].name;
+		auto& weight = g[*vertexIt].weight;
 		std::cout << node1 << "\t" << weight << "\n";
 	}
 	std::cout << "\nU\tV\tn" << std::endl;
 	auto edgeItRange = boost::edges(g);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
-		weight = g[*edgeIt].weight;
-		node1 = g[boost::source(*edgeIt, g)].name;
-		node2 = g[boost::target(*edgeIt, g)].name;
+		auto& weight = g[*edgeIt].weight;
+		auto& node1 = g[boost::source(*edgeIt, g)].name;
+		auto& node2 = g[boost::target(*edgeIt, g)].name;
 		std::cout << node1 << "\t" << node2 << "\t" << weight << "\n";
 	}
 }
@@ -141,8 +139,6 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 	indexToBarcode_t indexToBarcode;
 	for (auto& infile : infiles) {
 		infile == "-" ? "/dev/stdin" : infile;
-		vertex_t u;
-		edge_t E;
 		std::ifstream infileStream(infile);
 		std::string line;
 		bool atEdges = false;
@@ -168,7 +164,7 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 			ss >> node1;
 			if (!atEdges) {
 				ss >> weight;
-				u = boost::add_vertex(g);
+				auto u = boost::add_vertex(g);
 				g[u].name = node1;
 				g[u].weight = weight;
 				g[u].indexOriginal = u;
@@ -176,7 +172,7 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 				indexToBarcode[u] = node1;
 			} else {
 				ss >> node2 >> weight;
-				E = boost::add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
+				auto E = boost::add_edge(barcodeToIndex[node1], barcodeToIndex[node2], g).first;
 				g[E].weight = weight;
 			}
 		}
@@ -226,9 +222,8 @@ componentsToNewGraph(
 
 	auto edgeItRange = boost::edges(inG);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
-		vertex_t u, v;
-		u = inG[boost::source(*edgeIt, inG)].indexOriginal;
-		v = inG[boost::target(*edgeIt, inG)].indexOriginal;
+		auto& u = inG[boost::source(*edgeIt, inG)].indexOriginal;
+		auto& v = inG[boost::target(*edgeIt, inG)].indexOriginal;
 
 		if (vecVertexToComponent[u].find(v) == vecVertexToComponent[u].end() ||
 		    vecVertexToComponent[v].find(u) == vecVertexToComponent[v].end()) {
