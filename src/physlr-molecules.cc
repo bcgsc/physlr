@@ -19,7 +19,7 @@
 #define PACKAGE_NAME "physlr"
 #define GIT_REVISION "pre-autotools"
 
-static int
+static uint64_t
 memory_usage()
 {
 	int mem = 0;
