@@ -24,7 +24,7 @@ physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 bin=$(physlr_path)/bin
 
 # Python interpreter.
-py_interp=pypy3
+py_interp=/projects/btl/aafshinfard/virtuEnv/pypy3/bin/pypy3
 python=env PYTHONPATH=$(physlr_path) $(py_interp)
 
 # Name of the dataset.
