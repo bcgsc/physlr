@@ -24,7 +24,8 @@ physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 bin=$(physlr_path)/bin
 
 # Python interpreter.
-python=env PYTHONPATH=$(physlr_path) pypy3
+py_interpreter=pypy3
+python=env PYTHONPATH=$(physlr_path) $(py_interp)
 
 # Name of the dataset.
 ifneq ($(filter z11%, $(ref)),)
