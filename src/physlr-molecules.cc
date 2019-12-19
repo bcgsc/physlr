@@ -52,7 +52,7 @@ struct edgeComponent_t
 {
 	enum
 	{
-		num = 555
+		num = INT_MAX
 	};
 	using kind = boost::edge_property_tag;
 } edgeComponent;
