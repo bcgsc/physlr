@@ -1464,7 +1464,6 @@ class Physlr:
                     if g.has_node(bx + "_" + str(mol+i)+ "_" + str(mol2)):
                         mol += i
                         break
-            #mol += 1
         return mol_list
 
     @staticmethod
