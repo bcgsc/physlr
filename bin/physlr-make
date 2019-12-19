@@ -906,16 +906,12 @@ endif
 	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 -V$V $< >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
-%.mol2.tsv: %.tsv %.junctions.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc $^ >$@
-
-# Redo molecule separation on a list of junction-causing barcodes.
 %.mol2-bcs.tsv: %.tsv %.junctions.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos $^ >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos --separation-skip-small=11 $^ >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2-bkcs.tsv: %.tsv %.junctions.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3+cos+sqcos $^ >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3+cos+sqcos --separation-skip-small=11 $^ >$@
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
@@ -1080,7 +1076,7 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 
 # Separate barcodes into molecules.
 %.mol.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) $< >$@
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=$(mol_strategy) --separation-skip-small=11 $< >$@
 
 # Separate barcodes into molecules using K3-clique community detection.
 %.k3.mol.tsv: %.tsv
