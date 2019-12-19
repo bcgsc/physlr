@@ -1614,8 +1614,11 @@ class Physlr:
         import scipy as sp
         import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity
-
+        if len(node_set) < Physlr.skip_small:
+            return [set(node_set)]
         communities = []
+        if len(node_set) == 1:
+            return node_set
         if len(node_set) > 1:
             adj_array = nx.adjacency_matrix(g.subgraph(node_set)).toarray()
             if squaring:
@@ -2473,6 +2476,9 @@ class Physlr:
             help="strategy for barcode to molecule separation [bc+k3]. Use a combination"
                  " of bc, k3, k3bin, cos, sqcos, sqcosbin, louvain, and distributed"
                  " concatenated via plus sign (example:bc+k3+bc)")
+        argparser.add_argument(
+            "--separation-skip-small", action="store", dest="skip_small", default=0,
+            help="Skip splitting the barcode if neighborhood subgraph is smaller than this [0]")
         argparser.add_argument(
             "--coef", action="store", dest="coef", type=float, default=1.5,
             help="ignore minimizers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
