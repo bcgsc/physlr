@@ -6,7 +6,7 @@ Physlr constructs a *de novo* physical map using linked reads from 10X Genomics 
 
 * [ntCard](https://github.com/bcgsc/ntCard)
 * [ntHits](https://github.com/bcgsc/ntHits)
-* GCC 5 or newer with OpenMP
+* GCC 5 or newer with [OpenMP](https://www.openmp.org) and [boost](https://www.boost.org)
 * Python 3.5 or newer and the following packages
     * [community](https://python-louvain.readthedocs.io/en/latest/api.html)
     * [networkx](https://networkx.github.io/)
