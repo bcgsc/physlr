@@ -200,7 +200,7 @@ version:
 	@echo "physlr v0.2.0"
 
 ################################################################################
-# Test m=0
+# Test m=1 prune_branches=1 prune_bridges=1
 test: \
 	test.k1-w1.n1-2.c2-x.physlr.overlap.m0.mol.backbone0.path
 
