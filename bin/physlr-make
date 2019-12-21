@@ -66,6 +66,10 @@ prune_junctions = 200
 # 3: verbose messages
 V=1
 
+# backbone-graph variables
+prune_branches=10
+prune_bridges=10
+
 SHELL=bash -e -o pipefail
 ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
 # Set pipefail to ensure that all commands of a pipe succeed.
@@ -96,8 +100,6 @@ endif
 
 .PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map scaffolds
 all: f1chr4 f1chr2R f1 fishchr25 fish
-
-check: test
 
 $(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.path
 	ln -sf $< $@
@@ -144,7 +146,7 @@ else
 physical-map: \
 	$(lr).physlr.physical-map.path \
 	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf \
-	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv 
+	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv
 endif
 endif
 # Help
@@ -925,11 +927,6 @@ endif
 # Redo molecule separation on a list of junction-causing barcodes.
 %.mol2-bkcs.tsv: %.tsv %.junctions.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3+cos+sqcos $^ >$@
-
-
-# Determine the backbone graph from the overlap TSV for test dataset.
-%.backbone0.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=0 --prune-bridges=0 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
