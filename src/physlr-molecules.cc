@@ -219,10 +219,14 @@ componentsToNewGraph(
 	for (size_t i = 0; i < vecVertexToComponent.size(); ++i) {
 
 		size_t maxVal = 0;
-		for (auto&& val : vecVertexToComponent[i]) {
-			if (val.second > maxVal) {
-				maxVal = val.second;
-			}
+		if (!vecVertexToComponent[i].empty()) {
+			maxVal =
+			    std::max_element(
+			        vecVertexToComponent[i].begin(),
+			        vecVertexToComponent[i].end(),
+			        [](const vertexToComponent_t::value_type& p1,
+			           const vertexToComponent_t::value_type& p2) { return p1.second < p2.second; })
+			        ->second;
 		}
 
 		for (size_t j = 0; j < maxVal + 1; ++j) {
