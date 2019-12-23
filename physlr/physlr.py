@@ -2291,7 +2291,7 @@ class Physlr:
     @staticmethod
     def normal_estimation(x, probability, n):
         """
-        Compute binomial estimation
+        Normal approximation to the binomial distribution
         """
         mean_val = n * probability
         std_dev = float(math.sqrt(mean_val * (1 - probability)))
