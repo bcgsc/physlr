@@ -5,8 +5,8 @@ Physlr: Physical Mapping of Linked Reads
 
 import argparse
 import itertools
-import multiprocessing
 import math
+import multiprocessing
 import os
 import random
 import re
