@@ -2263,28 +2263,28 @@ class Physlr:
     @staticmethod
     def read_dist_est(filename, dist_type):
         """
-        Read ARCS distance estimate. Return a dictionary of pairs to distance estimates.
+        Read ARCS distance estimates. Return a dictionary of pairs to distance estimates.
         """
         dist = {}
-        dist_est_file = open(filename, "r")
+        with open(filename, "r") as dist_est_file:
 
-        dist_type_to_idx = {"min":2, "avg":3, "max":4}
+            dist_type_to_idx = {"min":2, "avg":3, "max":4}
 
-        if dist_type not in dist_type_to_idx:
-            print("invalid --dist-type parameters", file=sys.stderr)
-            sys.exit(1)
-        idx = dist_type_to_idx[dist_type]
-        for line in dist_est_file:
-            columns = line.rstrip().split("\t")
-            if columns[0] == "contig1":
-                continue
+            if dist_type not in dist_type_to_idx:
+                print("invalid --dist-type parameters. Acceptable values are: min, avg, max",
+                      file=sys.stderr)
+                sys.exit(1)
+            idx = dist_type_to_idx[dist_type]
+            for line in dist_est_file:
+                columns = line.rstrip().split("\t")
+                if columns[0] == "contig1":
+                    continue
 
-            contig1 = columns[0].rstrip("-+")
-            contig2 = columns[1].rstrip("-+")
-            dist[(contig1, contig2)] = int(columns[idx])
-            dist[(contig2, contig1)] = int(columns[idx])
+                contig1 = columns[0].rstrip("-+")
+                contig2 = columns[1].rstrip("-+")
+                dist[(contig1, contig2)] = int(columns[idx])
+                dist[(contig2, contig1)] = int(columns[idx])
 
-        dist_est_file.close()
         print("Read Distance Estimates", file=sys.stderr)
         return dist
 
