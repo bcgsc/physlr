@@ -2248,17 +2248,16 @@ class Physlr:
         Read ARCS pair tsv. Return a dictionary of pairs to orientation evidence.
         """
         pairs = {}
-        arks_pair_file = open(filename, "r")
-        for line in arks_pair_file:
-            columns = line.rstrip().split("\t")
-            int_columns = [int(x) for x in columns]
-            pairs[(columns[0], columns[1])] = int_columns[2:6]
-            temp = int_columns[3]
-            int_columns[3] = int_columns[4]
-            int_columns[4] = temp
-            pairs[(columns[1], columns[0])] = int_columns[2:6]
-        arks_pair_file.close()
-        print("Read ARCS pair", file=sys.stderr)
+        with open(filename, "r") as arks_pair_file:
+            for line in arks_pair_file:
+                columns = line.rstrip().split("\t")
+                int_columns = [int(x) for x in columns]
+                pairs[(columns[0], columns[1])] = int_columns[2:6]
+                temp = int_columns[3]
+                int_columns[3] = int_columns[4]
+                int_columns[4] = temp
+                pairs[(columns[1], columns[0])] = int_columns[2:6]
+        print("Read ARCS pairs", file=sys.stderr)
         return pairs
 
     @staticmethod
