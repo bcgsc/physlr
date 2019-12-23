@@ -217,6 +217,7 @@ componentsToNewGraph(
 	double sTime = omp_get_wtime();
 #endif
 	for (size_t i = 0; i < vecVertexToComponent.size(); ++i) {
+
 		size_t maxVal = 0;
 		if (!vecVertexToComponent[i].empty()) {
 			maxVal =
