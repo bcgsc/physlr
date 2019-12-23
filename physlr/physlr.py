@@ -2482,12 +2482,12 @@ class Physlr:
         dist = Physlr.read_dist_est(Physlr.args.dist_est, Physlr.args.dist_type)
 
         num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
-        print(num_unoriented, "unoriented pieces at the beginning", file=sys.stderr)
+        print(num_unoriented, "unoriented pieces before using ARCS pair information", file=sys.stderr)
 
         paths = Physlr.orient_paths(paths, pairs)
 
         num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
-        print(num_unoriented, "unoriented pieces at the end", file=sys.stderr)
+        print(num_unoriented, "unoriented pieces after using ARCS pair information", file=sys.stderr)
 
         for path in paths:
             if not dist:
