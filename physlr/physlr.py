@@ -2328,7 +2328,7 @@ class Physlr:
                     if curr_ori == name[-1]:
                         prev_ori = idxtojoin[max_idx][0]
                         path[prev_pos] = path[prev_pos][0:-1] + prev_ori
-                        del unoriented[-1]
+                        unoriented.pop()
                         curr_pos = prev_pos
                         name = path[prev_pos]
                     else:
