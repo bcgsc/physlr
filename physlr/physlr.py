@@ -2416,7 +2416,7 @@ class Physlr:
     @staticmethod
     def generate_seq_with_dist(seqs, dist, path, gaps):
         """
-        distance estimate based on ARCS distance estimation
+        Return scaffold using distance estimates based on ARCS distance estimation
         """
         seq = ""
         for idx, name in enumerate(path):
@@ -2482,12 +2482,14 @@ class Physlr:
         dist = Physlr.read_dist_est(Physlr.args.dist_est, Physlr.args.dist_type)
 
         num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
-        print(num_unoriented, "unoriented pieces before using ARCS pair information", file=sys.stderr)
+        print(num_unoriented, "unoriented pieces before using ARCS pair information",
+              file=sys.stderr)
 
         paths = Physlr.orient_paths(paths, pairs)
 
         num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
-        print(num_unoriented, "unoriented pieces after using ARCS pair information", file=sys.stderr)
+        print(num_unoriented, "unoriented pieces after using ARCS pair information",
+              file=sys.stderr)
 
         for path in paths:
             if not dist:
