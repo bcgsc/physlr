@@ -2298,7 +2298,7 @@ class Physlr:
         return 0.5 * (1 + math.erf((x - mean_val) / (std_dev * math.sqrt(2))))
 
     @staticmethod
-    def is_link_significant(ori_list):
+    def check_link_significance(ori_list):
         """
         Check if barcode link is strong enough
         """
@@ -2322,7 +2322,7 @@ class Physlr:
             pair = (path[prev_pos][:-1], name[:-1])
             if pair in pairs:
                 join_ori = pairs[pair]
-                max_idx = Physlr.is_link_significant(join_ori)
+                max_idx = Physlr.check_link_significance(join_ori)
                 if max_idx != -1:
                     curr_ori = idxtojoin[max_idx][1]
                     if curr_ori == name[-1]:
@@ -2352,7 +2352,7 @@ class Physlr:
         pair = (prev_name[:-1], name[:-1])
         if pair in pairs:
             join_orientation = pairs[pair]
-            max_idx = Physlr.is_link_significant(join_orientation)
+            max_idx = Physlr.check_link_significance(join_orientation)
             if max_idx != -1:
                 if idxtojoin[max_idx][0] == prev_name[-1]:
                     path[curr_pos] = name[:-1] + idxtojoin[max_idx][1]
