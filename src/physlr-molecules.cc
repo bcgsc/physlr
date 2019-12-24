@@ -20,6 +20,9 @@
 #define GIT_REVISION "pre-autotools"
 
 static uint64_t
+
+// typedef boost::adjacency_matrix< undirectedS > MatrixGraph
+
 memory_usage()
 {
 	int mem = 0;
@@ -312,6 +315,98 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 		}
 		++moleculeNum;
 	}
+}
+
+// Tools for cos_sim and k_cliques
+
+void
+square_adjacency_list(){
+    // starting with an adjacency list, connect each vertex into its 2nd order neighbors (only)
+    // equivalent to transforming into adjacency matrix, squaring and then converting back.
+}
+
+vector<vector<int> >
+convert_adj_list_adj_mat(graph_t& subgraph)
+{
+    typedef graph_traits<Graph>::edge_iterator edge_iterator;
+    pair<edge_iterator, edge_iterator> ei = edges(subgraph);
+
+    vector<vector<int> > mat(N,vector<int>(N));
+    for (edge_iterator edge_iter = ei.first; edge_iter != ei.second; ++edge_iter){
+        int a = source(*edge_iter, g);
+        int b = target(*edge_iter, g);
+        mat[a][b] = 1;
+        mat[b][a] = 1;
+    }
+}
+
+// // Functions related to cosine similarity:
+// squaring matrix, algorithm: ijk and ikj and boost
+
+vector< vector<int> >
+square_matrix_ijk(
+    vector< vector<int> > M,
+    bool symmetric)
+{
+    int n = M.size();
+
+    vector<int> tmp(n, 0); // Fast initialization
+    vector< vector<int> > M2(n, tmp);
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if ( j < i && symmetric )
+                M2[i][j] = M2[j][i];
+                continue;
+            for (int k = 0; k < n; k++) {
+                M2[i][j] += M[i][k] * M[k][j];
+            }
+        }
+    }
+    return M2;
+}
+
+vector< vector<int> >
+square_matrix_ikj( // Might be faster than ijk, benchmark it
+    vector< vector<int> > M,
+    bool symmetric)
+{
+    int n = M.size();
+
+    vector<int> tmp(n, 0); // Fast initialization
+    vector< vector<int> > M2(n, tmp);
+
+    for (int i = 0; i < n; i++) {
+        for (int k = 0; k < n; k++) {
+            for (int j = 0; j < n; j++) {
+                if ( j < i && symmetric ) {
+                    M2[i][j] = M2[j][i];
+                    continue;
+                }
+                M2[i][j] += M[i][k] * M[k][j];
+            }
+        }
+    }
+    return M2;
+}
+
+boost::numeric::ublas::matrix<int>
+square_matrix_boost(
+    vector< vector<int> > M,
+)
+{
+    return boost::numeric::ublas::prod(M, M);
+}
+
+void
+Community_detection_cosine_similarity(
+graph_t& subgraph, vertexToComponent_t& vertexToComponent, bool squaring = true)
+{
+    vector<vector<int> > adj_mat = convert_adj_list_adj_mat(subgraph);
+    vector<vector<int> > new_adj_mat(adj_mat);
+    if (squaring){
+        new_adj_mat = square_matrix_ikj(adj_mat, true)
+    }
 }
 
 int
