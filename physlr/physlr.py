@@ -2251,12 +2251,10 @@ class Physlr:
         with open(filename, "r") as arks_pair_file:
             for line in arks_pair_file:
                 columns = line.rstrip().split("\t")
-                int_columns = [int(x) for x in columns]
-                pairs[(columns[0], columns[1])] = int_columns[2:6]
-                temp = int_columns[3]
-                int_columns[3] = int_columns[4]
-                int_columns[4] = temp
-                pairs[(columns[1], columns[0])] = int_columns[2:6]
+                (u, v, hh, ht, th, tt) = [int(column) if idx > 1 else column
+                                          for idx, column in enumerate(columns)]
+                pairs[(u, v)] = [hh, ht, th, tt]
+                pairs[(v, u)] = [hh, th, ht, tt]
         print("Read ARCS pairs", file=sys.stderr)
         return pairs
 
