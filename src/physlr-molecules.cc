@@ -400,12 +400,15 @@ square_matrix_boost(
 
 void
 Community_detection_cosine_similarity(
-graph_t& subgraph, vertexToComponent_t& vertexToComponent, bool squaring = true)
+graph_t& subgraph, vertexToComponent_t& vertexToComponent,
+bool squaring = true, float threshold=0.7)
 {
     vector<vector<int> > adj_mat = convert_adj_list_adj_mat(subgraph);
     vector<vector<int> > new_adj_mat(adj_mat);
     if (squaring){
         new_adj_mat = square_matrix_ikj(adj_mat, true)
+        // new_adj_mat = square_matrix_ijk(adj_mat, true)
+        // new_adj_mat = square_matrix_boost(adj_mat)
     }
 }
 
