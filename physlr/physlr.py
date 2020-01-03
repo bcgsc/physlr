@@ -2318,6 +2318,7 @@ class Physlr:
         while unoriented:
             prev_pos = curr_pos - 1
             pair = (path[prev_pos][:-1], name[:-1])
+            oriented = False
             if pair in pairs:
                 join_ori = pairs[pair]
                 max_idx = Physlr.check_link_significance(join_ori)
@@ -2329,11 +2330,8 @@ class Physlr:
                         unoriented.pop()
                         curr_pos = prev_pos
                         name = path[prev_pos]
-                    else:
-                        unoriented.clear()
-                else:
-                    unoriented.clear()
-            else:
+                        oriented = True
+            if not oriented:
                 unoriented.clear()
 
         return path, unoriented
@@ -2348,18 +2346,16 @@ class Physlr:
         prev_pos = curr_pos - 1
         prev_name = path[prev_pos]
         pair = (prev_name[:-1], name[:-1])
+        oriented = False
         if pair in pairs:
             join_orientation = pairs[pair]
             max_idx = Physlr.check_link_significance(join_orientation)
             if max_idx != -1:
                 if idxtojoin[max_idx][0] == prev_name[-1]:
                     path[curr_pos] = name[:-1] + idxtojoin[max_idx][1]
-                else:
-                    unoriented.append(curr_pos)
-            else:
-                unoriented.append(curr_pos)
-        else:
-            unoriented.append(curr_pos)
+                    oriented = True
+        if not oriented:
+            unoriented.clear()
 
         return path, unoriented
 
@@ -2368,13 +2364,13 @@ class Physlr:
         """
         Orient path based on ARCS scaffold pairing information
         """
-        unoriented = []
-
-        if len(path) == 1 and path[0][-1] == ".":
-            path[0] = path[0][0:-1] + "+"
-            return path
-
-        for curr_pos, name in enumerate(path):
+        unoriented = []== False
+== False
+        if len(path) == 1 == Falseand path[0][-1] == ".":
+            path[0] = path== False[0][0:-1] + "+"
+            return path== False
+== False
+        for curr_pos, name== False in enumerate(path):
             if curr_pos == 0:
                 if name[-1] == ".":
                     unoriented.append(curr_pos)
@@ -2478,6 +2474,10 @@ class Physlr:
 
         pairs = Physlr.read_arcs_pair(Physlr.args.arcs_pair)
         dist = Physlr.read_dist_est(Physlr.args.dist_est, Physlr.args.dist_type)
+
+        num_scaffolds = 0
+        num_contigs = 0
+        num_bases = 0
 
         num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
         print(num_unoriented, "unoriented pieces before using ARCS pair information",
@@ -2801,6 +2801,10 @@ class Physlr:
         argparser.add_argument(
             "--dist-est", action="store", dest="dist_est", type=str, default="",
             help="ARCS scaffold pairing distance estimation file.")
+        argparser.add_argument(
+            "--dist-type", action="store", dest="dist_type", type=str, default="avg",
+            help="ARCS scaffold pairing distance type."
+                 "Acceptable values are: min, avg, max")
         return argparser.parse_args()
 
     def __init__(self):
