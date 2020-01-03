@@ -189,6 +189,7 @@ help:
 	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is most conservative and requires more time."
 	@echo "					distributed is a modified version of bc+k3 that is faster but less conservative."
 	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
+	@echo "	arcs		Use ARCS to augment scaffolds (only compatible with ARCS v1.1.1) [false]."
 	@echo ""
 	@echo "Example: To generate a physical map using physlr with stLFR reads myreads.fq.gz, run:"
 	@echo "	./physlr-make physical-map lr=myreads protocol=stlfr"
@@ -1160,26 +1161,22 @@ ifeq ($(arcs), "false")
 %.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
 	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=0 -V$V $^ >$@
 else
-%.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path $(draft)_c5_m50-6000_k30_r0.05_e30000_z500_pair.tsv
+%.$(draft).n10.sort.best.bed.path.fa: %.$(draft).n10.sort.best.bed.path $(draft).fa  $(draft)_c5_m50-6000_k30_r0.05_e30000_z500_pair.tsv
 	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=0 \
 	--arcs-pair $(draft)_c5_m50-6000_k30_r0.05_e30000_z500_pair.tsv \
 	--dist-est $(draft)_c5_m50-6000_k30_r0.05_e30000_z500_dist.tsv \
-	-V$V $(draft).fa %.$(draft).n10.sort.best.bed.path >$@
+	-V$V $(draft).fa $< >$@
 endif
 
 $(reads).fof: $(reads).fq.gz
 	echo $^ > $@
 
-# Create the barcode multiplicities file
-$(reads)_multiplicities.csv: $(reads).fof
-	$(time) perl $(bin)/calcBarcodeMultiplicities.pl $^ > $@
 
-$(draft)_c5_m50-6000_k30_r0.05_e30000_z500_pair.tsv: $(draft).fa $(reads)_multiplicities.csv $(reads).fq.gz
+$(draft)_c5_m50-6000_k30_r0.05_e30000_z500_pair.tsv: $(draft).fa $(reads).fq.gz
 	$(time) arcs --arks -v -f $(draft).fa \
 	-c 5 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t 8 -d 0 --gap 100 \
 	-b $(draft)_c5_m50-6000_k30_r0.05_e30000_z500 $(reads).fq.gz \
-	-P -D --dist_tsv=$(draft)_c5_m50-6000_k30_r0.05_e30000_z500_dist.tsv \
-	--barcode-counts $(reads)_multiplicities.csv
+	-P -D --dist_tsv=$(draft)_c5_m50-6000_k30_r0.05_e30000_z500_dist.tsv
 
 
 # Convert a PAF file to a BED file.
