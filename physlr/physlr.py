@@ -2331,7 +2331,7 @@ class Physlr:
                         curr_pos = prev_pos
                         name = path[prev_pos]
                         oriented = True
-            if oriented == False:
+            if not oriented:
                 unoriented.clear()
 
         return path, unoriented
