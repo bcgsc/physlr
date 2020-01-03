@@ -2336,7 +2336,6 @@ class Physlr:
 
         return path, unoriented
 
-
     @staticmethod
     def orient_part_of_path_forward(pairs, path, unoriented, curr_pos, name):
         """
@@ -2505,8 +2504,6 @@ class Physlr:
             num_bases += len(seq)
 
         return num_scaffolds, num_contigs, num_bases, paths
-
-
 
     def physlr_path_to_fasta(self):
         """
