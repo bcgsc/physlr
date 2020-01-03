@@ -2331,7 +2331,7 @@ class Physlr:
                         curr_pos = prev_pos
                         name = path[prev_pos]
                         oriented = True
-            if not oriented:
+            if oriented == False:
                 unoriented.clear()
 
         return path, unoriented
@@ -2364,13 +2364,13 @@ class Physlr:
         """
         Orient path based on ARCS scaffold pairing information
         """
-        unoriented = []== False
-== False
-        if len(path) == 1 == Falseand path[0][-1] == ".":
-            path[0] = path== False[0][0:-1] + "+"
-            return path== False
-== False
-        for curr_pos, name== False in enumerate(path):
+        unoriented = []
+
+        if len(path) == 1 and path[0][-1] == ".":
+            path[0] = path[0][0:-1] + "+"
+            return path
+
+        for curr_pos, name in enumerate(path):
             if curr_pos == 0:
                 if name[-1] == ".":
                     unoriented.append(curr_pos)
