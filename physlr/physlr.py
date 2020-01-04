@@ -1483,7 +1483,8 @@ class Physlr:
             sys.exit(msg)
         g = self.read_graph([self.args.FILES[0]])
         bxtomxs = self.read_minimizers([self.args.FILES[1]])
-        bxtocount = self.count_molecules_per_bx(bxtomxs)
+        molto0 = {mol : 0 for mol in g.nodes() }
+        bxtocount = self.count_molecules_per_bx(molto0)
 
         if self.args.threads == 1:
             moltomxs = [self.split_minimizers_bx(bx, g, bxtomxs, bxtocount)
