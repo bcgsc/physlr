@@ -251,11 +251,11 @@ f1: \
 	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(ref).n10.qpos.chain.metrics.tsv \
 
 # Scaffold the ABySS assembly of the fly genome.
-# ref=fly lr=f1 draft=f1.abyss n=25 minimizer_multiplicity=x
+# ref=fly lr=f1 draft=f1.abyss n=25 minimizer_multiplicity=xprune_br
 f1-abyss: \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.pdf \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.$(ref).minidot.pdf \
-	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map.$(draft).n10.sort.best.bed.path.quast.tsv \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbonprune_brsort.best.bed.pdf \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbonprune_brsort.best.bed.path.$(ref).minidot.pdf \
+	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbonprune_brsort.best.bed.path.quast.tsv \
 	f1.k32-w32.n100-1000.c2-x.physlr.overlap.n$n.mol.backbone.map-mkt.$(draft).n10.sort.best.bed.path.quast.tsv
 
 # Aggregate QUAST metrics.
@@ -451,7 +451,7 @@ maize: \
 	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.b73.n10.ann.gv.squish.pdf \
 	maize.k32-w32.n100-5000.c2-x.physlr.overlap.n$n.k3.mol.backbone.map.b73.n10.qpos.chain.metrics.tsv 
 
-# Aggregate QUAST metrics.
+# Aggregate QUAST metrics.prune_br
 maize.quast.tsv: \
 		maize.supernova.scaftigs.quast.tsv \
 		maize.supernova.quast.tsv \
@@ -930,7 +930,7 @@ endif
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=$(prune_branches) --prune-bridges=$(prune_bridges) --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
 
 # Determine the corrected backbone graph from the overlap TSV.
 min_path_size=200
