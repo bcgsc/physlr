@@ -440,6 +440,17 @@ class Physlr:
         return nametomxs
 
     @staticmethod
+    def count_molecules_per_bx_in_graph(g):
+        "Iterate over graph, track # molecules per barcode"
+        mol_counts = Counter()
+        bx_match = re.compile(r'(\S*?)(_(\d)+_(\d)+)$')
+        for bx_mol in g.nodes():
+            bx_mol_match = re.search(bx_match, bx_mol)
+            if bx_mol_match:
+                mol_counts[bx_mol_match.group(1)] += 1
+        return mol_counts
+
+    @staticmethod
     def count_molecules_per_bx(moltomxs):
         "Iterate over minimizers dictionary, track # molecules per barcode"
         mol_counts = Counter()
@@ -1483,8 +1494,7 @@ class Physlr:
             sys.exit(msg)
         g = self.read_graph([self.args.FILES[0]])
         bxtomxs = self.read_minimizers([self.args.FILES[1]])
-        molto0 = {mol : 0 for mol in g.nodes()}
-        bxtocount = self.count_molecules_per_bx(molto0)
+        bxtocount = self.count_molecules_per_bx_in_graph(g)
 
         if self.args.threads == 1:
             moltomxs = [self.split_minimizers_bx(bx, g, bxtomxs, bxtocount)
