@@ -66,6 +66,10 @@ prune_junctions = 200
 # 3: verbose messages
 V=1
 
+# backbone-graph variables
+prune_branches=10
+prune_bridges=10
+
 SHELL=bash -e -o pipefail
 ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
 # Set pipefail to ensure that all commands of a pipe succeed.
@@ -142,7 +146,7 @@ else
 physical-map: \
 	$(lr).physlr.physical-map.path \
 	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf \
-	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv 
+	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv
 endif
 endif
 # Help
@@ -194,6 +198,11 @@ help:
 
 version:
 	@echo "physlr v0.2.0"
+
+################################################################################
+# Test m=1 prune_branches=1 prune_bridges=1
+test: \
+	test.k1-w1.n1-2.c2-x.physlr.overlap.mol.backbone.path
 
 ################################################################################
 # Fly
@@ -921,12 +930,12 @@ endif
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=$(prune_branches) --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
 
 # Determine the corrected backbone graph from the overlap TSV.
 min_path_size=200
 %.s3.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) -V$V $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=$(prune_bridges) --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) -V$V $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
