@@ -328,16 +328,52 @@ square_adjacency_list(){
 vector<vector<int> >
 convert_adj_list_adj_mat(graph_t& subgraph)
 {
-    typedef graph_traits<Graph>::edge_iterator edge_iterator;
+    //typedef graph_traits<Graph>::edge_iterator edge_iterator;
+    typedef graph_traits<UndirectedGraph>::edge_iterator edge_iterator;
+
     pair<edge_iterator, edge_iterator> ei = edges(subgraph);
 
-    vector<vector<int> > mat(N,vector<int>(N));
+    int N = num_vertices(subgraph)
+
+    vector<vector<int> > adj_mat(N, vector<int>(N));
+    // dictionary of vertex name to index in tempo adjacencty matrix
+    std::unordered_map<std::string, int> dict_vertices(N);
+    int adj_mat_index = 0
     for (edge_iterator edge_iter = ei.first; edge_iter != ei.second; ++edge_iter){
-        int a = source(*edge_iter, g);
-        int b = target(*edge_iter, g);
-        mat[a][b] = 1;
-        mat[b][a] = 1;
+        std::string a = source(*edge_iter, g); // what data type do I need to choose here
+        std::string b = target(*edge_iter, g); // what data type do I need to choose here
+        // if not visited a or b
+        //      add to dictionary
+        // Could be more efficient by adding a "visited" property to vertices of the graph
+        // Now we implement by hash table lookup:
+        std::unordered_map<std::string,double>::const_iterator got_a = dict_vertices.find(a)
+        int index_a;
+        if ( got_a == dict_vertices.end() )
+        {
+            dict_vertices.insert (std::make_pair<std::string, int>(a, adj_mat_index));
+            index_a = adj_mat_index++;
+        }
+        else
+        {
+            index_a = got_a -> second;
+        }
+        std::unordered_map<std::string,double>::const_iterator got_b = dict_vertices.find(b)
+        int index_b;
+        if ( got_b == dict_vertices.end() )
+        {
+            dict_vertices.insert (std::make_pair<std::string, int>(b, adj_mat_index));
+            index_b = adj_mat_index++;
+        }
+        else
+        {
+            index_b = got_b -> second;
+        }
+        //mat[a][b] = g[*edge_iter].weight;
+        adj_mat[index_a][index_b] = get(weight, *edge_iter);
+        adj_mat[index_b][index_a] = get(weight, *edge_iter);
     }
+    return adj_mat, dict_vertices; // Cannot return two, add one as input that's being altered
+    // and care how you use this function elsewhere!
 }
 
 // // Functions related to cosine similarity:
