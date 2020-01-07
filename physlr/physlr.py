@@ -2264,15 +2264,13 @@ class Physlr:
         Read ARCS distance estimates. Return a dictionary of pairs to distance estimates.
         """
         dist = {}
+        dist_type_to_idx = {"min":2, "avg":3, "max":4}
+        if dist_type not in dist_type_to_idx:
+            print("invalid --dist-type parameters. Acceptable values are: min, avg, max",
+                    file=sys.stderr)
+            sys.exit(1)
+        idx = dist_type_to_idx[dist_type]
         with open(filename, "r") as dist_est_file:
-
-            dist_type_to_idx = {"min":2, "avg":3, "max":4}
-
-            if dist_type not in dist_type_to_idx:
-                print("invalid --dist-type parameters. Acceptable values are: min, avg, max",
-                      file=sys.stderr)
-                sys.exit(1)
-            idx = dist_type_to_idx[dist_type]
             for line in dist_est_file:
                 columns = line.rstrip().split("\t")
                 if columns[0] == "contig1":
