@@ -2146,18 +2146,22 @@ class Physlr:
             for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
                     mapped = True
-                    before = [tidpos_to_qpos.get((tid, tpos - i), None)
-                              for i in range(10)
-                              if tidpos_to_qpos.get((tid, tpos - i), None) is not None]
-                    before_median = statistics.median_low(before)
-                    after = [tidpos_to_qpos.get((tid, tpos + i), None)
-                             for i in range(10)
-                             if tidpos_to_qpos.get((tid, tpos + i), None) is not None]
-                    after_median = statistics.median_high(after)
+                    #before = [tidpos_to_qpos.get((tid, tpos - i), None)
+                    #          for i in range(10)
+                    #          if tidpos_to_qpos.get((tid, tpos - i), None) is not None]
+                    #before_median = statistics.median_low(before)
+                    #after = [tidpos_to_qpos.get((tid, tpos + i), None)
+                    #         for i in range(10)
+                    #         if tidpos_to_qpos.get((tid, tpos + i), None) is not None]
+                    #after_median = statistics.median_high(after)
+                    #orientation = Physlr.determine_orientation(
+                    #    before_median,
+                    #    tidpos_to_qpos.get((tid, tpos + 0), None),
+                    #    after_median)
                     orientation = Physlr.determine_orientation(
-                        before_median,
+                        tidpos_to_qpos.get((tid, tpos - 1), None),
                         tidpos_to_qpos.get((tid, tpos + 0), None),
-                        after_median)
+                        tidpos_to_qpos.get((tid, tpos + 1), None))
                     print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
             if mapped:
                 num_mapped += 1
