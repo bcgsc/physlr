@@ -77,6 +77,9 @@ using vertexSet_t = std::unordered_set<vertex_t>;
 using componentToVertexSet_t = std::vector<vertexSet_t>;
 using vertexToComponent_t = std::unordered_map<vertex_t, size_t>;
 using vecVertexToComponent_t = std::vector<vertexToComponent_t>;
+using vertexToIndex_t = std::unordered_map<vertex_t, size_t>;
+using adjacencyMatrix_t = std::vector<vector<int> >;
+
 
 static void
 printVersion()
@@ -325,19 +328,21 @@ square_adjacency_list(){
     // equivalent to transforming into adjacency matrix, squaring and then converting back.
 }
 
-vector<vector<int> >
-convert_adj_list_adj_mat(graph_t& subgraph)
+adjacencyMatrix_t
+convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 {
-    //typedef graph_traits<Graph>::edge_iterator edge_iterator;
+    int N = num_vertices(subgraph)
+    adjacencyMatrix_t adj_mat(N, vector<int>(N));
+
+    // typedef graph_traits<Graph>::edge_iterator edge_iterator;
     typedef graph_traits<UndirectedGraph>::edge_iterator edge_iterator;
 
     pair<edge_iterator, edge_iterator> ei = edges(subgraph);
 
-    int N = num_vertices(subgraph)
-
-    vector<vector<int> > adj_mat(N, vector<int>(N));
-    // dictionary of vertex name to index in tempo adjacencty matrix
-    std::unordered_map<std::string, int> dict_vertices(N);
+    // Dictionary of vertex name to index in temporary adjacency matrix
+    //vertexToIndex_t vertexToIndex(N);
+    vertexToIndex_t::iterator got_a;
+    vertexToIndex_t::iterator got_b;
     int adj_mat_index = 0
     for (edge_iterator edge_iter = ei.first; edge_iter != ei.second; ++edge_iter){
         std::string a = source(*edge_iter, g); // what data type do I need to choose here
@@ -346,22 +351,24 @@ convert_adj_list_adj_mat(graph_t& subgraph)
         //      add to dictionary
         // Could be more efficient by adding a "visited" property to vertices of the graph
         // Now we implement by hash table lookup:
-        std::unordered_map<std::string,double>::const_iterator got_a = dict_vertices.find(a)
+        // std::unordered_map<std::string,double>::const_iterator got_a = vertexToIndex.find(a)
+        got_a = vertexToIndex.find(a)
         int index_a;
-        if ( got_a == dict_vertices.end() )
+        if ( got_a == vertexToIndex.end() )
         {
-            dict_vertices.insert (std::make_pair<std::string, int>(a, adj_mat_index));
+            vertexToIndex.insert (std::make_pair<std::string, int>(a, adj_mat_index));
             index_a = adj_mat_index++;
         }
         else
         {
             index_a = got_a -> second;
         }
-        std::unordered_map<std::string,double>::const_iterator got_b = dict_vertices.find(b)
+        // std::unordered_map<std::string,double>::const_iterator got_b = vertexToIndex.find(b)
+        got_b = vertexToIndex.find(b)
         int index_b;
-        if ( got_b == dict_vertices.end() )
+        if ( got_b == vertexToIndex.end() )
         {
-            dict_vertices.insert (std::make_pair<std::string, int>(b, adj_mat_index));
+            vertexToIndex.insert (std::make_pair<std::string, int>(b, adj_mat_index));
             index_b = adj_mat_index++;
         }
         else
@@ -372,7 +379,7 @@ convert_adj_list_adj_mat(graph_t& subgraph)
         adj_mat[index_a][index_b] = get(weight, *edge_iter);
         adj_mat[index_b][index_a] = get(weight, *edge_iter);
     }
-    return adj_mat, dict_vertices; // Cannot return two, add one as input that's being altered
+    return adj_mat, vertexToIndex; // Cannot return two, add one as input that's being altered
     // and care how you use this function elsewhere!
 }
 
@@ -404,14 +411,14 @@ square_matrix_ijk(
 
 vector< vector<int> >
 square_matrix_ikj( // Might be faster than ijk, benchmark it
-    vector< vector<int> > M,
+    adjacencyMatrix_t M,
     bool symmetric)
 {
+    // Fast initialization:
     int n = M.size();
-
-    vector<int> tmp(n, 0); // Fast initialization
+    vector<int> tmp(n, 0);
     vector< vector<int> > M2(n, tmp);
-
+    // Multiplication
     for (int i = 0; i < n; i++) {
         for (int k = 0; k < n; k++) {
             for (int j = 0; j < n; j++) {
@@ -439,8 +446,9 @@ Community_detection_cosine_similarity(
 graph_t& subgraph, vertexToComponent_t& vertexToComponent,
 bool squaring = true, float threshold=0.7)
 {
-    vector<vector<int> > adj_mat = convert_adj_list_adj_mat(subgraph);
-    vector<vector<int> > new_adj_mat(adj_mat);
+    vertexToIndex_t vertexToIndex(num_vertices(subgraph))
+    adjacencyMatrix_t adj_mat = convert_adj_list_adj_mat(subgraph, vertexToIndex);
+    adjacencyMatrix_t new_adj_mat(adj_mat);
     if (squaring){
         new_adj_mat = square_matrix_ikj(adj_mat, true)
         // new_adj_mat = square_matrix_ijk(adj_mat, true)
