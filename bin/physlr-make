@@ -1169,8 +1169,8 @@ else
 endif
 
 $(draft)_c5_m50-6000_k30_r0.05_e30000_z500_pair.tsv: $(draft).fa $(lr).fq.gz
-	$(time) arcs --arks -v -f $(draft).fa \
-	-c 5 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t 8 -d 0 --gap 100 \
+	$(time) arcs --arks -v -f $< \
+	-c 5 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t $t -d 0 --gap 100 \
 	-b $(draft)_c5_m50-6000_k30_r0.05_e30000_z500 $(lr).fq.gz \
 	-P -D --dist_tsv=$(draft)_c5_m50-6000_k30_r0.05_e30000_z500_dist.tsv
 
