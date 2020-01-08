@@ -2267,7 +2267,7 @@ class Physlr:
         dist_type_to_idx = {"min":2, "avg":3, "max":4}
         if dist_type not in dist_type_to_idx:
             print("invalid --dist-type parameters. Acceptable values are: min, avg, max",
-                    file=sys.stderr)
+                  file=sys.stderr)
             sys.exit(1)
         idx = dist_type_to_idx[dist_type]
         with open(filename, "r") as dist_est_file:
