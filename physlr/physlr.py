@@ -2291,13 +2291,13 @@ class Physlr:
                 #change this
                 #tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
                 sorted_qpos = sorted(qpos)
-                while (len(qpos) > 1):
+                while (len(sorted_qpos) > 1):
                     
                     if (sorted_qpos[0] < sorted_qpos[1] - 100):
                         del sorted_qpos[0]
                     else:
                         break
-                while (len(qpos) > 1):
+                while (len(sorted_qpos) > 1):
 
                     if (sorted_qpos[-1] > sorted_qpos[-2] + 100):
                         del sorted_qpos[-1]
@@ -2355,14 +2355,14 @@ class Physlr:
                 #change this
                 #tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
                 sorted_qpos = sorted(qpos)
-                while (len(qpos) > 1):
+                while (len(sorted_qpos) > 1):
                     
                     if (sorted_qpos[0] < sorted_qpos[1] - 100):
                         del sorted_qpos[0]
                     else:
                         break
 
-                while (len(qpos) > 1):
+                while (len(sorted_qpos) > 1):
 
                     if (sorted_qpos[-1] > sorted_qpos[-2] + 100):
                         del sorted_qpos[-1]
