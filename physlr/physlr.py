@@ -5,6 +5,7 @@ Physlr: Physical Mapping of Linked Reads
 
 import argparse
 import itertools
+import math
 import multiprocessing
 import os
 import random
@@ -2241,23 +2242,205 @@ class Physlr:
             f"Wrote {num_contigs} contigs in {num_scaffolds} scaffolds.",
             file=sys.stderr)
 
-    def physlr_path_to_fasta(self):
+    @staticmethod
+    def read_arcs_pair(filename):
         """
-        Produce sequences in FASTA format from paths.
-        Usage: physlr path-to-fasta FASTA PATH... >FASTA
+        Read ARCS pair tsv. Return a dictionary of pairs to orientation evidence.
         """
-        if len(self.args.FILES) < 2:
-            sys.exit("physlr path-to-fasta: error: at least two file arguments are required")
-        fasta_filenames = self.args.FILES[0:1]
-        path_filenames = self.args.FILES[1:]
-        seqs = Physlr.read_fastas(fasta_filenames)
-        paths = Physlr.read_paths(path_filenames)
+        pairs = {}
+        with open(filename, "r") as arks_pair_file:
+            for line in arks_pair_file:
+                columns = line.rstrip().split("\t")
+                (u, v, hh, ht, th, tt) = [int(column) if idx > 1 else column
+                                          for idx, column in enumerate(columns)]
+                pairs[(u, v)] = [hh, ht, th, tt]
+                pairs[(v, u)] = [hh, th, ht, tt]
+        print("Read ARCS pairs", file=sys.stderr)
+        return pairs
+
+    @staticmethod
+    def read_dist_est(filename, dist_type):
+        """
+        Read ARCS distance estimates. Return a dictionary of pairs to distance estimates.
+        """
+        dist = {}
+        dist_type_to_idx = {"min":2, "avg":3, "max":4}
+        if dist_type not in dist_type_to_idx:
+            print("invalid --dist-type parameters. Acceptable values are: min, avg, max",
+                  file=sys.stderr)
+            sys.exit(1)
+        idx = dist_type_to_idx[dist_type]
+        with open(filename, "r") as dist_est_file:
+            for line in dist_est_file:
+                columns = line.rstrip().split("\t")
+                if columns[0] == "contig1":
+                    continue
+
+                contig1 = columns[0].rstrip("-+")
+                contig2 = columns[1].rstrip("-+")
+                dist[(contig1, contig2)] = int(columns[idx])
+                dist[(contig2, contig1)] = int(columns[idx])
+
+        print("Read Distance Estimates", file=sys.stderr)
+        return dist
+
+    @staticmethod
+    def normal_estimation(x, probability, n):
+        """
+        Normal approximation to the binomial distribution
+        """
+        mean_val = n * probability
+        std_dev = float(math.sqrt(mean_val * (1 - probability)))
+        return 0.5 * (1 + math.erf((x - mean_val) / (std_dev * math.sqrt(2))))
+
+    @staticmethod
+    def check_link_significance(ori_list):
+        """
+        Check if barcode link is strong enough
+        """
+        max_idx = ori_list.index(max(ori_list))
+        ori_list.sort()
+        max_val = ori_list[-1]
+        sum_with_second_max = ori_list[-1] + ori_list[-2]
+        normal_cdf = Physlr.normal_estimation(max_val, 0.5, sum_with_second_max)
+        if 1 - normal_cdf < 0.05:
+            return max_idx
+        return -1
+
+    @staticmethod
+    def orient_part_of_path_backward(pairs, path, unoriented, curr_pos, name):
+        """
+        Orient small part of path based on ARCS scaffold pairing information going backwards
+        """
+        idxtojoin = {0:"-+", 1:"--", 2:"++", 3:"+-"}
+        while unoriented:
+            prev_pos = curr_pos - 1
+            pair = (path[prev_pos][:-1], name[:-1])
+            oriented = False
+            if pair in pairs:
+                join_ori = pairs[pair]
+                max_idx = Physlr.check_link_significance(join_ori)
+                if max_idx != -1:
+                    curr_ori = idxtojoin[max_idx][1]
+                    if curr_ori == name[-1]:
+                        prev_ori = idxtojoin[max_idx][0]
+                        path[prev_pos] = path[prev_pos][0:-1] + prev_ori
+                        unoriented.pop()
+                        curr_pos = prev_pos
+                        name = path[prev_pos]
+                        oriented = True
+            if not oriented:
+                unoriented.clear()
+
+        return path, unoriented
+
+    @staticmethod
+    def orient_part_of_path_forward(pairs, path, unoriented, curr_pos, name):
+        """
+        Orient small part of path based on ARCS scaffold pairing information going forwards
+        """
+        idxtojoin = {0:"-+", 1:"--", 2:"++", 3:"+-"}
+        prev_pos = curr_pos - 1
+        prev_name = path[prev_pos]
+        pair = (prev_name[:-1], name[:-1])
+        oriented = False
+        if pair in pairs:
+            join_orientation = pairs[pair]
+            max_idx = Physlr.check_link_significance(join_orientation)
+            if max_idx != -1:
+                if idxtojoin[max_idx][0] == prev_name[-1]:
+                    path[curr_pos] = name[:-1] + idxtojoin[max_idx][1]
+                    oriented = True
+        if not oriented:
+            unoriented.clear()
+
+        return path, unoriented
+
+    @staticmethod
+    def orient_path(path, pairs):
+        """
+        Orient path based on ARCS scaffold pairing information
+        """
+        unoriented = []
+
+        if len(path) == 1 and path[0][-1] == ".":
+            path[0] = path[0][0:-1] + "+"
+            return path
+
+        for curr_pos, name in enumerate(path):
+            if curr_pos == 0:
+                if name[-1] == ".":
+                    unoriented.append(curr_pos)
+            else:
+                if name[-1] != ".":
+                    if unoriented:
+                        temp_curr_pos = curr_pos
+                        temp_name = name
+
+                        path, unoriented = Physlr.orient_part_of_path_backward(pairs, path,
+                                                                               unoriented, curr_pos,
+                                                                               name)
+
+                        curr_pos = temp_curr_pos
+                        name = temp_name
+                else:
+                    if not unoriented:
+                        path, unoriented = Physlr.orient_part_of_path_forward(pairs, path,
+                                                                              unoriented, curr_pos,
+                                                                              name)
+
+                    else:
+                        unoriented.append(curr_pos)
+        return path
+
+    @staticmethod
+    def orient_paths(paths, pairs):
+        """
+        Orient paths based on ARCS scaffold pairing information
+        """
+        if not pairs:
+            return paths
+        for idx, path in enumerate(paths):
+            paths[idx] = Physlr.orient_path(path, pairs)
+        return paths
+
+    @staticmethod
+    def generate_seq_with_dist(seqs, dist, path, gaps):
+        """
+        Return scaffold using distance estimates based on ARCS distance estimation
+        """
+        seq = ""
+        for idx, name in enumerate(path):
+            if seq == "":
+                if name[-1] == ".":
+                    seq += ("N" * len(seqs[name[0:-1]]))
+                else:
+                    seq += Physlr.get_oriented_sequence(seqs, name)
+            else:
+                pair = (name[:-1], path[idx - 1][:-1])
+                if name[-1] != "." and path[idx - 1][-1] != ".":
+                    if pair in dist:
+                        seq += (dist[pair] * "N")
+                    else:
+                        seq += gaps
+                    seq += Physlr.get_oriented_sequence(seqs, name)
+                elif name[-1] != "." and path[idx - 1][-1] == ".":
+                    seq += gaps
+                    seq += Physlr.get_oriented_sequence(seqs, name)
+                else:
+                    seq += gaps
+                    seq += ("N" * len(seqs[name[0:-1]]))
+        return seq
+
+    @staticmethod
+    def path_to_fasta_no_arcs(seqs, paths, gaps):
+        """
+        Convert path to fasta when --arcs-pair isn't used
+        """
 
         num_scaffolds = 0
         num_contigs = 0
         num_bases = 0
-
-        gaps = "N" * self.args.gap_size
 
         for path in progress(paths):
             if not path:
@@ -2271,12 +2454,74 @@ class Physlr:
                             if name[-1] != "." else ("N" * len(seqs[name[0:-1]]))
                             for name in path)
 
-            if len(seq) < self.args.min_length:
+            if len(seq) < Physlr.args.min_length:
                 continue
             num_scaffolds += 1
             print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
             num_contigs += len(path)
             num_bases += len(seq)
+
+        return num_scaffolds, num_contigs, num_bases
+
+    @staticmethod
+    def path_to_fasta_with_arcs(seqs, paths, gaps):
+        """
+        Convert path to fasta when --arcs-pair is used
+        """
+
+        pairs = Physlr.read_arcs_pair(Physlr.args.arcs_pair)
+        dist = Physlr.read_dist_est(Physlr.args.dist_est, Physlr.args.dist_type)
+
+        num_scaffolds = 0
+        num_contigs = 0
+        num_bases = 0
+
+        num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
+        print(num_unoriented, "unoriented pieces before using ARCS pair information",
+              file=sys.stderr)
+
+        paths = Physlr.orient_paths(paths, pairs)
+
+        num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
+        print(num_unoriented, "unoriented pieces after using ARCS pair information",
+              file=sys.stderr)
+
+        for path in paths:
+            if not dist:
+                seq = gaps.join(Physlr.get_oriented_sequence(seqs, name)
+                                if name[-1] != "." else ("N" * len(seqs[name[0:-1]]))
+                                for name in path)
+            else:
+                seq = Physlr.generate_seq_with_dist(seqs, dist, path, gaps)
+
+            if len(seq) < Physlr.args.min_length:
+                continue
+            num_scaffolds += 1
+            print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
+            num_contigs += len(path)
+            num_bases += len(seq)
+
+        return num_scaffolds, num_contigs, num_bases, paths
+
+    def physlr_path_to_fasta(self):
+        """
+        Produce sequences in FASTA format from paths.
+        Usage: physlr path-to-fasta FASTA PATH... >FASTA
+        """
+        if len(self.args.FILES) < 2:
+            sys.exit("physlr path-to-fasta: error: at least two file arguments are required")
+        fasta_filenames = self.args.FILES[0:1]
+        path_filenames = self.args.FILES[1:]
+        seqs = Physlr.read_fastas(fasta_filenames)
+        paths = Physlr.read_paths(path_filenames)
+
+        gaps = "N" * self.args.gap_size
+
+        if self.args.arcs_pair == "":
+            num_scaffolds, num_contigs, num_bases = Physlr.path_to_fasta_no_arcs(seqs, paths, gaps)
+        else:
+            num_scaffolds, num_contigs, num_bases, paths = \
+                Physlr.path_to_fasta_with_arcs(seqs, paths, gaps)
 
         used_seqs = {name[0:-1] for path in paths for name in path if name[-1] != "."}
 
@@ -2545,6 +2790,16 @@ class Physlr:
         argparser.add_argument(
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
+        argparser.add_argument(
+            "--arcs-pair", action="store", dest="arcs_pair", type=str, default="",
+            help="ARCS scaffold pairing file.")
+        argparser.add_argument(
+            "--dist-est", action="store", dest="dist_est", type=str, default="",
+            help="ARCS scaffold pairing distance estimation file.")
+        argparser.add_argument(
+            "--dist-type", action="store", dest="dist_type", type=str, default="avg",
+            help="ARCS scaffold pairing distance type."
+                 "Acceptable values are: min, avg, max")
         return argparser.parse_args()
 
     def __init__(self):

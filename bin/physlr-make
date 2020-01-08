@@ -95,6 +95,8 @@ gzip=gzip
 zcat=gunzip -c
 endif
 
+arcs=false
+
 .DELETE_ON_ERROR:
 .SECONDARY:
 
@@ -187,6 +189,7 @@ help:
 	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is most conservative and requires more time."
 	@echo "					distributed is a modified version of bc+k3 that is faster but less conservative."
 	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
+	@echo "	arcs		Use ARCS to augment scaffolds (only compatible with ARCS v1.1.1) [false]."
 	@echo ""
 	@echo "Example: To generate a physical map using physlr with stLFR reads myreads.fq.gz, run:"
 	@echo "	./physlr-make physical-map lr=myreads protocol=stlfr"
@@ -1154,8 +1157,23 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 	gunzip -c $< | awk '{ keep = $$6 " " $$8 " " $$9 != x; x = $$6 " " $$8 " " $$9 } keep' | $(gzip) >$@
 
 # Produce sequences in FASTA format from paths.
+ifeq ($(arcs), "false")
 %.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
 	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=0 -V$V $^ >$@
+else
+%.$(draft).n10.sort.best.bed.path.fa: %.$(draft).n10.sort.best.bed.path $(draft).fa  $(draft)_pair.tsv
+	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=0 \
+	--arcs-pair $(draft)_pair.tsv \
+	--dist-est $(draft)_dist.tsv \
+	-V$V $(draft).fa $< >$@
+endif
+
+$(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
+	$(time) arcs --arks -v -f $< \
+	-c 5 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t $t -d 0 --gap 100 \
+	-b $(draft) $(lr).fq.gz \
+	-P -D --dist_tsv=$(draft)_dist.tsv
+
 
 # Convert a PAF file to a BED file.
 %.paf.bed: %.paf.gz
