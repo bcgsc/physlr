@@ -19,7 +19,6 @@ from collections import Counter
 import networkx as nx
 import tqdm
 
-from physlr.minimerize import minimerize
 from physlr.read_fasta import read_fasta
 
 # The time at which execution started.
