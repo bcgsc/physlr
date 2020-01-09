@@ -2352,7 +2352,7 @@ class Physlr:
                     path[curr_pos] = name[:-1] + idxtojoin[max_idx][1]
                     oriented = True
         if not oriented:
-            unoriented.clear()
+            unoriented.append(curr_pos)
 
         return path, unoriented
 
