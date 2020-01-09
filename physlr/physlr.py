@@ -1004,22 +1004,6 @@ class Physlr:
               file=sys.stderr)
         print(int(timeit.default_timer() - t0), "Wrote graphs", file=sys.stderr)
 
-    def physlr_indexfa(self):
-        "Index a set of sequences. The output file format is TSV."
-        for filename in self.args.FILES:
-            with open(filename) as fin:
-                for name, seq, _, _ in read_fasta(fin):
-                    print(name, "\t", sep="", end="")
-                    print(*minimerize(self.args.k, self.args.w, seq.upper()))
-
-    def physlr_indexlr(self):
-        "Index a set of linked reads. The output file format is TSV."
-        for filename in self.args.FILES:
-            with open(filename) as fin:
-                for _, seq, bx, _ in read_fasta(fin):
-                    print(bx, "\t", sep="", end="")
-                    print(*minimerize(self.args.k, self.args.w, seq.upper()))
-
     def physlr_count_minimizers(self):
         "Count the frequency of each minimizer."
         bxtomxs = self.read_minimizers(self.args.FILES)
@@ -1073,172 +1057,6 @@ class Physlr:
         for mx in singletons:
             del mx_counts[mx]
         return mx_counts
-
-    def physlr_filter_barcodes(self):
-        """
-        Filter barcodes by number of minimizers.
-        Read a TSV file of barcodes to minimizers.
-        Remove minimizers that occur only once.
-        Remove barkers with too few or too many minimizers.
-        Write a TSV file of barcodes to minimizers.
-        """
-        bxtomxs = self.read_minimizers(self.args.FILES)
-        Physlr.remove_singleton_minimizers(bxtomxs)
-
-        q0, q1, q2, q3, q4 = quantile(
-            [0, 0.25, 0.5, 0.75, 1], (len(mxs) for mxs in bxtomxs.values()))
-        low_whisker = int(q1 - self.args.coef * (q3 - q1))
-        high_whisker = int(q3 + self.args.coef * (q3 - q1))
-        if self.args.n == 0:
-            self.args.n = max(q0, low_whisker)
-        if self.args.N is None:
-            self.args.N = min(1 + q4, high_whisker)
-
-        print(
-            int(timeit.default_timer() - t0), " Counted minimizers per barcode\n",
-            f"    Markers per barcode: Q0={q0} Q1={q1} Q2={q2} Q3={q3} Q4={q4} Q3-Q1={q3 - q1}\n",
-            f"    Q3-{self.args.coef}*(Q3-Q1)={low_whisker} n={self.args.n}\n",
-            f"    Q3+{self.args.coef}*(Q3-Q1)={high_whisker} N={self.args.N}",
-            sep="", file=sys.stderr)
-
-        too_few, too_many = 0, 0
-        for bx, mxs in progress(bxtomxs.items()):
-            if len(mxs) < self.args.n:
-                too_few += 1
-            elif len(mxs) >= self.args.N:
-                too_many += 1
-            else:
-                print(bx, "\t", sep="", end="")
-                print(*mxs)
-        print(
-            "    Discarded", too_few, "barcodes with too few minimizers of", len(bxtomxs),
-            f"({round(100 * too_few / len(bxtomxs), 2)}%)", file=sys.stderr)
-        print(
-            "    Discarded", too_many, "barcodes with too many minimizers of", len(bxtomxs),
-            f"({round(100 * too_many / len(bxtomxs), 2)}%)", file=sys.stderr)
-        print(
-            int(timeit.default_timer() - t0),
-            "Wrote", len(bxtomxs) - too_few - too_many, "barcodes", file=sys.stderr)
-
-    def physlr_filter_minimizers(self):
-        "Filter minimizers by depth of coverage. Remove repetitive minimizers."
-        bxtomxs = self.read_minimizers(self.args.FILES)
-        mx_counts = Physlr.remove_singleton_minimizers(bxtomxs)
-
-        # Identify frequent minimizers.
-        q1, q2, q3 = quantile([0.25, 0.5, 0.75], mx_counts.values())
-        low_whisker = int(q1 - self.args.coef * (q3 - q1))
-        high_whisker = int(q3 + self.args.coef * (q3 - q1))
-        if self.args.C is None:
-            self.args.C = high_whisker
-        print(
-            int(timeit.default_timer() - t0),
-            " Minimizer frequency: Q1=", q1, " Q2=", q2, " Q3=", q3,
-            " Q1-", self.args.coef, "*(Q3-Q1)=", low_whisker,
-            " Q3+", self.args.coef, "*(Q3-Q1)=", high_whisker,
-            " C=", self.args.C, sep="", file=sys.stderr)
-
-        # Remove frequent minimizers.
-        frequent_mxs = {mx for mx, count in mx_counts.items() if count >= self.args.C}
-        num_empty_barcodes = 0
-        for bx, mxs in progress(bxtomxs.items()):
-            mxs -= frequent_mxs
-            if not mxs:
-                num_empty_barcodes += 1
-                continue
-            print(bx, "\t", sep="", end="")
-            print(*mxs)
-
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", len(frequent_mxs), "most frequent minimizers of", len(mx_counts),
-            f"({round(100 * len(frequent_mxs) / len(mx_counts), 2)}%)", file=sys.stderr)
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", num_empty_barcodes, "empty barcodes of", len(bxtomxs),
-            f"({round(100 * num_empty_barcodes / len(bxtomxs), 2)}%)", file=sys.stderr)
-        print(
-            int(timeit.default_timer() - t0),
-            "Wrote", len(bxtomxs) - num_empty_barcodes, "barcodes", file=sys.stderr)
-
-    def remove_repetitive_minimizers(self, bxtomxs, mxtobxs):
-        "Remove repetitive minimizers."
-
-        # Remove minimizers that occur only once.
-        num_mxs = len(mxtobxs)
-        singletons = {mx for mx, bxs in progress(mxtobxs.items()) if len(bxs) < 2}
-        for mx in singletons:
-            del mxtobxs[mx]
-        for mxs in progress(bxtomxs.values()):
-            mxs -= singletons
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", len(singletons), "minimizers that occur only once of", num_mxs,
-            f"({round(100 * len(singletons) / num_mxs, 2)}%)", file=sys.stderr)
-
-        # Identify repetitive minimizers.
-        q1, q2, q3 = quantile([0.25, 0.5, 0.75], (len(bxs) for bxs in mxtobxs.values()))
-        whisker = int(q3 + self.args.coef * (q3 - q1))
-        if self.args.C is None:
-            self.args.C = whisker
-        print(
-            int(timeit.default_timer() - t0),
-            " Minimizer frequency: Q1=", q1, " Q2=", q2, " Q3=", q3,
-            " Q3+", self.args.coef, "*(Q3-Q1)=", whisker,
-            " C=", self.args.C, sep="", file=sys.stderr)
-
-        # Remove frequent (likely repetitive) minimizers.
-        num_mxs = len(mxtobxs)
-        repetitive = {mx for mx, bxs in mxtobxs.items() if len(bxs) >= self.args.C}
-        for mx in repetitive:
-            del mxtobxs[mx]
-        for xs in progress(bxtomxs.values()):
-            xs -= repetitive
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", len(repetitive), "most frequent minimizers of", num_mxs,
-            f"({round(100 * len(repetitive) / num_mxs, 2)}%)", file=sys.stderr)
-
-    def physlr_overlap(self):
-        "Read a sketch of linked reads and find overlapping barcodes."
-
-        bxtomxs = self.read_minimizers(self.args.FILES)
-        mxtobxs = self.construct_minimizers_to_barcodes(bxtomxs)
-
-        # Add the vertices.
-        g = nx.Graph()
-        for u, mxs in sorted(progress(bxtomxs.items())):
-            if len(mxs) >= self.args.n:
-                g.add_node(u, n=len(mxs))
-        print(
-            int(timeit.default_timer() - t0),
-            "Added", g.number_of_nodes(), "barcodes to the graph", file=sys.stderr)
-
-        # Add the overlap edges.
-        edges = Counter(
-            (u, v) for bxs in progress(mxtobxs.values()) for u, v in itertools.combinations(bxs, 2))
-        print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
-
-        for (u, v), n in progress(edges.items()):
-            if n >= self.args.n:
-                g.add_edge(u, v, n=n)
-        num_removed = len(edges) - g.number_of_edges()
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", num_removed, "edges with fewer than", self.args.n,
-            "common minimizers of", len(edges),
-            f"({round(100 * num_removed / len(edges), 2)}%)", file=sys.stderr)
-
-        num_singletons = Physlr.remove_singletons(g)
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
-
-        Physlr.print_graph_stats(g)
-
-        # Write the graph.
-        self.write_tsv(g, sys.stdout)
-        print(int(timeit.default_timer() - t0), "Wrote the graph", file=sys.stderr)
 
     def physlr_filter_overlap(self):
         "Read a Physlr overlap graph and filter edges."
@@ -2711,9 +2529,6 @@ class Physlr:
         argparser.add_argument(
             "-n", "--min-n", action="store", dest="n", type=int, default=0,
             help="remove edges with fewer than n shared minimizers [0]")
-        argparser.add_argument(
-            "-N", "--max-n", action="store", dest="N", type=int, default=None,
-            help="remove edges with at least N shared minimizers [None]")
         argparser.add_argument(
             "--bestn", action="store", dest="bestn", type=int, default=None,
             help="Keep the best n edges of each vertex [None]")
