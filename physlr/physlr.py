@@ -2479,31 +2479,12 @@ class Physlr:
         num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
         print(num_unoriented, "unoriented pieces before using ARCS pair information",
               file=sys.stderr)
-        f = open("pathToFasta.txt", "w")
-        num_unoriented = 0
-        old_ori = []
-        for path in paths:
-            for name in path:
-                old_ori.append(name)
-                if name[-1] == ".":
-                    num_unoriented += 1
-        print(num_unoriented, "at the beginning", file=sys.stderr)
-
 
         paths = Physlr.orient_paths(paths, pairs)
 
         num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
         print(num_unoriented, "unoriented pieces after using ARCS pair information",
               file=sys.stderr)
-        num_unoriented = 0
-        for path in paths:
-            for name in path:
-                f.write(old_ori.pop(0)+ "\t" + name + "\n")
-                if name[-1] == ".":
-                    num_unoriented += 1
-        print(num_unoriented, "at the end", file=sys.stderr)
-        f.close()
-        sys.exit(0)
 
         for path in paths:
             if not dist:
