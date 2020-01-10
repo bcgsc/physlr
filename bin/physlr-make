@@ -1054,7 +1054,7 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 
 # Estimate the number of molecules per barcode.
 %.physlr.overlap.n20.countmol.tsv: %.physlr.overlap.tsv
-	$(python) $(bin)/physlr count-molecules -n20 -V$V $< >$@
+	$(python) $(bin)/physlr count-molecules -m20 -V$V $< >$@
 
 # Remove barcodes with more than one molecule.
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
