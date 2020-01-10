@@ -305,8 +305,8 @@ class Physlr:
 
     @staticmethod
     def filter_edges(g, arg_m):
-        "Remove edges with n < arg_n."
-        if arg_n == 0:
+        "Remove edges with m < arg_m."
+        if arg_m == 0:
             return
         edges = [(u, v) for u, v, m in progress(g.edges(data="m")) if m < arg_m]
         print(
@@ -324,7 +324,7 @@ class Physlr:
     @staticmethod
     def keep_best_edges(g, bestm):
         """Keep the best edges of each vertex."""
-        if bestn is None:
+        if bestm is None:
             return
         num_edges = g.number_of_edges()
         num_removed = 0
