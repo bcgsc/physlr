@@ -42,18 +42,12 @@ check-physlr-filter-barcodes: all
 	./data/checkMx.sh data/f1chr4-head50.n100-1000.good.tsv data/f1chr4-head50.n100-1000.tsv
 
 check-physlr-filter-bxmx-first: all
-	./physlr-filter-barcodes data/f1.tiny.indexlr.physlr.tsv -n2 -N10 -o fb-cpp
-	env PYTHONPATH=.. ../bin/physlr filter-minimizers -V0 -C4 fb-cpp >fm-py
-	./physlr-filter-bxmx data/f1.tiny.indexlr.physlr.tsv -o ff-cpp -n2 -N10 -C4
-	./data/checkMx.sh fm-py ff-cpp
-	rm fb-cpp fm-py ff-cpp
+	./physlr-filter-bxmx data/f1.tiny.indexlr.n2-10.physlr.tsv -o f1.tiny.indexlr.n2-10.c2-4.physlr.tsv -n2 -N10 -C4
+	./data/checkMx.sh f1.tiny.indexlr.n2-10.c2-4.physlr.tsv data/f1.tiny.indexlr.n2-10.c2-4.physlr.tsv.good
 
 check-physlr-filter-bxmx-second: all
-	./physlr-filter-barcodes data/f1.tiny.indexlr.physlr.tsv -n2 -N10 -o fb-cpp
-	env PYTHONPATH=.. ../bin/physlr filter-minimizers -V0 fb-cpp >fm-py
-	./physlr-filter-bxmx data/f1.tiny.indexlr.physlr.tsv -o ff-cpp -n2 -N10
-	./data/checkMx.sh fm-py ff-cpp
-	rm fb-cpp fm-py ff-cpp
+	./physlr-filter-bxmx data/f1.tiny.indexlr.n2-10.physlr.tsv -o f1.tiny.indexlr.n2-10.c2-x.physlr.tsv -n2 -N10
+	./data/checkMx.sh f1.tiny.indexlr.n2-10.c2-x.physlr.tsv data/f1.tiny.indexlr.n2-10.c2-x.physlr.tsv.good
 
 check-physlr-index-stLFR: all
 	./physlr-indexlr -t16 -k8 -w1 data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.physlr.tsv.good
