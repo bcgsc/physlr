@@ -25,7 +25,7 @@
  * execution of the program.
  */
 namespace opt {
-static unsigned minN = 10;
+static unsigned minM = 10;
 static unsigned threads = 1;
 } // namespace opt
 
@@ -51,7 +51,7 @@ printHelpDialog()
 	static const char dialog[] =
 	    "Usage: physlr-overlap [OPTION]... [MINIMIZERS.tsv]\n"
 	    "Read a sketch of linked reads and find overlapping barcodes.\n"
-	    "  -n, --min-n=INT   Remove edges with fewer than n shared markers [10].\n"
+	    "  -m, --min-m=INT   Remove edges with fewer than m shared markers [10].\n"
 	    "  -t, --threads     threads [1]\n"
 	    "  -v, --version     Print version\n"
 	    "Report bugs to <cjustin@bcgsc.ca>.";
@@ -107,13 +107,13 @@ main(int argc, char* argv[])
 	int c;
 
 	// long form arguments
-	static struct option long_options[] = { { "min-n", required_argument, nullptr, 'n' },
+	static struct option long_options[] = { { "min-m", required_argument, nullptr, 'n' },
 		                                    { "threads", required_argument, nullptr, 't' },
 		                                    { "version", no_argument, nullptr, 'v' },
 		                                    { nullptr, 0, nullptr, 0 } };
 
 	int i = 0;
-	while ((c = getopt_long(argc, argv, "n:t:v:", long_options, &i)) != -1) {
+	while ((c = getopt_long(argc, argv, "m:t:v:", long_options, &i)) != -1) {
 		switch (c) {
 		case 't': {
 			std::stringstream convert(optarg);
@@ -125,8 +125,8 @@ main(int argc, char* argv[])
 		}
 		case 'n': {
 			std::stringstream convert(optarg);
-			if (!(convert >> opt::minN)) {
-				std::cerr << "Error - Invalid parameters! n: " << optarg << std::endl;
+			if (!(convert >> opt::minM)) {
+				std::cerr << "Error - Invalid parameters! m: " << optarg << std::endl;
 				return 0;
 			}
 			break;
@@ -221,7 +221,7 @@ main(int argc, char* argv[])
 #endif
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 
-	std::cout << "U\tn\n";
+	std::cout << "U\tm\n";
 	std::string bufferString;
 	// print out vertexes + counts
 	for (const auto& itr : barcodes) {
@@ -264,8 +264,8 @@ main(int argc, char* argv[])
 #pragma omp atomic
 #endif
 			edgeCount += 1;
-			// filter by n
-			if (opt::minN <= itr.second) {
+			// filter by m
+			if (opt::minM <= itr.second) {
 #if _OPENMP
 #pragma omp atomic
 #endif

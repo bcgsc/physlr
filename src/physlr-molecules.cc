@@ -109,14 +109,14 @@ printUsage(const std::string& progname)
 void
 printGraph(const graph_t& g)
 {
-	std::cout << "U\tn" << std::endl;
+	std::cout << "U\tm" << std::endl;
 	auto vertexItRange = boost::vertices(g);
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		auto& node1 = g[*vertexIt].name;
 		auto& weight = g[*vertexIt].weight;
 		std::cout << node1 << "\t" << weight << "\n";
 	}
-	std::cout << "\nU\tV\tn" << std::endl;
+	std::cout << "\nU\tV\tm" << std::endl;
 	auto edgeItRange = boost::edges(g);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
 		auto& weight = g[*edgeIt].weight;
@@ -140,7 +140,7 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 		infile == "-" ? "/dev/stdin" : infile;
 		std::ifstream infileStream(infile);
 		for (std::string line; std::getline(infileStream, line);) {
-			if (line == "U\tn") {
+			if (line == "U\tm") {
 				continue;
 			}
 			if (line.empty()) {
@@ -170,7 +170,7 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 #endif
 		}
 		for (std::string line; std::getline(infileStream, line);) {
-			if (line == "U\tV\tn") {
+			if (line == "U\tV\tm") {
 				continue;
 			}
 			if (line.empty()) {
