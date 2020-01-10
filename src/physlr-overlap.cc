@@ -123,7 +123,7 @@ main(int argc, char* argv[])
 			}
 			break;
 		}
-		case 'n': {
+		case 'm': {
 			std::stringstream convert(optarg);
 			if (!(convert >> opt::minM)) {
 				std::cerr << "Error - Invalid parameters! m: " << optarg << std::endl;
@@ -232,7 +232,7 @@ main(int argc, char* argv[])
 		bufferString += "\n";
 		std::cout << bufferString;
 	}
-	std::cout << "\nU\tV\tn" << std::endl;
+	std::cout << "\nU\tV\tm" << std::endl;
 
 	// store into 2d matrix / hash table
 	using SimMat = tsl::robin_map<uint64_t, Count, fastHash>;
