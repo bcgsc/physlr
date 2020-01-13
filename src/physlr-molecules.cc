@@ -78,7 +78,7 @@ using componentToVertexSet_t = std::vector<vertexSet_t>;
 using vertexToComponent_t = std::unordered_map<vertex_t, size_t>;
 using vecVertexToComponent_t = std::vector<vertexToComponent_t>;
 using vertexToIndex_t = std::unordered_map<vertex_t, size_t>;
-using adjacencyMatrix_t = std::vector<vector<int> >;
+using adjacencyMatrix_t = std::vector<vector<int>>;
 
 
 static void
@@ -322,6 +322,18 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 
 // Tools for cos_sim and k_cliques
 
+inline
+adjacencyMatrix_t
+calculate_cosine_similarity_2d(adjacencyMatrix_t& adj_mat, adjacencyMatrix_t& cosimilarity)
+{
+    // Assumptions: the input matrix is symmetric and cubic
+    // This function calculate the 2-dimensional cosine similarity of the input matrix
+    // to itself, that is the similarity between vertices of the corresponding graph
+    // for the input matrix (as adj matrix)
+
+
+}
+
 void
 square_adjacency_list(){
     // starting with an adjacency list, connect each vertex into its 2nd order neighbors (only)
@@ -331,16 +343,24 @@ square_adjacency_list(){
 adjacencyMatrix_t
 convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 {
+    // Inputs:
+    // - subgraph: adjacency list to convert to adjacency list
+    // - vertexToIndex: (empty, to be filled in)
+    //      Dictionary of (vertex name) -> (index in temporary adjacency matrix)
+    // Ouput(s):
+    // - adj_mat: the adjacency matrix for subgraph
+    // - vertexToIndex (referenced input)
+
     int N = num_vertices(subgraph)
-    adjacencyMatrix_t adj_mat(N, vector<int>(N));
+    adjacencyMatrix_t adj_mat(N, vector<int>(N, 0));
 
     // typedef graph_traits<Graph>::edge_iterator edge_iterator;
     typedef graph_traits<UndirectedGraph>::edge_iterator edge_iterator;
 
     pair<edge_iterator, edge_iterator> ei = edges(subgraph);
 
-    // Dictionary of vertex name to index in temporary adjacency matrix
-    //vertexToIndex_t vertexToIndex(N);
+
+
     vertexToIndex_t::iterator got_a;
     vertexToIndex_t::iterator got_b;
     int adj_mat_index = 0
@@ -379,7 +399,7 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
         adj_mat[index_a][index_b] = get(weight, *edge_iter);
         adj_mat[index_b][index_a] = get(weight, *edge_iter);
     }
-    return adj_mat, vertexToIndex; // Cannot return two, add one as input that's being altered
+    return adj_mat; // Cannot return two, add one as input that's being altered
     // and care how you use this function elsewhere!
 }
 
@@ -447,19 +467,21 @@ graph_t& subgraph, vertexToComponent_t& vertexToComponent,
 bool squaring = true, float threshold=0.7)
 {
     vertexToIndex_t vertexToIndex(num_vertices(subgraph))
-    adjacencyMatrix_t adj_mat = convert_adj_list_adj_mat(subgraph, vertexToIndex);
-    adjacencyMatrix_t new_adj_mat(adj_mat);
-    if (squaring){
-        new_adj_mat = square_matrix_ikj(adj_mat, true)
-        // new_adj_mat = square_matrix_ijk(adj_mat, true)
-        // new_adj_mat = square_matrix_boost(adj_mat)
-    }
+    adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
+    size_t size_adj_mat = adj_mat.size()
+    adjacencyMatrix_t cosimilarity2d(size_adj_mat, std::vector<int>(size_adj_mat, 0))
+    calculate_cosine_similarity_2d(squaring ?
+                                square_matrix_ikj(adj_mat, true) // may need some change
+//                                new_adj_mat = square_matrix_ijk(adj_mat, true)
+//                                new_adj_mat = square_matrix_boost(adj_mat)
+                                :
+                                adj_mat,
+                        cosimilarity2d)
 }
 
 int
 main(int argc, char* argv[])
 {
-
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
