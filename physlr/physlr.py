@@ -2177,9 +2177,9 @@ class Physlr:
         Check if barcode link is strong enough
         """
         max_idx = ori_list.index(max(ori_list))
-        ori_list.sort()
-        max_val = ori_list[-1]
-        sum_with_second_max = ori_list[-1] + ori_list[-2]
+        sorted_ori_list = sorted(ori_list)
+        max_val = sorted_ori_list[-1]
+        sum_with_second_max = sorted_ori_list[-1] + sorted_ori_list[-2]
         normal_cdf = Physlr.normal_estimation(max_val, 0.5, sum_with_second_max)
         if 1 - normal_cdf < 0.05:
             return max_idx
@@ -2235,12 +2235,29 @@ class Physlr:
         return path, unoriented
 
     @staticmethod
+    def check_pair(pairs, path, curr_pos, name):
+        """
+        Orient small part of path based on ARCS scaffold pairing information going forwards
+        """
+        idxtojoin = {0:"-+", 1:"--", 2:"++", 3:"+-"}
+        prev_pos = curr_pos - 1
+        prev_name = path[prev_pos]
+        pair = (prev_name[:-1], name[:-1])
+        if pair in pairs:
+            join_orientation = pairs[pair]
+            max_idx = Physlr.check_link_significance(join_orientation)
+            if max_idx != -1:
+                if idxtojoin[max_idx][0] == prev_name[-1]:
+                    if idxtojoin[max_idx][1] != name[-1]:
+                        path[curr_pos] =  name[:-1] + idxtojoin[max_idx][1]
+        return path
+
+    @staticmethod
     def orient_path(path, pairs):
         """
         Orient path based on ARCS scaffold pairing information
         """
         unoriented = []
-
         if len(path) == 1 and path[0][-1] == ".":
             path[0] = path[0][0:-1] + "+"
             return path
@@ -2261,6 +2278,8 @@ class Physlr:
 
                         curr_pos = temp_curr_pos
                         name = temp_name
+                    else:
+                        path = Physlr.check_pair(pairs, path, curr_pos, name)
                 else:
                     if not unoriented:
                         path, unoriented = Physlr.orient_part_of_path_forward(pairs, path,
