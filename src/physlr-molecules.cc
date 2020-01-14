@@ -78,7 +78,8 @@ using componentToVertexSet_t = std::vector<vertexSet_t>;
 using vertexToComponent_t = std::unordered_map<vertex_t, size_t>;
 using vecVertexToComponent_t = std::vector<vertexToComponent_t>;
 using vertexToIndex_t = std::unordered_map<vertex_t, size_t>;
-using adjacencyMatrix_t = std::vector<vector<int>>;
+using adjacencyMatrix_t = std::vector<vector<uint_fast32_t>>;
+using adjacencyVector_t = std::vector<uint_fast32_t>;
 
 
 static void
@@ -336,6 +337,7 @@ calculate_cosine_similarity_2d(adjacencyMatrix_t& adj_mat, adjacencyMatrix_t& co
 
 void
 square_adjacency_list(){
+    // with no adjacency matrix:
     // starting with an adjacency list, connect each vertex into its 2nd order neighbors (only)
     // equivalent to transforming into adjacency matrix, squaring and then converting back.
 }
@@ -352,7 +354,8 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
     // - vertexToIndex (referenced input)
 
     int N = num_vertices(subgraph)
-    adjacencyMatrix_t adj_mat(N, vector<int>(N, 0));
+    adjacencyVector_t tempVector(N, 0);
+    adjacencyMatrix_t adj_mat(N, tempVector);
 
     // typedef graph_traits<Graph>::edge_iterator edge_iterator;
     typedef graph_traits<UndirectedGraph>::edge_iterator edge_iterator;
@@ -406,15 +409,15 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 // // Functions related to cosine similarity:
 // squaring matrix, algorithm: ijk and ikj and boost
 
-vector< vector<int> >
+adjacencyMatrix_t
 square_matrix_ijk(
-    vector< vector<int> > M,
-    bool symmetric)
+    adjacencyMatrix_t M,
+    bool symmetric=true)
 {
     int n = M.size();
 
-    vector<int> tmp(n, 0); // Fast initialization
-    vector< vector<int> > M2(n, tmp);
+    adjacencyVector_t tmpVector(n, 0); // Fast initialization
+    adjacencyMatrix_t M2(n, tempVector);
 
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
@@ -429,18 +432,20 @@ square_matrix_ijk(
     return M2;
 }
 
-vector< vector<int> >
+adjacencyMatrix_t
 square_matrix_ikj( // Might be faster than ijk, benchmark it
     adjacencyMatrix_t M,
-    bool symmetric)
+    bool symmetric=true)
 {
     // Fast initialization:
     int n = M.size();
-    vector<int> tmp(n, 0);
-    vector< vector<int> > M2(n, tmp);
+    adjacencyVector_t tmpVector(n, 0);
+    adjacencyMatrix_t M2(n, tempVector);
     // Multiplication
     for (int i = 0; i < n; i++) {
         for (int k = 0; k < n; k++) {
+//            if ( !M[i][k] )
+//                continue;
             for (int j = 0; j < n; j++) {
                 if ( j < i && symmetric ) {
                     M2[i][j] = M2[j][i];
@@ -455,7 +460,7 @@ square_matrix_ikj( // Might be faster than ijk, benchmark it
 
 boost::numeric::ublas::matrix<int>
 square_matrix_boost(
-    vector< vector<int> > M,
+    adjacencyMatrix_t M,
 )
 {
     return boost::numeric::ublas::prod(M, M);
@@ -469,14 +474,15 @@ bool squaring = true, float threshold=0.7)
     vertexToIndex_t vertexToIndex(num_vertices(subgraph))
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
     size_t size_adj_mat = adj_mat.size()
-    adjacencyMatrix_t cosimilarity2d(size_adj_mat, std::vector<int>(size_adj_mat, 0))
+    adjacencyVector_t tempVector(size_adj_mat, 0)
+    adjacencyMatrix_t cosSimilarity2d(size_adj_mat, tempVector)
     calculate_cosine_similarity_2d(squaring ?
                                 square_matrix_ikj(adj_mat, true) // may need some change
 //                                new_adj_mat = square_matrix_ijk(adj_mat, true)
 //                                new_adj_mat = square_matrix_boost(adj_mat)
                                 :
                                 adj_mat,
-                        cosimilarity2d)
+                        cosSimilarity2d)
 }
 
 int
