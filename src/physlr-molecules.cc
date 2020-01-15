@@ -323,16 +323,88 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 
 // Tools for cos_sim and k_cliques
 
+
+//inline double cosine_similarity_vectors(adjacencyVector_t& A, adjacencyVector_t& B)
+inline double cosine_similarity_vectors(adjacencyMatrix_t::iterator& row_i, adjacencyMatrix_t::iterator& row_j)
+{
+    // Input: 2 vectors (1D) as rows and columns of a Matrix
+    // Output: Cosine similarity of the two vectors
+    // (Cosine Simiarity between 2 corresponding vertices)
+
+    double mul = 0.0;
+    double d_i = 0.0;
+    double d_j = 0.0;
+
+    if (row_i->size() != row_j->size())
+    {
+        throw std::logic_error("Vector A and Vector B are not the same size");
+    }
+
+    // Prevent Division by zero
+    if (A.size() < 1)
+    {
+        throw std::logic_error("Input vectors for multiplication are empty");
+    }
+
+    adjacencyVector_t::iterator i_iter = row_i->begin();
+    adjacencyVector_t::iterator j_iter = row_j->begin();
+    for( ; i_iter != row_i->end(); i_iter++ , j_iter++ )
+    {
+        mul += *i_iter * *j_iter;
+        d_i += *i_iter * *i_iter;
+        d_j += *j_iter * *j_iter;
+    }
+    if (mul == 0.0f)
+    {
+        return 0;
+    }
+    if (d_i == 0.0f || d_j == 0.0f)
+    {
+        return 0;
+//        throw std::logic_error(
+//                "cosine similarity is not defined whenever one or both "
+//                "input vectors are zero-vectors.");
+    }
+    //return mul / (sqrt(d_a) * sqrt(d_b));
+    return mul / sqrt(d_i * d_j);
+}
+
 inline
 adjacencyMatrix_t
 calculate_cosine_similarity_2d(adjacencyMatrix_t& adj_mat, adjacencyMatrix_t& cosimilarity)
+{
+    // NOT COMPLETE YET:
+    // STRATEGY: NORMALIZE THEN SQUARE (instead of normalizing per vector while multip
+}
+
+inline
+adjacencyMatrix_t
+calculate_cosine_similarity_2d_v2(adjacencyMatrix_t& adj_mat, adjacencyMatrix_t& cosimilarity)
 {
     // Assumptions: the input matrix is symmetric and cubic
     // This function calculate the 2-dimensional cosine similarity of the input matrix
     // to itself, that is the similarity between vertices of the corresponding graph
     // for the input matrix (as adj matrix)
-
-
+    adjacencyMatrix_t::iterator row_i;
+    adjacencyMatrix_t::iterator row_j;
+    int i = 0;
+    int j = 0;
+    for (row_i = adj_mat.begin(); row_i != adj_mat.end(); row_i++)
+    {
+        for (row_j = adj_mat.begin(); row_j != adj_mat.end(); row_j++)
+        {
+            if (j < i)
+            {
+                cosimilarity[i][j] = cosimilarity[j][i];
+            }
+            else
+            {
+                cosimilarity[i][j] = cosine_similarity_vectors(row_i, row_j);
+            }
+            j += 1;
+        }
+        i += 1;
+    }
 }
 
 void
@@ -436,7 +508,8 @@ adjacencyMatrix_t
 square_matrix_ikj( // Might be faster than ijk, benchmark it
     adjacencyMatrix_t M,
     bool symmetric=true)
-{
+{   // Square the input matrix iterating i, k, then j
+
     // Fast initialization:
     int n = M.size();
     adjacencyVector_t tmpVector(n, 0);
@@ -451,6 +524,31 @@ square_matrix_ikj( // Might be faster than ijk, benchmark it
                     M2[i][j] = M2[j][i];
                     continue;
                 }
+                M2[i][j] += M[i][k] * M[k][j];
+            }
+        }
+    }
+    return M2;
+}
+
+adjacencyMatrix_t
+square_matrix_ijk2(
+    adjacencyMatrix_t M,
+    bool symmetric=true)
+{   // NOT FINISHED YET!
+    int n = M.size();
+
+    adjacencyVector_t tempVector(n, 0); // Fast initialization
+    adjacencyMatrix_t M2(n, tempVector);
+    adjacencyMatrix_t::iterator M_iter = M.begin();
+    adjacencyMatrix_t::iterator M2_iter = M2.begin();
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if ( j < i && symmetric )
+                M2[i][j] = M2[j][i];
+                continue;
+            for (int k = 0; k < n; k++) {
                 M2[i][j] += M[i][k] * M[k][j];
             }
         }
