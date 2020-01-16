@@ -1930,50 +1930,6 @@ class Physlr:
             "Mapped", num_mapped, "sequences of", len(query_mxs),
             f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
 
-    def physlr_map_split(self):
-        """
-        Map sequences to a physical map.
-        Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
-        """
-
-        query_mxs, mxtopos, _backbones = self.map_indexing_split()
-
-        # Map the query sequences to the physical map.
-        num_mapped = 0
-        for qid, mxs in progress(query_mxs.items()):
-            tidpos_to_qpos = {}
-            for qpos, mx in enumerate(mxs):
-                for tidpos in mxtopos.get(mx, ()):
-                    tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
-            for tidpos, qpos in tidpos_to_qpos.items():
-                tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
-            # Count the number of minimizers mapped to each target position.
-            tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
-
-            mapped = False
-            for (tid, tpos), score in tidpos_to_n.items():
-                if score >= self.args.n:
-                    mapped = True
-                    before = [tidpos_to_qpos.get((tid, tpos - i), None)
-                              for i in range(10)
-                              if tidpos_to_qpos.get((tid, tpos - i), None) is not None]
-                    before_median = statistics.median_low(before)
-                    after = [tidpos_to_qpos.get((tid, tpos + i), None)
-                             for i in range(10)
-                             if tidpos_to_qpos.get((tid, tpos + i), None) is not None]
-                    after_median = statistics.median_high(after)
-                    orientation = Physlr.determine_orientation(
-                        before_median,
-                        tidpos_to_qpos.get((tid, tpos + 0), None),
-                        after_median)
-                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
-            if mapped:
-                num_mapped += 1
-        print(
-            int(timeit.default_timer() - t0),
-            "Mapped", num_mapped, "sequences of", len(query_mxs),
-            f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
-
     def physlr_map_paf(self):
         """
         Map sequences to a physical map and output a PAF file.
