@@ -979,7 +979,7 @@ min_path_size=200
 
 # Map the draft assembly to the backbone graph and output BED.
 %.backbone.map-split.$(draft).n10.bed: %.backbone.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.split.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-split -V$V -n10 $^ >$@
+	$(time) $(python) $(bin)/physlr map --mx-type split --map-pos 10 -V$V -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED.
 %.overlap.m$m.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv

@@ -1750,23 +1750,13 @@ class Physlr:
         mxtopos = {}
         for tid, path in enumerate(progress(backbones)):
             for pos, u in enumerate(path):
-                if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
-                if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
-                for mx in bxtomxs[u]:
-                    mxtopos.setdefault(mx, set()).add((tid, pos))
-        print(
-            int(timeit.default_timer() - t0),
-            "Indexed", len(mxtopos), "minimizers", file=sys.stderr)
-        return mxtopos
-
-    @staticmethod
-    def index_minimizers_in_backbones_split(backbones, bxtomxs):
-        "Index the positions of the minimizers in the backbones."
-        mxtopos = {}
-        for tid, path in enumerate(progress(backbones)):
-            for pos, u in enumerate(path):
+                if Physlr.args.mx_type == "unsplit":
+                    if u not in bxtomxs:
+                        u = u.rsplit("_", 1)[0]
+                    if u not in bxtomxs:
+                        u = u.rsplit("_", 1)[0]
+                elif Physlr.args.mx_type == "split":
+                    pass
                 for mx in bxtomxs[u]:
                     mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
@@ -1803,27 +1793,6 @@ class Physlr:
         backbones = [backbone for backbone in backbones
                      if len(backbone) >= self.args.min_component_size]
         mxtopos = Physlr.index_minimizers_in_backbones(backbones, moltomxs)
-
-        return query_mxs, mxtopos, backbones
-
-    def map_indexing_split(self):
-        "Load data structures and indexes required for mapping."
-        if len(self.args.FILES) < 3:
-            sys.exit("physlr map: error: at least three file arguments are required")
-        path_filenames = [self.args.FILES[0]]
-        target_filenames = [self.args.FILES[1]]
-        query_filenames = self.args.FILES[2:]
-
-        # Index the positions of the minimizers in the backbone.
-        moltomxs = Physlr.read_minimizers(target_filenames)
-        query_mxs = moltomxs if target_filenames == query_filenames else \
-            Physlr.read_minimizers_list(query_filenames)
-
-        # Index the positions of the markers in the backbone.
-        backbones = Physlr.read_paths(path_filenames)
-        backbones = [backbone for backbone in backbones
-                     if len(backbone) >= self.args.min_component_size]
-        mxtopos = Physlr.index_minimizers_in_backbones_split(backbones, moltomxs)
 
         return query_mxs, mxtopos, backbones
 
@@ -1907,6 +1876,15 @@ class Physlr:
         Map sequences to a physical map.
         Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
         """
+        if self.args.map_pos < 0:
+            print("--map-pos cannot be negative", file=sys.stderr)
+            print("See physlr --help for more information", file=sys.stderr)
+            sys.exit(1)
+
+        if self.args.mx_type not in ["unsplit", "split"]:
+            print("Invalid --mx-type argument", file=sys.stderr)
+            print("See physlr --help for more information", file=sys.stderr)
+            sys.exit(1)
 
         query_mxs, mxtopos, _backbones = self.map_indexing()
 
@@ -1928,54 +1906,24 @@ class Physlr:
             for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
                     mapped = True
-                    orientation = Physlr.determine_orientation(
-                        tidpos_to_qpos.get((tid, tpos - 1), None),
-                        tidpos_to_qpos.get((tid, tpos + 0), None),
-                        tidpos_to_qpos.get((tid, tpos + 1), None))
-                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
-            if mapped:
-                num_mapped += 1
-        print(
-            int(timeit.default_timer() - t0),
-            "Mapped", num_mapped, "sequences of", len(query_mxs),
-            f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
-
-    def physlr_map_split(self):
-        """
-        Map sequences to a physical map.
-        Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
-        """
-
-        query_mxs, mxtopos, _backbones = self.map_indexing_split()
-
-        # Map the query sequences to the physical map.
-        num_mapped = 0
-        for qid, mxs in progress(query_mxs.items()):
-            tidpos_to_qpos = {}
-            for qpos, mx in enumerate(mxs):
-                for tidpos in mxtopos.get(mx, ()):
-                    tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
-            for tidpos, qpos in tidpos_to_qpos.items():
-                tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
-            # Count the number of minimizers mapped to each target position.
-            tidpos_to_n = Counter(pos for mx in mxs for pos in mxtopos.get(mx, ()))
-
-            mapped = False
-            for (tid, tpos), score in tidpos_to_n.items():
-                if score >= self.args.n:
-                    mapped = True
-                    before = [tidpos_to_qpos.get((tid, tpos - i), None)
-                              for i in range(10)
-                              if tidpos_to_qpos.get((tid, tpos - i), None) is not None]
-                    before_median = statistics.median_low(before)
-                    after = [tidpos_to_qpos.get((tid, tpos + i), None)
-                             for i in range(10)
-                             if tidpos_to_qpos.get((tid, tpos + i), None) is not None]
-                    after_median = statistics.median_high(after)
-                    orientation = Physlr.determine_orientation(
-                        before_median,
-                        tidpos_to_qpos.get((tid, tpos + 0), None),
-                        after_median)
+                    if self.args.map_pos == 1:
+                        orientation = Physlr.determine_orientation(
+                            tidpos_to_qpos.get((tid, tpos - 1), None),
+                            tidpos_to_qpos.get((tid, tpos + 0), None),
+                            tidpos_to_qpos.get((tid, tpos + 1), None))
+                    else:
+                        before = [tidpos_to_qpos.get((tid, tpos - i), None)
+                                  for i in range(self.args.map_pos)
+                                  if tidpos_to_qpos.get((tid, tpos - i), None) is not None]
+                        before_median = statistics.median_low(before)
+                        after = [tidpos_to_qpos.get((tid, tpos + i), None)
+                                 for i in range(self.args.map_pos)
+                                 if tidpos_to_qpos.get((tid, tpos + i), None) is not None]
+                        after_median = statistics.median_high(after)
+                        orientation = Physlr.determine_orientation(
+                            before_median,
+                            tidpos_to_qpos.get((tid, tpos + 0), None),
+                            after_median)
                     print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
             if mapped:
                 num_mapped += 1
@@ -1989,6 +1937,11 @@ class Physlr:
         Map sequences to a physical map and output a PAF file.
         Usage: physlr map TGRAPH.path TMARKERS.tsv QMARKERS.tsv... >MAP.paf
         """
+
+        if self.args.mx_type not in ["unsplit", "split"]:
+            print("Invalid --mx-type argument", file=sys.stderr)
+            print("See physlr --help for more information", file=sys.stderr)
+            sys.exit(1)
 
         query_mxs, mxtopos, backbones = self.map_indexing()
 
@@ -2724,8 +2677,17 @@ class Physlr:
             help="ARCS scaffold pairing distance estimation file.")
         argparser.add_argument(
             "--dist-type", action="store", dest="dist_type", type=str, default="avg",
+            choices=["min", "avg", "max"],
             help="ARCS scaffold pairing distance type."
-                 "Acceptable values are: min, avg, max")
+                 "Accepted values are: min, avg, or max [avg].")
+        argparser.add_argument(
+            "--mx-type", action="store", dest="mx_type", type=str, default="unsplit",
+            choices=["unsplit", "split"],
+            help="Type of minimizers used to map sequence to backbone graph."
+                 "Accepted values are: unsplit or split [unsplit].")
+        argparser.add_argument(
+            "--map-pos", action="store", dest="map_pos", type=int, default=1,
+            help="Number of positions to use during the orientation process [1].")
         return argparser.parse_args()
 
     def __init__(self):
