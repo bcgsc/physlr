@@ -1882,7 +1882,7 @@ class Physlr:
             sys.exit(1)
 
         if self.args.mx_type not in ["unsplit", "split"]:
-            print("Invlaid --mx-type argument", file=sys.stderr)
+            print("Invalid --mx-type argument", file=sys.stderr)
             print("See physlr --help for more information", file=sys.stderr)
             sys.exit(1)
 
@@ -1939,7 +1939,7 @@ class Physlr:
         """
 
         if self.args.mx_type not in ["unsplit", "split"]:
-            print("Invlaid --mx-type argument", file=sys.stderr)
+            print("Invalid --mx-type argument", file=sys.stderr)
             print("See physlr --help for more information", file=sys.stderr)
             sys.exit(1)
 
@@ -2681,10 +2681,10 @@ class Physlr:
             help="ARCS scaffold pairing distance type."
                  "Accepted values are: min, avg, or max [avg].")
         argparser.add_argument(
-            "--mx-type", action="store", dest="mx_type", type=str, default="all",
+            "--mx-type", action="store", dest="mx_type", type=str, default="unsplit",
             choices=["unsplit", "split"],
             help="Type of minimizers used to map sequence to backbone graph."
-                 "Accepted values are: all or split [all].")
+                 "Accepted values are: unsplit or split [unsplit].")
         argparser.add_argument(
             "--map-pos", action="store", dest="map_pos", type=int, default=1,
             help="Number of positions to use during the orientation process [1].")
