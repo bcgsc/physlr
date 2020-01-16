@@ -1938,7 +1938,7 @@ class Physlr:
         Usage: physlr map TGRAPH.path TMARKERS.tsv QMARKERS.tsv... >MAP.paf
         """
 
-        if self.args.mx_type not in ["split", "unsplit"]:
+        if self.args.mx_type not in ["unsplit", "split"]:
             print("Invlaid --mx-type argument", file=sys.stderr)
             print("See physlr --help for more information", file=sys.stderr)
             sys.exit(1)
