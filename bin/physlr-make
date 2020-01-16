@@ -898,7 +898,7 @@ endif
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
-	$(time) $(physlr_path)/src/physlr-overlap -t1 -n10 $< >$@
+	$(time) $(physlr_path)/src/physlr-overlap -t$t -m10 $< >$@
 
 # Determine the degree of each vertex.
 %.deg.tsv: %.tsv
@@ -1032,6 +1032,10 @@ min_path_size=200
 
 # Map the reference to the backbone graph and output PAF.
 %.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
+
+# Map the reference to the backbone graph generated with split minimizers and output PAF.
+%.map-split.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
 
 # Lift over query coordinates of a PAF file from minimzer index to nucleotide coordinate.
