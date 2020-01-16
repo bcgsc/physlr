@@ -1750,16 +1750,13 @@ class Physlr:
         mxtopos = {}
         for tid, path in enumerate(progress(backbones)):
             for pos, u in enumerate(path):
-                if Physlr.args.map_type == "all":
+                if Physlr.args.mx_type == "unsplit":
                     if u not in bxtomxs:
                         u = u.rsplit("_", 1)[0]
                     if u not in bxtomxs:
                         u = u.rsplit("_", 1)[0]
-                elif Physlr.args.map_type == "split":
+                elif Physlr.args.mx_type == "split":
                     pass
-                else:
-                    print("Invalid --map-type argument", file=sys.stderr)
-                    print("See physlr --help for more information", file=sys.stderr)
                 for mx in bxtomxs[u]:
                     mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
@@ -1884,6 +1881,11 @@ class Physlr:
             print("See physlr --help for more information", file=sys.stderr)
             sys.exit(1)
 
+        if self.args.mx_type not in ["unsplit", "split"]:
+            print("Invlaid --mx-type argument", file=sys.stderr)
+            print("See physlr --help for more information", file=sys.stderr)
+            sys.exit(1)
+
         query_mxs, mxtopos, _backbones = self.map_indexing()
 
         # Map the query sequences to the physical map.
@@ -1935,6 +1937,11 @@ class Physlr:
         Map sequences to a physical map and output a PAF file.
         Usage: physlr map TGRAPH.path TMARKERS.tsv QMARKERS.tsv... >MAP.paf
         """
+
+        if self.args.mx_type not in ["split", "unsplit"]:
+            print("Invlaid --mx-type argument", file=sys.stderr)
+            print("See physlr --help for more information", file=sys.stderr)
+            sys.exit(1)
 
         query_mxs, mxtopos, backbones = self.map_indexing()
 
@@ -2674,8 +2681,8 @@ class Physlr:
             help="ARCS scaffold pairing distance type."
                  "Accepted values are: min, avg, or max [avg].")
         argparser.add_argument(
-            "--map-type", action="store", dest="map_type", type=str, default="all",
-            choices=["all", "split"],
+            "--mx-type", action="store", dest="mx_type", type=str, default="all",
+            choices=["unsplit", "split"],
             help="Type of minimizers used to map sequence to backbone graph."
                  "Accepted values are: all or split [all].")
         argparser.add_argument(
