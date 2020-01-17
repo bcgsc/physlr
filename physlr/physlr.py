@@ -2280,7 +2280,7 @@ class Physlr:
                         curr_pos = temp_curr_pos
                         name = temp_name
                     else:
-                        path = Physlr.check_and_correct(pairs, path, curr_pos, name)
+                        path = Physlr.check_and_correct_pair(pairs, path, curr_pos, name)
                 else:
                     if not unoriented:
                         path, unoriented = Physlr.orient_part_of_path_forward(pairs, path,
