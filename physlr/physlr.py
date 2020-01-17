@@ -2258,6 +2258,7 @@ class Physlr:
         Orient path based on ARCS scaffold pairing information
         """
         unoriented = []
+
         if len(path) == 1 and path[0][-1] == ".":
             path[0] = path[0][0:-1] + "+"
             return path
