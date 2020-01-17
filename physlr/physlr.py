@@ -2249,7 +2249,7 @@ class Physlr:
             if max_idx != -1:
                 if idxtojoin[max_idx][0] == prev_name[-1]:
                     if idxtojoin[max_idx][1] != name[-1]:
-                        path[curr_pos] =  name[:-1] + idxtojoin[max_idx][1]
+                        path[curr_pos] = name[:-1] + idxtojoin[max_idx][1]
         return path
 
     @staticmethod
