@@ -1094,8 +1094,7 @@ class Physlr:
 
         print(int(timeit.default_timer() - t0), "Sorting Edges", file=sys.stderr)
         edge_weight.sort()
-        lower_threshold = edge_weight[int(len(edge_weight) * self.args.minimizer_overlap / 100) - 1]
-
+        lower_threshold = edge_weight[int(len(edge_weight) * self.args.minimizer_overlap / 100)] - 1
         # Faster to read tsv again than to store edges as a dictionary
         print(int(timeit.default_timer() - t0), "Filtering Edges", file=sys.stderr)
         print(int(timeit.default_timer() - t0), "Lower Threshold", lower_threshold, file=sys.stderr)
