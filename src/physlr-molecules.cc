@@ -384,7 +384,7 @@ calculate_cosine_similarity_2d(
 {
     // calculate the cosine similarity of the input 2d-matrix with itself
     // Strategy: row-normalize then square the matrix.
-    time_start = timeNow();
+
     int n = adj_mat.size();
     vector<double> temp(n, 0.0);
     vector<vector<double> > normalized(n, temp);
