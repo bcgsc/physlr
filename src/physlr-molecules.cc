@@ -409,7 +409,7 @@ calculate_cosine_similarity_2d(
         vector<double>::iterator first_normalized = normalized_row_i->begin();
         vector<double>::iterator last_normalized = normalized_row_i->end();
         while(first!=last){
-            *first_normalized= (double)*first / row_sum;
+            *first_normalized= (1.0 * *first) / (1.0 * row_sum);
             ++first;
             ++first_normalized;
         }
@@ -546,17 +546,16 @@ square_matrix_ijk(
 {
     int n = M.size();
 
-    adjacencyVector_t tmpVector(n, 0); // Fast initialization
+    adjacencyVector_t tempVector(n, 0); // Fast initialization
     adjacencyMatrix_t M2(n, tempVector);
 
     for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++)
-        {
-            if ( j < i && symmetric )
+        for (int j = 0; j < n; j++) {
+            if ( j < i && symmetric ){
                 M2[i][j] = M2[j][i];
                 continue;
-            for (int k = 0; k < n; k++)
-            {
+            }
+            for (int k = 0; k < n; k++) {
                 M2[i][j] += M[i][k] * M[k][j];
             }
         }
