@@ -539,6 +539,34 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 // // Functions related to cosine similarity:
 // squaring matrix, algorithm: ijk and ikj and boost
 
+vector<vector<double> >
+square_matrix_ijk_d(
+    vector<vector<double> > M,
+    bool symmetric=true)
+{
+    int n = M.size();
+
+    vector<double> tempVector(n, 0.0); // Fast initialization
+    vector<vector<double> > M2(n, tempVector);
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if ( j < i && symmetric )
+            {
+                M2[i][j] = M2[j][i];
+                continue;
+             }
+            for (int k = 0; k < n; k++)
+            {
+                // second argument is transposed implicitly
+                M2[i][j] += M[i][k] * M[j][k];
+            }
+            cout<<i<<j<<" "<<M2[i][j]<<" ";
+        }
+        cout<<endl;
+    }
+    return M2;
+}
+
 adjacencyMatrix_t
 square_matrix_ijk(
     adjacencyMatrix_t M,
@@ -551,12 +579,15 @@ square_matrix_ijk(
 
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            if ( j < i && symmetric ){
+            if ( j < i && symmetric )
+            {
                 M2[i][j] = M2[j][i];
                 continue;
             }
-            for (int k = 0; k < n; k++) {
-                M2[i][j] += M[i][k] * M[k][j];
+            for (int k = 0; k < n; k++)
+            {
+                // second argument is transposed implicitly
+                M2[i][j] += M[i][k] * M[j][k];;
             }
         }
     }
