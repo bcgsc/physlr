@@ -5,7 +5,11 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <stdint.h>
+#include <chrono>
 #include <tgmath.h>
+#include <stdexcept>
+#include <algorithm>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/biconnected_components.hpp>
@@ -378,8 +382,39 @@ calculate_cosine_similarity_2d(
     adjacencyMatrix_t& adj_mat,
     vector<vector<double> >& cosimilarity)
 {
-    // NOT COMPLETE YET:
-    // STRATEGY: NORMALIZE THEN SQUARE (instead of normalizing per vector while multip
+    // calculate the cosine similarity of the input 2d-matrix with itself
+    // Strategy: row-normalize then square the matrix.
+    time_start = timeNow();
+    int n = adj_mat.size();
+    vector<double> temp(n, 0.0);
+    vector<vector<double> > normalized(n, temp);
+    double row_sum = 0;
+    uint_fast32_t init = 0;
+
+    adjacencyMatrix_t::iterator row_i;
+    vector<vector<double> >::iterator normalized_row_i = normalized.begin();
+    for (row_i = adj_mat.begin(); row_i != adj_mat.end(); ++row_i, ++normalized_row_i)
+    {
+        row_sum = 0;
+        vector<uint_fast32_t>::iterator first = row_i->begin();
+        vector<uint_fast32_t>::iterator last = row_i->end();
+        while(first!=last){
+            row_sum += *first * *first;
+            ++first;
+        }
+        row_sum = sqrt(row_sum);
+        //row_sum = accumulate(row_i->begin(), row_i->end(), init);
+
+        first = row_i->begin();
+        vector<double>::iterator first_normalized = normalized_row_i->begin();
+        vector<double>::iterator last_normalized = normalized_row_i->end();
+        while(first!=last){
+            *first_normalized= (double)*first / row_sum;
+            ++first;
+            ++first_normalized;
+        }
+    }
+    cosimilarity = square_matrix_ikj_d(normalized);
 }
 
 inline
