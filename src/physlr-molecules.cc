@@ -542,15 +542,18 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 vector<vector<double> >
 square_matrix_ijk_d(
     vector<vector<double> > M,
-    bool symmetric=true)
+    bool symmetric_output=true)
 {
+    // Compute M.M^T (not M.M)
     int n = M.size();
 
     vector<double> tempVector(n, 0.0); // Fast initialization
     vector<vector<double> > M2(n, tempVector);
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if ( j < i && symmetric )
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if ( j < i && symmetric_output )
             {
                 M2[i][j] = M2[j][i];
                 continue;
@@ -560,9 +563,7 @@ square_matrix_ijk_d(
                 // second argument is transposed implicitly
                 M2[i][j] += M[i][k] * M[j][k];
             }
-            cout<<i<<j<<" "<<M2[i][j]<<" ";
         }
-        cout<<endl;
     }
     return M2;
 }
@@ -570,16 +571,19 @@ square_matrix_ijk_d(
 adjacencyMatrix_t
 square_matrix_ijk(
     adjacencyMatrix_t M,
-    bool symmetric=true)
+    bool symmetric_output=true)
 {
+    // Compute M.M^T, not M.M
     int n = M.size();
 
     adjacencyVector_t tempVector(n, 0); // Fast initialization
     adjacencyMatrix_t M2(n, tempVector);
 
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if ( j < i && symmetric )
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if ( j < i && symmetric_output )
             {
                 M2[i][j] = M2[j][i];
                 continue;
@@ -587,7 +591,7 @@ square_matrix_ijk(
             for (int k = 0; k < n; k++)
             {
                 // second argument is transposed implicitly
-                M2[i][j] += M[i][k] * M[j][k];;
+                M2[i][j] += M[i][k] * M[j][k];
             }
         }
     }
