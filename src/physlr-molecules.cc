@@ -510,7 +510,7 @@ square_matrix_ijk2(
 }
 
 vector<vector<double> >
-square_matrix_ijk_d(
+square_matrix_ijk(
     vector<vector<double> > M,
     bool symmetric_output=true)
 {
@@ -641,7 +641,7 @@ calculate_cosine_similarity_2d(
             ++first_normalized;
         }
     }
-//    cosimilarity = square_matrix_ijk_d(normalized);
+//    cosimilarity = square_matrix_ijk(normalized);
     cosimilarity = square_matrix_ikj(normalized);
 }
 
@@ -692,7 +692,7 @@ calculate_cosine_similarity_2d_v2(
 void
 Community_detection_cosine_similarity(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
-    bool squaring = true, float threshold=0.7)
+    bool squaring = true, double threshold=0.7)
 {
     vertexToIndex_t vertexToIndex(num_vertices(subgraph))
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
@@ -707,6 +707,28 @@ Community_detection_cosine_similarity(
                                 adj_mat,
                         cosSimilarity2d);
 
+    for (int i = 0; i < adj_mat.size() ; i++)
+    {
+        for (int j = i+1; j < adj_mat.size() ; j++)
+            {
+                if (cosSimilarity2d[i][j] < threshold)
+                {
+                    adj_mat[i][j] = 0;
+                    adj_mat[j][i] = 0;
+                }
+            }
+    }
+
+//    vector<vector<double> >::iterator cos_row = cosSimilarity2d.begin();
+//    for ( ; cos_row != cosSimilarity2d.end(); ++cos_row)
+//    {
+//        for (vector<double>::iterator col = cos_row->begin(); col != cos_row->end(); ++col){
+//            if (*col)
+//            {
+//
+//            }
+//        }
+//    }
 }
 
 
@@ -726,6 +748,13 @@ Community_detection_k3_cliques(
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
     size_t size_adj_mat = adj_mat.size();
     adjacencyMatrix_t adj_mat2(square_matrix_ijk(adj_mat));
+
+    /// TEST WHICH IS FASTER:
+    /// 1-MATRIX MULTIPLICATION TO FIND TRIANGLES?
+    /// 2-MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
+
+    /// 3-NORMAL K-CLIQUE DETECTION
+
 
 }
 int
