@@ -376,96 +376,6 @@ cosine_similarity_vectors(
     return mul / sqrt(d_i * d_j);
 }
 
-inline
-void
-calculate_cosine_similarity_2d(
-    adjacencyMatrix_t& adj_mat,
-    vector<vector<double> >& cosimilarity)
-{
-    // calculate the cosine similarity of the input 2d-matrix with itself
-    // Strategy: row-normalize then square the matrix.
-
-    int n = adj_mat.size();
-    vector<double> temp(n, 0.0);
-    vector<vector<double> > normalized(n, temp);
-    double row_sum = 0;
-    uint_fast32_t init = 0;
-
-    adjacencyMatrix_t::iterator row_i;
-    vector<vector<double> >::iterator normalized_row_i = normalized.begin();
-    for (row_i = adj_mat.begin(); row_i != adj_mat.end(); ++row_i, ++normalized_row_i)
-    {
-        row_sum = 0;
-        vector<uint_fast32_t>::iterator first = row_i->begin();
-        vector<uint_fast32_t>::iterator last = row_i->end();
-        while(first!=last){
-            row_sum += *first * *first;
-            ++first;
-        }
-        row_sum = sqrt(row_sum);
-        //row_sum = accumulate(row_i->begin(), row_i->end(), init);
-
-        first = row_i->begin();
-        vector<double>::iterator first_normalized = normalized_row_i->begin();
-        vector<double>::iterator last_normalized = normalized_row_i->end();
-        while(first!=last){
-            *first_normalized= (1.0 * *first) / (1.0 * row_sum);
-            ++first;
-            ++first_normalized;
-        }
-    }
-    cosimilarity = square_matrix_ikj_d(normalized);
-}
-
-inline
-void
-calculate_cosine_similarity_2d_v2(
-    adjacencyMatrix_t& adj_mat,
-    vector<vector<double> >& cosimilarity)
-{
-    // Assumptions: the input matrix is symmetric and cubic
-    // This function calculate the 2-dimensional cosine similarity of the input matrix
-    // to itself, that is the similarity between vertices of the corresponding graph
-    // for the input matrix (as adj matrix)
-    adjacencyMatrix_t::iterator row_i;
-    adjacencyMatrix_t::iterator row_j;
-    vector<vector<double> >::iterator out_row = cosimilarity.begin();
-    vector<double>::iterator out_col = out_row->begin();
-    if (false/* inputs are not of same size*/)
-        //Throw error
-        ;
-
-    int i = 0;
-    int j = 0;
-    //cosimilarity[0][0] = 4;
-    for (row_i = adj_mat.begin(); row_i != adj_mat.end(); ++row_i)
-//    for (int row_i = 0; row_i 4; row_i++)
-    {
-        j = 0;
-        for (row_j = adj_mat.begin(); row_j != adj_mat.end(); ++row_j)
-//        for (int row_j = 0; row_j 4; row_j++)
-        {
-//            cout<<" "<<i<<" "<<j<<" started!"<<endl;
-            if (j < i)
-            {
-//                cosimilarity[i][j] = cosimilarity[j][i];
-//                cout<<" "<<i<<" "<<j<<" copied!"<<endl;
-            }
-            else
-            {
-//                *out_col = cosine_similarity_vectors(row_i, row_j);
-                cosimilarity[i][j] = cosine_similarity_vectors(row_i, row_j);
-//                cout<<" "<<i<<" "<<j<<" done!"<<endl;
-            }
-            j += 1;
-//            out_col++;
-        }
-        i += 1;
-//        out_row++;
-    }
-}
-
-
 void
 square_adjacency_list(){
     // with no adjacency matrix:
@@ -537,7 +447,67 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 }
 
 // // Functions related to cosine similarity:
-// squaring matrix, algorithm: ijk and ikj and boost
+// squaring matrix, algorithms: ijk and ikj and boost
+
+adjacencyMatrix_t
+square_matrix_ijk(
+    adjacencyMatrix_t M,
+    bool symmetric_output=true)
+{
+    // Compute M.M^T, not M.M
+    int n = M.size();
+
+    adjacencyVector_t tempVector(n, 0); // Fast initialization
+    adjacencyMatrix_t M2(n, tempVector);
+
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if ( j < i && symmetric_output )
+            {
+                M2[i][j] = M2[j][i];
+                continue;
+            }
+            for (int k = 0; k < n; k++)
+            {
+                // second matrix is transposed implicitly
+                M2[i][j] += M[i][k] * M[j][k];
+            }
+        }
+    }
+    return M2;
+}
+
+adjacencyMatrix_t
+square_matrix_ijk2(
+    adjacencyMatrix_t M,
+    bool symmetric=true)
+{   // NOT FINISHED YET!
+    int n = M.size();
+
+    adjacencyVector_t tempVector(n, 0); // Fast initialization
+    adjacencyMatrix_t M2(n, tempVector);
+    adjacencyMatrix_t::iterator M_iter = M.begin();
+    adjacencyMatrix_t::iterator M2_iter = M2.begin();
+
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if ( j < i && symmetric )
+            {
+                M2[i][j] = M2[j][i];
+                continue;
+            }
+            for (int k = 0; k < n; k++) {
+                // second matrix is transposed implicitly
+                M2[i][j] += M[i][k] * M[j][k];
+            }
+        }
+    }
+    return M2;
+}
 
 vector<vector<double> >
 square_matrix_ijk_d(
@@ -569,40 +539,11 @@ square_matrix_ijk_d(
 }
 
 adjacencyMatrix_t
-square_matrix_ijk(
-    adjacencyMatrix_t M,
-    bool symmetric_output=true)
-{
-    // Compute M.M^T, not M.M
-    int n = M.size();
-
-    adjacencyVector_t tempVector(n, 0); // Fast initialization
-    adjacencyMatrix_t M2(n, tempVector);
-
-    for (int i = 0; i < n; i++)
-    {
-        for (int j = 0; j < n; j++)
-        {
-            if ( j < i && symmetric_output )
-            {
-                M2[i][j] = M2[j][i];
-                continue;
-            }
-            for (int k = 0; k < n; k++)
-            {
-                // second argument is transposed implicitly
-                M2[i][j] += M[i][k] * M[j][k];
-            }
-        }
-    }
-    return M2;
-}
-
-adjacencyMatrix_t
 square_matrix_ikj( // Might be faster than ijk, benchmark it
     adjacencyMatrix_t M,
     bool symmetric=true)
-{   // Square the input matrix iterating i, k, then j
+{
+    // Square the input matrix iterating i, k, then j
 
     // Fast initialization:
     int n = M.size();
@@ -625,30 +566,35 @@ square_matrix_ikj( // Might be faster than ijk, benchmark it
     return M2;
 }
 
-adjacencyMatrix_t
-square_matrix_ijk2(
-    adjacencyMatrix_t M,
+vector<vector<double> >
+square_matrix_ikj( // Might be faster than ijk, benchmark it
+    vector<vector<double> > M, M,
     bool symmetric=true)
-{   // NOT FINISHED YET!
+{
+    // Square the input matrix iterating i, k, then j
+
+    // Fast initialization:
     int n = M.size();
-
-    adjacencyVector_t tempVector(n, 0); // Fast initialization
-    adjacencyMatrix_t M2(n, tempVector);
-    adjacencyMatrix_t::iterator M_iter = M.begin();
-    adjacencyMatrix_t::iterator M2_iter = M2.begin();
-
+    vector<double> tempVector(n, 0.0); // Fast initialization
+    vector<vector<double> > M2(n, tempVector);
+    // Multiplication
     for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if ( j < i && symmetric )
-                M2[i][j] = M2[j][i];
+        for (int k = 0; k < n; k++) {
+            if ( !M[i][k] )
+                // one side of multip. is zero, so skip
                 continue;
-            for (int k = 0; k < n; k++) {
+            for (int j = 0; j < n; j++) {
+                if ( j < i && symmetric ) {
+                    M2[i][j] = M2[j][i];
+                    continue;
+                }
                 M2[i][j] += M[i][k] * M[k][j];
             }
         }
     }
     return M2;
 }
+
 
 boost::numeric::ublas::matrix<int>
 square_matrix_boost(
@@ -657,6 +603,91 @@ square_matrix_boost(
 {
     return boost::numeric::ublas::prod(M, M);
 }
+
+inline
+void
+calculate_cosine_similarity_2d(
+    adjacencyMatrix_t& adj_mat,
+    vector<vector<double> >& cosimilarity)
+{
+    // calculate the cosine similarity of the input 2d-matrix with itself
+    // Strategy: row-normalize then square the matrix.
+
+    int n = adj_mat.size();
+    vector<double> temp(n, 0.0);
+    vector<vector<double> > normalized(n, temp);
+    double row_sum = 0;
+    uint_fast32_t init = 0;
+
+    adjacencyMatrix_t::iterator row_i;
+    vector<vector<double> >::iterator normalized_row_i = normalized.begin();
+    for (row_i = adj_mat.begin(); row_i != adj_mat.end(); ++row_i, ++normalized_row_i)
+    {
+        row_sum = 0;
+        vector<uint_fast32_t>::iterator first = row_i->begin();
+        vector<uint_fast32_t>::iterator last = row_i->end();
+        while(first!=last){
+            row_sum += *first * *first;
+            row_sum += *first * *first;
+            ++first;
+        }
+
+        first = row_i->begin();
+        vector<double>::iterator first_normalized = normalized_row_i->begin();
+        vector<double>::iterator last_normalized = normalized_row_i->end();
+        while(first!=last){
+            *first_normalized = *first / sqrt(1.0 * row_sum);
+            ++first;
+            ++first_normalized;
+        }
+    }
+//    cosimilarity = square_matrix_ijk_d(normalized);
+    cosimilarity = square_matrix_ikj(normalized);
+}
+
+inline
+void
+calculate_cosine_similarity_2d_v2(
+    adjacencyMatrix_t& adj_mat,
+    vector<vector<double> >& cosimilarity)
+{
+    // Assumptions: the input matrix is symmetric and cubic
+    // This function calculate the 2-dimensional cosine similarity of the input matrix
+    // to itself, that is the similarity between vertices of the corresponding graph
+    // for the input matrix (as adj matrix)
+
+    adjacencyMatrix_t::iterator row_i;
+    adjacencyMatrix_t::iterator row_j;
+    vector<vector<double> >::iterator out_row = cosimilarity.begin();
+    vector<double>::iterator out_col = out_row->begin();
+    if (adj_mat.size() != cosimilarity.size())
+    {
+       cout<<" Error: Input Matrices are not of the same size.";
+       exit (EXIT_FAILURE);
+    }
+
+    int i = 0;
+    int j = 0;
+
+    for (row_i = adj_mat.begin(); row_i != adj_mat.end(); ++row_i)
+    {
+        j = 0;
+        for (row_j = adj_mat.begin(); row_j != adj_mat.end(); ++row_j)
+        {
+            if (j < i)
+            {
+                cosimilarity[i][j] = cosimilarity[j][i];
+            }
+            else
+            {
+                cosimilarity[i][j] = cosine_similarity_vectors(row_i, row_j);
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+}
+
 
 void
 Community_detection_cosine_similarity(
