@@ -315,7 +315,7 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 
 	size_t moleculeNum = 0;
 
-	// Remove components with size less than 1
+	// Remove components with size less than 2
 	for (auto&& vertexSet : componentToVertexSet) {
 		if (vertexSet.size() <= 1) {
 			continue;
@@ -347,7 +347,7 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
     // - adj_mat: the adjacency matrix for subgraph
     // - vertexToIndex (referenced input)
 
-    int N = num_vertices(subgraph)
+    int N = num_vertices(subgraph);
     adjacencyVector_t tempVector(N, 0);
     adjacencyMatrix_t adj_mat(N, tempVector);
 
@@ -698,7 +698,7 @@ Community_detection_cosine_similarity(
     // Detect communities using cosine similarity of vertices
 
     // 1- Calculate the cosine similarity:
-    vertexToIndex_t vertexToIndex(num_vertices(subgraph))
+    vertexToIndex_t vertexToIndex(num_vertices(subgraph));
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
     indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
 
@@ -735,7 +735,7 @@ Community_detection_cosine_similarity(
     int max_communities = 30;
     vector<vector<uint_fast32_t>> communities(max_communities,vector<uint_fast32_t>(adj_mat.size(),-1));
 
-    int community_id = 0;
+    size_t community_id = 0;
     stack<int> toCheck;
     //unordered_map<int, int>;
     vector<int> zeros(adj_mat.size(),0);
