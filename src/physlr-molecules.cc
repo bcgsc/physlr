@@ -707,8 +707,8 @@ Community_detection_cosine_similarity(
     vector<vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
     calculate_cosine_similarity_2d(squaring ?
                                 square_matrix_ikj(adj_mat, true) // may need some change
-//                                new_adj_mat = square_matrix_ijk(adj_mat, true)
-//                                new_adj_mat = square_matrix_boost(adj_mat)
+                                //square_matrix_ijk(adj_mat, true)
+                                //square_matrix_boost(adj_mat)
                                 :
                                 adj_mat,
                         cosSimilarity2d);
