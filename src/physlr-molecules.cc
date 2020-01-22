@@ -796,6 +796,8 @@ Community_detection_k3_cliques(
     }
     vertexToIndex_t vertexToIndex(num_vertices(subgraph))
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
+    indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
+
     size_t size_adj_mat = adj_mat.size();
     adjacencyMatrix_t adj_mat2(square_matrix_ijk(adj_mat));
 
@@ -807,6 +809,7 @@ Community_detection_k3_cliques(
 
 
 }
+
 int
 main(int argc, char* argv[])
 {
