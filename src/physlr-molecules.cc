@@ -82,7 +82,8 @@ using vertexSet_t = std::unordered_set<vertex_t>;
 using componentToVertexSet_t = std::vector<vertexSet_t>;
 using vertexToComponent_t = std::unordered_map<vertex_t, size_t>;
 using vecVertexToComponent_t = std::vector<vertexToComponent_t>;
-using vertexToIndex_t = std::unordered_map<vertex_t, size_t>;
+using vertexToIndex_t = std::unordered_map<vertex_t, size_t>; // wanna improve this? checkout boost::bimap
+using indexToVertex_t = std::unordered_map<size_t, vertex_t>; // wanna improve this? checkout boost::bimap
 using adjacencyMatrix_t = std::vector<vector<uint_fast32_t>>;
 using adjacencyVector_t = std::vector<uint_fast32_t>;
 
@@ -694,11 +695,16 @@ Community_detection_cosine_similarity(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
     bool squaring = true, double threshold=0.7)
 {
+    // Detect communities using cosine similarity of vertices
+
+    // 1- Calculate the cosine similarity:
     vertexToIndex_t vertexToIndex(num_vertices(subgraph))
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
+    indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
+
     size_t size_adj_mat = adj_mat.size();
     vector<double> tempVector(size_adj_mat, 0);
-    vector<vector<double> > cosSimilarity2d(size_adj_mat, tempVector);
+    vector<vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
     calculate_cosine_similarity_2d(squaring ?
                                 square_matrix_ikj(adj_mat, true) // may need some change
 //                                new_adj_mat = square_matrix_ijk(adj_mat, true)
@@ -706,7 +712,11 @@ Community_detection_cosine_similarity(
                                 :
                                 adj_mat,
                         cosSimilarity2d);
+    // 2- Determine the threshold:
+    // not implemented yet; so use a predefined universal threshold.
+    threshold = threshold;
 
+    // 3- Filter out edges:
     for (int i = 0; i < adj_mat.size() ; i++)
     {
         for (int j = i+1; j < adj_mat.size() ; j++)
@@ -718,19 +728,59 @@ Community_detection_cosine_similarity(
                 }
             }
     }
+    // 4- Detect Communities (find connected components - DFS)
+    // / use .reserve to set the capacity of the below 2d vector instead of initialization
+    int max_communities = 30;
+    vector<vector<uint_fast32_t>> communities(max_communities,vector<uint_fast32_t>(adj_mat.size(),-1));
 
-//    vector<vector<double> >::iterator cos_row = cosSimilarity2d.begin();
-//    for ( ; cos_row != cosSimilarity2d.end(); ++cos_row)
-//    {
-//        for (vector<double>::iterator col = cos_row->begin(); col != cos_row->end(); ++col){
-//            if (*col)
-//            {
-//
-//            }
-//        }
-//    }
+    int community_id = 0;
+    stack<int> toCheck;
+    //unordered_map<int, int>;
+    vector<int> zeros(adj_mat.size(),0);
+    vector<int> isDetected(zeros);
+    //vector<int> isVisited(zeros);
+    bool isSingleton = true;
+
+    for (int i = 0 ; i < adj_mat.size(); i++)
+    {
+        // DFS traversal
+        isVisited = zeros;
+        if (isDetected[i])
+            continue; // this node is included in a community already.
+        toCheck.push(i);
+        isDetected[i] = 1;
+        isSingleton = true;
+
+        while(!toCheck.empty()){
+
+            ii = toCheck.top();
+            toCheck.pop();
+            // /communities[community_id].push_back(ii);
+            vertex_t vertex = indexToVertex_t.find(ii);
+            vertexToComponent.insert (std::pair<vertex_t, size_t>(vertex, community_id));
+
+            for (int j = 0 ; j < adj_mat.size(); j++)
+            {
+                if (isDetected[j])
+                    continue; // this node is included in a community already.
+                //if (isVisited[j])
+                //    continue; // this node is included in this community already.
+                if (adj_mat[ii][j] > 0){
+                    toCheck.push(j);
+                    isDetected[j]=1;
+                    isSingleton = false;
+                }
+            }
+        }
+        if (isSingleton)
+        {
+            // /communities[community_id].pop_back();
+            vertexToComponent.erase ( indexToVertex_t.find(i) );
+        }
+        else
+            community_id++;
+    }
 }
-
 
 void
 Community_detection_k3_cliques(
