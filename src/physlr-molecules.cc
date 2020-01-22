@@ -361,8 +361,8 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
     int adj_mat_index = 0
     for (edge_iterator edge_iter = ei.first; edge_iter != ei.second; ++edge_iter)
     {
-        std::string a = source(*edge_iter, g); // what data type do I need to choose here
-        std::string b = target(*edge_iter, g); // what data type do I need to choose here
+        vertex_t a = source(*edge_iter, g); // what data type do I need to choose here
+        vertex_t b = target(*edge_iter, g); // what data type do I need to choose here
         // if not visited a or b
         //      add to dictionary
         // Could be more efficient by adding a "visited" property to vertices of the graph
@@ -372,7 +372,7 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
         int index_a;
         if ( got_a == vertexToIndex.end() )
         {
-            vertexToIndex.insert (std::make_pair<std::string, int>(a, adj_mat_index));
+            vertexToIndex.insert (std::make_pair<vertex_t, size_t>(a, adj_mat_index));
             index_a = adj_mat_index++;
         }
         else
@@ -384,7 +384,7 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
         int index_b;
         if ( got_b == vertexToIndex.end() )
         {
-            vertexToIndex.insert (std::make_pair<std::string, int>(b, adj_mat_index));
+            vertexToIndex.insert (std::make_pair<vertex_t, vertex_t>(b, adj_mat_index));
             index_b = adj_mat_index++;
         }
         else
@@ -691,7 +691,7 @@ calculate_cosine_similarity_2d_v2(
 
 
 void
-Community_detection_cosine_similarity(
+community_detection_cosine_similarity(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
     bool squaring = true, double threshold=0.7)
 {
@@ -864,6 +864,7 @@ main(int argc, char* argv[])
 	graph_t g;
 	readTSV(g, infiles, verbose);
 
+
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
 
@@ -877,8 +878,8 @@ main(int argc, char* argv[])
 		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
 
 		vertexToComponent_t vertexToComponent;
-		biconnectedComponents(subgraph, vertexToComponent);
-        //Community_detection_cosine_similarity(subgraph, vertexToComponent);
+		//biconnectedComponents(subgraph, vertexToComponent);
+        community_detection_cosine_similarity(subgraph, vertexToComponent);
 
 		// Delete subgraph to keep memory in control
 		for (auto& i : g.m_children) {
