@@ -329,54 +329,6 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 
 // Tools for cos_sim and k_cliques
 
-inline double
-cosine_similarity_vectors(
-    adjacencyMatrix_t::iterator& row_i,
-    adjacencyMatrix_t::iterator& row_j)
-{
-    // Input: 2 vectors (1D) as rows and columns of a Matrix
-    // Output: Cosine similarity of the two vectors
-    // (Cosine Similarity between 2 corresponding vertices)
-
-    float mul = 0.0; // also test double
-    float d_i = 0.0;
-    float d_j = 0.0;
-
-    if (row_i->size() != row_j->size())
-    {
-        throw std::logic_error("Vector A and Vector B are not the same size");
-    }
-
-    // Prevent Division by zero
-    if (row_i->size() < 1)
-    {
-        throw std::logic_error("Input vectors for multiplication are empty");
-    }
-
-    adjacencyVector_t::iterator i_iter = row_i->begin();
-    adjacencyVector_t::iterator j_iter = row_j->begin();
-    for( ; i_iter != row_i->end(); i_iter++ , j_iter++ )
-    {
-        mul += *i_iter * *j_iter;
-        d_i += *i_iter * *i_iter;
-        d_j += *j_iter * *j_iter;
-        // cout<<"\nDebug - mul:"<<mul<<" - d_i:"<<d_i<<" - d_j:"<<d_j<<endl;
-    }
-    if (mul == 0.0f)
-    {
-        return 0;
-    }
-    if (d_i == 0.0f || d_j == 0.0f)
-    {
-        return 0;
-//        throw std::logic_error(
-//                "cosine similarity is not defined whenever one or both "
-//                "input vectors are zero-vectors.");
-    }
-    //return mul / (sqrt(d_a) * sqrt(d_b));
-    return mul / sqrt(d_i * d_j);
-}
-
 void
 square_adjacency_list(){
     // with no adjacency matrix:
@@ -605,6 +557,54 @@ square_matrix_boost(
     return boost::numeric::ublas::prod(M, M);
 }
 
+inline double
+cosine_similarity_vectors(
+    adjacencyMatrix_t::iterator& row_i,
+    adjacencyMatrix_t::iterator& row_j)
+{
+    // Input: 2 vectors (1D) as rows and columns of a Matrix
+    // Output: Cosine similarity of the two vectors
+    // (Cosine Similarity between 2 corresponding vertices)
+
+    float mul = 0.0; // also test double
+    float d_i = 0.0;
+    float d_j = 0.0;
+
+    if (row_i->size() != row_j->size())
+    {
+        throw std::logic_error("Vector A and Vector B are not the same size");
+    }
+
+    // Prevent Division by zero
+    if (row_i->size() < 1)
+    {
+        throw std::logic_error("Input vectors for multiplication are empty");
+    }
+
+    adjacencyVector_t::iterator i_iter = row_i->begin();
+    adjacencyVector_t::iterator j_iter = row_j->begin();
+    for( ; i_iter != row_i->end(); i_iter++ , j_iter++ )
+    {
+        mul += *i_iter * *j_iter;
+        d_i += *i_iter * *i_iter;
+        d_j += *j_iter * *j_iter;
+        // cout<<"\nDebug - mul:"<<mul<<" - d_i:"<<d_i<<" - d_j:"<<d_j<<endl;
+    }
+    if (mul == 0.0f)
+    {
+        return 0;
+    }
+    if (d_i == 0.0f || d_j == 0.0f)
+    {
+        return 0;
+//        throw std::logic_error(
+//                "cosine similarity is not defined whenever one or both "
+//                "input vectors are zero-vectors.");
+    }
+    //return mul / (sqrt(d_a) * sqrt(d_b));
+    return mul / sqrt(d_i * d_j);
+}
+
 inline
 void
 calculate_cosine_similarity_2d(
@@ -729,6 +729,8 @@ Community_detection_cosine_similarity(
             }
     }
     // 4- Detect Communities (find connected components - DFS)
+    //      Alternative implementation: convert to adjacency list and use boost to find cc
+
     // / use .reserve to set the capacity of the below 2d vector instead of initialization
     int max_communities = 30;
     vector<vector<uint_fast32_t>> communities(max_communities,vector<uint_fast32_t>(adj_mat.size(),-1));
@@ -876,6 +878,7 @@ main(int argc, char* argv[])
 
 		vertexToComponent_t vertexToComponent;
 		biconnectedComponents(subgraph, vertexToComponent);
+        //Community_detection_cosine_similarity(subgraph, vertexToComponent);
 
 		// Delete subgraph to keep memory in control
 		for (auto& i : g.m_children) {
