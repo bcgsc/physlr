@@ -832,17 +832,21 @@ Community_detection_k3_cliques(
 
     /// TEST WHICH IS FASTER:
     /// 1-MATRIX MULTIPLICATION TO FIND TRIANGLES?
-    int adj_mat_size = adj_mat.size();
-    for (int i = 0; i < adj_mat_size; i++){
-        for (int j = i+1; j < adj_mat_size; j++){
-            if ()
-        }
-    }
+//    int adj_mat_size = adj_mat.size();
+//    for (int i = 0; i < adj_mat_size; i++)
+//    {
+//        for (int j = i+1; j < adj_mat_size; j++)
+//        {
+//            if ( adj_mat[i][j] > 0 && squared_adj_mat[i][j] > 0 )
+//            {
+//                // There is a Triangle of 3 vertices i,j, and ?
+//
+//            }
+//        }
+//    }
     /// 2-MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
 
     /// 3-NORMAL K-CLIQUE DETECTION
-
-
 }
 
 int
