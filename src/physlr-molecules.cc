@@ -5,12 +5,19 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <utility>
+#include <functional>
+
 #include <stdint.h>
 #include <chrono>
 #include <tgmath.h>
 #include <stdexcept>
 #include <algorithm>
 
+#include <boost/config.hpp>
+#include <boost/property_map/property_map.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/io.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/biconnected_components.hpp>
 #include <boost/graph/graph_utility.hpp>
@@ -65,6 +72,8 @@ struct edgeComponent_t
 	using kind = boost::edge_property_tag;
 } edgeComponent;
 
+using namespace std;
+
 using graph_t = boost::subgraph<boost::adjacency_list<
     boost::vecS,
     boost::vecS,
@@ -84,7 +93,7 @@ using vertexToComponent_t = std::unordered_map<vertex_t, size_t>;
 using vecVertexToComponent_t = std::vector<vertexToComponent_t>;
 using vertexToIndex_t = std::unordered_map<vertex_t, size_t>; // wanna improve this? checkout boost::bimap
 using indexToVertex_t = std::unordered_map<size_t, vertex_t>; // wanna improve this? checkout boost::bimap
-using adjacencyMatrix_t = std::vector<vector<uint_fast32_t>>;
+using adjacencyMatrix_t = std::vector<std::vector<uint_fast32_t>>;
 using adjacencyVector_t = std::vector<uint_fast32_t>;
 
 
@@ -351,28 +360,33 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
     adjacencyVector_t tempVector(N, 0);
     adjacencyMatrix_t adj_mat(N, tempVector);
 
+    // CHANGE &:
+    //boost::property_map<graph_t, edge_weight_t>::type weight =
+    //    boost::get(edge_weight, subgraph);
+
     // typedef graph_traits<Graph>::edge_iterator edge_iterator;
-    typedef graph_traits<UndirectedGraph>::edge_iterator edge_iterator;
+    typedef boost::graph_traits<graph_t>::edge_iterator edge_iterator;
+
 
     pair<edge_iterator, edge_iterator> ei = edges(subgraph);
 
     vertexToIndex_t::iterator got_a;
     vertexToIndex_t::iterator got_b;
-    int adj_mat_index = 0
+    size_t adj_mat_index = 0;
     for (edge_iterator edge_iter = ei.first; edge_iter != ei.second; ++edge_iter)
     {
-        vertex_t a = source(*edge_iter, g); // what data type do I need to choose here
-        vertex_t b = target(*edge_iter, g); // what data type do I need to choose here
+        vertex_t a = source(*edge_iter, subgraph);
+        vertex_t b = target(*edge_iter, subgraph);
         // if not visited a or b
         //      add to dictionary
         // Could be more efficient by adding a "visited" property to vertices of the graph
         // Now we implement by hash table lookup:
         // std::unordered_map<std::string,double>::const_iterator got_a = vertexToIndex.find(a)
-        got_a = vertexToIndex.find(a)
-        int index_a;
+        got_a = vertexToIndex.find(a);
+        size_t index_a;
         if ( got_a == vertexToIndex.end() )
         {
-            vertexToIndex.insert (std::make_pair<vertex_t, size_t>(a, adj_mat_index));
+            vertexToIndex.insert (std::pair<vertex_t, size_t>(a, adj_mat_index));
             index_a = adj_mat_index++;
         }
         else
@@ -380,20 +394,22 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
             index_a = got_a -> second;
         }
         // std::unordered_map<std::string,double>::const_iterator got_b = vertexToIndex.find(b)
-        got_b = vertexToIndex.find(b)
-        int index_b;
+        got_b = vertexToIndex.find(b);
+        size_t index_b;
         if ( got_b == vertexToIndex.end() )
         {
-            vertexToIndex.insert (std::make_pair<vertex_t, vertex_t>(b, adj_mat_index));
+            vertexToIndex.insert (std::pair<vertex_t, size_t>(b, adj_mat_index));
             index_b = adj_mat_index++;
         }
         else
         {
             index_b = got_b -> second;
         }
-        //mat[a][b] = g[*edge_iter].weight;
-        adj_mat[index_a][index_b] = get(weight, *edge_iter);
-        adj_mat[index_b][index_a] = get(weight, *edge_iter);
+        // CHANGE &:
+        //adj_mat[index_a][index_b] = boost::get(weight, *edge_iter);
+        //adj_mat[index_b][index_a] = boost::get(weight, *edge_iter);
+        adj_mat[index_a][index_b] = subgraph[*edge_iter].weight;
+        adj_mat[index_b][index_a] = adj_mat[index_a][index_b];
     }
     return adj_mat; // Cannot return two, add one as input that's being altered
     // and care how you use this function elsewhere!
@@ -500,7 +516,7 @@ square_matrix_ikj( // Might be faster than ijk, benchmark it
 
     // Fast initialization:
     int n = M.size();
-    adjacencyVector_t tmpVector(n, 0);
+    adjacencyVector_t tempVector(n, 0);
     adjacencyMatrix_t M2(n, tempVector);
     // Multiplication
     for (int i = 0; i < n; i++) {
@@ -521,7 +537,7 @@ square_matrix_ikj( // Might be faster than ijk, benchmark it
 
 vector<vector<double> >
 square_matrix_ikj( // Might be faster than ijk, benchmark it
-    vector<vector<double> > M, M,
+    vector<vector<double> > M,
     bool symmetric=true)
 {
     // Square the input matrix iterating i, k, then j
@@ -549,19 +565,17 @@ square_matrix_ikj( // Might be faster than ijk, benchmark it
 }
 
 
-boost::numeric::ublas::matrix<int>
-square_matrix_boost(
-    adjacencyMatrix_t M,
-)
-{
-    return boost::numeric::ublas::prod(M, M);
-}
+//boost::numeric::ublas::matrix<int>
+//square_matrix_boost(
+//    adjacencyMatrix_t M)
+//{
+//    return boost::numeric::ublas::prod(M, M);
+//}
 
 inline double
 cosine_similarity_vectors(
     adjacencyMatrix_t::iterator& row_i,
-    adjacencyMatrix_t::iterator& row_j)
-{
+    adjacencyMatrix_t::iterator& row_j){
     // Input: 2 vectors (1D) as rows and columns of a Matrix
     // Output: Cosine similarity of the two vectors
     // (Cosine Similarity between 2 corresponding vertices)
@@ -608,8 +622,8 @@ cosine_similarity_vectors(
 inline
 void
 calculate_cosine_similarity_2d(
-    adjacencyMatrix_t& adj_mat,
-    vector<vector<double> >& cosimilarity)
+    adjacencyMatrix_t adj_mat, // CHANGE: to a reference!
+    vector<vector<double>>& cosimilarity)
 {
     // calculate the cosine similarity of the input 2d-matrix with itself
     // Strategy: row-normalize then square the matrix.
@@ -689,6 +703,15 @@ calculate_cosine_similarity_2d_v2(
     }
 }
 
+template<typename K, typename V>
+std::unordered_map<V,K> inverse_map(std::unordered_map<K,V> &map)
+{
+	std::unordered_map<V,K> inverse;
+	for (const auto &p: map) {
+		inverse.insert(std::make_pair(p.second, p.first));
+	}
+	return inverse;
+}
 
 void
 community_detection_cosine_similarity(
@@ -702,16 +725,18 @@ community_detection_cosine_similarity(
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
     indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
 
-    size_t size_adj_mat = adj_mat.size();
+    int size_adj_mat = adj_mat.size();
     vector<double> tempVector(size_adj_mat, 0);
     vector<vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
-    calculate_cosine_similarity_2d(squaring ?
-                                square_matrix_ikj(adj_mat, true) // may need some change
-                                //square_matrix_ijk(adj_mat, true)
-                                //square_matrix_boost(adj_mat)
-                                :
-                                adj_mat,
-                        cosSimilarity2d);
+
+    if (squaring)
+        calculate_cosine_similarity_2d(square_matrix_ikj(adj_mat, true),
+                                        // may need some change
+                                        //square_matrix_ijk(adj_mat, true),
+                                        //square_matrix_boost(adj_mat),
+                                        cosSimilarity2d);
+    else
+        calculate_cosine_similarity_2d(adj_mat, cosSimilarity2d);
     // 2- Determine the threshold:
     // not implemented yet; so use a predefined universal threshold.
     threshold = threshold;
@@ -746,19 +771,21 @@ community_detection_cosine_similarity(
     for (int i = 0 ; i < adj_mat.size(); i++)
     {
         // DFS traversal
-        isVisited = zeros;
+        //isVisited = zeros;
         if (isDetected[i])
             continue; // this node is included in a community already.
         toCheck.push(i);
         isDetected[i] = 1;
         isSingleton = true;
 
+        int ii;
+
         while(!toCheck.empty()){
 
             ii = toCheck.top();
             toCheck.pop();
             // /communities[community_id].push_back(ii);
-            vertex_t vertex = indexToVertex_t.find(ii);
+            vertex_t vertex = indexToVertex.find(ii)->second;
             vertexToComponent.insert (std::pair<vertex_t, size_t>(vertex, community_id));
 
             for (int j = 0 ; j < adj_mat.size(); j++)
@@ -777,7 +804,7 @@ community_detection_cosine_similarity(
         if (isSingleton)
         {
             // /communities[community_id].pop_back();
-            vertexToComponent.erase ( indexToVertex_t.find(i) );
+            vertexToComponent.erase ( indexToVertex.find(i) );
         }
         else
             community_id++;
@@ -793,10 +820,10 @@ Community_detection_k3_cliques(
     // based on matrix multiplication
     if (k != 3)
     {
-        cout<<" This implementation of k-cliques does not support any k other than 3."
+        cout<<" This implementation of k-cliques does not support any k other than 3.";
         exit (EXIT_FAILURE);
     }
-    vertexToIndex_t vertexToIndex(num_vertices(subgraph))
+    vertexToIndex_t vertexToIndex(num_vertices(subgraph));
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
     indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
 
