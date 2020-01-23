@@ -828,10 +828,16 @@ Community_detection_k3_cliques(
     indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
 
     size_t size_adj_mat = adj_mat.size();
-    adjacencyMatrix_t adj_mat2(square_matrix_ijk(adj_mat));
+    adjacencyMatrix_t squared_adj_mat(square_matrix_ijk(adj_mat));
 
     /// TEST WHICH IS FASTER:
     /// 1-MATRIX MULTIPLICATION TO FIND TRIANGLES?
+    int adj_mat_size = adj_mat.size();
+    for (int i = 0; i < adj_mat_size; i++){
+        for (int j = i+1; j < adj_mat_size; j++){
+            if ()
+        }
+    }
     /// 2-MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
 
     /// 3-NORMAL K-CLIQUE DETECTION
