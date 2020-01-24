@@ -399,7 +399,13 @@ main(int argc, char* argv[])
 	sTime = omp_get_wtime();
 #endif
 
+	std::cerr << "Splitting minimizers" << std::endl;
 	bxToMolIdx_t bxToMolIdx;
 	findMoleculesPerBarcode(bxToMolIdx, g);
 	splitMinimizers(bxToMolIdx, barcodeToMinimizer, g, barcodes);
+	std::cerr << "Splitted minimizers" << std::endl;
+#if _OPENMP
+	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+	sTime = omp_get_wtime();
+#endif
 }
