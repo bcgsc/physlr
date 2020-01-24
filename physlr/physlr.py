@@ -1655,7 +1655,7 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        alg_white_list = {"bc", "cn2", "cn3", "k3", "k3bin" "k4",
+        alg_white_list = {"bc", "cn2", "cn3", "k3", "k3bin", "k4",
                           "cos", "sqcos", "sqcosbin", "louvain", "distributed"}
         alg_list = self.args.strategy.split("+")
         if not alg_list:
