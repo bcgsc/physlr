@@ -217,7 +217,6 @@ splitMinimizers(
 		std::advance(it, i);
 
 		std::stringstream ssOut;
-		std::stringstream ssErr;
 
 		auto& bx = (*it).first;
 		auto& bxIdx = barcodes[bx];
@@ -250,7 +249,6 @@ splitMinimizers(
 			}
 
 			if (splitMinimizers.empty()) {
-				ssErr << "Warning: " << g[mol].name << " has no associated minimizers\n";
 				ssOut << g[mol].name << "\t\n";
 			} else {
 				ssOut << g[mol].name << "\t";
@@ -268,7 +266,6 @@ splitMinimizers(
 #endif
 		{
 			std::cout << ssOut.str();
-			std::cerr << ssErr.str();
 		}
 	}
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
@@ -333,8 +330,8 @@ main(int argc, char* argv[])
 		case 't': {
 			std::stringstream convert(optarg);
 			if (!(convert >> opt::threads)) {
-				std::cerr << "Error - Invalid parameters! t: " << optarg << std::endl;
-				return 0;
+				printErrorMsg(PROGRAM, "Invalid parameters! t: ");
+				die = true;
 			}
 			break;
 		}
@@ -348,6 +345,7 @@ main(int argc, char* argv[])
 		}
 		}
 	}
+
 	if (help != 0) {
 		printVersion();
 		exit(EXIT_SUCCESS);
