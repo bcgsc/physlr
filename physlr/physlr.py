@@ -1726,19 +1726,32 @@ class Physlr:
         return Physlr.subgraph_stats(Physlr.graph, u)
 
     def physlr_subgraphs_stats(self):
-        "Retrieve subgraphs' stats."
-        gin = self.read_graph(self.args.FILES)
-        Physlr.filter_edges(gin, self.args.m)
-        print(
-            int(timeit.default_timer() - t0),
-            "Computing statistics of the subgraphs...", file=sys.stderr)
+        "Retrieve statistics of subgraphs."
+        nodes_of_interest = []
+        if len(self.args.FILES) > 1:
+            gin = self.read_graph([self.args.FILES[0]])
+            with open(self.args.FILES[1]) as fin:
+                for line in fin:
+                    nodes_of_interest.append(line.split()[0])
+            print(
+                int(timeit.default_timer() - t0),
+                "Computing statistics for subgraphs of interest...",
+                file=sys.stderr)
+        else:
+            gin = self.read_graph(self.args.FILES)
+            print(
+                int(timeit.default_timer() - t0),
+                "Computing statistics of all subgraphs...", file=sys.stderr)
+            nodes_of_interest = gin
+        #Physlr.filter_edges(gin, self.args.n)
+
         if self.args.threads == 1:
             stats = dict(self.subgraph_stats(gin, u) for u in progress(gin))
         else:
             Physlr.graph = gin
             with multiprocessing.Pool(self.args.threads) as pool:
                 stats = dict(pool.map(
-                    self.subgraph_stats_process, progress(gin), chunksize=100))
+                    self.subgraph_stats_process, progress(nodes_of_interest), chunksize=100))
             Physlr.graph = None
         print(int(timeit.default_timer() - t0), "Extracted subgraphs' statistics.", file=sys.stderr)
         self.write_subgraphs_stats(stats, sys.stdout)
