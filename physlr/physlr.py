@@ -1729,6 +1729,7 @@ class Physlr:
         """
         Retrieve statistics of a set of subgraphs.
         (Either all subgraphs, or a subset of them indicated by a second input file).
+        Usage: physlr subgraph-stats <graph .tsv> [TSV file listing barcodes in the first column]
         """
         nodes_of_interest = []
         if len(self.args.FILES) > 1:
