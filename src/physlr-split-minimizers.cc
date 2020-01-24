@@ -26,7 +26,6 @@
  * execution of the program.
  */
 namespace opt {
-
 static unsigned threads = 1;
 } // namespace opt
 
@@ -85,7 +84,6 @@ using vertex_t = graph_t::vertex_descriptor;
 using edge_t = graph_t::edge_descriptor;
 using barcodeToIndex_t = std::unordered_map<std::string, vertex_t>;
 using indexToBarcode_t = std::unordered_map<vertex_t, std::string>;
-using bxToCount_t = std::unordered_map<std::string, int>;
 using bxToMolIdx_t = std::unordered_map<std::string, std::vector<vertex_t>>;
 using BarcodeID = uint32_t;
 using Minimizer = uint64_t;
@@ -338,18 +336,15 @@ main(int argc, char* argv[])
 	bool verbose = false;
 	static int help = 0;
 	static int version = 0;
-
-	// switch statement variable
-	int c;
+	int optindex = 0;
 
 	// long form arguments
-	static struct option long_options[] = { { "help", no_argument, &help, 1 },
-		                                    { "threads", required_argument, nullptr, 't' },
-		                                    { "version", no_argument, &version, 1 },
-		                                    { nullptr, 0, nullptr, 0 } };
+	static struct option longopts[] = { { "help", no_argument, &help, 1 },
+		                                { "threads", required_argument, nullptr, 't' },
+		                                { "version", no_argument, &version, 1 },
+		                                { nullptr, 0, nullptr, 0 } };
 
-	int i = 0;
-	while ((c = getopt_long(argc, argv, "m:t:v:", long_options, &i)) != -1) {
+	for (int c; (c = getopt_long(argc, argv, "t:", longopts, &optindex)) != -1;) {
 		switch (c) {
 		case 't': {
 			std::stringstream convert(optarg);
