@@ -1735,7 +1735,7 @@ class Physlr:
             gin = self.read_graph([self.args.FILES[0]])
             with open(self.args.FILES[1]) as fin:
                 for line in fin:
-                    nodes_of_interest.append(line.split()[0])
+                    nodes_of_interest.append(line.strip().split()[0])
             print(
                 int(timeit.default_timer() - t0),
                 "Computing statistics for subgraphs of interest...",
