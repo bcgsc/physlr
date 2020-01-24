@@ -184,10 +184,11 @@ help:
 	@echo "	min_component_size		minimum number of barcodes in a backbone [50]."
 	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode [10]."
 	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode [5000]."
-	@echo "	mol_strategy			molecule separation strategy [distributed]. Available options are bc, bc+k3, distributed."
+	@echo "	mol_strategy			molecule separation strategy [distributed]. Available options are bc, bc+k3, distributed, ext."
 	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity."
-	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is most conservative and requires more time."
-	@echo "					distributed is a modified version of bc+k3 that is faster but less conservative."
+	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is more conservative than bc and requires more time."
+	@echo "					distributed is a modified version of bc+k3 that is faster than bc+k3 but may be more (or even less) conservative."
+	@echo "					ext (extensive) mixes distributed with a modified version of sqcos (cosine similarity of squared adjacency matrix) which makes it more conservative."
 	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
 	@echo "	arcs		Use ARCS to augment scaffolds (only compatible with ARCS v1.1.1) [false]."
 	@echo ""
@@ -989,6 +990,10 @@ min_path_size=200
 %.overlap.m$m.k3.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
+# Map the draft assembly to the backbone graph and output BED (K3-cliques and sqcosbin).
+%.overlap.m$m.ext.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.ext.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+
 # Map the draft assembly to the Louvain backbone graph and output BED.
 %.overlap.m$m.louvain.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
@@ -1001,6 +1006,10 @@ min_path_size=200
 %.overlap.m$m.k3.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
+# Map the reference assembly to the backbone graph and output BED (K3-cliques and sqcosbin).
+%.overlap.m$m.ext.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.ext.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+
 # Map the reference assembly to the Louvain backbone graph and output BED.
 %.overlap.m$m.louvain.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
@@ -1011,6 +1020,10 @@ min_path_size=200
 
 # Map the draft assembly to the k3-cliques backbone graph using physlr map-mkt and output BED.
 %.overlap.m$m.k3.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
+
+# Map the draft assembly to the `K3-cliques and sqcosbin` backbone graph using physlr map-mkt and output BED.
+%.overlap.m$m.ext.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.ext.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
 
 # Map the draft assembly to the Louvain backbone graph using physlr map-mkt and output BED.
@@ -1103,6 +1116,10 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 # Separate barcodes into molecules using K3-clique community detection.
 %.k3.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3 $< >$@
+
+# Separate barcodes into molecules using K3-clique and sqcosbin community detection.
+%.ext.mol.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=distributed+sqcosbin $< >$@
 
 # Separate barcodes into molecules using Louvain community detection.
 %.louvain.mol.tsv: %.tsv
