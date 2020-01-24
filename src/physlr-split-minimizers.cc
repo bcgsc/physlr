@@ -376,7 +376,7 @@ main(int argc, char* argv[])
 	omp_set_num_threads(opt::threads);
 #endif
 
-	// Stores fasta input file names
+	// Stores input file names
 	std::vector<std::string> inputFiles;
 
 	while (optind < argc) {
@@ -394,7 +394,6 @@ main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	// constuct minimizers to barcodes
 	// barcode to ID table (index in vector)
 	tsl::robin_map<std::string, BarcodeID> barcodes;
 
