@@ -1726,7 +1726,10 @@ class Physlr:
         return Physlr.subgraph_stats(Physlr.graph, u)
 
     def physlr_subgraphs_stats(self):
-        "Retrieve statistics of subgraphs."
+        """
+        Retrieve statistics of a set of subgraphs.
+        (Either all subgraphs, or a subset of them indicated by a second input file).
+        """
         nodes_of_interest = []
         if len(self.args.FILES) > 1:
             gin = self.read_graph([self.args.FILES[0]])
