@@ -253,14 +253,14 @@ splitMinimizers(
 					auto neighbourBx = matches[1].str();
 					auto& neighbourBxIdx = barcodes[neighbourBx];
 					auto& neighbourMxs = barcodeToMinimizer[neighbourBxIdx];
-					for (Minimizer mx : neighbourMxs) {
+					for (auto& mx : neighbourMxs) {
 						neighbourMxsUnion.insert(mx);
 					}
 				}
 			}
 			// Intersect minimizers of barcode with union
 			std::vector<Minimizer> splitMinimizers;
-			for (Minimizer mx : minimizerSet) {
+			for (auto& mx : minimizerSet) {
 				if (neighbourMxsUnion.find(mx) != neighbourMxsUnion.end()) {
 					splitMinimizers.emplace_back(mx);
 				}
