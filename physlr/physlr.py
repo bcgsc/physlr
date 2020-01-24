@@ -2723,6 +2723,9 @@ class Physlr:
             "--gap-size", action="store", dest="gap_size", type=int, default=100,
             help="gap size used in scaffolding [100].")
         argparser.add_argument(
+            "--cost", action="store", dest="cost", type=float, default=0.5,
+            help="threshold for `cos` molecule separation [0.5].")
+        argparser.add_argument(
             "--sqcost", action="store", dest="sqcost", type=float, default=0.75,
             help="threshold for `sqcos` molecule separation [0.75].")
         argparser.add_argument(
