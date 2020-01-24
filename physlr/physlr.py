@@ -1749,7 +1749,6 @@ class Physlr:
             print("Settings for round 2:", file=sys.stderr)
 
             Physlr.args.threads = math.ceil(Physlr.args.threads / 8)
-            Physlr.args.skip_small = False
             Physlr.args.junction_depth = 10
             Physlr.args.cost = 0.55
             Physlr.args.sqcost = 0.85
@@ -1766,6 +1765,9 @@ class Physlr:
                   "\n |  junction_depth ", Physlr.args.junction_depth,
                   " |  prune_junctions ", Physlr.args.prune_junctions,
                   "\n | Skip small:", Physlr.args.skip_small,
+                  file=sys.stderr)
+        if round > 3:
+            print(" No changes in the settings compared to previous rounds",
                   file=sys.stderr)
 
     def physlr_molecules(self):
