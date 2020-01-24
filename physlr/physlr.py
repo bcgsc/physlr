@@ -1468,7 +1468,13 @@ class Physlr:
         import numpy as np
         from sklearn.metrics.pairwise import cosine_similarity
 
+        if len(node_set) < Physlr.args.skip_small:
+            return [set(node_set)]
+        if len(node_set) == 1:
+            return [set(node_set)]
+
         communities = []
+
         if len(node_set) > 1:
             adj_array = nx.adjacency_matrix(g.subgraph(node_set)).toarray()
             if squaring:
@@ -1586,6 +1592,20 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_k_clique(g, component, k=3))
+            elif algorithm == "k3bin":
+                for component in communities:
+                    communities_temp.extend(
+                        [merged for merged in Physlr.merge_communities(
+                            g, [cluster
+                                for bin_set in
+                                Physlr.partition_subgraph_into_bins_randomly(
+                                    component)
+                                for cluster in
+                                Physlr.detect_communities_k_clique(g, bin_set, k=3)
+                                ]
+                        )
+                        ]
+                    )
             elif algorithm == "k4":
                 for component in communities:
                     communities_temp.extend(
@@ -1599,6 +1619,21 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(g, component))
+            elif algorithm == "sqcosbin":
+                for component in communities:
+                    communities_temp.extend(
+                        [merged for merged in Physlr.merge_communities(
+                            g, [cluster
+                                for bin_set in
+                                Physlr.partition_subgraph_into_bins_randomly(
+                                    component)
+                                for cluster in
+                                Physlr.detect_communities_cosine_of_squared(
+                                    g, bin_set, squaring=True, threshold=Physlr.args.sqcost)
+                                ]
+                        )
+                         ]
+                    )
             elif algorithm == "louvain":
                 for component in communities:
                     communities_temp.extend(
@@ -1622,7 +1657,8 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
+        alg_white_list = {"bc", "cn2", "cn3", "k3", "k3bin" "k4",
+                          "cos", "sqcos", "sqcosbin", "louvain", "distributed"}
         alg_list = self.args.strategy.split("+")
         if not alg_list:
             sys.exit("Error: physlr molecule: missing parameter --separation-strategy")
@@ -2589,8 +2625,11 @@ class Physlr:
         argparser.add_argument(
             "--separation-strategy", action="store", dest="strategy", default="bc+k3",
             help="strategy for barcode to molecule separation [bc+k3]. Use a combination"
-                 " of bc, k3, cos, sqcos, louvain, and distributed"
-                 " concatenated plus sign (example:bc+k3+bc)")
+                 " of bc, k3, k3bin, cos, sqcos, sqcosbin, louvain, and distributed"
+                 " concatenated via plus sign (example:bc+k3+bc)")
+        argparser.add_argument(
+            "--separation-skip-small", action="store", dest="skip_small", type=int, default=10,
+            help="Skip splitting the barcode if neighborhood subgraph is smaller than this [0]")
         argparser.add_argument(
             "--coef", action="store", dest="coef", type=float, default=1.5,
             help="ignore minimizers that occur in Q3+c*(Q3-Q1) or more barcodes [0]")
@@ -2685,6 +2724,9 @@ class Physlr:
         argparser.add_argument(
             "--gap-size", action="store", dest="gap_size", type=int, default=100,
             help="gap size used in scaffolding [100].")
+        argparser.add_argument(
+            "--sqcost", action="store", dest="sqcost", type=float, default=0.75,
+            help="threshold for `sqcos` molecule separation [0.75].")
         argparser.add_argument(
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
