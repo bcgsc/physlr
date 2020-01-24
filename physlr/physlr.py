@@ -1746,7 +1746,6 @@ class Physlr:
                 int(timeit.default_timer() - t0),
                 "Computing statistics of all subgraphs...", file=sys.stderr)
             nodes_of_interest = gin
-        #Physlr.filter_edges(gin, self.args.n)
 
         if self.args.threads == 1:
             stats = dict(self.subgraph_stats(gin, u) for u in progress(gin))
