@@ -56,8 +56,8 @@ maximum_barcode_multiplicity=5000
 # Minimum component size for backbones
 min_component_size=50
 
-# Minimum size of 3rd largest branch of a node to be considered a junction
-prune_junctions = 200
+# Round of molecule separation to start from
+round=1
 
 # Level of verbosity
 # 0: silent
@@ -69,6 +69,9 @@ V=1
 # backbone-graph variables
 prune_branches=10
 prune_bridges=10
+
+# Minimum size of 3rd largest branch of a node to be considered a junction
+prune_junctions = 50
 
 SHELL=bash -e -o pipefail
 ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
@@ -188,6 +191,7 @@ help:
 	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity."
 	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is most conservative and requires more time."
 	@echo "					distributed is a modified version of bc+k3 that is faster but less conservative."
+	@echo "					iterative does 3 rounds of molecule separation being (1)distributed+sqcosbin, (2)sqcosbin, and (3)sqcosbin (with different thresholds)"
 	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
 	@echo "	arcs		Use ARCS to augment scaffolds (only compatible with ARCS v1.1.1) [false]."
 	@echo ""
@@ -905,7 +909,7 @@ endif
 
 # Determine the maximum spanning tree.
 %.mst.tsv: %.tsv
-	$(python) $(bin)/physlr mst -V$V --prune-branches=10 --prune-bridges=10 $< >$@
+	$(python) $(bin)/physlr mst -V$V --prune-branches=$(prune_branches) --prune-bridges=$(prune_bridges) $< >$@
 
 # Separate a graph into its biconnected components by removing its cut vertices.
 %.bic.tsv: %.tsv
@@ -913,36 +917,36 @@ endif
 
 # Determine the bridge-removed graph from the overlap TSV.
 %.bridge-removed.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr remove-bridges-graph --prune-branches=10 --prune-bridges=10 -s0 -V$V $< >$@
+	$(time) $(python) $(bin)/physlr remove-bridges-graph --prune-branches=$(prune_branches) --prune-bridges=$(prune_bridges) -s0 -V$V $< >$@
 
 # Report the junctions in a overlap/backbone graph TSV.
 %.junctions.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=10 --junction-depth=1 -s0 -V$V $< >$@
+	$(time) $(python) $(bin)/physlr report-junctions-graph --prune-branches=$(prune_branches) --junction-depth=1 -s0 -V$V $< >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
-%.mol2.tsv: %.tsv %.junctions.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc $^ >$@
+%.mol2.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc --round=2 $^ >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
-%.mol2-bcs.tsv: %.tsv %.junctions.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos $^ >$@
+%.mol2-bcs.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+cos+sqcos --round=2 $^ >$@
 
 # Redo molecule separation on a list of junction-causing barcodes.
-%.mol2-bkcs.tsv: %.tsv %.junctions.tsv
-	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3+cos+sqcos $^ >$@
+%.mol2-bkcs.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3+cos+sqcos --round=2 $^ >$@
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=$(prune_branches) --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=$(prune_branches) --prune-bridges=$(prune_bridges) --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
 
 # Determine the corrected backbone graph from the overlap TSV.
 min_path_size=200
 %.s3.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=$(prune_bridges) --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) -V$V $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=$(prune_branches) --prune-bridges=$(prune_bridges) --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) -V$V $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
-	$(time) $(python) $(bin)/physlr backbone --prune-branches=0 -s0 -V$V $< >$@
+	$(time) $(python) $(bin)/physlr backbone --prune-branches=0 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
 
 # Cut chimeric paths to correct misassemblies.
 %.backbone.depth.tsv: %.tsv %.backbone.path
@@ -989,6 +993,10 @@ min_path_size=200
 %.overlap.m$m.k3.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
+# Map the draft assembly to the backbone graph and output BED (iterative molecule separation).
+%.overlap.m$m.iterative.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.iterative.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+
 # Map the draft assembly to the Louvain backbone graph and output BED.
 %.overlap.m$m.louvain.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
@@ -1001,6 +1009,10 @@ min_path_size=200
 %.overlap.m$m.k3.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
+# Map the reference assembly to the backbone graph and output BED (iterative molecule separation).
+%.overlap.m$m.iterative.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.iterative.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+
 # Map the reference assembly to the Louvain backbone graph and output BED.
 %.overlap.m$m.louvain.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
@@ -1011,6 +1023,10 @@ min_path_size=200
 
 # Map the draft assembly to the k3-cliques backbone graph using physlr map-mkt and output BED.
 %.overlap.m$m.k3.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
+
+# Map the draft assembly to the iterative mol-sep backbone graph using physlr map-mkt and output BED.
+%.overlap.m$m.iterative.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.iterative.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
 
 # Map the draft assembly to the Louvain backbone graph using physlr map-mkt and output BED.
@@ -1103,6 +1119,10 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 # Separate barcodes into molecules using K3-clique community detection.
 %.k3.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+k3 $< >$@
+
+# Separate barcodes into molecules using K3-clique community detection.
+%.iterative.mol.tsv: %.tsv
+	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=distributed+sqcosbin++sqcosbin++sqcosbin $< >$@
 
 # Separate barcodes into molecules using Louvain community detection.
 %.louvain.mol.tsv: %.tsv
