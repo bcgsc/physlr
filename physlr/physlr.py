@@ -557,6 +557,42 @@ class Physlr:
         return (g, len(junctions))
 
     @staticmethod
+    def identify_junctions_graph(g, prune_junctions, junction_depth, include_bridges=True):
+        gmst = Physlr.determine_pruned_mst(g)
+        print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
+        tree_junctions = []
+        for component in nx.connected_components(gmst):
+            tree_junctions += Physlr.detect_junctions_of_tree(
+                gmst.subgraph(component), Physlr.args.prune_junctions)
+        print(int(timeit.default_timer() - t0),
+              "Found", len(tree_junctions), "junctions.", file=sys.stderr)
+        if include_bridges:
+            bridges, bridge_juncs = Physlr.identify_bridges(gmst, Physlr.args.prune_bridges, True)
+            tree_junctions.extend(node for edge in bridges for node in edge)
+            tree_junctions.extend(node for node in bridge_juncs)
+        print(int(timeit.default_timer() - t0),
+              "Expanded to", len(tree_junctions), "with bridges.", file=sys.stderr)
+        junctions = []
+        if Physlr.args.junction_depth > 0:
+            print(int(timeit.default_timer() - t0),
+                  "Exapnding junctions, depth:", Physlr.args.junction_depth, file=sys.stderr)
+            if Physlr.args.junction_depth > 1:
+                tree_junctions_expanded = set()
+                for tree_junction in tree_junctions:
+                    tree_junctions_expanded.update(
+                        nx.bfs_tree(gmst, source=tree_junction,
+                                    depth_limit=Physlr.args.junction_depth - 1))
+            else:
+                tree_junctions_expanded = set(tree_junctions)
+            junctions = {m for n in tree_junctions_expanded for m in g.neighbors(n)}
+            junctions.update(tree_junctions_expanded)
+            print(int(timeit.default_timer() - t0),
+                  "Exapnded to", len(junctions), "junctions.", file=sys.stderr)
+        else:
+            junctions = tree_junctions
+        return junctions
+
+    @staticmethod
     def determine_backbones_of_trees(g, prune_junctions):
         """"
         Determine backbones of the MSTs.
@@ -716,12 +752,14 @@ class Physlr:
         return paths, junctions
 
     @staticmethod
-    def identify_bridges(g, bridge_length):
+    def identify_bridges(g, bridge_length, include_junctions=False):
         """Return the bridges of the graph"""
         paths, junctions = Physlr.identify_contiguous_paths(g)
         bridges = [path for path in paths if len(path) < bridge_length
                    and all(g.degree(u) == 2 for u in path)]
         bridges += g.subgraph(junctions).edges
+        if include_junctions:
+            return bridges, junctions
         return bridges
 
     @staticmethod
@@ -1425,6 +1463,8 @@ class Physlr:
     @staticmethod
     def detect_communities_biconnected_components(g, node_set):
         """Separate bi-connected components. Return components."""
+        # if len(node_set) < Physlr.args.skip_small:
+        #     return [set(node_set)]
         cut_vertices = set(nx.articulation_points(g.subgraph(node_set)))
         components = list(nx.connected_components(g.subgraph(node_set - cut_vertices)))
         return components
@@ -1444,8 +1484,10 @@ class Physlr:
         return list(nx.connected_components(subgraph))
 
     @staticmethod
-    def detect_communities_k_clique(g, node_set, k):
+    def detect_communities_k_clique(g, node_set, k=3):
         """Apply k-clique community detection. Return communities."""
+        # if len(node_set) < Physlr.args.skip_small:
+        #     return [set(node_set)]
         return list(nx.algorithms.community.k_clique_communities(g.subgraph(node_set), k))
 
     @staticmethod
@@ -1453,6 +1495,8 @@ class Physlr:
         """Apply Louvain community detection on a single component. Return communities."""
         if len(node_set) < 2:
             return []
+        # if len(node_set) < Physlr.args.skip_small:
+        #     return [set(node_set)]
         import community as louvain
         partition = louvain.best_partition(g.subgraph(node_set), init_communities)
         return [{node for node in partition.keys() if partition[node] == com}
@@ -1494,6 +1538,8 @@ class Physlr:
         Partition the subgraph into bins randomly for faster processing. Return bins.
         Warning: This function is not deterministic.
         """
+        if len(node_set) < max_size:
+            return [set(node_set)]
         bins_count = 1 + len(node_set) // max_size
         node_list = list(node_set)
         random.shuffle(node_list)
@@ -1513,7 +1559,7 @@ class Physlr:
         if len(communities) == 1 and (node_set == 0 or strategy != 1):
             return communities
         if strategy == 1:  # Merge by Initializing Louvain with the communities
-            return Physlr.detect_communities_louvain(g, node_set, communities)
+            return Physlr.detect_communities_louvain(g, communities, node_set)
         # Ad-hoc Merge (default - strategy = 0)
         merge_network = nx.Graph()
         for i in range(len(communities)):
@@ -1566,14 +1612,38 @@ class Physlr:
         communities = [g[u].keys()]
         if junctions:
             if u not in junctions:
-                strategy = "bc"
-        alg_list = strategy.split("+")
+                return u, {i: 0 for i in g[u].keys()}
+        alg_list = strategy
+        alg_white_list = {"cc", "bc", "bcbin", "cn2", "cn3", "k3", "k3bin", "k4",
+                          "cos", "cosbin", "sqcos", "sqcosbin", "louvain", "distributed"}
+
         for algorithm in alg_list:
             communities_temp = []
+            if algorithm not in alg_white_list:
+                print("Strategy: ", algorithm, file=sys.stderr)
+                sys.exit("Error: strategy not valid")
+            if algorithm == "cc":
+                for component in communities:
+                    communities_temp.extend(
+                        list(nx.connected_components(g.subgraph(component))))
             if algorithm == "bc":
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_biconnected_components(g, component))
+            if algorithm == "bcbin":
+                for component in communities:
+                    communities_temp.extend(
+                        [merged for merged in Physlr.merge_communities(
+                            g, [cluster
+                                for bin_set in
+                                Physlr.partition_subgraph_into_bins_randomly(
+                                    component)
+                                for cluster in
+                                Physlr.detect_communities_biconnected_components(g, bin_set)
+                                ]
+                        )
+                         ]
+                    )
             elif algorithm == "cn2":
                 for component in communities:
                     communities_temp.extend(
@@ -1586,6 +1656,20 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_k_clique(g, component, k=3))
+            elif algorithm == "k3bin":
+                for component in communities:
+                    communities_temp.extend(
+                        [merged for merged in Physlr.merge_communities(
+                            g, [cluster
+                                for bin_set in
+                                Physlr.partition_subgraph_into_bins_randomly(
+                                    component)
+                                for cluster in
+                                Physlr.detect_communities_k_clique(g, bin_set, k=3)
+                                ]
+                        )
+                        ]
+                    )
             elif algorithm == "k4":
                 for component in communities:
                     communities_temp.extend(
@@ -1594,11 +1678,42 @@ class Physlr:
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_cosine_of_squared(
-                            g, component, squaring=False, threshold=0.4))
+                            g, component, squaring=False, threshold=Physlr.args.cost))
+            elif algorithm == "cosbin":
+                for component in communities:
+                    communities_temp.extend(
+                        [merged for merged in Physlr.merge_communities(
+                            g, [cluster
+                                for bin_set in
+                                Physlr.partition_subgraph_into_bins_randomly(
+                                    component)
+                                for cluster in
+                                Physlr.detect_communities_cosine_of_squared(
+                                    g, bin_set, squaring=False, threshold=Physlr.args.cost)
+                                ]
+                        )
+                        ]
+                    )
             elif algorithm == "sqcos":
                 for component in communities:
                     communities_temp.extend(
-                        Physlr.detect_communities_cosine_of_squared(g, component))
+                        Physlr.detect_communities_cosine_of_squared(
+                            g, component, squaring=True, threshold=Physlr.args.sqcost))
+            elif algorithm == "sqcosbin":
+                for component in communities:
+                    communities_temp.extend(
+                        [merged for merged in Physlr.merge_communities(
+                            g, [cluster
+                                for bin_set in
+                                Physlr.partition_subgraph_into_bins_randomly(
+                                    component)
+                                for cluster in
+                                Physlr.detect_communities_cosine_of_squared(
+                                    g, bin_set, squaring=True, threshold=Physlr.args.sqcost)
+                                ]
+                        )
+                         ]
+                    )
             elif algorithm == "louvain":
                 for component in communities:
                     communities_temp.extend(
@@ -1620,17 +1735,63 @@ class Physlr:
         """
         return Physlr.determine_molecules(Physlr.graph, u, Physlr.junctions, Physlr.args.strategy)
 
+    @staticmethod
+    def set_settings(round):
+        if round == 1:
+            print("Settings for round 1:", file=sys.stderr)
+            Physlr.args.skip_small = True
+            # Physlr.args.strategy = ["distributed+sqcosbin"]
+            Physlr.args.junction_depth = 0
+            Physlr.args.cost = 0.5
+            Physlr.args.sqcost = 0.80
+            print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
+                  "\n |  junction_depth ", Physlr.args.junction_depth,
+                  " |  prune_junctions ", Physlr.args.prune_junctions,
+                  "\n | Skip small:", Physlr.args.skip_small,
+                  file=sys.stderr)
+        if round == 2:
+            print("Settings for round 2:", file=sys.stderr)
+            # Physlr.args.strategy = ["sqcosbin"]
+            Physlr.args.threads = int(Physlr.args.threads / 8)
+            if Physlr.args.threads < 1:
+                Physlr.args.threads = 1
+            Physlr.args.skip_small = False
+            Physlr.args.junction_depth = 10
+            Physlr.args.cost = 0.55
+            Physlr.args.sqcost = 0.85
+            print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
+                  "\n |  junction_depth ", Physlr.args.junction_depth,
+                  " |  prune_junctions ", Physlr.args.prune_junctions,
+                  "\n | Skip small:", Physlr.args.skip_small,
+                  file=sys.stderr)
+        if round == 3:
+            print("Settings for round 3:", file=sys.stderr)
+            # Physlr.args.strategy = ["sqcosbin"]
+            Physlr.args.junction_depth = 10
+            Physlr.args.cost = 0.6
+            Physlr.args.sqcost = 0.88
+            print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
+                  "\n |  junction_depth ", Physlr.args.junction_depth,
+                  " |  prune_junctions ", Physlr.args.prune_junctions,
+                  "\n | Skip small:", Physlr.args.skip_small,
+                  file=sys.stderr)
+
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        alg_white_list = {"bc", "cn2", "cn3", "k3", "k4", "cos", "sqcos", "louvain", "distributed"}
-        alg_list = self.args.strategy.split("+")
-        if not alg_list:
-            sys.exit("Error: physlr molecule: missing parameter --separation-strategy")
-        if not set(alg_list).issubset(alg_white_list):
-            exit_message = "Error: physlr molecule: wrong input parameter(s) " + \
-                      "--separation-strategy: " + str(set(alg_list) - alg_white_list)
-            sys.exit(exit_message)
+
         junctions = []
+
+        alg_white_list = {"cc", "bc", "bcbin", "cn2", "cn3", "k3", "k3bin", "k4",
+                          "cos", "cosbin", "sqcos", "sqcosbin", "louvain", "distributed"}
+        alg_list_2d = [t.split("+") for t in self.args.strategy.split("++")]
+        if not alg_list_2d:
+            sys.exit("Error: physlr molecule: missing parameter --separation-strategy")
+        for alg_list in alg_list_2d:
+            if not set(alg_list).issubset(alg_white_list):
+                exit_message = "Error: physlr molecule: wrong input parameter(s) " + \
+                               "--separation-strategy: " + str(set(alg_list) - alg_white_list)
+                sys.exit(exit_message)
+
         if len(self.args.FILES) > 1:
             gin = self.read_graph([self.args.FILES[0]])
             with open(self.args.FILES[1]) as fin:
@@ -1640,7 +1801,7 @@ class Physlr:
                 int(timeit.default_timer() - t0),
                 "Separating junction-causing barcodes into molecules "
                 "using the following algorithm(s):\n\t",
-                self.args.strategy.replace("+", " + "),
+                alg_list_2d,
                 "\n\tand other barcodes with bc.",
                 file=sys.stderr)
         else:
@@ -1648,54 +1809,130 @@ class Physlr:
             print(
                 int(timeit.default_timer() - t0),
                 "Separating barcodes into molecules using the following algorithm(s):\n\t",
-                self.args.strategy.replace("+", " + "),
+                alg_list_2d,
+                # self.args.strategy.replace("++"," / ").replace("+", " + "),
                 file=sys.stderr)
 
         Physlr.filter_edges(gin, self.args.m)
+        round = self.args.round
+        for alg_list in alg_list_2d:
+            Physlr.set_settings(round)
+            Physlr.args.prune_bridges = 10
+            Physlr.args.prune_branches = 10
+            Physlr.args.prune_junctions = 50
+            if round > 1:
+                print(
+                    int(timeit.default_timer() - t0),
+                    "Detecting junction-causing barcodes",
+                    file=sys.stderr)
+                junctions = Physlr.identify_junctions_graph(
+                    gin, self.args.prune_junctions, self.args.junction_depth)
+            # round = round + 1
+            if junctions:
+                print(
+                    int(timeit.default_timer() - t0),
+                    "Working on the junction-causing barcodes with algs:", alg_list,
+                    file=sys.stderr)
+                if "sqcos" in alg_list or "cos" in alg_list or \
+                        "sqcosbin" in alg_list or "cosbin" in alg_list:
+                    print(
+                        int(timeit.default_timer() - t0),
+                        "cost:", Physlr.args.cost, "sqcost:", Physlr.args.sqcost,
+                        file=sys.stderr)
+                nodes_to_process = junctions
+            else:
+                print(
+                    int(timeit.default_timer() - t0),
+                    "Working on the whole overlap graph with algs:", alg_list,
+                    file=sys.stderr)
+                nodes_to_process = gin
+            if self.args.threads == 1:
+                molecules = dict(
+                    self.determine_molecules(
+                        gin, u, junctions, alg_list) for u in progress(nodes_to_process))
+            else:
+                Physlr.graph = gin
+                Physlr.junctions = junctions
+                Physlr.args.strategy = alg_list
+                with multiprocessing.Pool(self.args.threads) as pool:
+                    molecules = dict(pool.map(
+                        self.determine_molecules_process, progress(nodes_to_process), chunksize=100))
+                Physlr.graph = None
+            print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
+            if not molecules:
+                print(int(timeit.default_timer() - t0), "Identidied no molecules", file=sys.stderr)
 
-        # Partition the neighbouring vertices of each barcode into molecules.
-        if self.args.threads == 1:
-            molecules = dict(
-                self.determine_molecules(
-                    gin, u, junctions, self.args.strategy) for u in progress(gin))
-        else:
-            Physlr.graph = gin
-            Physlr.junctions = junctions
-            with multiprocessing.Pool(self.args.threads) as pool:
-                molecules = dict(pool.map(
-                    self.determine_molecules_process, progress(gin), chunksize=100))
-            Physlr.graph = None
-        print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
+            # Add vertices.
+            if round > 1:
+                gout = gin.copy()
+            else:
+                gout = nx.Graph()
+            cumul_nmolecules = 0
+            cumul_junctions = 0
+            for u, vs in sorted(molecules.items()):
+                n = gin.nodes[u]["n"]
+                nmolecules = 1 + max(vs.values()) if vs else 0
+                if nmolecules > 1:
+                    cumul_nmolecules += (nmolecules - 1)
+                    cumul_junctions += 1
+                for i in range(nmolecules):
+                    if round > 1:
+                        gout.add_node(f"{u}-{i}", n=n)
+                    elif round == 1:
+                        gout.add_node(f"{u}_{i}", n=n)
+                # set([cluster for v, cluster in a.items()])
+            print(
+                int(timeit.default_timer() - t0),
+                "Identified", cumul_nmolecules, "new molecules in",
+                gin.number_of_nodes(), "barcodes and Solved", cumul_junctions, "barcode re-uses.",
+                # round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
+                file=sys.stderr)
 
-        # Add vertices.
-        gout = nx.Graph()
-        for u, vs in sorted(molecules.items()):
-            m = gin.nodes[u]["m"]
-            nmolecules = 1 + max(vs.values()) if vs else 0
-            for i in range(nmolecules):
-                gout.add_node(f"{u}_{i}", m=m)
+            # Add edges
+            if round > 1:
+                for u, vs in sorted(molecules.items()):
+                    for v, cluster in vs.items():
+                        if v in molecules:
+                            if v not in molecules[u] or u not in molecules[v]:
+                                continue
+                            u_molecule = molecules[u][v]
+                            v_molecule = molecules[v][u]
+                            gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}", n=gin[u][v]["n"])
+                        else:
+                            u_molecule = molecules[u][v]
+                            gout.add_edge(f"{u}-{u_molecule}", f"{v}", n=gin[u][v]["n"])
+                # remove older nodes
+                gout.remove_nodes_from([u for u, _ in molecules.items()])
+            elif round == 1:
+                for (u, v), prop in gin.edges.items():
+                    # Skip singleton and cut vertices, which are excluded from the partition.
+                    if v not in molecules[u] or u not in molecules[v]:
+                        continue
+                    u_molecule = molecules[u][v]
+                    v_molecule = molecules[v][u]
+                    gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
 
-        print(
-            int(timeit.default_timer() - t0),
-            "Identified", gout.number_of_nodes(), "molecules in",
-            gin.number_of_nodes(), "barcodes.",
-            round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
-            file=sys.stderr)
+            print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
+            num_singletons = Physlr.remove_singletons(gout)
+            print(
+                int(timeit.default_timer() - t0),
+                "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
+            # gin.clear()
+            # gin = gout.copy()
+            gin = gout
+            round = round + 1
+            gout = 0
+            # Physlr.graph.clear()
+            # gout.clear()
+            # old_molecules = molecules
+            # gc.collect()
 
-        # Add edges.
-        for (u, v), prop in gin.edges.items():
-            # Skip singleton and cut vertices, which are excluded from the partition.
-            if v not in molecules[u] or u not in molecules[v]:
-                continue
-            u_molecule = molecules[u][v]
-            v_molecule = molecules[v][u]
-            gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", m=prop["m"])
-        print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
-
-        num_singletons = Physlr.remove_singletons(gout)
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
+        if False:
+            # No effect on results
+            # only set to True to report the number of junctions after last round of mol-sep
+            Physlr.identify_junctions_graph(
+                gin, self.args.prune_junctions, self.args.junction_depth)
+        gout = gin
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
@@ -1727,18 +1964,31 @@ class Physlr:
 
     def physlr_subgraphs_stats(self):
         "Retrieve subgraphs' stats."
-        gin = self.read_graph(self.args.FILES)
-        Physlr.filter_edges(gin, self.args.m)
-        print(
-            int(timeit.default_timer() - t0),
-            "Computing statistics of the subgraphs...", file=sys.stderr)
+        nodes_of_interest = []
+        if len(self.args.FILES) > 1:
+            gin = self.read_graph([self.args.FILES[0]])
+            with open(self.args.FILES[1]) as fin:
+                for line in fin:
+                    nodes_of_interest.append(line.split()[0])
+            print(
+                int(timeit.default_timer() - t0),
+                "Computing statistics for subgraphs of interest...",
+                file=sys.stderr)
+        else:
+            gin = self.read_graph(self.args.FILES)
+            print(
+                int(timeit.default_timer() - t0),
+                "Computing statistics of all subgraphs...", file=sys.stderr)
+            nodes_of_interest = gin
+        #Physlr.filter_edges(gin, self.args.n)
+
         if self.args.threads == 1:
             stats = dict(self.subgraph_stats(gin, u) for u in progress(gin))
         else:
             Physlr.graph = gin
             with multiprocessing.Pool(self.args.threads) as pool:
                 stats = dict(pool.map(
-                    self.subgraph_stats_process, progress(gin), chunksize=100))
+                    self.subgraph_stats_process, progress(nodes_of_interest), chunksize=100))
             Physlr.graph = None
         print(int(timeit.default_timer() - t0), "Extracted subgraphs' statistics.", file=sys.stderr)
         self.write_subgraphs_stats(stats, sys.stdout)
@@ -1750,10 +2000,15 @@ class Physlr:
         for tid, path in enumerate(progress(backbones)):
             for pos, u in enumerate(path):
                 if Physlr.args.mx_type == "unsplit":
-                    if u not in bxtomxs:
+                    iter_c = 0
+                    while u not in bxtomxs:
                         u = u.rsplit("_", 1)[0]
+                        if iter_c > 20:
+                            break
+                        iter_c += 1
                     if u not in bxtomxs:
-                        u = u.rsplit("_", 1)[0]
+                        print("Could not find barcode in dictionary:", u, file=sys.stderr)
+                        sys.exit()
                 elif Physlr.args.mx_type == "split":
                     pass
                 for mx in bxtomxs[u]:
@@ -2686,6 +2941,12 @@ class Physlr:
             "--gap-size", action="store", dest="gap_size", type=int, default=100,
             help="gap size used in scaffolding [100].")
         argparser.add_argument(
+            "--cost", action="store", dest="cost", type=float, default=0.5,
+            help="threshold for `cos` molecule separation [0.5].")
+        argparser.add_argument(
+            "--sqcost", action="store", dest="sqcost", type=float, default=0.75,
+            help="threshold for `sqcos` molecule separation [0.75].")
+        argparser.add_argument(
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
         argparser.add_argument(
@@ -2707,6 +2968,9 @@ class Physlr:
         argparser.add_argument(
             "--map-pos", action="store", dest="map_pos", type=int, default=1,
             help="Number of positions to use during the orientation process [1].")
+        argparser.add_argument(
+            "--round", action="store", dest="round", type=int, default=1,
+            help="which round of mol-sep to start from.")
         return argparser.parse_args()
 
     def __init__(self):
