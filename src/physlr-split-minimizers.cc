@@ -213,6 +213,7 @@ findMoleculesPerBarcode(bxToMolIdx_t& bxToMolIdx, const graph_t& g)
 			exit(1);
 		}
 	}
+	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
 void
@@ -288,6 +289,7 @@ splitMinimizers(
 			std::cerr << ssErr.str();
 		}
 	}
+	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
 void
