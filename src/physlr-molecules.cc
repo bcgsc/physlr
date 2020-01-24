@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
 #include <utility>
 #include <functional>
 
@@ -14,7 +15,7 @@
 #include <stdexcept>
 #include <algorithm>
 
-#include <boost/config.hpp>
+//#include <boost/config.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -74,6 +75,7 @@ struct edgeComponent_t
 
 using namespace std;
 
+// this definition assumes there is no redundant edge in the undirected graph
 using graph_t = boost::subgraph<boost::adjacency_list<
     boost::vecS,
     boost::vecS,
@@ -102,7 +104,7 @@ printVersion()
 {
 	const char VERSION_MESSAGE[] =
 	    PROGRAM " (" PACKAGE_NAME ") " GIT_REVISION "\n"
-	            "Written by Johnathan Wong.\n"
+	            "Written by Johnathan Wong and Amirhossein Afshinfard.\n"
 	            "\n"
 	            "Copyright 2019 Canada's Michael Smith Genome Science Centre\n";
 	std::cerr << VERSION_MESSAGE << std::endl;
@@ -408,7 +410,7 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
         // CHANGE &:
         //adj_mat[index_a][index_b] = boost::get(weight, *edge_iter);
         //adj_mat[index_b][index_a] = boost::get(weight, *edge_iter);
-        adj_mat[index_a][index_b] = subgraph[*edge_iter].weight;
+        adj_mat[index_a][index_b] = (int)subgraph[*edge_iter].weight;
         adj_mat[index_b][index_a] = adj_mat[index_a][index_b];
     }
     return adj_mat; // Cannot return two, add one as input that's being altered
@@ -716,12 +718,15 @@ std::unordered_map<V,K> inverse_map(std::unordered_map<K,V> &map)
 void
 community_detection_cosine_similarity(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
-    bool squaring = true, double threshold=0.7)
+    bool squaring = true, double threshold=0)
 {
     // Detect communities using cosine similarity of vertices
 
     // 1- Calculate the cosine similarity:
-    vertexToIndex_t vertexToIndex(num_vertices(subgraph));
+//    vertexToIndex_t vertexToIndex(num_vertices(subgraph));
+    vertexToIndex_t vertexToIndex;
+    vertexToIndex.reserve(boost::num_vertices(subgraph));
+
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
     indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
 
@@ -757,19 +762,20 @@ community_detection_cosine_similarity(
     //      Alternative implementation: convert to adjacency list and use boost to find cc
 
     // / use .reserve to set the capacity of the below 2d vector instead of initialization
-    int max_communities = 30;
+    int max_communities = 1000;
     vector<vector<uint_fast32_t>> communities(max_communities,vector<uint_fast32_t>(adj_mat.size(),-1));
 
     size_t community_id = 0;
-    stack<int> toCheck;
+    stack<size_t> toCheck;
     //unordered_map<int, int>;
     vector<int> zeros(adj_mat.size(),0);
-    vector<int> isDetected(zeros);
+    vector<int> isDetected(adj_mat.size(),0);
     //vector<int> isVisited(zeros);
-    bool isSingleton = true;
-
-    for (int i = 0 ; i < adj_mat.size(); i++)
+    bool isSingleton = false;
+    cout<<"NEW TRACE: "<<adj_mat.size()<<"\n";
+    for (size_t i = 0 ; i < adj_mat.size(); i++)
     {
+        cout<<"i : "<<i<<endl;
         // DFS traversal
         //isVisited = zeros;
         if (isDetected[i])
@@ -777,23 +783,38 @@ community_detection_cosine_similarity(
         toCheck.push(i);
         isDetected[i] = 1;
         isSingleton = true;
-
-        int ii;
+        cout<<"entered"<<endl;
+        size_t ii;
 
         while(!toCheck.empty()){
 
             ii = toCheck.top();
             toCheck.pop();
             // /communities[community_id].push_back(ii);
-            vertex_t vertex = indexToVertex.find(ii)->second;
-            vertexToComponent.insert (std::pair<vertex_t, size_t>(vertex, community_id));
 
-            for (int j = 0 ; j < adj_mat.size(); j++)
+            auto vt = indexToVertex.find(ii);
+            cout<<"ii : "<<ii<<":"<<vt->second<<" | ";
+            //vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
+            if (vt != indexToVertex.end())
+                vertexToComponent[vt->second] = community_id;
+                //componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
+            else
+                cout<<"BIG BUG";
+//            if (vt != indexToVertex.end())
+//                vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
+//            else
+//            {
+//                cout<<"\nCould not find this one in the dict:"<<ii<<endl;
+//                continue;
+//            }
+
+            for (size_t j = 0 ; j < adj_mat.size(); j++)
             {
                 if (isDetected[j])
                     continue; // this node is included in a community already.
                 //if (isVisited[j])
                 //    continue; // this node is included in this community already.
+//                if (adj_mat[1][2] > 0){
                 if (adj_mat[ii][j] > 0){
                     toCheck.push(j);
                     isDetected[j]=1;
@@ -801,13 +822,21 @@ community_detection_cosine_similarity(
                 }
             }
         }
-        if (isSingleton)
-        {
-            // /communities[community_id].pop_back();
-            vertexToComponent.erase ( indexToVertex.find(i) );
-        }
-        else
-            community_id++;
+        cout<<"\n";
+//        if (isSingleton)
+//        {
+//            // /communities[community_id].pop_back();
+//            auto vt = indexToVertex.find(i);
+//            if (vt != indexToVertex.end())
+//                vertexToComponent.erase ( indexToVertex.find(i) );
+//            else{
+//                cout<<"\nCould not find this one in the dict:"<<i<<endl;
+//                continue;
+//            }
+//        }
+//        else
+//            ++community_id;
+        ++community_id;
     }
 }
 
@@ -852,6 +881,7 @@ Community_detection_k3_cliques(
 int
 main(int argc, char* argv[])
 {
+
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
@@ -899,9 +929,78 @@ main(int argc, char* argv[])
 	}
 
 	graph_t g;
-	readTSV(g, infiles, verbose);
+	//readTSV(g, infiles, verbose);
 
+	barcodeToIndex_t barcodeToIndex;
+	indexToBarcode_t indexToBarcode;
+	std::string node1;
 
+	node1 = "A";
+	auto u = boost::add_vertex(g);
+    g[u].name = node1;
+	g[u].weight = 10;
+	g[u].indexOriginal = u;
+	barcodeToIndex[node1] = u;
+	indexToBarcode[u] = node1;
+
+    node1 = "B";
+	u = boost::add_vertex(g);
+    g[u].name = node1;
+	g[u].weight = 10;
+	g[u].indexOriginal = u;
+	barcodeToIndex[node1] = u;
+	indexToBarcode[u] = node1;
+
+    node1 = "C";
+	u = boost::add_vertex(g);
+    g[u].name = node1;
+	g[u].weight = 10;
+	g[u].indexOriginal = u;
+	barcodeToIndex[node1] = u;
+	indexToBarcode[u] = node1;
+
+    node1 = "D";
+	u = boost::add_vertex(g);
+    g[u].name = node1;
+	g[u].weight = 10;
+	g[u].indexOriginal = u;
+	barcodeToIndex[node1] = u;
+	indexToBarcode[u] = node1;
+
+    node1 = "E";
+	u = boost::add_vertex(g);
+    g[u].name = node1;
+	g[u].weight = 10;
+	g[u].indexOriginal = u;
+	barcodeToIndex[node1] = u;
+	indexToBarcode[u] = node1;
+
+//	auto aa = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["B"], g).first;
+//	g[aa].weight = 10;
+
+	auto aa = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["A"], g).first;
+	g[aa].weight = 10;
+
+	auto ba = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["C"], g).first;
+	g[ba].weight = 10;
+
+	auto ca = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["D"], g).first;
+	g[ca].weight = 10;
+
+	auto da = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["C"], g).first;
+	g[da].weight = 10;
+
+	auto ea = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["D"], g).first;
+	g[ea].weight = 10;
+
+	auto fa = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
+	g[fa].weight = 10;
+
+	//E = boost::add_edge(barcodeToIndex["D"], barcodeToIndex["E"], g).first;
+	//g[E].weight = 4;
+
+    printGraph(g);
+    cout<<"\n\n\n";
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
 
@@ -915,6 +1014,9 @@ main(int argc, char* argv[])
 		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
 
 		vertexToComponent_t vertexToComponent;
+		if (vertexToComponent.size() > 0 ){
+		    cout<<"\n BIG BUG\n ";
+		}
 		//biconnectedComponents(subgraph, vertexToComponent);
         community_detection_cosine_similarity(subgraph, vertexToComponent);
 
