@@ -1595,7 +1595,7 @@ class Physlr:
             elif algorithm == "k3bin":
                 for component in communities:
                     communities_temp.extend(
-                        [merged for merged in Physlr.merge_communities(
+                        Physlr.merge_communities(
                             g, [cluster
                                 for bin_set in
                                 Physlr.partition_subgraph_into_bins_randomly(
@@ -1604,7 +1604,6 @@ class Physlr:
                                 Physlr.detect_communities_k_clique(g, bin_set, k=3)
                                 ]
                         )
-                        ]
                     )
             elif algorithm == "k4":
                 for component in communities:
@@ -1622,7 +1621,7 @@ class Physlr:
             elif algorithm == "sqcosbin":
                 for component in communities:
                     communities_temp.extend(
-                        [merged for merged in Physlr.merge_communities(
+                        Physlr.merge_communities(
                             g, [cluster
                                 for bin_set in
                                 Physlr.partition_subgraph_into_bins_randomly(
@@ -1632,7 +1631,6 @@ class Physlr:
                                     g, bin_set, squaring=True, threshold=Physlr.args.sqcost)
                                 ]
                         )
-                         ]
                     )
             elif algorithm == "louvain":
                 for component in communities:
