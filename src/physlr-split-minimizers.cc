@@ -264,9 +264,7 @@ splitMinimizers(
 #if _OPENMP
 #pragma omp critical
 #endif
-		{
-			std::cout << ssOut.str();
-		}
+		std::cout << ssOut.str();
 	}
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
