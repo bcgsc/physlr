@@ -1739,11 +1739,7 @@ class Physlr:
     def set_settings(round):
         if round == 1:
             print("Settings for round 1:", file=sys.stderr)
-            Physlr.args.skip_small = True
-            # Physlr.args.strategy = ["distributed+sqcosbin"]
-            Physlr.args.junction_depth = 0
-            Physlr.args.cost = 0.5
-            Physlr.args.sqcost = 0.80
+
             print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
                   "\n |  junction_depth ", Physlr.args.junction_depth,
                   " |  prune_junctions ", Physlr.args.prune_junctions,
@@ -1751,26 +1747,22 @@ class Physlr:
                   file=sys.stderr)
         if round == 2:
             print("Settings for round 2:", file=sys.stderr)
-            # Physlr.args.strategy = ["sqcosbin"]
-            Physlr.args.threads = int(Physlr.args.threads / 8)
-            if Physlr.args.threads < 1:
-                Physlr.args.threads = 1
+
+            Physlr.args.threads = math.ceil(Physlr.args.threads / 8)
             Physlr.args.skip_small = False
             Physlr.args.junction_depth = 10
             Physlr.args.cost = 0.55
             Physlr.args.sqcost = 0.85
-            print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
+            print(" # threads: ", Physlr.args.threads, "| sqcos(bin) t:", Physlr.args.sqcost,
                   "\n |  junction_depth ", Physlr.args.junction_depth,
                   " |  prune_junctions ", Physlr.args.prune_junctions,
                   "\n | Skip small:", Physlr.args.skip_small,
                   file=sys.stderr)
         if round == 3:
             print("Settings for round 3:", file=sys.stderr)
-            # Physlr.args.strategy = ["sqcosbin"]
-            Physlr.args.junction_depth = 10
             Physlr.args.cost = 0.6
             Physlr.args.sqcost = 0.88
-            print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
+            print(" # threads: ", Physlr.args.threads, "| sqcos(bin) t:", Physlr.args.sqcost,
                   "\n |  junction_depth ", Physlr.args.junction_depth,
                   " |  prune_junctions ", Physlr.args.prune_junctions,
                   "\n | Skip small:", Physlr.args.skip_small,
