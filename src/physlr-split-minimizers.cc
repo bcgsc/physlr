@@ -266,7 +266,7 @@ splitMinimizers(
 				}
 			}
 
-			if (splitMinimizers.size() == 0) {
+			if (splitMinimizers.empty()) {
 				ssErr << "Warning: " << g[mol].name << " has no associated minimizers\n";
 				ssOut << g[mol].name << "\t\n";
 			} else {
