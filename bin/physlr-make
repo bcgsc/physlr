@@ -959,7 +959,7 @@ min_path_size=200
 
 # Split the minimizers to molecules
 %.overlap.m$m.mol.mol2-bcs.split.tsv: %.overlap.m$m.mol.mol2-bcs.tsv %.tsv
-	$(time) $(python) $(bin)/physlr split-minimizers -t$t -V$V $< $*.tsv >$@
+	$(time) $(physlr_path)/src/physlr-split-minimizers -t$t $< $*.tsv >$@
 
 # Split the reads into molecules
 %.split.fq.gz: $(lr).fq.gz %.split.tsv $(lr).k$k-w$w.physlr.tsv
