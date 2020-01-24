@@ -62,29 +62,13 @@ struct edgeProperties
 	int weight = 0;
 };
 
-struct edgeComponent_t
-{
-	enum
-	{
-		num = INT_MAX
-	};
-	using kind = boost::edge_property_tag;
-} edgeComponent;
-
-using graph_t = boost::subgraph<boost::adjacency_list<
-    boost::vecS,
-    boost::vecS,
-    boost::undirectedS,
-    vertexProperties,
-    boost::property<
-        boost::edge_index_t,
-        int,
-        boost::property<edgeComponent_t, std::size_t, edgeProperties>>>>;
+using graph_t = boost::
+    adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, vertexProperties, edgeProperties>;
 using vertex_t = graph_t::vertex_descriptor;
 using edge_t = graph_t::edge_descriptor;
-using barcodeToIndex_t = std::unordered_map<std::string, vertex_t>;
-using indexToBarcode_t = std::unordered_map<vertex_t, std::string>;
-using bxToMolIdx_t = std::unordered_map<std::string, std::vector<vertex_t>>;
+using barcodeToIndex_t = tsl::robin_map<std::string, vertex_t>;
+using indexToBarcode_t = tsl::robin_map<vertex_t, std::string>;
+using bxToMolIdx_t = tsl::robin_map<std::string, std::vector<vertex_t>>;
 using BarcodeID = uint32_t;
 using Minimizer = uint64_t;
 
@@ -230,9 +214,7 @@ splitMinimizers(
 #endif
 	for (size_t i = 0; i < numBx; ++i) {
 		auto it = bxToMolIdx.begin();
-		for (size_t j = 0; j < i; ++j) {
-			++it;
-		}
+		std::advance(it, i);
 
 		std::stringstream ssOut;
 		std::stringstream ssErr;
@@ -244,7 +226,7 @@ splitMinimizers(
 		for (auto& mol : (*it).second) {
 			// Get Union of minimizers of neighbours
 			auto neighbours = boost::adjacent_vertices(mol, g);
-			std::unordered_set<Minimizer> neighbourMxsUnion;
+			tsl::robin_set<Minimizer> neighbourMxsUnion;
 			for (auto neighbourItr = neighbours.first; neighbourItr != neighbours.second;
 			     ++neighbourItr) {
 				std::string pattern = R"((\S+)_\d+_\d+$)";
