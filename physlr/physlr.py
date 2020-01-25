@@ -1810,7 +1810,7 @@ class Physlr:
         Physlr.filter_edges(gin, self.args.m)
         round = self.args.round
         for alg_list in alg_list_2d:
-            if Physlr.arg.set_settings:
+            if Physlr.args.set_settings:
                 Physlr.set_settings(round)
             Physlr.args.prune_bridges = 10
             Physlr.args.prune_branches = 10
