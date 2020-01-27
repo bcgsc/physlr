@@ -1566,7 +1566,7 @@ class Physlr:
         if len(communities) == 1 and (node_set == 0 or strategy != 1):
             return communities
         if strategy == 1:  # Merge by Initializing Louvain with the communities
-            return Physlr.detect_communities_louvain(g, communities, node_set)
+            return Physlr.detect_communities_louvain(g, node_set, communities)
         # Ad-hoc Merge (default - strategy = 0)
         merge_network = nx.Graph()
         for i in range(len(communities)):
