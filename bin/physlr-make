@@ -962,7 +962,11 @@ min_path_size=200
 	$(python) $(bin)/physlr flesh-backbone --min-component-size=$(min_component_size) -V$V $< $*.backbone.path >$@
 
 # Split the minimizers to molecules
-%.overlap.m$m.mol.mol2-bcs.split.tsv: %.overlap.m$m.mol.mol2-bcs.tsv %.tsv
+%.overlap.m$m.ext.mol.split.tsv: %.overlap.m$m.ext.mol.tsv %.tsv
+	$(time) $(physlr_path)/src/physlr-split-minimizers -t$t $< $*.tsv >$@
+
+# Split the minimizers to molecules
+%.overlap.m$m.iterative.mol.split.tsv: %.overlap.m$m.iterative.mol.tsv %.tsv
 	$(time) $(physlr_path)/src/physlr-split-minimizers -t$t $< $*.tsv >$@
 
 # Split the reads into molecules
