@@ -1918,17 +1918,11 @@ class Physlr:
             print(
                 int(timeit.default_timer() - t0),
                 "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
-            # gin.clear()
-            # gin = gout.copy()
             gin = gout
             round_num = round_num + 1
             gout = 0
-            # Physlr.graph.clear()
-            # gout.clear()
-            # old_molecules = molecules
-            # gc.collect()
 
-        if 2 > 1:
+        if self.args.report_remaining_junctions:
             # No effect on results
             # only set to True to report the number of junctions after last round of mol-sep
             Physlr.identify_junctions_graph(gin)
@@ -2944,6 +2938,11 @@ class Physlr:
         argparser.add_argument(
             "--junction-depth", action="store", dest="junction_depth", type=int, default=0,
             help="depth for expanding the junctions by collecting all neighbors of this depth [0].")
+        argparser.add_argument(
+            "--report-remaining-junctions", action="store", dest="report_remaining_junctions",
+            type=bool, default=False,
+            help="set to 1 to report the remaining number of junctions"
+                 "after the last round of molecule separation [0].")
         argparser.add_argument(
             "--gap-size", action="store", dest="gap_size", type=int, default=100,
             help="gap size used in scaffolding [100].")
