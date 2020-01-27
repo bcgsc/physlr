@@ -1144,7 +1144,6 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 %.ext.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=distributed+sqcosbin $< >$@
 
-
 # Separate barcodes into molecules using Louvain community detection.
 %.louvain.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$t --separation-strategy=bc+louvain $< >$@
