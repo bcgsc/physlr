@@ -66,6 +66,10 @@ prune_junctions = 200
 # 3: verbose messages
 V=1
 
+# backbone-graph variables
+prune_branches=10
+prune_bridges=10
+
 SHELL=bash -e -o pipefail
 ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
 # Set pipefail to ensure that all commands of a pipe succeed.
@@ -91,6 +95,8 @@ gzip=gzip
 zcat=gunzip -c
 endif
 
+arcs=false
+
 .DELETE_ON_ERROR:
 .SECONDARY:
 
@@ -100,10 +106,10 @@ all: f1chr4 f1chr2R f1 fishchr25 fish
 $(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.path
 	ln -sf $< $@
 
-$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.map.$(ref).n10.paf.gz
+$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.map-split.$(ref).n10.paf.gz
 	ln -sf $< $@
 
-$(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.map.$(draft).n10.sort.best.bed.path.fa
+$(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
 	ln -sf $< $@
 
 scaffolds:
@@ -142,7 +148,7 @@ else
 physical-map: \
 	$(lr).physlr.physical-map.path \
 	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf \
-	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv 
+	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv
 endif
 endif
 # Help
@@ -183,6 +189,7 @@ help:
 	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is most conservative and requires more time."
 	@echo "					distributed is a modified version of bc+k3 that is faster but less conservative."
 	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
+	@echo "	arcs		Use ARCS to augment scaffolds (only compatible with ARCS v1.1.1) [false]."
 	@echo ""
 	@echo "Example: To generate a physical map using physlr with stLFR reads myreads.fq.gz, run:"
 	@echo "	./physlr-make physical-map lr=myreads protocol=stlfr"
@@ -194,6 +201,11 @@ help:
 
 version:
 	@echo "physlr v0.2.0"
+
+################################################################################
+# Test m=1 prune_branches=1 prune_bridges=1
+test: \
+	test.k1-w1.n1-2.c2-x.physlr.overlap.m1.mol.backbone.path
 
 ################################################################################
 # Fly
@@ -921,12 +933,12 @@ endif
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=$(prune_branches) --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
 
 # Determine the corrected backbone graph from the overlap TSV.
 min_path_size=200
 %.s3.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=10 --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) -V$V $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=10 --prune-bridges=$(prune_bridges) --prune-junctions=$(prune_junctions) -s3 --min-path-size=$(min_path_size) -V$V $< >$@
 
 # Determine the backbone path of the backbone graph.
 %.path: %.tsv
@@ -945,8 +957,8 @@ min_path_size=200
 	$(python) $(bin)/physlr flesh-backbone --min-component-size=$(min_component_size) -V$V $< $*.backbone.path >$@
 
 # Split the minimizers to molecules
-%.overlap.m$m.mol.split.tsv: %.overlap.m$m.mol.tsv %.tsv
-	$(python) $(bin)/physlr split-minimizers -t$t -V$V $< $*.tsv >$@
+%.overlap.m$m.mol.mol2-bcs.split.tsv: %.overlap.m$m.mol.mol2-bcs.tsv %.tsv
+	$(time) $(python) $(bin)/physlr split-minimizers -t$t -V$V $< $*.tsv >$@
 
 # Split the reads into molecules
 %.split.fq.gz: $(lr).fq.gz %.split.tsv $(lr).k$k-w$w.physlr.tsv
@@ -964,6 +976,10 @@ min_path_size=200
 # Map the draft assembly to the backbone graph and output BED.
 %.backbone.map.$(draft).n10.bed: %.backbone.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+
+# Map the draft assembly to the backbone graph and output BED.
+%.backbone.map-split.$(draft).n10.bed: %.backbone.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.split.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map --mx-type split --map-pos 10 -V$V -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED.
 %.overlap.m$m.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
@@ -1042,7 +1058,7 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 
 # Estimate the number of molecules per barcode.
 %.physlr.overlap.n20.countmol.tsv: %.physlr.overlap.tsv
-	$(python) $(bin)/physlr count-molecules -n20 -V$V $< >$@
+	$(python) $(bin)/physlr count-molecules -m20 -V$V $< >$@
 
 # Remove barcodes with more than one molecule.
 %.physlr.overlap.molecules.M2.tsv: %.physlr.overlap.molecules.tsv
@@ -1145,8 +1161,23 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 	gunzip -c $< | awk '{ keep = $$6 " " $$8 " " $$9 != x; x = $$6 " " $$8 " " $$9 } keep' | $(gzip) >$@
 
 # Produce sequences in FASTA format from paths.
+ifeq ($(arcs), "false")
 %.$(draft).n10.sort.best.bed.path.fa: $(draft).fa %.$(draft).n10.sort.best.bed.path
 	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=0 -V$V $^ >$@
+else
+%.$(draft).n10.sort.best.bed.path.fa: %.$(draft).n10.sort.best.bed.path $(draft).fa  $(draft)_pair.tsv
+	$(time) $(python) $(bin)/physlr path-to-fasta --min-length=0 \
+	--arcs-pair $(draft)_pair.tsv \
+	--dist-est $(draft)_dist.tsv \
+	-V$V $(draft).fa $< >$@
+endif
+
+$(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
+	$(time) arcs --arks -v -f $< \
+	-c 5 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t $t -d 0 --gap 100 \
+	-b $(draft) $(lr).fq.gz \
+	-P -D --dist_tsv=$(draft)_dist.tsv
+
 
 # Convert a PAF file to a BED file.
 %.paf.bed: %.paf.gz

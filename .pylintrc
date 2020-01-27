@@ -1,5 +1,5 @@
 [basic]
-good-names = bx, c, e, g, g0, i, j, k, mx, n, q0, q1, q2, q3, q4, t0, u, un, us, vn, v, vs, w, ws, x, xs, y, z
+good-names = bx, c, e, g, g0, i, j, k, mx, n, q0, q1, q2, q3, q4, t0, u, un, us, vn, v, vs, w, ws, x, xs, y, z, hh, ht, th, tt, m
 max-branches=25
 max-locals=50
 max-module-lines=5000

@@ -5,6 +5,7 @@ Physlr: Physical Mapping of Linked Reads
 
 import argparse
 import itertools
+import math
 import multiprocessing
 import os
 import random
@@ -18,7 +19,6 @@ from collections import Counter
 import networkx as nx
 import tqdm
 
-from physlr.minimerize import minimerize
 from physlr.read_fasta import read_fasta
 
 # The time at which execution started.
@@ -151,19 +151,19 @@ class Physlr:
     @staticmethod
     def write_tsv(g, fout):
         "Write a graph in TSV format."
-        if "m" in next(iter(g.nodes.values())):
-            print("U\tn\tm", file=fout)
+        if "mol" in next(iter(g.nodes.values())):
+            print("U\tm\tmol", file=fout)
         else:
-            print("U\tn", file=fout)
+            print("U\tm", file=fout)
         for u, prop in g.nodes.items():
-            if "m" in prop:
-                print(u, prop["n"], prop["m"], sep="\t", file=fout)
+            if "mol" in prop:
+                print(u, prop["m"], prop["mol"], sep="\t", file=fout)
             else:
-                print(u, prop["n"], sep="\t", file=fout)
-        print("\nU\tV\tn", file=fout)
+                print(u, prop["m"], sep="\t", file=fout)
+        print("\nU\tV\tm", file=fout)
         for e, prop in g.edges.items():
             u, v = sorted(e)
-            print(u, v, prop["n"], sep="\t", file=fout)
+            print(u, v, prop["m"], sep="\t", file=fout)
 
     @staticmethod
     def write_graph(g, fout, graph_format):
@@ -185,7 +185,7 @@ class Physlr:
             line = fin.readline()
             if Physlr.args.verbose >= 2:
                 progressbar.update(len(line))
-            if line not in ["U\tn\n", "U\tn\tm\n"]:
+            if line not in ["U\tm\n", "U\tm\tmol\n"]:
                 print("Unexpected header:", line, file=sys.stderr)
                 sys.exit(1)
             reading_vertices = True
@@ -196,7 +196,7 @@ class Physlr:
                     line = fin.readline()
                     if Physlr.args.verbose >= 2:
                         progressbar.update(len(line))
-                    if line == "U\tV\tn\n":
+                    if line == "U\tV\tm\n":
                         reading_vertices = False
                     else:
                         print("Unexpected header:", line, file=sys.stderr)
@@ -211,15 +211,15 @@ class Physlr:
                 xs = line.split()
                 if reading_vertices:
                     if len(xs) == 2:
-                        g.add_node(xs[0], n=int(xs[1]))
+                        g.add_node(xs[0], m=int(xs[1]))
                     elif len(xs) == 3:
-                        g.add_node(xs[0], n=int(xs[1]), m=int(xs[2]))
+                        g.add_node(xs[0], m=int(xs[1]), mol=int(xs[2]))
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
                         sys.exit(1)
                 else:
                     if len(xs) == 3:
-                        g.add_edge(xs[0], xs[1], n=int(xs[2]))
+                        g.add_edge(xs[0], xs[1], m=int(xs[2]))
                     else:
                         print("Unexpected row:", line, file=sys.stderr)
                         sys.exit(1)
@@ -232,9 +232,9 @@ class Physlr:
         "Read a GraphViz file."
         graph = nx.drawing.nx_agraph.read_dot(filename)
         for vprop in graph.nodes().values():
-            vprop["n"] = int(vprop["n"])
+            vprop["m"] = int(vprop["m"])
         for _, _, eprop in graph.edges.data():
-            eprop["n"] = int(eprop["n"])
+            eprop["m"] = int(eprop["m"])
         return nx.algorithms.operators.binary.compose(g, graph)
 
     # Complement nucleotides.
@@ -304,14 +304,14 @@ class Physlr:
         return len(singletons)
 
     @staticmethod
-    def filter_edges(g, arg_n):
-        "Remove edges with n < arg_n."
-        if arg_n == 0:
+    def filter_edges(g, arg_m):
+        "Remove edges with m < arg_m."
+        if arg_m == 0:
             return
-        edges = [(u, v) for u, v, n in progress(g.edges(data="n")) if n < arg_n]
+        edges = [(u, v) for u, v, m in progress(g.edges(data="m")) if m < arg_m]
         print(
             int(timeit.default_timer() - t0),
-            "Removed", len(edges), "edges with fewer than", arg_n,
+            "Removed", len(edges), "edges with fewer than", arg_m,
             "common minimizers of", g.number_of_edges(),
             f"({round(100 * len(edges) / g.number_of_edges(), 2)}%)", file=sys.stderr)
         g.remove_edges_from(edges)
@@ -322,9 +322,9 @@ class Physlr:
             "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
 
     @staticmethod
-    def keep_best_edges(g, bestn):
+    def keep_best_edges(g, bestm):
         """Keep the best edges of each vertex."""
-        if bestn is None:
+        if bestm is None:
             return
         num_edges = g.number_of_edges()
         num_removed = 0
@@ -332,8 +332,8 @@ class Physlr:
         us.sort(key=g.degree, reverse=True)
         for u in progress(us):
             vs = list(g[u])
-            vs.sort(key=lambda v, u=u: g[u][v]["n"], reverse=True)
-            for v in vs[bestn:]:
+            vs.sort(key=lambda v, u=u: g[u][v]["m"], reverse=True)
+            for v in vs[bestm:]:
                 g.remove_edge(u, v)
                 num_removed += 1
         print(
@@ -440,6 +440,17 @@ class Physlr:
         return nametomxs
 
     @staticmethod
+    def count_molecules_per_bx_in_graph(g):
+        "Iterate over graph, track # molecules per barcode"
+        mol_counts = Counter()
+        bx_match = re.compile(r'(\S*?)(_(\d)+_(\d)+)$')
+        for bx_mol in g.nodes():
+            bx_mol_match = re.search(bx_match, bx_mol)
+            if bx_mol_match:
+                mol_counts[bx_mol_match.group(1)] += 1
+        return mol_counts
+
+    @staticmethod
     def count_molecules_per_bx(moltomxs):
         "Iterate over minimizers dictionary, track # molecules per barcode"
         mol_counts = Counter()
@@ -532,7 +543,7 @@ class Physlr:
         junctions = Physlr.detect_junctions_of_tree(gin, prune_junctions)
         g = gin.copy()
         for junction in junctions:
-            edges = list(g.edges(junction, data="n"))
+            edges = list(g.edges(junction, data="m"))
             edges.sort(key=lambda e: e[2], reverse=True)
             if Physlr.args.verbose >= 3:
                 print("Junction:", junction, "Edges:", *edges, file=sys.stderr)
@@ -559,8 +570,8 @@ class Physlr:
             removed_count += rem_count
             for subcomponent in nx.connected_components(gcomponents):
                 gsubcomponent = g.subgraph(subcomponent)
-                u, v, _ = Physlr.diameter_of_tree(gsubcomponent, weight="n")
-                path = nx.shortest_path(gsubcomponent, u, v, weight="n")
+                u, v, _ = Physlr.diameter_of_tree(gsubcomponent, weight="m")
+                path = nx.shortest_path(gsubcomponent, u, v, weight="m")
                 paths.append(path)
         paths.sort(key=len, reverse=True)
         print(
@@ -687,7 +698,7 @@ class Physlr:
     def determine_pruned_mst(g):
         """Return the pruned maximum spanning tree of the graph."""
         # having tested kruskal and prim, we found the former is faster in our case
-        gmst = nx.maximum_spanning_tree(g, algorithm="kruskal", weight="n")
+        gmst = nx.maximum_spanning_tree(g, algorithm="kruskal", weight="m")
         print(
             int(timeit.default_timer() - t0),
             "Determined the maximum spanning tree.", file=sys.stderr, flush=True)
@@ -891,9 +902,9 @@ class Physlr:
     def physlr_filter(self):
         "Filter a graph."
         g = self.read_graph(self.args.FILES)
-        Physlr.filter_edges(g, self.args.n)
+        Physlr.filter_edges(g, self.args.m)
         if self.args.M is not None:
-            vertices = [u for u, prop in g.nodes().items() if prop["m"] >= self.args.M]
+            vertices = [u for u, prop in g.nodes().items() if prop["mol"] >= self.args.M]
             g.remove_nodes_from(vertices)
             print(
                 int(timeit.default_timer() - t0),
@@ -905,8 +916,8 @@ class Physlr:
     def physlr_best_edges(self):
         """Keep the best edges of each vertex."""
         g = self.read_graph(self.args.FILES)
-        Physlr.filter_edges(g, self.args.n)
-        Physlr.keep_best_edges(g, self.args.bestn)
+        Physlr.filter_edges(g, self.args.m)
+        Physlr.keep_best_edges(g, self.args.bestm)
         self.write_graph(g, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
@@ -928,24 +939,24 @@ class Physlr:
             for neighbour in neighbours:
                 if neighbour in backbone:
                     continue
-                (max_n, max_index) = (float("-inf"), float("-inf"))
+                (max_m, max_index) = (float("-inf"), float("-inf"))
                 for i, k in enumerate(backbone):
                     if not g.has_edge(neighbour, k):
                         continue
-                    n = g[neighbour][k]["n"]
-                    if n > max_n:
-                        (max_n, max_index) = (n, i)
+                    m = g[neighbour][k]["m"]
+                    if m > max_m:
+                        (max_m, max_index) = (m, i)
                 # Put R or L of node with most shared minimizers?
                 if max_index == 0:
                     insert_index = max_index
                 elif max_index == len(backbone) - 1:
                     insert_index = max_index - 1
                 else:
-                    r_n = g[neighbour][backbone[max_index+1]]['n'] \
+                    r_m = g[neighbour][backbone[max_index+1]]["m"] \
                         if g.has_edge(neighbour, backbone[max_index+1]) else 0
-                    l_n = g[neighbour][backbone[max_index-1]]['n'] \
+                    l_m = g[neighbour][backbone[max_index-1]]["m"] \
                         if g.has_edge(neighbour, backbone[max_index-1]) else 0
-                    if l_n > r_n:
+                    if l_m > r_m:
                         insert_index = max_index - 1
                     else:
                         insert_index = max_index
@@ -1003,22 +1014,6 @@ class Physlr:
               file=sys.stderr)
         print(int(timeit.default_timer() - t0), "Wrote graphs", file=sys.stderr)
 
-    def physlr_indexfa(self):
-        "Index a set of sequences. The output file format is TSV."
-        for filename in self.args.FILES:
-            with open(filename) as fin:
-                for name, seq, _, _ in read_fasta(fin):
-                    print(name, "\t", sep="", end="")
-                    print(*minimerize(self.args.k, self.args.w, seq.upper()))
-
-    def physlr_indexlr(self):
-        "Index a set of linked reads. The output file format is TSV."
-        for filename in self.args.FILES:
-            with open(filename) as fin:
-                for _, seq, bx, _ in read_fasta(fin):
-                    print(bx, "\t", sep="", end="")
-                    print(*minimerize(self.args.k, self.args.w, seq.upper()))
-
     def physlr_count_minimizers(self):
         "Count the frequency of each minimizer."
         bxtomxs = self.read_minimizers(self.args.FILES)
@@ -1037,8 +1032,8 @@ class Physlr:
 
     def physlr_intersect(self):
         "Print the minimizers in the intersection of each pair of barcodes."
-        if self.args.n == 0:
-            self.args.n = 1
+        if self.args.m == 0:
+            self.args.m = 1
         bxtomxs = self.read_minimizers(self.args.FILES)
         mxtobxs = self.construct_minimizers_to_barcodes(bxtomxs)
         if self.args.v:
@@ -1047,7 +1042,7 @@ class Physlr:
             pairs = {(u, v) for bxs in mxtobxs.values() for u, v in itertools.combinations(bxs, 2)}
         for u, v in pairs:
             common = bxtomxs[u] & bxtomxs[v]
-            if len(common) >= self.args.n:
+            if len(common) >= self.args.m:
                 print(u, v, "", sep="\t", end="")
                 print(*common)
 
@@ -1073,172 +1068,6 @@ class Physlr:
             del mx_counts[mx]
         return mx_counts
 
-    def physlr_filter_barcodes(self):
-        """
-        Filter barcodes by number of minimizers.
-        Read a TSV file of barcodes to minimizers.
-        Remove minimizers that occur only once.
-        Remove barkers with too few or too many minimizers.
-        Write a TSV file of barcodes to minimizers.
-        """
-        bxtomxs = self.read_minimizers(self.args.FILES)
-        Physlr.remove_singleton_minimizers(bxtomxs)
-
-        q0, q1, q2, q3, q4 = quantile(
-            [0, 0.25, 0.5, 0.75, 1], (len(mxs) for mxs in bxtomxs.values()))
-        low_whisker = int(q1 - self.args.coef * (q3 - q1))
-        high_whisker = int(q3 + self.args.coef * (q3 - q1))
-        if self.args.n == 0:
-            self.args.n = max(q0, low_whisker)
-        if self.args.N is None:
-            self.args.N = min(1 + q4, high_whisker)
-
-        print(
-            int(timeit.default_timer() - t0), " Counted minimizers per barcode\n",
-            f"    Markers per barcode: Q0={q0} Q1={q1} Q2={q2} Q3={q3} Q4={q4} Q3-Q1={q3 - q1}\n",
-            f"    Q3-{self.args.coef}*(Q3-Q1)={low_whisker} n={self.args.n}\n",
-            f"    Q3+{self.args.coef}*(Q3-Q1)={high_whisker} N={self.args.N}",
-            sep="", file=sys.stderr)
-
-        too_few, too_many = 0, 0
-        for bx, mxs in progress(bxtomxs.items()):
-            if len(mxs) < self.args.n:
-                too_few += 1
-            elif len(mxs) >= self.args.N:
-                too_many += 1
-            else:
-                print(bx, "\t", sep="", end="")
-                print(*mxs)
-        print(
-            "    Discarded", too_few, "barcodes with too few minimizers of", len(bxtomxs),
-            f"({round(100 * too_few / len(bxtomxs), 2)}%)", file=sys.stderr)
-        print(
-            "    Discarded", too_many, "barcodes with too many minimizers of", len(bxtomxs),
-            f"({round(100 * too_many / len(bxtomxs), 2)}%)", file=sys.stderr)
-        print(
-            int(timeit.default_timer() - t0),
-            "Wrote", len(bxtomxs) - too_few - too_many, "barcodes", file=sys.stderr)
-
-    def physlr_filter_minimizers(self):
-        "Filter minimizers by depth of coverage. Remove repetitive minimizers."
-        bxtomxs = self.read_minimizers(self.args.FILES)
-        mx_counts = Physlr.remove_singleton_minimizers(bxtomxs)
-
-        # Identify frequent minimizers.
-        q1, q2, q3 = quantile([0.25, 0.5, 0.75], mx_counts.values())
-        low_whisker = int(q1 - self.args.coef * (q3 - q1))
-        high_whisker = int(q3 + self.args.coef * (q3 - q1))
-        if self.args.C is None:
-            self.args.C = high_whisker
-        print(
-            int(timeit.default_timer() - t0),
-            " Minimizer frequency: Q1=", q1, " Q2=", q2, " Q3=", q3,
-            " Q1-", self.args.coef, "*(Q3-Q1)=", low_whisker,
-            " Q3+", self.args.coef, "*(Q3-Q1)=", high_whisker,
-            " C=", self.args.C, sep="", file=sys.stderr)
-
-        # Remove frequent minimizers.
-        frequent_mxs = {mx for mx, count in mx_counts.items() if count >= self.args.C}
-        num_empty_barcodes = 0
-        for bx, mxs in progress(bxtomxs.items()):
-            mxs -= frequent_mxs
-            if not mxs:
-                num_empty_barcodes += 1
-                continue
-            print(bx, "\t", sep="", end="")
-            print(*mxs)
-
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", len(frequent_mxs), "most frequent minimizers of", len(mx_counts),
-            f"({round(100 * len(frequent_mxs) / len(mx_counts), 2)}%)", file=sys.stderr)
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", num_empty_barcodes, "empty barcodes of", len(bxtomxs),
-            f"({round(100 * num_empty_barcodes / len(bxtomxs), 2)}%)", file=sys.stderr)
-        print(
-            int(timeit.default_timer() - t0),
-            "Wrote", len(bxtomxs) - num_empty_barcodes, "barcodes", file=sys.stderr)
-
-    def remove_repetitive_minimizers(self, bxtomxs, mxtobxs):
-        "Remove repetitive minimizers."
-
-        # Remove minimizers that occur only once.
-        num_mxs = len(mxtobxs)
-        singletons = {mx for mx, bxs in progress(mxtobxs.items()) if len(bxs) < 2}
-        for mx in singletons:
-            del mxtobxs[mx]
-        for mxs in progress(bxtomxs.values()):
-            mxs -= singletons
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", len(singletons), "minimizers that occur only once of", num_mxs,
-            f"({round(100 * len(singletons) / num_mxs, 2)}%)", file=sys.stderr)
-
-        # Identify repetitive minimizers.
-        q1, q2, q3 = quantile([0.25, 0.5, 0.75], (len(bxs) for bxs in mxtobxs.values()))
-        whisker = int(q3 + self.args.coef * (q3 - q1))
-        if self.args.C is None:
-            self.args.C = whisker
-        print(
-            int(timeit.default_timer() - t0),
-            " Minimizer frequency: Q1=", q1, " Q2=", q2, " Q3=", q3,
-            " Q3+", self.args.coef, "*(Q3-Q1)=", whisker,
-            " C=", self.args.C, sep="", file=sys.stderr)
-
-        # Remove frequent (likely repetitive) minimizers.
-        num_mxs = len(mxtobxs)
-        repetitive = {mx for mx, bxs in mxtobxs.items() if len(bxs) >= self.args.C}
-        for mx in repetitive:
-            del mxtobxs[mx]
-        for xs in progress(bxtomxs.values()):
-            xs -= repetitive
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", len(repetitive), "most frequent minimizers of", num_mxs,
-            f"({round(100 * len(repetitive) / num_mxs, 2)}%)", file=sys.stderr)
-
-    def physlr_overlap(self):
-        "Read a sketch of linked reads and find overlapping barcodes."
-
-        bxtomxs = self.read_minimizers(self.args.FILES)
-        mxtobxs = self.construct_minimizers_to_barcodes(bxtomxs)
-
-        # Add the vertices.
-        g = nx.Graph()
-        for u, mxs in sorted(progress(bxtomxs.items())):
-            if len(mxs) >= self.args.n:
-                g.add_node(u, n=len(mxs))
-        print(
-            int(timeit.default_timer() - t0),
-            "Added", g.number_of_nodes(), "barcodes to the graph", file=sys.stderr)
-
-        # Add the overlap edges.
-        edges = Counter(
-            (u, v) for bxs in progress(mxtobxs.values()) for u, v in itertools.combinations(bxs, 2))
-        print(int(timeit.default_timer() - t0), "Loaded", len(edges), "edges", file=sys.stderr)
-
-        for (u, v), n in progress(edges.items()):
-            if n >= self.args.n:
-                g.add_edge(u, v, n=n)
-        num_removed = len(edges) - g.number_of_edges()
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", num_removed, "edges with fewer than", self.args.n,
-            "common minimizers of", len(edges),
-            f"({round(100 * num_removed / len(edges), 2)}%)", file=sys.stderr)
-
-        num_singletons = Physlr.remove_singletons(g)
-        print(
-            int(timeit.default_timer() - t0),
-            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
-
-        Physlr.print_graph_stats(g)
-
-        # Write the graph.
-        self.write_tsv(g, sys.stdout)
-        print(int(timeit.default_timer() - t0), "Wrote the graph", file=sys.stderr)
-
     def physlr_filter_overlap(self):
         "Read a Physlr overlap graph and filter edges."
 
@@ -1248,9 +1077,11 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Processing Nodes", file=sys.stderr)
         with open(self.args.FILES[0], "r") as overlap_input:
             for line in overlap_input:
-                if at_edges:
+                if at_edges and self.args.minimizer_overlap != 0:
                     columns = line.rstrip().split("\t")
                     edge_weight.append(int(columns[2]))
+                elif at_edges and self.args.minimizer_overlap == 0:
+                    print(line.rstrip())
                 else:
                     print(line.rstrip())
                     if not line.strip():
@@ -1258,10 +1089,12 @@ class Physlr:
                         print(int(timeit.default_timer() - t0), "Processing Edges", file=sys.stderr)
                         at_edges = True
 
+        if self.args.minimizer_overlap == 0:
+            return
+
         print(int(timeit.default_timer() - t0), "Sorting Edges", file=sys.stderr)
         edge_weight.sort()
-        lower_threshold = edge_weight[int(len(edge_weight) * self.args.minimizer_overlap / 100) - 1]
-
+        lower_threshold = edge_weight[int(len(edge_weight) * self.args.minimizer_overlap / 100)] - 1
         # Faster to read tsv again than to store edges as a dictionary
         print(int(timeit.default_timer() - t0), "Filtering Edges", file=sys.stderr)
         print(int(timeit.default_timer() - t0), "Lower Threshold", lower_threshold, file=sys.stderr)
@@ -1280,17 +1113,17 @@ class Physlr:
     def physlr_degree(self):
         "Print the degree of each vertex."
         g = self.read_graph(self.args.FILES)
-        Physlr.filter_edges(g, self.args.n)
-        print("U\tn\tDegree")
+        Physlr.filter_edges(g, self.args.m)
+        print("U\tm\tDegree")
         for u, prop in progress(g.nodes.items()):
-            print(u, prop["n"], g.degree(u), sep="\t")
+            print(u, prop["m"], g.degree(u), sep="\t")
         print(int(timeit.default_timer() - t0), "Wrote degrees of vertices", file=sys.stderr)
 
     def physlr_common_neighbours(self):
         """Count the number of common neighbours for each edge."""
         g = self.read_graph(self.args.FILES)
         for u, v in g.edges:
-            g[u][v]["n"] = len(list(nx.common_neighbors(g, u, v)))
+            g[u][v]["m"] = len(list(nx.common_neighbors(g, u, v)))
         print(int(timeit.default_timer() - t0), "Counted common neighbours.",
               file=sys.stderr, flush=True)
         self.write_graph(g, sys.stdout, self.args.graph_format)
@@ -1405,7 +1238,7 @@ class Physlr:
     def physlr_tiling_graph(self):
         "Determine the minimum-tiling-path-induced subgraph."
         g = self.read_graph(self.args.FILES)
-        Physlr.filter_edges(g, self.args.n)
+        Physlr.filter_edges(g, self.args.m)
         backbones = self.determine_backbones(g)
         tiling = {u for path in backbones for u in nx.shortest_path(g, path[0], path[-1])}
         subgraph = g.subgraph(tiling)
@@ -1414,7 +1247,7 @@ class Physlr:
     def physlr_count_molecules(self):
         "Estimate the nubmer of molecules per barcode."
         g = self.read_graph(self.args.FILES)
-        Physlr.filter_edges(g, self.args.n)
+        Physlr.filter_edges(g, self.args.m)
         print(
             int(timeit.default_timer() - t0),
             "Separating barcodes into molecules", file=sys.stderr)
@@ -1422,29 +1255,45 @@ class Physlr:
         for u, prop in progress(g.nodes.items()):
             subgraph = g.subgraph(g.neighbors(u))
             # Ignore K3 (triangle) components.
-            prop["m"] = sum(
+            prop["mol"] = sum(
                 1 for component in nx.biconnected_components(subgraph)
                 if len(component) >= 4)
         self.write_graph(g, sys.stdout, self.args.graph_format)
 
     @staticmethod
-    def split_minimizers_bx(bx, g, bxtomxs):
+    def split_minimizers_bx(bx, g, bxtomxs, bxtocount):
         "Partition the minimizers of the given barcode"
-        bx_match = re.compile(r'^(\S+)_\d+$')
+        bx_match = re.compile(r'^(\S+)_\d+_\d+$')
+        count = bxtocount[bx]
         mxs = bxtomxs[bx]
         mol = 0
+        mol2 = 0
         mol_list = []
-        while g.has_node(bx + "_" + str(mol)):
-            bxmol = bx + "_" + str(mol)
-            neighbour_mxs_list = [bxtomxs[re.search(bx_match, v).group(1)] \
-                                  for v in g.neighbors(bxmol) \
-                                  if re.search(bx_match, v).group(1) in bxtomxs]
-            if not neighbour_mxs_list:
-                neighbour_mxs_list = [set()]
-            neighbour_mxs_set = set.union(*neighbour_mxs_list)
-            molec_mxs = set.intersection(mxs, neighbour_mxs_set)
-            mol_list.append((bxmol, molec_mxs))
+        while g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
+            while g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
+                bxmol = bx + "_" + str(mol)+ "_" + str(mol2)
+                neighbour_mxs_list = [bxtomxs[re.search(bx_match, v).group(1)] \
+                                      for v in g.neighbors(bxmol) \
+                                      if re.search(bx_match, v).group(1) in bxtomxs]
+                if not neighbour_mxs_list:
+                    neighbour_mxs_list = [set()]
+                neighbour_mxs_set = set.union(*neighbour_mxs_list)
+                molec_mxs = set.intersection(mxs, neighbour_mxs_set)
+                mol_list.append((bxmol, molec_mxs))
+                count -= 1
+                mol2 += 1
+                if not g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
+                    for i in range(1, count):
+                        if g.has_node(bx + "_" + str(mol)+ "_" + str(mol2+i)):
+                            mol2 += i
+                            break
+            mol2 = 0
             mol += 1
+            if not g.has_node(bx + "_" + str(mol)+ "_" + str(mol2)):
+                for i in range(1, count):
+                    if g.has_node(bx + "_" + str(mol+i)+ "_" + str(mol2)):
+                        mol += i
+                        break
         return mol_list
 
     @staticmethod
@@ -1453,7 +1302,7 @@ class Physlr:
         Partition the minimizers of this barcode.
         The Graph and bx->min dictionary are passed as class variables.
         """
-        return Physlr.split_minimizers_bx(bx, Physlr.graph, Physlr.bxtomxs)
+        return Physlr.split_minimizers_bx(bx, Physlr.graph, Physlr.bxtomxs, Physlr.bxtocount)
 
     def physlr_split_minimizers(self):
         "Given the molecule overlap graph, split the minimizers into molecules"
@@ -1462,19 +1311,23 @@ class Physlr:
             sys.exit(msg)
         g = self.read_graph([self.args.FILES[0]])
         bxtomxs = self.read_minimizers([self.args.FILES[1]])
+        bxtocount = self.count_molecules_per_bx_in_graph(g)
 
         if self.args.threads == 1:
-            moltomxs = [self.split_minimizers_bx(bx, g, bxtomxs) for bx in progress(bxtomxs)]
+            moltomxs = [self.split_minimizers_bx(bx, g, bxtomxs, bxtocount)
+                        for bx in progress(bxtomxs)]
             moltomxs = dict(x for l in moltomxs for x in l)
 
         else:
             Physlr.graph = g
             Physlr.bxtomxs = bxtomxs
+            Physlr.bxtocount = bxtocount
             with multiprocessing.Pool(self.args.threads) as pool:
                 moltomxs = dict(x for l in pool.map(self.split_minimizers_bx_process,
                                                     progress(bxtomxs), chunksize=100) for x in l)
             Physlr.graph = None
             Physlr.bxtomxs = None
+            Physlr.bxtocount = None
 
         empty_ct = 0
         for mol in moltomxs:
@@ -1798,7 +1651,7 @@ class Physlr:
                 self.args.strategy.replace("+", " + "),
                 file=sys.stderr)
 
-        Physlr.filter_edges(gin, self.args.n)
+        Physlr.filter_edges(gin, self.args.m)
 
         # Partition the neighbouring vertices of each barcode into molecules.
         if self.args.threads == 1:
@@ -1817,10 +1670,10 @@ class Physlr:
         # Add vertices.
         gout = nx.Graph()
         for u, vs in sorted(molecules.items()):
-            n = gin.nodes[u]["n"]
+            m = gin.nodes[u]["m"]
             nmolecules = 1 + max(vs.values()) if vs else 0
             for i in range(nmolecules):
-                gout.add_node(f"{u}_{i}", n=n)
+                gout.add_node(f"{u}_{i}", m=m)
 
         print(
             int(timeit.default_timer() - t0),
@@ -1836,7 +1689,7 @@ class Physlr:
                 continue
             u_molecule = molecules[u][v]
             v_molecule = molecules[v][u]
-            gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
+            gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", m=prop["m"])
         print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
 
         num_singletons = Physlr.remove_singletons(gout)
@@ -1875,7 +1728,7 @@ class Physlr:
     def physlr_subgraphs_stats(self):
         "Retrieve subgraphs' stats."
         gin = self.read_graph(self.args.FILES)
-        Physlr.filter_edges(gin, self.args.n)
+        Physlr.filter_edges(gin, self.args.m)
         print(
             int(timeit.default_timer() - t0),
             "Computing statistics of the subgraphs...", file=sys.stderr)
@@ -1896,10 +1749,13 @@ class Physlr:
         mxtopos = {}
         for tid, path in enumerate(progress(backbones)):
             for pos, u in enumerate(path):
-                if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
-                if u not in bxtomxs:
-                    u = u.rsplit("_", 1)[0]
+                if Physlr.args.mx_type == "unsplit":
+                    if u not in bxtomxs:
+                        u = u.rsplit("_", 1)[0]
+                    if u not in bxtomxs:
+                        u = u.rsplit("_", 1)[0]
+                elif Physlr.args.mx_type == "split":
+                    pass
                 for mx in bxtomxs[u]:
                     mxtopos.setdefault(mx, set()).add((tid, pos))
         print(
@@ -2019,6 +1875,15 @@ class Physlr:
         Map sequences to a physical map.
         Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
         """
+        if self.args.map_pos < 0:
+            print("--map-pos cannot be negative", file=sys.stderr)
+            print("See physlr --help for more information", file=sys.stderr)
+            sys.exit(1)
+
+        if self.args.mx_type not in ["unsplit", "split"]:
+            print("Invalid --mx-type argument", file=sys.stderr)
+            print("See physlr --help for more information", file=sys.stderr)
+            sys.exit(1)
 
         query_mxs, mxtopos, _backbones = self.map_indexing()
 
@@ -2040,10 +1905,24 @@ class Physlr:
             for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
                     mapped = True
-                    orientation = Physlr.determine_orientation(
-                        tidpos_to_qpos.get((tid, tpos - 1), None),
-                        tidpos_to_qpos.get((tid, tpos + 0), None),
-                        tidpos_to_qpos.get((tid, tpos + 1), None))
+                    if self.args.map_pos == 1:
+                        orientation = Physlr.determine_orientation(
+                            tidpos_to_qpos.get((tid, tpos - 1), None),
+                            tidpos_to_qpos.get((tid, tpos + 0), None),
+                            tidpos_to_qpos.get((tid, tpos + 1), None))
+                    else:
+                        before = [tidpos_to_qpos.get((tid, tpos - i), None)
+                                  for i in range(self.args.map_pos)
+                                  if tidpos_to_qpos.get((tid, tpos - i), None) is not None]
+                        before_median = statistics.median_low(before)
+                        after = [tidpos_to_qpos.get((tid, tpos + i), None)
+                                 for i in range(self.args.map_pos)
+                                 if tidpos_to_qpos.get((tid, tpos + i), None) is not None]
+                        after_median = statistics.median_high(after)
+                        orientation = Physlr.determine_orientation(
+                            before_median,
+                            tidpos_to_qpos.get((tid, tpos + 0), None),
+                            after_median)
                     print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
             if mapped:
                 num_mapped += 1
@@ -2057,6 +1936,11 @@ class Physlr:
         Map sequences to a physical map and output a PAF file.
         Usage: physlr map TGRAPH.path TMARKERS.tsv QMARKERS.tsv... >MAP.paf
         """
+
+        if self.args.mx_type not in ["unsplit", "split"]:
+            print("Invalid --mx-type argument", file=sys.stderr)
+            print("See physlr --help for more information", file=sys.stderr)
+            sys.exit(1)
 
         query_mxs, mxtopos, backbones = self.map_indexing()
 
@@ -2184,7 +2068,7 @@ class Physlr:
                 print(f'"{u}"')
         for e, prop in g.edges.items():
             u, v = sorted(e)
-            print(f'"{u}" -- "{v}" [label={prop["n"]}]')
+            print(f'"{u}" -- "{v}" [label={prop["m"]}]')
         print("}")
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
@@ -2236,23 +2120,225 @@ class Physlr:
             f"Wrote {num_contigs} contigs in {num_scaffolds} scaffolds.",
             file=sys.stderr)
 
-    def physlr_path_to_fasta(self):
+    @staticmethod
+    def read_arcs_pair(filename):
         """
-        Produce sequences in FASTA format from paths.
-        Usage: physlr path-to-fasta FASTA PATH... >FASTA
+        Read ARCS pair tsv. Return a dictionary of pairs to orientation evidence.
         """
-        if len(self.args.FILES) < 2:
-            sys.exit("physlr path-to-fasta: error: at least two file arguments are required")
-        fasta_filenames = self.args.FILES[0:1]
-        path_filenames = self.args.FILES[1:]
-        seqs = Physlr.read_fastas(fasta_filenames)
-        paths = Physlr.read_paths(path_filenames)
+        pairs = {}
+        with open(filename, "r") as arks_pair_file:
+            for line in arks_pair_file:
+                columns = line.rstrip().split("\t")
+                (u, v, hh, ht, th, tt) = [int(column) if idx > 1 else column
+                                          for idx, column in enumerate(columns)]
+                pairs[(u, v)] = [hh, ht, th, tt]
+                pairs[(v, u)] = [hh, th, ht, tt]
+        print("Read ARCS pairs", file=sys.stderr)
+        return pairs
+
+    @staticmethod
+    def read_dist_est(filename, dist_type):
+        """
+        Read ARCS distance estimates. Return a dictionary of pairs to distance estimates.
+        """
+        dist = {}
+        dist_type_to_idx = {"min":2, "avg":3, "max":4}
+        if dist_type not in dist_type_to_idx:
+            print("invalid --dist-type parameters. Acceptable values are: min, avg, max",
+                  file=sys.stderr)
+            sys.exit(1)
+        idx = dist_type_to_idx[dist_type]
+        with open(filename, "r") as dist_est_file:
+            for line in dist_est_file:
+                columns = line.rstrip().split("\t")
+                if columns[0] == "contig1":
+                    continue
+
+                contig1 = columns[0].rstrip("-+")
+                contig2 = columns[1].rstrip("-+")
+                dist[(contig1, contig2)] = int(columns[idx])
+                dist[(contig2, contig1)] = int(columns[idx])
+
+        print("Read Distance Estimates", file=sys.stderr)
+        return dist
+
+    @staticmethod
+    def normal_estimation(x, probability, n):
+        """
+        Normal approximation to the binomial distribution
+        """
+        mean_val = n * probability
+        std_dev = float(math.sqrt(mean_val * (1 - probability)))
+        return 0.5 * (1 + math.erf((x - mean_val) / (std_dev * math.sqrt(2))))
+
+    @staticmethod
+    def check_link_significance(ori_list):
+        """
+        Check if barcode link is strong enough
+        """
+        max_idx = ori_list.index(max(ori_list))
+        sorted_ori_list = sorted(ori_list)
+        max_val = sorted_ori_list[-1]
+        sum_with_second_max = sorted_ori_list[-1] + sorted_ori_list[-2]
+        normal_cdf = Physlr.normal_estimation(max_val, 0.5, sum_with_second_max)
+        if 1 - normal_cdf < 0.05:
+            return max_idx
+        return -1
+
+    @staticmethod
+    def orient_part_of_path_backward(pairs, path, unoriented, curr_pos, name):
+        """
+        Orient small part of path based on ARCS scaffold pairing information going backwards
+        """
+        idxtojoin = {0:"-+", 1:"--", 2:"++", 3:"+-"}
+        while unoriented:
+            prev_pos = curr_pos - 1
+            pair = (path[prev_pos][:-1], name[:-1])
+            oriented = False
+            if pair in pairs:
+                join_ori = pairs[pair]
+                max_idx = Physlr.check_link_significance(join_ori)
+                if max_idx != -1:
+                    curr_ori = idxtojoin[max_idx][1]
+                    if curr_ori == name[-1]:
+                        prev_ori = idxtojoin[max_idx][0]
+                        path[prev_pos] = path[prev_pos][0:-1] + prev_ori
+                        unoriented.pop()
+                        curr_pos = prev_pos
+                        name = path[prev_pos]
+                        oriented = True
+            if not oriented:
+                unoriented.clear()
+
+        return path, unoriented
+
+    @staticmethod
+    def orient_part_of_path_forward(pairs, path, unoriented, curr_pos, name):
+        """
+        Orient small part of path based on ARCS scaffold pairing information going forwards
+        """
+        idxtojoin = {0:"-+", 1:"--", 2:"++", 3:"+-"}
+        prev_pos = curr_pos - 1
+        prev_name = path[prev_pos]
+        pair = (prev_name[:-1], name[:-1])
+        oriented = False
+        if pair in pairs:
+            join_orientation = pairs[pair]
+            max_idx = Physlr.check_link_significance(join_orientation)
+            if max_idx != -1:
+                if idxtojoin[max_idx][0] == prev_name[-1]:
+                    path[curr_pos] = name[:-1] + idxtojoin[max_idx][1]
+                    oriented = True
+        if not oriented:
+            unoriented.append(curr_pos)
+
+        return path, unoriented
+
+    @staticmethod
+    def check_and_correct_pair(pairs, path, curr_pos, name):
+        """
+        Orient small part of path based on ARCS scaffold pairing information going forwards
+        """
+        idxtojoin = {0:"-+", 1:"--", 2:"++", 3:"+-"}
+        prev_pos = curr_pos - 1
+        prev_name = path[prev_pos]
+        pair = (prev_name[:-1], name[:-1])
+        if pair in pairs:
+            join_orientation = pairs[pair]
+            max_idx = Physlr.check_link_significance(join_orientation)
+            if max_idx != -1:
+                if idxtojoin[max_idx][0] == prev_name[-1]:
+                    if idxtojoin[max_idx][1] != name[-1]:
+                        path[curr_pos] = name[:-1] + idxtojoin[max_idx][1]
+        return path
+
+    @staticmethod
+    def orient_path(path, pairs):
+        """
+        Orient path based on ARCS scaffold pairing information
+        """
+        unoriented = []
+
+        if len(path) == 1 and path[0][-1] == ".":
+            path[0] = path[0][0:-1] + "+"
+            return path
+
+        for curr_pos, name in enumerate(path):
+            if curr_pos == 0:
+                if name[-1] == ".":
+                    unoriented.append(curr_pos)
+            else:
+                if name[-1] != ".":
+                    if unoriented:
+                        temp_curr_pos = curr_pos
+                        temp_name = name
+
+                        path, unoriented = Physlr.orient_part_of_path_backward(pairs, path,
+                                                                               unoriented, curr_pos,
+                                                                               name)
+
+                        curr_pos = temp_curr_pos
+                        name = temp_name
+                    else:
+                        path = Physlr.check_and_correct_pair(pairs, path, curr_pos, name)
+                else:
+                    if not unoriented:
+                        path, unoriented = Physlr.orient_part_of_path_forward(pairs, path,
+                                                                              unoriented, curr_pos,
+                                                                              name)
+
+                    else:
+                        unoriented.append(curr_pos)
+        return path
+
+    @staticmethod
+    def orient_paths(paths, pairs):
+        """
+        Orient paths based on ARCS scaffold pairing information
+        """
+        if not pairs:
+            return paths
+        for idx, path in enumerate(paths):
+            paths[idx] = Physlr.orient_path(path, pairs)
+        return paths
+
+    @staticmethod
+    def generate_seq_with_dist(seqs, dist, path, gaps):
+        """
+        Return scaffold using distance estimates based on ARCS distance estimation
+        """
+        seq = ""
+        for idx, name in enumerate(path):
+            if seq == "":
+                if name[-1] == ".":
+                    seq += ("N" * len(seqs[name[0:-1]]))
+                else:
+                    seq += Physlr.get_oriented_sequence(seqs, name)
+            else:
+                pair = (name[:-1], path[idx - 1][:-1])
+                if name[-1] != "." and path[idx - 1][-1] != ".":
+                    if pair in dist:
+                        seq += (dist[pair] * "N")
+                    else:
+                        seq += gaps
+                    seq += Physlr.get_oriented_sequence(seqs, name)
+                elif name[-1] != "." and path[idx - 1][-1] == ".":
+                    seq += gaps
+                    seq += Physlr.get_oriented_sequence(seqs, name)
+                else:
+                    seq += gaps
+                    seq += ("N" * len(seqs[name[0:-1]]))
+        return seq
+
+    @staticmethod
+    def path_to_fasta_no_arcs(seqs, paths, gaps):
+        """
+        Convert path to fasta when --arcs-pair isn't used
+        """
 
         num_scaffolds = 0
         num_contigs = 0
         num_bases = 0
-
-        gaps = "N" * self.args.gap_size
 
         for path in progress(paths):
             if not path:
@@ -2266,12 +2352,74 @@ class Physlr:
                             if name[-1] != "." else ("N" * len(seqs[name[0:-1]]))
                             for name in path)
 
-            if len(seq) < self.args.min_length:
+            if len(seq) < Physlr.args.min_length:
                 continue
             num_scaffolds += 1
             print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
             num_contigs += len(path)
             num_bases += len(seq)
+
+        return num_scaffolds, num_contigs, num_bases
+
+    @staticmethod
+    def path_to_fasta_with_arcs(seqs, paths, gaps):
+        """
+        Convert path to fasta when --arcs-pair is used
+        """
+
+        pairs = Physlr.read_arcs_pair(Physlr.args.arcs_pair)
+        dist = Physlr.read_dist_est(Physlr.args.dist_est, Physlr.args.dist_type)
+
+        num_scaffolds = 0
+        num_contigs = 0
+        num_bases = 0
+
+        num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
+        print(num_unoriented, "unoriented pieces before using ARCS pair information",
+              file=sys.stderr)
+
+        paths = Physlr.orient_paths(paths, pairs)
+
+        num_unoriented = sum([1 for path in paths for name in path if name[-1] == "."])
+        print(num_unoriented, "unoriented pieces after using ARCS pair information",
+              file=sys.stderr)
+
+        for path in paths:
+            if not dist:
+                seq = gaps.join(Physlr.get_oriented_sequence(seqs, name)
+                                if name[-1] != "." else ("N" * len(seqs[name[0:-1]]))
+                                for name in path)
+            else:
+                seq = Physlr.generate_seq_with_dist(seqs, dist, path, gaps)
+
+            if len(seq) < Physlr.args.min_length:
+                continue
+            num_scaffolds += 1
+            print(f">{str(num_scaffolds).zfill(7)} LN:i:{len(seq)} xn:i:{len(path)}\n{seq}")
+            num_contigs += len(path)
+            num_bases += len(seq)
+
+        return num_scaffolds, num_contigs, num_bases, paths
+
+    def physlr_path_to_fasta(self):
+        """
+        Produce sequences in FASTA format from paths.
+        Usage: physlr path-to-fasta FASTA PATH... >FASTA
+        """
+        if len(self.args.FILES) < 2:
+            sys.exit("physlr path-to-fasta: error: at least two file arguments are required")
+        fasta_filenames = self.args.FILES[0:1]
+        path_filenames = self.args.FILES[1:]
+        seqs = Physlr.read_fastas(fasta_filenames)
+        paths = Physlr.read_paths(path_filenames)
+
+        gaps = "N" * self.args.gap_size
+
+        if self.args.arcs_pair == "":
+            num_scaffolds, num_contigs, num_bases = Physlr.path_to_fasta_no_arcs(seqs, paths, gaps)
+        else:
+            num_scaffolds, num_contigs, num_bases, paths = \
+                Physlr.path_to_fasta_with_arcs(seqs, paths, gaps)
 
         used_seqs = {name[0:-1] for path in paths for name in path if name[-1] != "."}
 
@@ -2459,14 +2607,14 @@ class Physlr:
             "-M", "--max-molecules", action="store", dest="M", type=int,
             help="remove barcodes with M or more molecules [None]")
         argparser.add_argument(
-            "-n", "--min-n", action="store", dest="n", type=int, default=0,
+            "-n", action="store", dest="n", type=int, default=0,
+            help="remove mappings with score less than n [0]")
+        argparser.add_argument(
+            "-m", "--min-m", action="store", dest="m", type=int, default=0,
             help="remove edges with fewer than n shared minimizers [0]")
         argparser.add_argument(
-            "-N", "--max-n", action="store", dest="N", type=int, default=None,
-            help="remove edges with at least N shared minimizers [None]")
-        argparser.add_argument(
-            "--bestn", action="store", dest="bestn", type=int, default=None,
-            help="Keep the best n edges of each vertex [None]")
+            "--bestm", action="store", dest="bestm", type=int, default=None,
+            help="Keep the best m edges of each vertex [None]")
         argparser.add_argument(
             "--min-length", action="store", dest="min_length", type=int, default=0,
             help="remove sequences with length less than N bp [0]")
@@ -2540,6 +2688,25 @@ class Physlr:
         argparser.add_argument(
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
+        argparser.add_argument(
+            "--arcs-pair", action="store", dest="arcs_pair", type=str, default="",
+            help="ARCS scaffold pairing file.")
+        argparser.add_argument(
+            "--dist-est", action="store", dest="dist_est", type=str, default="",
+            help="ARCS scaffold pairing distance estimation file.")
+        argparser.add_argument(
+            "--dist-type", action="store", dest="dist_type", type=str, default="avg",
+            choices=["min", "avg", "max"],
+            help="ARCS scaffold pairing distance type."
+                 "Accepted values are: min, avg, or max [avg].")
+        argparser.add_argument(
+            "--mx-type", action="store", dest="mx_type", type=str, default="unsplit",
+            choices=["unsplit", "split"],
+            help="Type of minimizers used to map sequence to backbone graph."
+                 "Accepted values are: unsplit or split [unsplit].")
+        argparser.add_argument(
+            "--map-pos", action="store", dest="map_pos", type=int, default=1,
+            help="Number of positions to use during the orientation process [1].")
         return argparser.parse_args()
 
     def __init__(self):
