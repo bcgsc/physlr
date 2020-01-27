@@ -1918,7 +1918,7 @@ class Physlr:
             print(
                 int(timeit.default_timer() - t0),
                 "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
-            gin = gout.copy()
+            gin = gout
             round_num = round_num + 1
             gout = 0
 
