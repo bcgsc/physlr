@@ -1,9 +1,13 @@
 [basic]
 good-names = bx, c, e, g, g0, i, j, k, mx, n, q0, q1, q2, q3, q4, t0, u, un, us, vn, v, vs, w, ws, x, xs, y, z, hh, ht, th, tt, m
-max-branches=25
+max-branches=35
 max-locals=50
 max-module-lines=5000
 max-public-methods=150
+max-nested-blocks=6
+max-statements=100
+max-branches=32
+
 [MASTER]
 ignore=mkt.py
 [TYPECHECK]
