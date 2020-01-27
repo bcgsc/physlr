@@ -185,7 +185,7 @@ findMoleculesPerBarcode(bxToMolIdx_t& bxToMolIdx, const graph_t& g)
 {
 	auto vertexItRange = boost::vertices(g);
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
-		std::string pattern = R"((\S+)_\d+_\d+$)";
+		std::string pattern = R"((\S+)_\d+$)";
 		std::regex rgx(pattern);
 		std::smatch matches;
 
@@ -228,7 +228,7 @@ splitMinimizers(
 			tsl::robin_set<Minimizer> neighbourMxsUnion;
 			for (auto neighbourItr = neighbours.first; neighbourItr != neighbours.second;
 			     ++neighbourItr) {
-				std::string pattern = R"((\S+)_\d+_\d+$)";
+				std::string pattern = R"((\S+)_\d+$)";
 				std::regex rgx(pattern);
 				std::smatch matches;
 				if (std::regex_search(g[*neighbourItr].name, matches, rgx)) {
