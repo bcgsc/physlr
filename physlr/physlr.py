@@ -1823,7 +1823,6 @@ class Physlr:
                     "Detecting junction-causing barcodes",
                     file=sys.stderr)
                 junctions = Physlr.identify_junctions_graph(gin)
-            # round = round + 1
             if junctions:
                 print(
                     int(timeit.default_timer() - t0),
