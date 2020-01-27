@@ -103,22 +103,13 @@ arcs=false
 .PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map scaffolds
 all: f1chr4 f1chr2R f1 fishchr25 fish
 
-$(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.path
+$(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.ext.mol.backbone.path
 	ln -sf $< $@
 
-$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.map-split.$(ref).n10.paf.gz
+$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.ext.mol.backbone.map-split.$(ref).n10.paf.gz
 	ln -sf $< $@
 
-$(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
-	ln -sf $< $@
-	
-$(lr).physlr.extended-physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.ext.mol.backbone.path
-	ln -sf $< $@
-
-$(lr).physlr.extended-physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.ext.mol.backbone.map-split.$(ref).n10.paf.gz
-	ln -sf $< $@
-
-$(draft).extended.physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.ext.mol.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
+$(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.ext.mol.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
 	ln -sf $< $@
 
 scaffolds:
@@ -143,28 +134,6 @@ scaffolds: \
 endif
 endif
 
-extended-scaffolds:
-
-ifndef draft
-extended-scaffolds: help
-	@echo ""
-	@echo "scaffolds rule requires the draft parameter to be set"
-else ifndef lr
-extended-scaffolds: help
-	@echo ""
-	@echo "scaffolds rule requires the lr parameter to be set"
-else
-ifndef ref
-extended-scaffolds: \
-	extended-physical-map \
-	$(draft).extended.physlr.fa
-else
-extended-scaffolds: \
-	extended-physical-map \
-	$(draft).extended.physlr.quast.tsv
-endif
-endif
-
 physical-map:
 
 ifndef lr
@@ -180,24 +149,6 @@ physical-map: \
 	$(lr).physlr.physical-map.path \
 	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf \
 	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv
-endif
-endif
-
-extended-physical-map:
-
-ifndef lr
-extended-physical-map: help
-	@echo ""
-	@echo "physical-map rule requires the lr parameter to be set"
-else
-ifndef ref
-extended-physical-map: \
-	$(lr).physlr.extended-physical-map.path
-else
-extended-physical-map: \
-	$(lr).physlr.extended-physical-map.path \
-	$(lr).physlr.extended-physical-map.$(ref).n10.paf.gz.pdf \
-	$(lr).physlr.extended-physical-map.$(ref).n10.qpos.chain.metrics.tsv
 endif
 endif
 
@@ -1008,10 +959,6 @@ min_path_size=200
 	$(python) $(bin)/physlr flesh-backbone --min-component-size=$(min_component_size) -V$V $< $*.backbone.path >$@
 
 # Split the minimizers to molecules
-%.overlap.m$m.mol.mol2-bcs.split.tsv: %.overlap.m$m.mol.mol2-bcs.tsv %.tsv
-	$(time) $(physlr_path)/src/physlr-split-minimizers -t$t $< $*.tsv >$@
-	
-# Split the minimizers to molecules
 %.overlap.m$m.ext.mol.split.tsv: %.overlap.m$m.ext.mol.tsv %.tsv
 	$(time) $(physlr_path)/src/physlr-split-minimizers -t$t $< $*.tsv >$@
 
@@ -1087,7 +1034,7 @@ min_path_size=200
 # Map the reference to the backbone graph and output PAF.
 %.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
-	
+
 # Map the reference to the backbone graph with split minimizers and output PAF.
 %.backbone.map-split.$(ref).n10.paf.gz: %.backbone.path %.split.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf --mx-type split -V$V -n10 $^ | $(gzip) >$@
