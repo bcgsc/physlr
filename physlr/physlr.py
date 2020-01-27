@@ -1815,7 +1815,7 @@ class Physlr:
         Physlr.filter_edges(gin, self.args.m)
         round_num = self.args.round
         for alg_list in alg_list_2d:
-            if Physlr.args.set_settings and len(alg_list_2d > 1):
+            if Physlr.args.set_settings and len(alg_list_2d) > 1:
                 Physlr.set_settings(round_num)
             if round_num > 1:
                 print(
