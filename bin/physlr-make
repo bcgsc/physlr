@@ -998,10 +998,9 @@ min_path_size=200
 %.overlap.m$m.k3.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
-
 # Map the draft assembly to the backbone graph and output BED (iterative molecule separation).
 %.overlap.m$m.iterative.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.iterative.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
-  $(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED (K3-cliques and sqcosbin).
 %.overlap.m$m.ext.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.ext.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
