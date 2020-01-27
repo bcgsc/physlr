@@ -1896,7 +1896,7 @@ class Physlr:
                                 continue
                             u_molecule = molecules[u][v]
                             v_molecule = molecules[v][u]
-                            gout.add_edge(f"{u}-{u_molecule}",f"{v}-{v_molecule}",
+                            gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}",
                                           n=gin[u][v]["n"])
                         else:
                             u_molecule = molecules[u][v]
