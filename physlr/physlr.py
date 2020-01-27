@@ -1640,7 +1640,7 @@ class Physlr:
             if algorithm == "bcbin":
                 for component in communities:
                     communities_temp.extend(
-                        [merged for merged in Physlr.merge_communities(
+                        Physlr.merge_communities(
                             g, [cluster
                                 for bin_set in
                                 Physlr.partition_subgraph_into_bins_randomly(
@@ -1649,7 +1649,6 @@ class Physlr:
                                 Physlr.detect_communities_biconnected_components(g, bin_set)
                                 ]
                         )
-                         ]
                     )
             elif algorithm == "cn2":
                 for component in communities:
@@ -1688,7 +1687,7 @@ class Physlr:
             elif algorithm == "cosbin":
                 for component in communities:
                     communities_temp.extend(
-                        [merged for merged in Physlr.merge_communities(
+                        Physlr.merge_communities(
                             g, [cluster
                                 for bin_set in
                                 Physlr.partition_subgraph_into_bins_randomly(
@@ -1698,7 +1697,6 @@ class Physlr:
                                     g, bin_set, squaring=False, threshold=Physlr.args.cost)
                                 ]
                         )
-                        ]
                     )
             elif algorithm == "sqcos":
                 for component in communities:
@@ -1741,8 +1739,11 @@ class Physlr:
         return Physlr.determine_molecules(Physlr.graph, u, Physlr.junctions, Physlr.args.strategy)
 
     @staticmethod
-    def set_settings(round):
-        if round == 1:
+    def set_settings(round_num):
+        """
+        set settings for a pre-defined version of iterative molecule separation.
+        """
+        if round_num == 1:
             print("Settings for round 1:", file=sys.stderr)
 
             print(" # threads: ", Physlr.args.threads, "| sqcosbin t:", Physlr.args.sqcost,
@@ -1750,7 +1751,7 @@ class Physlr:
                   " |  prune_junctions ", Physlr.args.prune_junctions,
                   "\n | Skip small:", Physlr.args.skip_small,
                   file=sys.stderr)
-        if round == 2:
+        if round_num == 2:
             print("Settings for round 2:", file=sys.stderr)
 
             Physlr.args.threads = math.ceil(Physlr.args.threads / 8)
@@ -1762,7 +1763,7 @@ class Physlr:
                   " |  prune_junctions ", Physlr.args.prune_junctions,
                   "\n | Skip small:", Physlr.args.skip_small,
                   file=sys.stderr)
-        if round == 3:
+        if round_num == 3:
             print("Settings for round 3:", file=sys.stderr)
             Physlr.args.cost = 0.6
             Physlr.args.sqcost = 0.88
@@ -1771,7 +1772,7 @@ class Physlr:
                   " |  prune_junctions ", Physlr.args.prune_junctions,
                   "\n | Skip small:", Physlr.args.skip_small,
                   file=sys.stderr)
-        if round > 3:
+        if round_num > 3:
             print(" No changes in the settings compared to previous rounds",
                   file=sys.stderr)
 
@@ -1812,14 +1813,14 @@ class Physlr:
                 file=sys.stderr)
 
         Physlr.filter_edges(gin, self.args.m)
-        round = self.args.round
+        round_num = self.args.round
         for alg_list in alg_list_2d:
             if Physlr.args.set_settings:
-                Physlr.set_settings(round)
+                Physlr.set_settings(round_num)
             # Physlr.args.prune_bridges = 10
             # Physlr.args.prune_branches = 10
             # Physlr.args.prune_junctions = 50
-            if round > 1:
+            if round_num > 1:
                 print(
                     int(timeit.default_timer() - t0),
                     "Detecting junction-causing barcodes",
@@ -1862,7 +1863,7 @@ class Physlr:
                 print(int(timeit.default_timer() - t0), "Identidied no molecules", file=sys.stderr)
 
             # Add vertices.
-            if round > 1:
+            if round_num > 1:
                 gout = gin.copy()
             else:
                 gout = nx.Graph()
@@ -1875,9 +1876,9 @@ class Physlr:
                     cumul_nmolecules += (nmolecules - 1)
                     cumul_junctions += 1
                 for i in range(nmolecules):
-                    if round > 1:
+                    if round_num > 1:
                         gout.add_node(f"{u}-{i}", n=n)
-                    elif round == 1:
+                    elif round_num == 1:
                         gout.add_node(f"{u}_{i}", n=n)
                 # set([cluster for v, cluster in a.items()])
             print(
@@ -1885,11 +1886,10 @@ class Physlr:
                 "Identified", cumul_nmolecules, "new molecules in",
                 gin.number_of_nodes(), "barcodes and Solved",
                 cumul_junctions, "barcode re-uses.",
-                # round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
                 file=sys.stderr)
 
             # Add edges
-            if round > 1:
+            if round_num > 1:
                 for u, vs in sorted(molecules.items()):
                     for v, _ in vs.items():
                         if v in molecules:
@@ -1905,7 +1905,7 @@ class Physlr:
                                           n=gin[u][v]["n"])
                 # remove older nodes
                 gout.remove_nodes_from([u for u, _ in molecules.items()])
-            elif round == 1:
+            elif round_num == 1:
                 for (u, v), prop in gin.edges.items():
                     # Skip singleton and cut vertices, which are excluded from the partition.
                     if v not in molecules[u] or u not in molecules[v]:
@@ -1922,14 +1922,14 @@ class Physlr:
             # gin.clear()
             # gin = gout.copy()
             gin = gout
-            round = round + 1
+            round_num = round_num + 1
             gout = 0
             # Physlr.graph.clear()
             # gout.clear()
             # old_molecules = molecules
             # gc.collect()
 
-        if 2>1:
+        if 2 > 1:
             # No effect on results
             # only set to True to report the number of junctions after last round of mol-sep
             Physlr.identify_junctions_graph(gin)
