@@ -6,7 +6,6 @@ max-module-lines=5000
 max-public-methods=150
 max-nested-blocks=6
 max-statements=100
-max-branches=32
 
 [MASTER]
 ignore=mkt.py
