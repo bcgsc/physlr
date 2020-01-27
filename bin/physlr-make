@@ -15,7 +15,7 @@ t=16
 bloom_filter_size=10000000000 #10GB
 
 # Molecule separation stratergy
-mol_strategy=distributed+sqcosbin++sqcosbin++sqcosbin
+mol_strategy=distributed+sqcosbin
 
 # Path to the Physlr project.
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
