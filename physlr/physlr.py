@@ -1866,16 +1866,16 @@ class Physlr:
             cumul_nmolecules = 0
             cumul_junctions = 0
             for u, vs in sorted(molecules.items()):
-                n = gin.nodes[u]["n"]
+                m = gin.nodes[u]["m"]
                 nmolecules = 1 + max(vs.values()) if vs else 0
                 if nmolecules > 1:
                     cumul_nmolecules += (nmolecules - 1)
                     cumul_junctions += 1
                 for i in range(nmolecules):
                     if round_num > 1:
-                        gout.add_node(f"{u}-{i}", n=n)
+                        gout.add_node(f"{u}-{i}", n=m)
                     elif round_num == 1:
-                        gout.add_node(f"{u}_{i}", n=n)
+                        gout.add_node(f"{u}_{i}", n=m)
             print(
                 int(timeit.default_timer() - t0),
                 "Identified", cumul_nmolecules, "new molecules in",
@@ -1893,11 +1893,11 @@ class Physlr:
                             u_molecule = molecules[u][v]
                             v_molecule = molecules[v][u]
                             gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}",
-                                          n=gin[u][v]["n"])
+                                          n=gin[u][v]["m"])
                         else:
                             u_molecule = molecules[u][v]
                             gout.add_edge(f"{u}-{u_molecule}", f"{v}",
-                                          n=gin[u][v]["n"])
+                                          n=gin[u][v]["m"])
                 # remove older nodes
                 gout.remove_nodes_from([u for u, _ in molecules.items()])
             elif round_num == 1:
@@ -1907,7 +1907,7 @@ class Physlr:
                         continue
                     u_molecule = molecules[u][v]
                     v_molecule = molecules[v][u]
-                    gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["n"])
+                    gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}", n=prop["m"])
 
             print(int(timeit.default_timer() - t0), "Separated molecules", file=sys.stderr)
             num_singletons = Physlr.remove_singletons(gout)
