@@ -2,12 +2,12 @@ CXXFLAGS=-g -O3 -Wall -Werror -Wno-error=unknown-pragmas -std=c++11 -pthread -I.
 LDLIBS=-lz
 PREFIX=$(HOME)/.local
 
-.PHONY: all clean check install lint clang-format clang-tidy fix check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf check-physlr-overlap
+.PHONY: all clean check install lint clang-format clang-tidy fix check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf check-physlr-overlap check-physlr-split-minimizers
 
-all: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-molecules
+all: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-molecules physlr-split-minimizers
 
 clean:
-	rm -f physlr-indexlr physlr-filter-barcodes physlr-filter-bxmx physlr-overlap physlr-makebf physlr-molecules
+	rm -f physlr-indexlr physlr-filter-barcodes physlr-filter-bxmx physlr-overlap physlr-makebf physlr-molecules physlr-split-minimizers
 
 # Check the C++ source code for errors.
 lint: clang-format clang-tidy
@@ -66,6 +66,9 @@ check-physlr-overlap: all
 check-physlr-molecules: all
 	./physlr-molecules -s bc data/tiny.mol.input.tsv | diff -q - data/tiny.mol.tsv.good
 
-install: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-molecules
+check-physlr-split-minimizers: all
+	./physlr-split-minimizers -t4 data/tiny.split-minimizers.mol.mol2-bcs.tsv data/tiny.split-minimizers.physlr.tsv | sort |diff -q - data/tiny.split-minimizers.mol.mol2-bcs.split.tsv.good
+
+install: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-molecules physlr-split-minimizers
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install $^ $(DESTDIR)$(PREFIX)/bin
