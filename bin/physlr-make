@@ -15,7 +15,7 @@ t=16
 bloom_filter_size=10000000000 #10GB
 
 # Molecule separation stratergy
-mol_strategy=distributed
+mol_strategy=distributed+sqcosbin++sqcosbin++sqcosbin
 
 # Path to the Physlr project.
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
@@ -106,13 +106,13 @@ arcs=false
 .PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map scaffolds
 all: f1chr4 f1chr2R f1 fishchr25 fish
 
-$(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.path
+$(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.path
 	ln -sf $< $@
 
-$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.map-split.$(ref).n10.paf.gz
+$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.map-split.$(ref).n10.paf.gz
 	ln -sf $< $@
 
-$(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
+$(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
 	ln -sf $< $@
 
 scaffolds:
@@ -187,12 +187,16 @@ help:
 	@echo "	min_component_size		minimum number of barcodes in a backbone [50]."
 	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode [10]."
 	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode [5000]."
-	@echo "	mol_strategy			molecule separation strategy [distributed]. Available options are bc, bc+k3, distributed, ext."
-	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity."
-	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is more conservative than bc and requires more time."
-	@echo "					distributed is a modified version of bc+k3 that is faster than bc+k3 but may be more (or even less) conservative."
-	@echo "					ext (extensive) mixes distributed with a modified version of sqcos (cosine similarity of squared adjacency matrix) which makes it more conservative."
-	@echo "					iterative does 3 rounds of molecule separation being (1)distributed+sqcosbin, (2)sqcosbin, and (3)sqcosbin (with different thresholds)"
+	@echo "	mol_strategy			molecule separation strategy [distributed+sqcosbin++sqcosbin++sqcosbin]."
+	@echo "					Available options are bc, bc+k3, distributed, or a mixture of them."
+	@echo "					- bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity."
+	@echo "					- k3 (k-3 cliques) is more conservative than bc and requires more time."
+	@echo "					- k3bin is a faster version of k3."
+	@echo "					- cos and sqcos (cosine similarity of (squared) adjacency matrix) is more conservative than bc and requires more time."
+	@echo "					- cosbin and sqcosbin are faster versions of cos and sqcos."
+	@echo "					- distributed is a modified version of bc+k3 that is faster than bc+k3 but may be more (or even less) conservative."
+	@echo "					use + to mix strategies in a round and ++ to add multiple rounds"
+	@echo "					(e.g. distributed+sqcosbin++sqcosbin runs distributed+sqcosbin in a round then sqcosbin on remaining junctions"
 	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
 	@echo "	arcs		Use ARCS to augment scaffolds (only compatible with ARCS v1.1.1) [false]."
 	@echo ""

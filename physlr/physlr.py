@@ -1815,11 +1815,8 @@ class Physlr:
         Physlr.filter_edges(gin, self.args.m)
         round_num = self.args.round
         for alg_list in alg_list_2d:
-            if Physlr.args.set_settings:
+            if Physlr.args.set_settings and len(alg_list_2d > 1):
                 Physlr.set_settings(round_num)
-            # Physlr.args.prune_bridges = 10
-            # Physlr.args.prune_branches = 10
-            # Physlr.args.prune_junctions = 50
             if round_num > 1:
                 print(
                     int(timeit.default_timer() - t0),
@@ -2977,6 +2974,9 @@ class Physlr:
         argparser.add_argument(
             "--round", action="store", dest="round", type=int, default=1,
             help="which round of mol-sep to start from.")
+        argparser.add_argument(
+            "--set-settings", action="store", dest="set_settings", type=int, default=1,
+            help="set to non-zero to use default settings for iterative molecule separation [1].")
         return argparser.parse_args()
 
     def __init__(self):
