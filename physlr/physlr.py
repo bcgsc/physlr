@@ -557,7 +557,8 @@ class Physlr:
         return (g, len(junctions))
 
     @staticmethod
-    def identify_junctions_graph(g, prune_junctions, junction_depth, include_bridges=True):
+    def identify_junctions_graph(g, include_bridges=True):
+        "Identify junctions (may include branches) in the graph"
         gmst = Physlr.determine_pruned_mst(g)
         print(int(timeit.default_timer() - t0), "Searching for junctions...", file=sys.stderr)
         tree_junctions = []
@@ -1823,8 +1824,7 @@ class Physlr:
                     int(timeit.default_timer() - t0),
                     "Detecting junction-causing barcodes",
                     file=sys.stderr)
-                junctions = Physlr.identify_junctions_graph(
-                    gin, self.args.prune_junctions, self.args.junction_depth)
+                junctions = Physlr.identify_junctions_graph(gin)
             # round = round + 1
             if junctions:
                 print(
@@ -1854,7 +1854,8 @@ class Physlr:
                 Physlr.args.strategy = alg_list
                 with multiprocessing.Pool(self.args.threads) as pool:
                     molecules = dict(pool.map(
-                        self.determine_molecules_process, progress(nodes_to_process), chunksize=100))
+                        self.determine_molecules_process,
+                        progress(nodes_to_process), chunksize=100))
                 Physlr.graph = None
             print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
             if not molecules:
@@ -1882,23 +1883,26 @@ class Physlr:
             print(
                 int(timeit.default_timer() - t0),
                 "Identified", cumul_nmolecules, "new molecules in",
-                gin.number_of_nodes(), "barcodes and Solved", cumul_junctions, "barcode re-uses.",
+                gin.number_of_nodes(), "barcodes and Solved",
+                cumul_junctions, "barcode re-uses.",
                 # round(gout.number_of_nodes() / gin.number_of_nodes(), 2), "mean molecules per barcode",
                 file=sys.stderr)
 
             # Add edges
             if round > 1:
                 for u, vs in sorted(molecules.items()):
-                    for v, cluster in vs.items():
+                    for v, _ in vs.items():
                         if v in molecules:
                             if v not in molecules[u] or u not in molecules[v]:
                                 continue
                             u_molecule = molecules[u][v]
                             v_molecule = molecules[v][u]
-                            gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}", n=gin[u][v]["n"])
+                            gout.add_edge(f"{u}-{u_molecule}",f"{v}-{v_molecule}",
+                                          n=gin[u][v]["n"])
                         else:
                             u_molecule = molecules[u][v]
-                            gout.add_edge(f"{u}-{u_molecule}", f"{v}", n=gin[u][v]["n"])
+                            gout.add_edge(f"{u}-{u_molecule}", f"{v}",
+                                          n=gin[u][v]["n"])
                 # remove older nodes
                 gout.remove_nodes_from([u for u, _ in molecules.items()])
             elif round == 1:
@@ -1925,11 +1929,10 @@ class Physlr:
             # old_molecules = molecules
             # gc.collect()
 
-        if False:
+        if 2>1:
             # No effect on results
             # only set to True to report the number of junctions after last round of mol-sep
-            Physlr.identify_junctions_graph(
-                gin, self.args.prune_junctions, self.args.junction_depth)
+            Physlr.identify_junctions_graph(gin)
         gout = gin
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
