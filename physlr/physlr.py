@@ -1880,7 +1880,6 @@ class Physlr:
                         gout.add_node(f"{u}-{i}", n=n)
                     elif round_num == 1:
                         gout.add_node(f"{u}_{i}", n=n)
-                # set([cluster for v, cluster in a.items()])
             print(
                 int(timeit.default_timer() - t0),
                 "Identified", cumul_nmolecules, "new molecules in",
