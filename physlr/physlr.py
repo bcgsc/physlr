@@ -1872,10 +1872,7 @@ class Physlr:
                     cumul_nmolecules += (nmolecules - 1)
                     cumul_junctions += 1
                 for i in range(nmolecules):
-                    if round_num > 1:
-                        gout.add_node(f"{u}-{i}", m=m)
-                    elif round_num == 1:
-                        gout.add_node(f"{u}_{i}", m=m)
+                    gout.add_node(f"{u}_{i}", m=m)
             print(
                 int(timeit.default_timer() - t0),
                 "Identified", cumul_nmolecules, "new molecules in",
@@ -1892,7 +1889,7 @@ class Physlr:
                                 continue
                             u_molecule = molecules[u][v]
                             v_molecule = molecules[v][u]
-                            gout.add_edge(f"{u}-{u_molecule}", f"{v}-{v_molecule}",
+                            gout.add_edge(f"{u}_{u_molecule}", f"{v}_{v_molecule}",
                                           m=gin[u][v]["m"])
                         else:
                             u_molecule = molecules[u][v]
