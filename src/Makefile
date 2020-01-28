@@ -67,7 +67,7 @@ check-physlr-molecules: all
 	./physlr-molecules -s bc data/tiny.mol.input.tsv | diff -q - data/tiny.mol.tsv.good
 
 check-physlr-split-minimizers: all
-	./physlr-split-minimizers -t4 data/tiny.split-minimizers.mol.mol2-bcs.tsv data/tiny.split-minimizers.physlr.tsv | sort |diff -q - data/tiny.split-minimizers.mol.mol2-bcs.split.tsv.good
+	./physlr-split-minimizers -t4 data/tiny.split-minimizers.ext.mol.tsv data/tiny.split-minimizers.physlr.tsv | sort |diff -q - data/tiny.split-minimizers.ext.mol.split.tsv.good
 
 install: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-molecules physlr-split-minimizers
 	install -d $(DESTDIR)$(PREFIX)/bin

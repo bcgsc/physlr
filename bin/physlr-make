@@ -15,7 +15,7 @@ t=16
 bloom_filter_size=10000000000 #10GB
 
 # Molecule separation stratergy
-mol_strategy=distributed
+mol_strategy=distributed+sqcosbin
 
 # Path to the Physlr project.
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
@@ -103,13 +103,13 @@ arcs=false
 .PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map scaffolds
 all: f1chr4 f1chr2R f1 fishchr25 fish
 
-$(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.path
+$(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.path
 	ln -sf $< $@
 
-$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.map-split.$(ref).n10.paf.gz
+$(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.map-split.$(ref).n10.paf.gz
 	ln -sf $< $@
 
-$(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
+$(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
 	ln -sf $< $@
 
 scaffolds:
@@ -151,6 +151,7 @@ physical-map: \
 	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv
 endif
 endif
+
 # Help
 help:
 	@echo "Usage: ./physlr-make [COMMAND] [OPTION=VALUE]..."
@@ -184,11 +185,11 @@ help:
 	@echo "	min_component_size		minimum number of barcodes in a backbone [50]."
 	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode [10]."
 	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode [5000]."
-	@echo "	mol_strategy			molecule separation strategy [distributed]. Available options are bc, bc+k3, distributed, ext."
+	@echo "	mol_strategy			molecule separation strategy [distributed+sqcosbin]. Available options are bc, bc+k3, distributed, distributed+sqcosbin."
 	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity."
 	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is more conservative than bc and requires more time."
 	@echo "					distributed is a modified version of bc+k3 that is faster than bc+k3 but may be more (or even less) conservative."
-	@echo "					ext (extensive) mixes distributed with a modified version of sqcos (cosine similarity of squared adjacency matrix) which makes it more conservative."
+	@echo "					distributed+sqcosbin mixes distributed with a modified version of sqcos (cosine similarity of squared adjacency matrix) which makes it more conservative."
 	@echo "	bloom_filter_size		size of bloom filter [10000000000] (10G)."
 	@echo "	arcs		Use ARCS to augment scaffolds (only compatible with ARCS v1.1.1) [false]."
 	@echo ""
@@ -898,7 +899,7 @@ endif
 
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
-	$(time) $(physlr_path)/src/physlr-overlap -t1 -n10 $< >$@
+	$(time) $(physlr_path)/src/physlr-overlap -t$t -m10 $< >$@
 
 # Determine the degree of each vertex.
 %.deg.tsv: %.tsv
@@ -958,7 +959,7 @@ min_path_size=200
 	$(python) $(bin)/physlr flesh-backbone --min-component-size=$(min_component_size) -V$V $< $*.backbone.path >$@
 
 # Split the minimizers to molecules
-%.overlap.m$m.mol.mol2-bcs.split.tsv: %.overlap.m$m.mol.mol2-bcs.tsv %.tsv
+%.overlap.m$m.mol.split.tsv: %.overlap.m$m.mol.tsv %.tsv
 	$(time) $(physlr_path)/src/physlr-split-minimizers -t$t $< $*.tsv >$@
 
 # Split the reads into molecules
@@ -979,7 +980,7 @@ min_path_size=200
 	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED.
-%.backbone.map-split.$(draft).n10.bed: %.backbone.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.mol2-bcs.split.tsv $(draft).k$k-w$w.physlr.tsv
+%.backbone.map-split.$(draft).n10.bed: %.backbone.path %.split.tsv $(draft).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map --mx-type split --map-pos 10 -V$V -n10 $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED.
@@ -1033,6 +1034,10 @@ min_path_size=200
 # Map the reference to the backbone graph and output PAF.
 %.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
+
+# Map the reference to the backbone graph with split minimizers and output PAF.
+%.backbone.map-split.$(ref).n10.paf.gz: %.backbone.path %.split.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-paf --mx-type split -V$V -n10 $^ | $(gzip) >$@
 
 # Lift over query coordinates of a PAF file from minimzer index to nucleotide coordinate.
 %.qpos.paf.gz: $(name)/$(ref).k$k-w$w.physlr.tsv %.paf.gz
