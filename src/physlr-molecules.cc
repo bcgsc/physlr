@@ -23,6 +23,7 @@
 #include <boost/graph/biconnected_components.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/subgraph.hpp>
+#include <boost/graph/bron_kerbosch_all_cliques.hpp>
 
 #if _OPENMP
 #include <omp.h>
@@ -857,25 +858,39 @@ Community_detection_k3_cliques(
     indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
 
     size_t size_adj_mat = adj_mat.size();
-    adjacencyMatrix_t squared_adj_mat(square_matrix_ijk(adj_mat));
+
+
 
     /// TEST WHICH IS FASTER:
     /// 1-MATRIX MULTIPLICATION TO FIND TRIANGLES?
-//    int adj_mat_size = adj_mat.size();
-//    for (int i = 0; i < adj_mat_size; i++)
-//    {
-//        for (int j = i+1; j < adj_mat_size; j++)
-//        {
-//            if ( adj_mat[i][j] > 0 && squared_adj_mat[i][j] > 0 )
-//            {
-//                // There is a Triangle of 3 vertices i,j, and ?
-//
-//            }
-//        }
-//    }
-    /// 2-MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
+    typedef vector< tuple<int, int, int> > triangleVector_t;
 
-    /// 3-NORMAL K-CLIQUE DETECTION
+    adjacencyMatrix_t squared_adj_mat(square_matrix_ijk(adj_mat));
+    const int adj_mat_size = adj_mat.size();
+    triangleVector_t triangleVector;
+    for (int i = 0; i < adj_mat_size; i++)
+    {
+        for (int j = i+1; j < adj_mat_size; j++)
+        {
+            if ( adj_mat[i][j] > 0 && squared_adj_mat[i][j] > 0 )
+            {
+                // There are triangles comprises of vertices i, j; find the 3rd vertices.
+                for (int k = 0; k < adj_mat_size; k++)
+                {
+                    if ( adj_mat[k][i] > 0 && adj_mat[k][j] > 0 )
+                    {
+                        triangleVector.push_back(tuple<int, int, int>(i, j, k));
+                    }
+                }
+
+            }
+        }
+    }
+    /// 2-GRAPH TRAVERSAL TO FIND TRIANGLES
+
+    /// 3-MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
+
+    /// 4-NORMAL K-CLIQUE DETECTION
 }
 
 int
