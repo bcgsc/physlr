@@ -1856,7 +1856,7 @@ class Physlr:
                 Physlr.graph = None
             print(int(timeit.default_timer() - t0), "Identified molecules", file=sys.stderr)
             if not molecules:
-                print(int(timeit.default_timer() - t0), "Identidied no molecules", file=sys.stderr)
+                print(int(timeit.default_timer() - t0), "Identified no molecules", file=sys.stderr)
 
             # Add vertices.
             if round_num > 1:
