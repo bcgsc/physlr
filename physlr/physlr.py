@@ -1809,13 +1809,12 @@ class Physlr:
                 int(timeit.default_timer() - t0),
                 "Separating barcodes into molecules using the following algorithm(s):\n\t",
                 alg_list_2d,
-                # self.args.strategy.replace("++"," / ").replace("+", " + "),
                 file=sys.stderr)
 
         Physlr.filter_edges(gin, self.args.m)
         round_num = self.args.round
         for alg_list in alg_list_2d:
-            if Physlr.args.set_settings and len(alg_list_2d) > 1:
+            if self.args.set_settings and len(alg_list_2d) > 1:
                 Physlr.set_settings(round_num)
             if round_num > 1:
                 print(
