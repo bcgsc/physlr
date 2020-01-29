@@ -74,6 +74,38 @@ struct edgeComponent_t
 	using kind = boost::edge_property_tag;
 } edgeComponent;
 
+
+template <typename Clique_type>
+struct cliques_visitor {
+    // this is the visitor that will process each clique found by bron_kerbosch algorithm
+    // Clique_type: std::set<Vertex> or std::unordered_map<Vertex> (must support .insert())
+    //https://stackoverflow.com/questions/23299406/maximum-weighted-clique-in-a-large-graph-with-high-density
+
+    cliques_visitor(vector<Clique_type>& cliquesVec)
+        : cliquesVec(cliquesVec) {
+        // You may reserve some memory to avoid reallocation
+    }
+
+    // this is called each time a clique is found
+    template <typename Clique, typename Graph>
+    void clique(const Clique& clique, const Graph& g)
+    {
+        Clique_type current_clique;
+        // Clique_type current_clique(clique);
+        // Clique_type current_clique(clique.begin(), clique.end());
+        for(auto it = clique.begin(); it != clique.end(); ++it)
+        {
+            // May need changes
+            current_clique.insert(*it);
+        }
+        cliquesVec.push_back(current_clique);
+    }
+
+    const VertexWeight& weight_map;
+    std::set<Vertex> &max_clique;
+    Weight& max_weight;
+};
+
 using namespace std;
 
 // this definition assumes there is no redundant edge in the undirected graph
@@ -98,6 +130,7 @@ using vertexToIndex_t = std::unordered_map<vertex_t, size_t>; // wanna improve t
 using indexToVertex_t = std::unordered_map<size_t, vertex_t>; // wanna improve this? checkout boost::bimap
 using adjacencyMatrix_t = std::vector<std::vector<uint_fast32_t>>;
 using adjacencyVector_t = std::vector<uint_fast32_t>;
+using Clique_type = std::unordered_map<vertex_t, size_t>;
 
 
 static void
@@ -841,6 +874,23 @@ community_detection_cosine_similarity(
     }
 }
 
+int
+inline share_edges(Clique_type& a, Clique_type& b)
+{
+    // wether two cliques share at least an edge.
+    // two cliques (Clique_type) share edges if they share at least 2 vertices.
+    unsigned int count = 0;
+    for (Clique_type::iterator it = a.begin(); it != a.end(), ++it)
+    {
+        if (b.count(*it))
+            count++;
+        if (count > 1)
+            return 1;
+    }
+    // count < 2
+    return 0;
+}
+
 void
 Community_detection_k3_cliques(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
@@ -859,44 +909,71 @@ Community_detection_k3_cliques(
 
     size_t size_adj_mat = adj_mat.size();
 
-
-
     /// TEST WHICH IS FASTER:
     /// 1-MATRIX MULTIPLICATION TO FIND TRIANGLES?
-    typedef vector< tuple<int, int, int> > triangleVector_t;
+//    typedef vector< tuple<int, int, int> > triangleVector_t;
+//
+//    adjacencyMatrix_t squared_adj_mat(square_matrix_ijk(adj_mat));
+//    const int adj_mat_size = adj_mat.size();
+//    triangleVector_t triangleVector;
+//    for (int i = 0; i < adj_mat_size; i++)
+//    {
+//        for (int j = i+1; j < adj_mat_size; j++)
+//        {
+//            if ( adj_mat[i][j] > 0 && squared_adj_mat[i][j] > 0 )
+//            {
+//                // There are triangles comprises of vertices i, j; find the 3rd vertices.
+//                for (int k = 0; k < adj_mat_size; k++)
+//                {
+//                    if ( adj_mat[k][i] > 0 && adj_mat[k][j] > 0 )
+//                    {
+//                        triangleVector.push_back(tuple<int, int, int>(i, j, k));
+//                    }
+//                }
+//
+//            }
+//        }
+//    }
+//    // Now go over these triangles to mix them.
+//    // ...
 
-    adjacencyMatrix_t squared_adj_mat(square_matrix_ijk(adj_mat));
-    const int adj_mat_size = adj_mat.size();
-    triangleVector_t triangleVector;
-    for (int i = 0; i < adj_mat_size; i++)
-    {
-        for (int j = i+1; j < adj_mat_size; j++)
-        {
-            if ( adj_mat[i][j] > 0 && squared_adj_mat[i][j] > 0 )
-            {
-                // There are triangles comprises of vertices i, j; find the 3rd vertices.
-                for (int k = 0; k < adj_mat_size; k++)
-                {
-                    if ( adj_mat[k][i] > 0 && adj_mat[k][j] > 0 )
-                    {
-                        triangleVector.push_back(tuple<int, int, int>(i, j, k));
-                    }
-                }
-
-            }
-        }
-    }
-    /// 2-GRAPH TRAVERSAL TO FIND TRIANGLES
+    /// 2-GRAPH TRAVERSAL TO FIND TRIANGLES (without squaring)
 
     /// 3-MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
 
-    /// 4-NORMAL K-CLIQUE DETECTION
+    /// 4-NORMAL K-CLIQUE DETECTION using boost
+    std::vector<Clique_type> allCliquesVec;
+    cliques_visitor<Clique_type> visitor(allCliquesVec);
+    // use the Bron-Kerbosch algorithm to find all cliques
+    boost::bron_kerbosch_all_cliques(subgraph, visitor);
+
+    adjacencyVector_t tempVector(n, 0); // Fast initialization
+    adjacencyMatrix_t M2(n, tempVector);
+
+    cliquesCount = allCliquesVec.size();
+    vector<vector<int>> connections(cliquesCount,vector<int>(cliquesCount,0));
+    for (size_t i = 0; i < cliquesCount; i++)
+    {
+        for (size_t j = i+1; i < cliquesCount; i++)
+        {
+            if (connections[i][j] > 0)
+                continue;
+            // if indirectly connected, continue;
+            if (share_edges(allCliquesVec[i], allCliquesVec[j]))
+            {
+                connections[i][j] = 1;
+            }
+        }
+    }
+
+    /// 5-NORMAL K-CLIQUE DETECTION using Google OR-Tools
+
+    /// 6-NORMAL K-CLIQUE DETECTION using Cliquer
 }
 
 int
 main(int argc, char* argv[])
 {
-
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
