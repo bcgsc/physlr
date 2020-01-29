@@ -78,8 +78,7 @@ struct edgeComponent_t
 template <typename Clique_type>
 struct cliques_visitor {
     // this is the visitor that will process each clique found by bron_kerbosch algorithm
-    // Clique_type: std::set<Vertex> or std::unordered_map<Vertex> (must support .insert())
-    //https://stackoverflow.com/questions/23299406/maximum-weighted-clique-in-a-large-graph-with-high-density
+    // Clique_type: std::set<Vertex> or std::unordered_map<Vertex> or etc (must support .insert(), prefer unordered)
 
     cliques_visitor(vector<Clique_type>& cliquesVec)
         : cliquesVec(cliquesVec) {
@@ -796,7 +795,7 @@ community_detection_cosine_similarity(
     //      Alternative implementation: convert to adjacency list and use boost to find cc
 
     // / use .reserve to set the capacity of the below 2d vector instead of initialization
-    int max_communities = 1000;
+    const int max_communities = 100;
     vector<vector<uint_fast32_t>> communities(max_communities,vector<uint_fast32_t>(adj_mat.size(),-1));
 
     size_t community_id = 0;
@@ -836,19 +835,12 @@ community_detection_cosine_similarity(
                 cout<<"BIG BUG";
 //            if (vt != indexToVertex.end())
 //                vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
-//            else
-//            {
-//                cout<<"\nCould not find this one in the dict:"<<ii<<endl;
-//                continue;
-//            }
+
 
             for (size_t j = 0 ; j < adj_mat.size(); j++)
             {
                 if (isDetected[j])
                     continue; // this node is included in a community already.
-                //if (isVisited[j])
-                //    continue; // this node is included in this community already.
-//                if (adj_mat[1][2] > 0){
                 if (adj_mat[ii][j] > 0){
                     toCheck.push(j);
                     isDetected[j]=1;
@@ -910,7 +902,7 @@ Community_detection_k3_cliques(
     size_t size_adj_mat = adj_mat.size();
 
     /// TEST WHICH IS FASTER:
-    /// 1-MATRIX MULTIPLICATION TO FIND TRIANGLES?
+    /// 1- MATRIX MULTIPLICATION TO FIND TRIANGLES?
 //    typedef vector< tuple<int, int, int> > triangleVector_t;
 //
 //    adjacencyMatrix_t squared_adj_mat(square_matrix_ijk(adj_mat));
@@ -934,41 +926,93 @@ Community_detection_k3_cliques(
 //            }
 //        }
 //    }
+//    // NEW IDEA: WHEN YOU FIND TRIANGLES LAYING ON AN EDGE, CONNECT ALL AS ADJACENT in a MATRIX. THEN DFS ITERATE the MATRIX
 //    // Now go over these triangles to mix them.
 //    // ...
 
-    /// 2-GRAPH TRAVERSAL TO FIND TRIANGLES (without squaring)
+    /// 2- GRAPH TRAVERSAL TO FIND TRIANGLES (without squaring)
 
-    /// 3-MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
+    /// 3- MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
 
-    /// 4-NORMAL K-CLIQUE DETECTION using boost
+    /// 4- NORMAL K-CLIQUE DETECTION using boost
     std::vector<Clique_type> allCliquesVec;
     cliques_visitor<Clique_type> visitor(allCliquesVec);
-    // use the Bron-Kerbosch algorithm to find all cliques
+    // - use the Bron-Kerbosch algorithm to find all cliques
     boost::bron_kerbosch_all_cliques(subgraph, visitor);
 
     adjacencyVector_t tempVector(n, 0); // Fast initialization
     adjacencyMatrix_t M2(n, tempVector);
-
-    cliquesCount = allCliquesVec.size();
+    // - find adjacent cliques sharing 2 vertices at least (one edge at least)
+    size_t cliquesCount = allCliquesVec.size();
     vector<vector<int>> connections(cliquesCount,vector<int>(cliquesCount,0));
     for (size_t i = 0; i < cliquesCount; i++)
     {
+        if (allCliquesVec[i].size() < 3)
+            continue; // not a 3-clique
         for (size_t j = i+1; i < cliquesCount; i++)
         {
             if (connections[i][j] > 0)
-                continue;
-            // if indirectly connected, continue;
+                continue; // already connected
+            // if indirectly_connected(allCliquesVec[i], allCliquesVec[j]), continue; (may be more efficient)
+            if (allCliquesVec[j].size() < 3)
+                continue; // not a k3-clique
             if (share_edges(allCliquesVec[i], allCliquesVec[j]))
             {
                 connections[i][j] = 1;
             }
         }
     }
+    // - percolate over (DFS) adjacent cliques and mix: k3-cliques
+    std::vector<Clique_type> k3CliquesVec;
 
-    /// 5-NORMAL K-CLIQUE DETECTION using Google OR-Tools
+    size_t community_id = 0;
+    stack<size_t> toCheck;
+    vector<size_t> isDetected(cliquesCount,0);
+    max_communities = 200;
+    vector<vector<size_t>> communities(max_communities,vector<uint_fast32_t>(cliquesCount(),-1));
 
-    /// 6-NORMAL K-CLIQUE DETECTION using Cliquer
+    for (size_t i = 0 ; i < cliquesCount; i++)
+    {
+        // DFS traversal
+        if (isDetected[i])
+            continue; // this clique set is added to a community already.
+        toCheck.push(i);
+        isDetected[i] = 1;
+        size_t ii = -1;
+
+        while(!toCheck.empty()){
+
+            ii = toCheck.top();
+            toCheck.pop();
+            //communities[community_id].push_back(ii);
+//            k3CliquesVec[community_id].insert(allCliquesVec[ii].begin(), allCliquesVec[ii].end());
+            for (size_t jj = 0; jj < allCliquesVec[ii].size(); jj++ ){
+                vertexToComponent[allCliquesVec[ii][jj]] = community_id;
+            }
+
+            for (size_t j = 0 ; j < cliquesCount; j++)
+            {
+                if (isDetected[j])
+                    continue; // this clique is included in this community already.
+                if (adj_mat[ii][j] > 0){
+                    toCheck.push(j);
+                    isDetected[j]=1;
+                }
+            }
+        }
+        community_id++;
+    }
+    // in case you use k3CliquesVec: iterate over communities and add them to vertexToComponent
+//    for (int i = 0; i < k3CliquesVec.size(); i++)
+//    {
+//        for (int j = 0; j < k3CliquesVec[i].size(); j++)
+//            {   // inexact, CHANGE: if exist vertexToComponent[k3CliquesVec[i][j]] then add i.
+//                vertexToComponent[k3CliquesVec[i][j]] = i;
+//            }
+//    }
+    /// 5- K-CLIQUE DETECTION using Google OR-Tools
+
+    /// 6- K-CLIQUE DETECTION using Cliquer
 }
 
 int
