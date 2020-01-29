@@ -1019,6 +1019,9 @@ template <class Neighbours_Type>
 void
 bin_neighbors(Neighbours_Type neighbours, vector<Neighbours_Type>& binned_neighbours, size_t = 50)
 {
+    // vector<vector<int> > vecs(3,vector<int>(5));
+    // #reserve #reserve() reserve memory
+
     // bin_neighbours(neighbours, binned_neighbours);
     size_t neighborhood_size = 0;
 	for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
