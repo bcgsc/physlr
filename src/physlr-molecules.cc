@@ -75,36 +75,6 @@ struct edgeComponent_t
 } edgeComponent;
 
 
-template <typename Clique_type>
-struct cliques_visitor {
-    // this is the visitor that will process each clique found by bron_kerbosch algorithm
-    // Clique_type: std::set<Vertex> or std::unordered_map<Vertex> or etc (must support .insert(), prefer unordered)
-
-    cliques_visitor(vector<Clique_type>& cliquesVec)
-        : cliquesVec(cliquesVec) {
-        // You may reserve some memory to avoid reallocation
-    }
-
-    // this is called each time a clique is found
-    template <typename Clique, typename Graph>
-    void clique(const Clique& clique, const Graph& g)
-    {
-        Clique_type current_clique;
-        // Clique_type current_clique(clique);
-        // Clique_type current_clique(clique.begin(), clique.end());
-        for(auto it = clique.begin(); it != clique.end(); ++it)
-        {
-            // May need changes
-            current_clique.insert(*it);
-        }
-        cliquesVec.push_back(current_clique);
-    }
-
-    const VertexWeight& weight_map;
-    std::set<Vertex> &max_clique;
-    Weight& max_weight;
-};
-
 using namespace std;
 
 // this definition assumes there is no redundant edge in the undirected graph
@@ -130,6 +100,35 @@ using indexToVertex_t = std::unordered_map<size_t, vertex_t>; // wanna improve t
 using adjacencyMatrix_t = std::vector<std::vector<uint_fast32_t>>;
 using adjacencyVector_t = std::vector<uint_fast32_t>;
 using Clique_type = std::unordered_map<vertex_t, size_t>;
+
+
+struct cliques_visitor {
+    // this is the visitor that will process each clique found by bron_kerbosch algorithm
+    // Clique_type: std::set<Vertex> or std::unordered_map<Vertex> or etc (must support .insert(), prefer unordered)
+
+    cliques_visitor(vector<Clique_type>& cliquesVec)
+        : cliquesVec(cliquesVec) {
+        // You may reserve some memory to avoid reallocation
+    }
+
+    // this is called each time a clique is found
+    template <typename Clique, typename Graph>
+    void clique(const Clique& clique, const Graph& g)
+    {
+        Clique_type current_clique;
+        // Clique_type current_clique(clique);
+        // Clique_type current_clique(clique.begin(), clique.end());
+        for(auto it = clique.begin(); it != clique.end(); ++it)
+        {
+            // May need changes
+            // current_clique.insert(*it);
+            current_clique[*it] = 1;
+        }
+        cliquesVec.push_back(current_clique);
+    }
+
+    std::vector<Clique_type>& cliquesVec;
+};
 
 
 static void
@@ -872,9 +871,9 @@ inline share_edges(Clique_type& a, Clique_type& b)
     // wether two cliques share at least an edge.
     // two cliques (Clique_type) share edges if they share at least 2 vertices.
     unsigned int count = 0;
-    for (Clique_type::iterator it = a.begin(); it != a.end(), ++it)
+    for (Clique_type::iterator it = a.begin(); it != a.end(); ++it)
     {
-        if (b.count(*it))
+        if (b.count(it->first))
             count++;
         if (count > 1)
             return 1;
@@ -936,7 +935,7 @@ Community_detection_k3_cliques(
 
     /// 4- NORMAL K-CLIQUE DETECTION using boost
     std::vector<Clique_type> allCliquesVec;
-    cliques_visitor<Clique_type> visitor(allCliquesVec);
+    cliques_visitor visitor(allCliquesVec);
     // - use the Bron-Kerbosch algorithm to find all cliques
     boost::bron_kerbosch_all_cliques(subgraph, visitor);
 
@@ -969,7 +968,7 @@ Community_detection_k3_cliques(
     size_t community_id = 0;
     stack<size_t> toCheck;
     vector<size_t> isDetected(cliquesCount,0);
-    max_communities = 200;
+    int max_communities = 200;
     // vector<vector<size_t>> communities(max_communities,vector<uint_fast32_t>(cliquesCount(),-1));
 
     for (size_t i = 0 ; i < cliquesCount; i++)
@@ -995,7 +994,7 @@ Community_detection_k3_cliques(
             {
                 if (isDetected[j])
                     continue; // this clique is included in this community already.
-                if (adj_mat[ii][j] > 0){
+                if (connections[ii][j] > 0){
                     toCheck.push(j);
                     isDetected[j]=1;
                 }
@@ -1115,20 +1114,36 @@ main(int argc, char* argv[])
 //	auto aa = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["B"], g).first;
 //	g[aa].weight = 10;
 
-	auto aa = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["A"], g).first;
-	g[aa].weight = 10;
+	auto ab = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["B"], g).first;
+	g[ab].weight = 10;
 
-	auto ba = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["C"], g).first;
-	g[ba].weight = 10;
+	auto ac = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["C"], g).first;
+	g[ac].weight = 10;
 
-	auto ca = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["D"], g).first;
-	g[ca].weight = 10;
+	auto ad = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["D"], g).first;
+	g[ad].weight = 10;
 
-	auto da = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["C"], g).first;
-	g[da].weight = 10;
+//	auto ae = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["E"], g).first;
+//	g[ae].weight = 10;
 
-	auto ea = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["D"], g).first;
-	g[ea].weight = 10;
+	auto bc = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["C"], g).first;
+	g[bc].weight = 10;
+
+	auto bd = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["D"], g).first;
+	g[bd].weight = 10;
+
+//	auto be = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["E"], g).first;
+//	g[be].weight = 10;
+
+//	auto cd = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
+//	g[cd].weight = 10;
+
+//	auto ce = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["E"], g).first;
+//	g[ce].weight = 10;
+
+//	auto de = boost::add_edge(barcodeToIndex["D"], barcodeToIndex["E"], g).first;
+//	g[de].weight = 10;
+
 
 //	auto fa = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
 //	g[fa].weight = 10;
