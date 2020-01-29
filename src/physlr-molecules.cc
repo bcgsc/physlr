@@ -895,14 +895,14 @@ Community_detection_k3_cliques(
         cout<<" This implementation of k-cliques does not support any k other than 3.";
         exit (EXIT_FAILURE);
     }
-    vertexToIndex_t vertexToIndex(num_vertices(subgraph));
-    adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
-    indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
-
-    size_t size_adj_mat = adj_mat.size();
 
     /// TEST WHICH IS FASTER:
     /// 1- MATRIX MULTIPLICATION TO FIND TRIANGLES?
+//    vertexToIndex_t vertexToIndex(num_vertices(subgraph));
+//    adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
+//    indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
+//
+//    size_t size_adj_mat = adj_mat.size();
 //    typedef vector< tuple<int, int, int> > triangleVector_t;
 //
 //    adjacencyMatrix_t squared_adj_mat(square_matrix_ijk(adj_mat));
@@ -940,8 +940,7 @@ Community_detection_k3_cliques(
     // - use the Bron-Kerbosch algorithm to find all cliques
     boost::bron_kerbosch_all_cliques(subgraph, visitor);
 
-    adjacencyVector_t tempVector(n, 0); // Fast initialization
-    adjacencyMatrix_t M2(n, tempVector);
+
     // - find adjacent cliques sharing 2 vertices at least (one edge at least)
     size_t cliquesCount = allCliquesVec.size();
     vector<vector<int>> connections(cliquesCount,vector<int>(cliquesCount,0));
@@ -964,12 +963,14 @@ Community_detection_k3_cliques(
     }
     // - percolate over (DFS) adjacent cliques and mix: k3-cliques
     std::vector<Clique_type> k3CliquesVec;
+    //k3CliquesVec.resize(?);
+
 
     size_t community_id = 0;
     stack<size_t> toCheck;
     vector<size_t> isDetected(cliquesCount,0);
     max_communities = 200;
-    vector<vector<size_t>> communities(max_communities,vector<uint_fast32_t>(cliquesCount(),-1));
+    // vector<vector<size_t>> communities(max_communities,vector<uint_fast32_t>(cliquesCount(),-1));
 
     for (size_t i = 0 ; i < cliquesCount; i++)
     {
@@ -1129,8 +1130,8 @@ main(int argc, char* argv[])
 	auto ea = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["D"], g).first;
 	g[ea].weight = 10;
 
-	auto fa = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
-	g[fa].weight = 10;
+//	auto fa = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
+//	g[fa].weight = 10;
 
 	//E = boost::add_edge(barcodeToIndex["D"], barcodeToIndex["E"], g).first;
 	//g[E].weight = 4;
@@ -1154,7 +1155,8 @@ main(int argc, char* argv[])
 		    cout<<"\n BIG BUG\n ";
 		}
 		//biconnectedComponents(subgraph, vertexToComponent);
-        community_detection_cosine_similarity(subgraph, vertexToComponent);
+        //community_detection_cosine_similarity(subgraph, vertexToComponent);
+        Community_detection_k3_cliques(subgraph, vertexToComponent);
 
 		// Delete subgraph to keep memory in control
 		for (auto& i : g.m_children) {
