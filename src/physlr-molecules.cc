@@ -1014,21 +1014,21 @@ Community_detection_k3_cliques(
     /// 6- K-CLIQUE DETECTION using Cliquer
 }
 
-template <class Neighbours_Type>
-void
-bin_neighbors(Neighbours_Type neighbours, vector<Neighbours_Type>& binned_neighbours, size_t = 50)
-{
-    // vector<vector<int> > vecs(3,vector<int>(5));
-    // #reserve #reserve() reserve memory
-
-    // bin_neighbours(neighbours, binned_neighbours);
-    size_t neighborhood_size = 0;
-	for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
-	    neighborhood_size++;
-	}
-	binned_neighbours.resize(neighborhood_size);
-
-}
+//template <class Neighbours_Type>
+//void
+//bin_neighbours(Neighbours_Type neighbours, vector<Neighbours_Type>& binned_neighbours, size_t = 50)
+//{
+//    // vector<vector<int> > vecs(3,vector<int>(5));
+//    // #reserve #reserve() reserve memory
+//
+//    // bin_neighbours(neighbours, binned_neighbours);
+//    size_t neighborhood_size = 0;
+//	for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
+//	    neighborhood_size++;
+//	}
+//	binned_neighbours.resize(neighborhood_size);
+//
+//}
 
 int
 main(int argc, char* argv[])
@@ -1178,8 +1178,8 @@ main(int argc, char* argv[])
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
-		vector<decltype(neighbours)> binned_neighbours;
-		bin_neighbours(neighbours, binned_neighbours);
+//		vector<decltype(neighbours)> binned_neighbours;
+//		bin_neighbours(neighbours, binned_neighbours);
 //		size_t neighborhood_size = 0;
 //		for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
 //		    neighborhood_size++;
