@@ -1193,7 +1193,7 @@ main(int argc, char* argv[])
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
 
-		if (vertexCount % 1000 = 0)
+		if (vertexCount % 1000 == 0)
 		    cout<<"processing "<<vertexCount<<"th subgraph"<<endl;
 //		vector<decltype(neighbours)> binned_neighbours;
 //		bin_neighbours(neighbours, binned_neighbours);
