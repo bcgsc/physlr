@@ -937,7 +937,10 @@ Community_detection_k3_cliques(
 
     /// 4- NORMAL K-CLIQUE DETECTION using boost
     // vector<vector<int> > vecs(3,vector<int>(5));
-    std::vector<Clique_type> allCliquesVec(100, Clique_type(1000));
+    // std::vector<Clique_type> allCliquesVec(100, Clique_type(1000));
+    std::vector<Clique_type> allCliquesVec;
+    allCliquesVec.resize(100);                              // resize the columns
+    for (auto &row : allCliquesVec) { row.reserve(1000); }   // resize the rows
     cliques_visitor visitor(allCliquesVec);
     // - use the Bron-Kerbosch algorithm to find all cliques
     boost::bron_kerbosch_all_cliques(subgraph, visitor);
@@ -964,7 +967,11 @@ Community_detection_k3_cliques(
     }
 
     // - percolate over (DFS) adjacent cliques and mix: k3-cliques
-    std::vector<Clique_type> k3CliquesVec(100, Clique_type(1000));
+    //std::vector<Clique_type> k3CliquesVec(100, Clique_type(1000));
+    std::vector<Clique_type> k3CliquesVec;
+    k3CliquesVec.resize(100);                              // resize the columns
+    for (auto &row : k3CliquesVec) { row.reserve(1000); }   // resize the rows
+
     size_t community_id = 0;
     stack<size_t> toCheck;
     vector<size_t> isDetected(cliquesCount,0);
