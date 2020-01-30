@@ -102,6 +102,7 @@ using adjacencyMatrix_t = std::vector<std::vector<uint_fast32_t>>;
 using adjacencyVector_t = std::vector<uint_fast32_t>;
 using Clique_type = std::unordered_map<vertex_t, size_t>;
 
+#define timeNow() std::chrono::high_resolution_clock::now()
 
 struct cliques_visitor {
     // This is the visitor that will process each clique found by bron_kerbosch algorithm
