@@ -1200,7 +1200,7 @@ main(int argc, char* argv[])
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
         vertexCount++;
 		if (vertexCount % 1000 == 0)
-		    cout<<"processing "<<vertexCount<<"th subgraph"<<endl;
+		    cout<<"processing "<<vertexCount<<"th subgraph of "<<boost::num_vertices(g)<<endl;
 //		vector<decltype(neighbours)> binned_neighbours;
 //		bin_neighbours(neighbours, binned_neighbours);
 //		size_t neighborhood_size = 0;
