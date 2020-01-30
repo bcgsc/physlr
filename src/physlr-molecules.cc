@@ -997,7 +997,7 @@ Community_detection_k3_cliques(
             //k3CliquesVec[community_id].insert(allCliquesVec[ii].begin(), allCliquesVec[ii].end());
             for (size_t jj = 0; jj < allCliquesVec[ii].size(); jj++ ){
                 cout<<"Community ID being assigned to: "<<ii<<" - "<<jj<<"- id: "<<community_id<<endl;
-                vertexToComponent[allCliquesVec[ii][jj]] = community_id;
+                vertexToComponent[allCliquesVec[ii][jj]->first] = community_id;
             }
 
             for (size_t j = 0 ; j < cliquesCount; j++)
