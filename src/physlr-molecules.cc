@@ -947,9 +947,11 @@ Community_detection_k3_cliques(
 
     // - find adjacent cliques sharing 2 vertices at least (one edge at least)
     size_t cliquesCount = allCliquesVec.size();
+    cout<<"size of allCliqueVec: "<<cliquesCount<<endl;
     vector<vector<int>> connections(cliquesCount,vector<int>(cliquesCount,0));
     for (size_t i = 0; i < cliquesCount; i++)
     {
+        cout<<"\t - size of allCliqueVec[i]: "<<allCliquesVec[i].size()<<endl;
         if (allCliquesVec[i].size() < 3)
             continue; // not a 3-clique
         for (size_t j = i+1; j < cliquesCount; j++)
