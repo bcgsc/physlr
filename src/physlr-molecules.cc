@@ -954,7 +954,7 @@ Community_detection_k3_cliques(
         cout<<"\t - size of allCliqueVec[i]: "<<allCliquesVec[i].size()<<endl;
         if (allCliquesVec[i].size() < 3)
             continue; // not a 3-clique
-        for (size_t j = i+1; j < cliquesCount; j++)
+        for (size_t j = i; j < cliquesCount; j++)
         {
             if (connections[i][j] > 0)
                 continue; // already connected
