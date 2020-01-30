@@ -1126,9 +1126,6 @@ main(int argc, char* argv[])
 	barcodeToIndex[node1] = u;
 	indexToBarcode[u] = node1;
 
-//	auto aa = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["B"], g).first;
-//	g[aa].weight = 10;
-
 	auto ab = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["B"], g).first;
 	g[ab].weight = 10;
 
@@ -1138,8 +1135,8 @@ main(int argc, char* argv[])
 	auto ad = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["D"], g).first;
 	g[ad].weight = 10;
 
-//	auto ae = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["E"], g).first;
-//	g[ae].weight = 10;
+	auto ae = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["E"], g).first;
+	g[ae].weight = 10;
 
 	auto bc = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["C"], g).first;
 	g[bc].weight = 10;
@@ -1147,17 +1144,17 @@ main(int argc, char* argv[])
 	auto bd = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["D"], g).first;
 	g[bd].weight = 10;
 
-//	auto be = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["E"], g).first;
-//	g[be].weight = 10;
+	auto be = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["E"], g).first;
+	g[be].weight = 10;
 
-//	auto cd = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
-//	g[cd].weight = 10;
+	auto cd = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
+	g[cd].weight = 10;
 
-//	auto ce = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["E"], g).first;
-//	g[ce].weight = 10;
+	auto ce = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["E"], g).first;
+	g[ce].weight = 10;
 
-//	auto de = boost::add_edge(barcodeToIndex["D"], barcodeToIndex["E"], g).first;
-//	g[de].weight = 10;
+	auto de = boost::add_edge(barcodeToIndex["D"], barcodeToIndex["E"], g).first;
+	g[de].weight = 10;
 
 
 //	auto fa = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
