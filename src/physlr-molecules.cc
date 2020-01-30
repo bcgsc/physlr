@@ -76,6 +76,7 @@ struct edgeComponent_t
 
 
 using namespace std;
+using namespace std::chrono;
 
 // this definition assumes there is no redundant edge in the undirected graph
 using graph_t = boost::subgraph<boost::adjacency_list<
