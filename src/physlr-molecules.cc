@@ -855,7 +855,8 @@ community_detection_cosine_similarity(
             // /communities[community_id].pop_back();
             auto vt = indexToVertex.find(i);
             if (vt != indexToVertex.end())
-                vertexToComponent.erase ( indexToVertex.find(i) );
+                cout<<"were suppose to erase something";
+                //vertexToComponent.erase ( indexToVertex.find(i) );
             else{
                 cout<<"\nCould not find this one in the dict:"<<i<<endl;
                 continue;
