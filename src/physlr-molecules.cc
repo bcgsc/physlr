@@ -754,7 +754,7 @@ std::unordered_map<V,K> inverse_map(std::unordered_map<K,V> &map)
 void
 community_detection_cosine_similarity(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
-    bool squaring = true, double threshold=0)
+    bool squaring = true, double threshold=0.5)
 {
     // Detect communities using cosine similarity of vertices
 
@@ -834,7 +834,7 @@ community_detection_cosine_similarity(
                 vertexToComponent[vt->second] = community_id;
                 //componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
             else
-                cout<<"BIG BUG";
+                cout<<"BIG BUG on "<<ii<<" when processing "<<i<<endl;
 //            if (vt != indexToVertex.end())
 //                vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
 
