@@ -1195,12 +1195,20 @@ main(int argc, char* argv[])
 	auto vertexItRange = vertices(g);
 	size_t vertexCount = 0;
 	cout<<"Total number of subgraphs: "<<boost::num_vertices(g)<<endl;
+	auto start = timeNow();
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start);
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
         vertexCount++;
-		if (vertexCount % 1000 == 0)
+		if (vertexCount % 100 == 0){
 		    cout<<"processing "<<vertexCount<<"th subgraph of "<<boost::num_vertices(g)<<endl;
+		    stop = high_resolution_clock::now();
+            duration = duration_cast<microseconds>(stop - start);
+            cout << "\ttime since last report (micro-s): "<<duration.count() << endl;
+		    start = timeNow();
+		}
 //		vector<decltype(neighbours)> binned_neighbours;
 //		bin_neighbours(neighbours, binned_neighbours);
 //		size_t neighborhood_size = 0;
