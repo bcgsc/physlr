@@ -879,7 +879,7 @@ inline share_edges(Clique_type& a, Clique_type& b)
         if (b.count(it->first))
             {count++; cout<<"connection -"<<endl;}
         if (count > 1)
-            {return 1; cout<<"count > 1"<<endl;}
+            {cout<<"count > 1"<<endl; return 1;}
     }
     // count < 2
     return 0;
@@ -994,8 +994,9 @@ Community_detection_k3_cliques(
             ii = toCheck.top();
             toCheck.pop();
             //communities[community_id].push_back(ii);
-//            k3CliquesVec[community_id].insert(allCliquesVec[ii].begin(), allCliquesVec[ii].end());
+            //k3CliquesVec[community_id].insert(allCliquesVec[ii].begin(), allCliquesVec[ii].end());
             for (size_t jj = 0; jj < allCliquesVec[ii].size(); jj++ ){
+                cout<<"Community ID being assigned to: "<<ii<<" - "<<jj<<"- id: "<<community_id<<endl;
                 vertexToComponent[allCliquesVec[ii][jj]] = community_id;
             }
 
