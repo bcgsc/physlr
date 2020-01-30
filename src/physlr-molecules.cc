@@ -870,15 +870,16 @@ community_detection_cosine_similarity(
 int
 inline share_edges(Clique_type& a, Clique_type& b)
 {
-    // wether two cliques share at least an edge.
+    // whether two cliques share at least an edge.
     // two cliques (Clique_type) share edges if they share at least 2 vertices.
     unsigned int count = 0;
     for (Clique_type::iterator it = a.begin(); it != a.end(); ++it)
     {
+//        cout<<decltype(it->first);
         if (b.count(it->first))
-            count++;
+            {count++; cout<<"connection -"<<endl;}
         if (count > 1)
-            return 1;
+            {return 1; cout<<"count > 1"<<endl;}
     }
     // count < 2
     return 0;
