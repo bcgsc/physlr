@@ -806,10 +806,10 @@ community_detection_cosine_similarity(
     vector<int> isDetected(adj_mat.size(),0);
     //vector<int> isVisited(zeros);
     bool isSingleton = false;
-    cout<<"NEW TRACE: "<<adj_mat.size()<<"\n";
+    //cout<<"NEW TRACE: "<<adj_mat.size()<<"\n";
     for (size_t i = 0 ; i < adj_mat.size(); i++)
     {
-        cout<<"i : "<<i<<endl;
+        //cout<<"i : "<<i<<endl;
         // DFS traversal
         //isVisited = zeros;
         if (isDetected[i])
@@ -817,7 +817,7 @@ community_detection_cosine_similarity(
         toCheck.push(i);
         isDetected[i] = 1;
         isSingleton = true;
-        cout<<"entered"<<endl;
+        //cout<<"entered"<<endl;
         size_t ii;
 
         while(!toCheck.empty()){
@@ -827,7 +827,7 @@ community_detection_cosine_similarity(
             // /communities[community_id].push_back(ii);
 
             auto vt = indexToVertex.find(ii);
-            cout<<"ii : "<<ii<<":"<<vt->second<<" | ";
+            //cout<<"ii : "<<ii<<":"<<vt->second<<" | ";
             //vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
             if (vt != indexToVertex.end())
                 vertexToComponent[vt->second] = community_id;
@@ -849,7 +849,7 @@ community_detection_cosine_similarity(
                 }
             }
         }
-        cout<<"\n";
+        //cout<<"\n";
 //        if (isSingleton)
 //        {
 //            // /communities[community_id].pop_back();
@@ -877,9 +877,15 @@ inline share_edges(Clique_type& a, Clique_type& b)
     {
 //        cout<<decltype(it->first);
         if (b.count(it->first))
-            {count++; cout<<"connection -"<<endl;}
+        {
+            count++;
+//            cout<<"connection -"<<endl;
+        }
         if (count > 1)
-            {cout<<"count > 1"<<endl; return 1;}
+        {
+//            cout<<"count > 1"<<endl;
+            return 1;
+        }
     }
     // count < 2
     return 0;
@@ -948,11 +954,11 @@ Community_detection_k3_cliques(
 
     // - find adjacent cliques sharing 2 vertices at least (one edge at least)
     size_t cliquesCount = allCliquesVec.size();
-    cout<<"size of allCliqueVec: "<<cliquesCount<<endl;
+    //cout<<"size of allCliqueVec: "<<cliquesCount<<endl;
     vector<vector<int>> connections(cliquesCount,vector<int>(cliquesCount,0));
     for (size_t i = 0; i < cliquesCount; i++)
     {
-        cout<<"\t - size of allCliqueVec[i]: "<<allCliquesVec[i].size()<<endl;
+        //cout<<"\t - size of allCliqueVec[i]: "<<allCliquesVec[i].size()<<endl;
         if (allCliquesVec[i].size() < 3)
             continue; // not a 3-clique
         for (size_t j = i; j < cliquesCount; j++)
