@@ -813,7 +813,6 @@ community_detection_cosine_similarity(
     {
         //cout<<"i : "<<i<<endl;
         // DFS traversal
-        //isVisited = zeros;
         if (isDetected[i])
             continue; // this node is included in a community already.
         toCheck.push(i);
@@ -838,7 +837,6 @@ community_detection_cosine_similarity(
                 cout<<"BIG BUG";
 //            if (vt != indexToVertex.end())
 //                vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
-
 
             for (size_t j = 0 ; j < adj_mat.size(); j++)
             {
@@ -1225,8 +1223,8 @@ main(int argc, char* argv[])
 		    cout<<"\n BIG BUG\n ";
 		}
 		//biconnectedComponents(subgraph, vertexToComponent);
-        //community_detection_cosine_similarity(subgraph, vertexToComponent);
-        Community_detection_k3_cliques(subgraph, vertexToComponent);
+        community_detection_cosine_similarity(subgraph, vertexToComponent);
+        //Community_detection_k3_cliques(subgraph, vertexToComponent);
 
 		// Delete subgraph to keep memory in control
 		for (auto& i : g.m_children) {
