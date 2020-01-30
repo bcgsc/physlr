@@ -995,13 +995,13 @@ Community_detection_k3_cliques(
             toCheck.pop();
             //communities[community_id].push_back(ii);
             //k3CliquesVec[community_id].insert(allCliquesVec[ii].begin(), allCliquesVec[ii].end());
-//            for (size_t jj = 0; jj < allCliquesVec[ii].size(); jj++ ){
-//                cout<<"Community ID being assigned to: "<<ii<<" - "<<jj<<"- id: "<<community_id<<endl;
-//                vertexToComponent[allCliquesVec[ii][jj]] = community_id;
-//            }
+            //for (size_t jj = 0; jj < allCliquesVec[ii].size(); jj++ ){
+            //    cout<<"Community ID being assigned to: "<<ii<<" - "<<jj<<"- id: "<<community_id<<endl;
+            //    vertexToComponent[allCliquesVec[ii][jj]] = community_id;
+            //}
             for (auto& x:allCliquesVec[ii])
             {
-                cout<<"Community ID being assigned to: "<<ii<<" - "<<"- id: "<<community_id<<endl;
+                //cout<<"Community ID being assigned to: "<<ii<<" - "<<"- id: "<<community_id<<endl;
                 vertexToComponent[x.first] = community_id;
             }
 
@@ -1096,97 +1096,90 @@ main(int argc, char* argv[])
 	}
 
 	graph_t g;
-	//readTSV(g, infiles, verbose);
+	readTSV(g, infiles, verbose);
 
 	barcodeToIndex_t barcodeToIndex;
 	indexToBarcode_t indexToBarcode;
 	std::string node1;
 
-	node1 = "A";
-	auto u = boost::add_vertex(g);
-    g[u].name = node1;
-	g[u].weight = 10;
-	g[u].indexOriginal = u;
-	barcodeToIndex[node1] = u;
-	indexToBarcode[u] = node1;
+//	node1 = "A";
+//	auto u = boost::add_vertex(g);
+//    g[u].name = node1;
+//	g[u].weight = 10;
+//	g[u].indexOriginal = u;
+//	barcodeToIndex[node1] = u;
+//	indexToBarcode[u] = node1;
+//
+//    node1 = "B";
+//	u = boost::add_vertex(g);
+//    g[u].name = node1;
+//	g[u].weight = 10;
+//	g[u].indexOriginal = u;
+//	barcodeToIndex[node1] = u;
+//	indexToBarcode[u] = node1;
+//
+//    node1 = "C";
+//	u = boost::add_vertex(g);
+//    g[u].name = node1;
+//	g[u].weight = 10;
+//	g[u].indexOriginal = u;
+//	barcodeToIndex[node1] = u;
+//	indexToBarcode[u] = node1;
+//
+//    node1 = "D";
+//	u = boost::add_vertex(g);
+//    g[u].name = node1;
+//	g[u].weight = 10;
+//	g[u].indexOriginal = u;
+//	barcodeToIndex[node1] = u;
+//	indexToBarcode[u] = node1;
+//
+//    node1 = "E";
+//	u = boost::add_vertex(g);
+//    g[u].name = node1;
+//	g[u].weight = 10;
+//	g[u].indexOriginal = u;
+//	barcodeToIndex[node1] = u;
+//	indexToBarcode[u] = node1;
+//
+//    vector<vector<int>> aaaa;
+//    aaaa.resize(100);
+//    for (auto &row : aaaa) { row.reserve(1000); }
+//    //cout<<"size:"<<aaaa[1].size()<<endl;
+////    cout<<aaaa[1]<<endl;
+//
+//	auto ab = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["B"], g).first;
+//	g[ab].weight = 10;
+//
+//	auto ac = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["C"], g).first;
+//	g[ac].weight = 10;
+//
+//	auto ad = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["D"], g).first;
+//	g[ad].weight = 10;
+//
+//	auto ae = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["E"], g).first;
+//	g[ae].weight = 10;
+//
+//	auto bc = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["C"], g).first;
+//	g[bc].weight = 10;
+//
+//	auto bd = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["D"], g).first;
+//	g[bd].weight = 10;
+//
+//	auto be = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["E"], g).first;
+//	g[be].weight = 10;
+//
+//	auto cd = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
+//	g[cd].weight = 10;
+//
+//	auto ce = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["E"], g).first;
+//	g[ce].weight = 10;
+//
+//	auto de = boost::add_edge(barcodeToIndex["D"], barcodeToIndex["E"], g).first;
+//	g[de].weight = 10;
 
-    node1 = "B";
-	u = boost::add_vertex(g);
-    g[u].name = node1;
-	g[u].weight = 10;
-	g[u].indexOriginal = u;
-	barcodeToIndex[node1] = u;
-	indexToBarcode[u] = node1;
-
-    node1 = "C";
-	u = boost::add_vertex(g);
-    g[u].name = node1;
-	g[u].weight = 10;
-	g[u].indexOriginal = u;
-	barcodeToIndex[node1] = u;
-	indexToBarcode[u] = node1;
-
-    node1 = "D";
-	u = boost::add_vertex(g);
-    g[u].name = node1;
-	g[u].weight = 10;
-	g[u].indexOriginal = u;
-	barcodeToIndex[node1] = u;
-	indexToBarcode[u] = node1;
-
-    node1 = "E";
-	u = boost::add_vertex(g);
-    g[u].name = node1;
-	g[u].weight = 10;
-	g[u].indexOriginal = u;
-	barcodeToIndex[node1] = u;
-	indexToBarcode[u] = node1;
-
-    vector<vector<int>> aaaa;
-    aaaa.resize(100);
-    for (auto &row : aaaa) { row.reserve(1000); }
-    cout<<"size:"<<aaaa[1].size()<<endl;
-//    cout<<aaaa[1]<<endl;
-
-	auto ab = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["B"], g).first;
-	g[ab].weight = 10;
-
-	auto ac = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["C"], g).first;
-	g[ac].weight = 10;
-
-	auto ad = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["D"], g).first;
-	g[ad].weight = 10;
-
-	auto ae = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["E"], g).first;
-	g[ae].weight = 10;
-
-	auto bc = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["C"], g).first;
-	g[bc].weight = 10;
-
-	auto bd = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["D"], g).first;
-	g[bd].weight = 10;
-
-	auto be = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["E"], g).first;
-	g[be].weight = 10;
-
-	auto cd = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
-	g[cd].weight = 10;
-
-	auto ce = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["E"], g).first;
-	g[ce].weight = 10;
-
-	auto de = boost::add_edge(barcodeToIndex["D"], barcodeToIndex["E"], g).first;
-	g[de].weight = 10;
-
-
-//	auto fa = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
-//	g[fa].weight = 10;
-
-	//E = boost::add_edge(barcodeToIndex["D"], barcodeToIndex["E"], g).first;
-	//g[E].weight = 4;
-
-    printGraph(g);
-    cout<<"\n\n\n";
+//    printGraph(g);
+//    cout<<"\n\n\n";
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
 
@@ -1194,9 +1187,14 @@ main(int argc, char* argv[])
 	double sTime = omp_get_wtime();
 #endif
 	auto vertexItRange = vertices(g);
+	size_t vertexCount = 0;
+	cout<<"Total number of subgraphs: "<<boost::num_vertices(g)<<endl;
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+
+		if (vertexCount % 1000 = 0)
+		    cout<<"processing "<<vertexCount<<"th subgraph"<<endl;
 //		vector<decltype(neighbours)> binned_neighbours;
 //		bin_neighbours(neighbours, binned_neighbours);
 //		size_t neighborhood_size = 0;
