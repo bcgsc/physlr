@@ -103,7 +103,7 @@ using Clique_type = std::unordered_map<vertex_t, size_t>;
 
 
 struct cliques_visitor {
-    // this is the visitor that will process each clique found by bron_kerbosch algorithm
+    // This is the visitor that will process each clique found by bron_kerbosch algorithm
     // Clique_type: std::set<Vertex> or std::unordered_map<Vertex> or etc (must support .insert(), prefer unordered)
 
     cliques_visitor(vector<Clique_type>& cliquesVec)
@@ -118,13 +118,15 @@ struct cliques_visitor {
         Clique_type current_clique;
         // Clique_type current_clique(clique);
         // Clique_type current_clique(clique.begin(), clique.end());
-        for(auto it = clique.begin(); it != clique.end(); ++it)
+        if (clique.size() > 2)
         {
-            // May need changes
-            // current_clique.insert(*it);
-            current_clique[*it] = 1;
+            for(auto it = clique.begin(); it != clique.end(); ++it)
+            {
+                // May need changes
+                current_clique[*it] = 1;
+            }
+            cliquesVec.push_back(current_clique);
         }
-        cliquesVec.push_back(current_clique);
     }
 
     std::vector<Clique_type>& cliquesVec;
@@ -934,11 +936,11 @@ Community_detection_k3_cliques(
     /// 3- MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
 
     /// 4- NORMAL K-CLIQUE DETECTION using boost
-    std::vector<Clique_type> allCliquesVec;
+    // vector<vector<int> > vecs(3,vector<int>(5));
+    std::vector<Clique_type> allCliquesVec(100, Clique_type(1000));
     cliques_visitor visitor(allCliquesVec);
     // - use the Bron-Kerbosch algorithm to find all cliques
     boost::bron_kerbosch_all_cliques(subgraph, visitor);
-
 
     // - find adjacent cliques sharing 2 vertices at least (one edge at least)
     size_t cliquesCount = allCliquesVec.size();
@@ -947,7 +949,7 @@ Community_detection_k3_cliques(
     {
         if (allCliquesVec[i].size() < 3)
             continue; // not a 3-clique
-        for (size_t j = i+1; i < cliquesCount; i++)
+        for (size_t j = i+1; j < cliquesCount; j++)
         {
             if (connections[i][j] > 0)
                 continue; // already connected
@@ -960,17 +962,14 @@ Community_detection_k3_cliques(
             }
         }
     }
+
     // - percolate over (DFS) adjacent cliques and mix: k3-cliques
-    std::vector<Clique_type> k3CliquesVec;
-    //k3CliquesVec.resize(?);
-
-
+    std::vector<Clique_type> k3CliquesVec(100, Clique_type(1000));
     size_t community_id = 0;
     stack<size_t> toCheck;
     vector<size_t> isDetected(cliquesCount,0);
-    int max_communities = 200;
+    //int max_communities = 100;
     // vector<vector<size_t>> communities(max_communities,vector<uint_fast32_t>(cliquesCount(),-1));
-
     for (size_t i = 0 ; i < cliquesCount; i++)
     {
         // DFS traversal
