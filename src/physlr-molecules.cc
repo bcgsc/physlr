@@ -850,20 +850,20 @@ community_detection_cosine_similarity(
             }
         }
         //cout<<"\n";
-//        if (isSingleton)
-//        {
-//            // /communities[community_id].pop_back();
-//            auto vt = indexToVertex.find(i);
-//            if (vt != indexToVertex.end())
-//                vertexToComponent.erase ( indexToVertex.find(i) );
-//            else{
-//                cout<<"\nCould not find this one in the dict:"<<i<<endl;
-//                continue;
-//            }
-//        }
-//        else
-//            ++community_id;
-        ++community_id;
+        if (isSingleton)
+        {
+            // /communities[community_id].pop_back();
+            auto vt = indexToVertex.find(i);
+            if (vt != indexToVertex.end())
+                vertexToComponent.erase ( indexToVertex.find(i) );
+            else{
+                cout<<"\nCould not find this one in the dict:"<<i<<endl;
+                continue;
+            }
+        }
+        else
+            ++community_id;
+//        ++community_id;
     }
 }
 
