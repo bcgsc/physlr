@@ -1137,7 +1137,7 @@ main(int argc, char* argv[])
     aaaa.resize(100);
     for (auto &row : aaaa) { row.reserve(1000); }
     cout<<"size:"<<aaaa[1].size()<<endl;
-    cout<<aaaa[1]<<endl;
+//    cout<<aaaa[1]<<endl;
 
 	auto ab = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["B"], g).first;
 	g[ab].weight = 10;
