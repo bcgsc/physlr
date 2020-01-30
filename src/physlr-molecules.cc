@@ -939,8 +939,8 @@ Community_detection_k3_cliques(
     // vector<vector<int> > vecs(3,vector<int>(5));
     // std::vector<Clique_type> allCliquesVec(100, Clique_type(1000));
     std::vector<Clique_type> allCliquesVec;
-    allCliquesVec.resize(100);                              // resize the columns
-    for (auto &row : allCliquesVec) { row.reserve(1000); }   // resize the rows
+//    allCliquesVec.resize(100);                              // resize the columns
+//    for (auto &row : allCliquesVec) { row.reserve(1000); }   // resize the rows
     cliques_visitor visitor(allCliquesVec);
     // - use the Bron-Kerbosch algorithm to find all cliques
     boost::bron_kerbosch_all_cliques(subgraph, visitor);
@@ -1132,6 +1132,12 @@ main(int argc, char* argv[])
 	g[u].indexOriginal = u;
 	barcodeToIndex[node1] = u;
 	indexToBarcode[u] = node1;
+
+    vector<vector<int>> aaaa;
+    aaaa.resize(100);
+    for (auto &row : aaaa) { row.reserve(1000); }
+    cout<<"size:"<<aaaa[1].size()<<endl;
+    cout<<aaaa[1]<<endl;
 
 	auto ab = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["B"], g).first;
 	g[ab].weight = 10;
