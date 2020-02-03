@@ -791,6 +791,8 @@ community_detection_cosine_similarity(
     {
         for (int j = i+1; j < adj_mat.size() ; j++)
             {
+                if (cosSimilarity2d[i][j] < 0)
+                    cout<<" negative cosim found;"<<endl;
                 if (cosSimilarity2d[i][j] < threshold)
                 {
                     adj_mat[i][j] = 0;
