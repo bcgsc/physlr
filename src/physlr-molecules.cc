@@ -394,7 +394,8 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
     // - adj_mat: the adjacency matrix for subgraph
     // - vertexToIndex (referenced input)
 
-    int N = num_vertices(subgraph);
+    int N = boost::num_vertices(subgraph);
+    cout<<"  inner subgraph size:"<<N<<endl;
     adjacencyVector_t tempVector(N, 0);
     adjacencyMatrix_t adj_mat(N, tempVector);
 
@@ -404,7 +405,6 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 
     // typedef graph_traits<Graph>::edge_iterator edge_iterator;
     typedef boost::graph_traits<graph_t>::edge_iterator edge_iterator;
-
 
     pair<edge_iterator, edge_iterator> ei = edges(subgraph);
 
@@ -754,7 +754,7 @@ std::unordered_map<V,K> inverse_map(std::unordered_map<K,V> &map)
 void
 community_detection_cosine_similarity(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
-    bool squaring = true, double threshold=0.5)
+    bool squaring = true, double threshold=0.1)
 {
     // Detect communities using cosine similarity of vertices
 
@@ -762,10 +762,13 @@ community_detection_cosine_similarity(
 //    vertexToIndex_t vertexToIndex(num_vertices(subgraph));
     vertexToIndex_t vertexToIndex;
     vertexToIndex.reserve(boost::num_vertices(subgraph));
+    cout<<"size of vertexToInex: "<<vertexToIndex.size()<<endl;
 
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
     indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
-    cout<<"size of subgraph:"<<num_vertices(subgraph)<<"\n size of vertexToInex: "<<vertexToIndex.size()<<"\n size of indexToVer: "<<indexToVertex.size()<<endl;
+    cout<<" size of subgraph:"<<num_vertices(subgraph)<<endl;
+    cout<<" size of adj_mat:"<<adj_mat.size();
+    cout<<" size of vertexToInex: "<<vertexToIndex.size()<<"\n size of indexToVer: "<<indexToVertex.size()<<endl;
 
     int size_adj_mat = adj_mat.size();
     vector<double> tempVector(size_adj_mat, 0);
@@ -835,7 +838,10 @@ community_detection_cosine_similarity(
                 vertexToComponent[vt->second] = community_id;
                 //componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
             else
+            {
                 cout<<"BIG BUG on "<<ii<<" when processing "<<i<<"| Size of dict: "<<indexToVertex.size()<<endl;
+
+            }
 //            if (vt != indexToVertex.end())
 //                vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
 
@@ -857,12 +863,13 @@ community_detection_cosine_similarity(
             auto vt = indexToVertex.find(i);
             if (vt != indexToVertex.end())
                 cout<<"were supposed to erase something"<<endl;
-                //vertexToComponent.erase ( indexToVertex.find(i) );
+                vertexToComponent.erase ( indexToVertex.find(i) );
             else{
+                //
                 cout<<"\nCould not find this one in the dict:"<<i<<endl;
                 continue;
             }
-            ++community_id;
+//            ++community_id;
         }
         else
             ++community_id;
