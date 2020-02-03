@@ -798,8 +798,8 @@ community_detection_cosine_similarity(
     //      Alternative implementation: convert to adjacency list and use boost to find cc
 
     // / use .reserve to set the capacity of the below 2d vector instead of initialization
-    const int max_communities = 100;
-    vector<vector<uint_fast32_t>> communities(max_communities,vector<uint_fast32_t>(adj_mat.size(),-1));
+//    const int max_communities = 100;
+//    vector<vector<uint_fast32_t>> communities(max_communities,vector<uint_fast32_t>(adj_mat.size(),-1));
 
     size_t community_id = 0;
     stack<size_t> toCheck;
@@ -834,7 +834,7 @@ community_detection_cosine_similarity(
                 vertexToComponent[vt->second] = community_id;
                 //componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
             else
-                cout<<"BIG BUG on "<<ii<<" when processing "<<i<<endl;
+                cout<<"BIG BUG on "<<ii<<" when processing "<<i<<"| Size of dict: "<<indexToVertex.size()<<endl;
 //            if (vt != indexToVertex.end())
 //                vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
 
@@ -1186,8 +1186,8 @@ main(int argc, char* argv[])
 //	auto de = boost::add_edge(barcodeToIndex["D"], barcodeToIndex["E"], g).first;
 //	g[de].weight = 10;
 
-//    printGraph(g);
-//    cout<<"\n\n\n";
+    printGraph(g);
+    cout<<"\n\n\n";
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
 
@@ -1204,7 +1204,7 @@ main(int argc, char* argv[])
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
         vertexCount++;
-		cout<<" ||| Processing subgraph "<<vertexCount<<endl;
+		cout<<" ||| Processing subgraph "<<vertexCount<<" - node count: "<<neighbours.size()<<endl;
 		if (vertexCount % 100 == 0){
 		    cout<<"processing "<<vertexCount<<"th subgraph of "<<boost::num_vertices(g)<<endl;
 		    stop = high_resolution_clock::now();
