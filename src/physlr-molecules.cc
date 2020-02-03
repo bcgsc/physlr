@@ -863,6 +863,8 @@ community_detection_cosine_similarity(
         if (toAdd.size() < 2)
         {
             cout<<"small comm - skipped"<<endl;
+            while(!toAdd.empty())
+                toAdd.pop();
         }
         else
         {
@@ -874,7 +876,7 @@ community_detection_cosine_similarity(
                 if (vt != indexToVertex.end() )
                     vertexToComponent[vt->second] = community_id;
                 else
-                    cout<<"BIG BUG"<<endl;
+                    cout<<"not found while more than 2 are waiting to be added."<<endl;
             }
             community_id++;
         }
