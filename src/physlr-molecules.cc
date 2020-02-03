@@ -654,7 +654,13 @@ cosine_similarity_vectors(
 //                "input vectors are zero-vectors.");
     }
     //return mul / (sqrt(d_a) * sqrt(d_b));
-    return mul / sqrt(d_i * d_j);
+    if (sqrt(d_i * d_j))
+        return mul / sqrt(d_i * d_j);
+    else
+    {
+        cout<<"BUG OF cos: "<<mul<<" - "<<d_i<<" - "<<d_j<<" - "<<sqrt(d_i * d_j)<<endl;
+        return 0;
+    }
 }
 
 inline
@@ -689,7 +695,10 @@ calculate_cosine_similarity_2d(
         vector<double>::iterator first_normalized = normalized_row_i->begin();
         vector<double>::iterator last_normalized = normalized_row_i->end();
         while(first!=last){
-            *first_normalized = *first / sqrt(1.0 * row_sum);
+            if (row_sum)
+                *first_normalized = *first / sqrt(1.0 * row_sum);
+            else
+                *first_normalized = 0;
             ++first;
             ++first_normalized;
         }
@@ -782,6 +791,26 @@ community_detection_cosine_similarity(
                                         cosSimilarity2d);
     else
         calculate_cosine_similarity_2d(adj_mat, cosSimilarity2d);
+
+    cout<<"adj mat values: "<<endl;
+    for (size_t i = 0; i < adj_mat.size(); i++)
+    {
+        for (size_t j = 0; j < adj_mat.size(); j++)
+        {
+            cout<<" "<<adj_mat[i][j];
+        }
+        cout<<endl;
+    }
+
+    cout<<"Cosim values: "<<endl;
+    for (size_t i = 0; i < cosSimilarity2d.size(); i++)
+    {
+        for (size_t j = 0; j < cosSimilarity2d.size(); j++)
+        {
+            cout<<" "<<cosSimilarity2d[i][j];
+        }
+        cout<<endl;
+    }
     // 2- Determine the threshold:
     // not implemented yet; so use a predefined universal threshold.
     threshold = threshold;
@@ -799,6 +828,16 @@ community_detection_cosine_similarity(
                     adj_mat[j][i] = 0;
                 }
             }
+    }
+
+    cout<<"filtered adj mat values: "<<endl;
+    for (size_t i = 0; i < adj_mat.size(); i++)
+    {
+        for (size_t j = 0; j < adj_mat.size(); j++)
+        {
+            cout<<" "<<adj_mat[i][j];
+        }
+        cout<<endl;
     }
     // 4- Detect Communities (find connected components - DFS)
     //      Alternative implementation: convert to adjacency list and use boost to find cc
@@ -827,6 +866,7 @@ community_detection_cosine_similarity(
         isSingleton = true;
         //cout<<"entered"<<endl;
         size_t ii;
+        size_t node_to_add;
 
         while(!toCheck.empty()){
 
@@ -868,16 +908,21 @@ community_detection_cosine_similarity(
         }
         else
         {
+            cout<<"community "<<community_id<<" nodes: ";
             while(!toAdd.empty())
             {
-                size_t node_to_add = toAdd.top();
+                node_to_add = toAdd.top();
                 toAdd.pop();
                 auto vt = indexToVertex.find(node_to_add);
-                if (vt != indexToVertex.end() )
+                cout<<node_to_add<<": ";
+                if (vt != indexToVertex.end() ){
                     vertexToComponent[vt->second] = community_id;
+                    cout<<subgraph[vt->second].name<<" - ";
+                }
                 else
                     cout<<"BUG: not found in the map!"<<endl;
             }
+            cout<<endl;
             community_id++;
         }
 
@@ -1276,8 +1321,13 @@ main(int argc, char* argv[])
 		g.m_children.clear();
 
 		vecVertexToComponent[*vertexIt] = vertexToComponent;
+		cout<<"\n\nHERE HAHA:"<<*vertexIt<<endl;
 	}
-
+//	for (auto it1 = vecVertexToComponent.begin(); it1 < vecVertexToComponent.end(); ++it1){
+//	    cout<<"New:"<<endl;
+//	    for(auto& it2 = it1->begin(); it2 != it1->end(); ++it2)
+//	        cout<<"\tnode to com:"<<it2->first.name()<<","<<it2->second<<endl;
+//	}
 	std::cerr << "Finished molecule separation ";
 #if _OPENMP
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
