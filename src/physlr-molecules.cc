@@ -765,6 +765,7 @@ community_detection_cosine_similarity(
 
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
     indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
+    cout<<"size of subgraph:"<<num_vertices(subgraph)<<"\n size of vertexToInex: "<<vertexToIndex.size()<<"\n size of indexToVer: "<<indexToVertex.size()<<endl;
 
     int size_adj_mat = adj_mat.size();
     vector<double> tempVector(size_adj_mat, 0);
