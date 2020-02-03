@@ -855,7 +855,7 @@ community_detection_cosine_similarity(
             // /communities[community_id].pop_back();
             auto vt = indexToVertex.find(i);
             if (vt != indexToVertex.end())
-                cout<<"were supposed to erase something";
+                cout<<"were supposed to erase something"<<endl;
                 //vertexToComponent.erase ( indexToVertex.find(i) );
             else{
                 cout<<"\nCould not find this one in the dict:"<<i<<endl;
@@ -1211,6 +1211,9 @@ main(int argc, char* argv[])
             cout << "\ttime since last report (micro-s): "<<duration.count() << endl;
 		    start = timeNow();
 		}
+//		if (vertexCount == 1000){
+//		    break;
+//		}
 //		vector<decltype(neighbours)> binned_neighbours;
 //		bin_neighbours(neighbours, binned_neighbours);
 //		size_t neighborhood_size = 0;
