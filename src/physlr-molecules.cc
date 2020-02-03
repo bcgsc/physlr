@@ -1204,7 +1204,7 @@ main(int argc, char* argv[])
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
         vertexCount++;
-		cout<<" ||| Processing subgraph "<<vertexCount<<" - node count: "<<neighbours.size()<<endl;
+
 		if (vertexCount % 100 == 0){
 		    cout<<"processing "<<vertexCount<<"th subgraph of "<<boost::num_vertices(g)<<endl;
 		    stop = high_resolution_clock::now();
@@ -1223,7 +1223,7 @@ main(int argc, char* argv[])
 //		}
 //		cout<<"Size: "<<neighborhood_size++<<endl;
 		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
-
+        cout<<" ||| Processing subgraph "<<vertexCount<<" - node count: "<<num_vertices(subgraph)<<endl;
 		vertexToComponent_t vertexToComponent;
 		if (vertexToComponent.size() > 0 ){
 		    cout<<"\n BIG BUG\n ";
