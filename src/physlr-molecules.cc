@@ -807,6 +807,7 @@ community_detection_cosine_similarity(
 
     size_t community_id = 0;
     stack<size_t> toCheck;
+    stack<size_t> toAdd;
     //unordered_map<int, int>;
     vector<int> zeros(adj_mat.size(),0);
     vector<int> isDetected(adj_mat.size(),0);
@@ -831,17 +832,18 @@ community_detection_cosine_similarity(
             toCheck.pop();
             // /communities[community_id].push_back(ii);
 
-            auto vt = indexToVertex.find(ii);
-            //cout<<"ii : "<<ii<<":"<<vt->second<<" | ";
-            //vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
-            if (vt != indexToVertex.end())
-                vertexToComponent[vt->second] = community_id;
-                //componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
-            else
-            {
-                cout<<"BIG BUG on "<<ii<<" when processing "<<i<<"| Size of dict: "<<indexToVertex.size()<<endl;
-
-            }
+            toAdd.push_back(ii);
+//            auto vt = indexToVertex.find(ii);
+//            //cout<<"ii : "<<ii<<":"<<vt->second<<" | ";
+//            //vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
+//            if (vt != indexToVertex.end())
+//                vertexToComponent[vt->second] = community_id;
+//                //componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
+//            else
+//            {
+//                cout<<"real singleton: "<<ii<<"| Size of dict: "<<indexToVertex.size()<<endl;
+//                continue;
+//            }
 //            if (vt != indexToVertex.end())
 //                vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
 
@@ -856,26 +858,43 @@ community_detection_cosine_similarity(
                 }
             }
         }
-        //cout<<"\n";
-        if (isSingleton)
+        if (toAdd.size() < 2)
         {
-            // /communities[community_id].pop_back();
-            auto vt = indexToVertex.find(i);
-            if (vt != indexToVertex.end())
-            {
-                cout<<"were supposed to erase something"<<endl;
-                vertexToComponent.erase ( indexToVertex.find(i) );
-            }
-            else
-            {
-                //
-                cout<<"\nCould not find this one in the dict:"<<i<<endl;
-                continue;
-            }
-//            ++community_id;
+            cout<<"small comm - skipped";
         }
         else
-            ++community_id;
+        {
+            while(!toAdd.empty())
+            {
+                auto vt = indexToVertex.find(ii);
+                if (vt != indexToVertex.end() )
+                    vertexToComponent[vt->second] = community_id;
+                else
+                    cout<<"BIG BUG"<<endl;
+            }
+            community_id++;
+        }
+
+        //cout<<"\n";
+//        if (isSingleton)
+//        {
+//            // /communities[community_id].pop_back();
+//            auto vt = indexToVertex.find(i);
+//            if (vt != indexToVertex.end())
+//            {
+//                cout<<"were supposed to erase something"<<endl;
+//                vertexToComponent.erase ( indexToVertex.find(i) );
+//            }
+//            else
+//            {
+//                //
+//                cout<<"\nCould not find this one in the dict:"<<i<<endl;
+//                continue;
+//            }
+////            ++community_id;
+//        }
+//        else
+//            ++community_id;
 //        ++community_id;
     }
 }
