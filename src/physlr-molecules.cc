@@ -876,7 +876,7 @@ community_detection_cosine_similarity(
                 if (vt != indexToVertex.end() )
                     vertexToComponent[vt->second] = community_id;
                 else
-                    cout<<"not found while more than 2 are waiting to be added."<<endl;
+                    cout<<"BUG: not found in the map!"<<endl;
             }
             community_id++;
         }
