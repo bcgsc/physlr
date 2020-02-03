@@ -1229,7 +1229,7 @@ main(int argc, char* argv[])
 		    cout<<"\n BIG BUG\n ";
 		}
 		//biconnectedComponents(subgraph, vertexToComponent);
-        community_detection_cosine_similarity(subgraph, vertexToComponent);
+        community_detection_cosine_similarity(subgraph, vertexToComponent, false);
         //Community_detection_k3_cliques(subgraph, vertexToComponent);
 
 		// Delete subgraph to keep memory in control
