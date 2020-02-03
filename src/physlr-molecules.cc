@@ -866,7 +866,9 @@ community_detection_cosine_similarity(
         {
             while(!toAdd.empty())
             {
-                auto vt = indexToVertex.find(ii);
+                size_t node_to_add = toAdd.top();
+                toAdd.pop();
+                auto vt = indexToVertex.find(node_to_add);
                 if (vt != indexToVertex.end() )
                     vertexToComponent[vt->second] = community_id;
                 else
