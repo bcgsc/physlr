@@ -832,7 +832,7 @@ community_detection_cosine_similarity(
             toCheck.pop();
             // /communities[community_id].push_back(ii);
 
-            toAdd.push_back(ii);
+            toAdd.push(ii);
 //            auto vt = indexToVertex.find(ii);
 //            //cout<<"ii : "<<ii<<":"<<vt->second<<" | ";
 //            //vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
