@@ -208,64 +208,76 @@ splitMinimizers(
     tsl::robin_map<std::string, BarcodeID>& barcodes)
 {
 	size_t numBx = bxToMolIdx.size();
+	size_t numTasks = numBx / opt::threads;
 	// Canonical for loop for openMP
 #if _OPENMP
 #pragma omp parallel for
 #endif
-	for (size_t i = 0; i < numBx; ++i) {
-		auto it = bxToMolIdx.begin();
-		std::advance(it, i);
-
+	for (unsigned j = 0; j < opt::threads; ++j) {
+		size_t end;
+		if (j == opt::threads - 1 ){
+			end = numBx;
+		} else {
+			end = (j + 1) * numTasks;
+		}
 		std::stringstream ssOut;
+		for (size_t i = j * numTasks; i < end; ++i) {
+			auto it = bxToMolIdx.begin();
+			std::advance(it, i);
 
-		auto& bx = (*it).first;
-		auto& bxIdx = barcodes[bx];
-		auto& minimizerSet = barcodeToMinimizer[bxIdx];
 
-		for (auto& mol : (*it).second) {
-			// Get Union of minimizers of neighbours
-			auto neighbours = boost::adjacent_vertices(mol, g);
-			tsl::robin_set<Minimizer> neighbourMxsUnion;
-			for (auto neighbourItr = neighbours.first; neighbourItr != neighbours.second;
-			     ++neighbourItr) {
-				std::string pattern = R"((\S+)_\d+$)";
-				std::regex rgx(pattern);
-				std::smatch matches;
-				if (std::regex_search(g[*neighbourItr].name, matches, rgx)) {
-					auto neighbourBx = matches[1].str();
-					auto& neighbourBxIdx = barcodes[neighbourBx];
-					auto& neighbourMxs = barcodeToMinimizer[neighbourBxIdx];
-					for (auto& mx : neighbourMxs) {
-						neighbourMxsUnion.insert(mx);
+			auto& bx = (*it).first;
+			auto& bxIdx = barcodes[bx];
+			auto& minimizerSet = barcodeToMinimizer[bxIdx];
+
+			for (auto& mol : (*it).second) {
+				// Get Union of minimizers of neighbours
+				auto neighbours = boost::adjacent_vertices(mol, g);
+				tsl::robin_set<Minimizer> neighbourMxsUnion;
+				for (auto neighbourItr = neighbours.first; neighbourItr != neighbours.second;
+					++neighbourItr) {
+					std::string pattern = R"((\S+)_\d+$)";
+					std::regex rgx(pattern);
+					std::smatch matches;
+					if (std::regex_search(g[*neighbourItr].name, matches, rgx)) {
+						auto neighbourBx = matches[1].str();
+						auto& neighbourBxIdx = barcodes[neighbourBx];
+						auto& neighbourMxs = barcodeToMinimizer[neighbourBxIdx];
+						for (auto& mx : neighbourMxs) {
+							neighbourMxsUnion.insert(mx);
+						}
+					}
+				}
+				// Intersect minimizers of barcode with union
+				std::vector<Minimizer> splitMinimizers;
+				for (auto& mx : minimizerSet) {
+					if (neighbourMxsUnion.find(mx) != neighbourMxsUnion.end()) {
+						splitMinimizers.emplace_back(mx);
+					}
+				}
+
+				if (splitMinimizers.empty()) {
+					ssOut << g[mol].name << "\t\n";
+				} else {
+					ssOut << g[mol].name << "\t";
+					for (unsigned i = 0; i < splitMinimizers.size(); ++i) {
+						if (i == splitMinimizers.size() - 1) {
+							ssOut << splitMinimizers[i] << "\n";
+						} else {
+							ssOut << splitMinimizers[i] << " ";
+						}
 					}
 				}
 			}
-			// Intersect minimizers of barcode with union
-			std::vector<Minimizer> splitMinimizers;
-			for (auto& mx : minimizerSet) {
-				if (neighbourMxsUnion.find(mx) != neighbourMxsUnion.end()) {
-					splitMinimizers.emplace_back(mx);
-				}
-			}
 
-			if (splitMinimizers.empty()) {
-				ssOut << g[mol].name << "\t\n";
-			} else {
-				ssOut << g[mol].name << "\t";
-				for (unsigned i = 0; i < splitMinimizers.size(); ++i) {
-					if (i == splitMinimizers.size() - 1) {
-						ssOut << splitMinimizers[i] << "\n";
-					} else {
-						ssOut << splitMinimizers[i] << " ";
-					}
-				}
-			}
+			
 		}
 #if _OPENMP
 #pragma omp critical
 #endif
-		std::cout << ssOut.str();
+	std::cout << ssOut.str();
 	}
+
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
