@@ -9,6 +9,7 @@
 #include <utility>
 #include <functional>
 
+#include <numeric>
 #include <stdint.h>
 #include <chrono>
 #include <tgmath.h>
@@ -1190,16 +1191,7 @@ community_detection_k3_cliques(
 
 }
 
-template <class Neighbours_Type>
-void
-bin_neighbours(Neighbours_Type neighbours, componentToVertexSet_t& binned_neighbours, size_t bin_size = 50)
-{
-    componentToVertexSet_t compToVertset(1,vertexSet(neighbours.first, neighbours.second));
-    if (compToVertset[i].size() > bin_size)
-    {
-        bin_components(compToVertset, binned_neighbours, bin_size);
-    }
-}
+
 
 void
 bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_neighbours, size_t bin_size = 50)
@@ -1207,45 +1199,98 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
     vector<size_t> components_size;
     size_t neighborhood_size;
     size_t components_count;
+    cout<<"size of source is:"<<source.size()<<endl;
     for (int i = 0; i < source.size(); i++){
+        cout<<"size of dim "<<i<<"of source is:"<<source[i].size()<<endl;
         neighborhood_size = source[i].size();
 //        for (auto neigh_it = source[i].begin(); neigh_it < source[i].end(); ++neigh_it)
 //        {
 //    	    neighborhood_size++;
 //	    }
 	    components_count = ((neighborhood_size-1) / bin_size)+1;
-	    components_count.push_back(components_count);
+	    cout<<"so comp count is: "<<components_count<<endl;
+	    components_size.push_back(components_count);
     }
-    binned_neighbours.resize(std::accumulate(components_count.begin(),components_count.end(), 0));
-
+    size_t new_size = std::accumulate(components_size.begin(),components_size.end(), 0);
+    binned_neighbours.resize(new_size);
+    cout<<"binned_neighbours resized to "<<new_size<<endl;
     size_t counter_new = 0;
     size_t base_com_size;
     size_t leftover;
 
     for (int i = 0; i < source.size(); i++){
-        neighborhood_size = 0
-	    random_shuffle(source[i].begin(), source[i].end());
+        neighborhood_size = 0;
+	    //random_shuffle(source[i].begin(), source[i].end());
         // source[i].size
-        base_com_size = source[i].size() / components_count[i];
-        leftover = source[i].size() % components_count[i];
+        base_com_size = source[i].size() / components_size[i];
+        leftover = source[i].size() % components_size[i];
         int yet_leftover = (leftover ? 1 : 0 );
-        size_t start = 0;
-        size_t end = 0;
-        for ( ; start < source[i].size(); start = end )
+//        int start = 0;
+//        int end = 0;
+
+        auto elementIt = source[i].begin();
+        while(elementIt != source[i].end())
         {
-            if (--leftover == 0)
+            int length = base_com_size + yet_leftover;
+            if (--leftover == 0 )
                 yet_leftover = 0;
-            end = start + base_com_size + leftover;
-            if (counter_new > binned_neighbours.size())
-                cout<<"BUG IN SIZE OF binned_neighbours"<<endl;
-            binned_neighbours[counter_new].reserve(end-start);
-            binned_neighbours[counter_new].insert(source[i].begin()+start, source[i].begin()+end);
+
+            for (int i = 0; i < length; i++)
+            {
+                binned_neighbours[counter_new].insert(*elementIt);
+                elementIt;
+                if (elementIt == source[i].end()){
+                    cerr<<" WAS NOT EXPECTED!"<<endl;
+                    break;
+                }
+            }
             counter_new++;
         }
+//        for ( ; start < source[i].size(); start = end )
+//        {
+//            if (--leftover == 0)
+//                yet_leftover = 0;
+//            end = start + base_com_size + leftover;
+//            if (counter_new > binned_neighbours.size())
+//                cout<<"BUG IN SIZE OF binned_neighbours"<<endl;
+//            auto ss = source[i].begin();
+//            size_t temp_s = start;
+//            size_t temp_e = end-start;
+//            while (temp_s > 0){
+//                temp_s--;
+//                ss++;
+//            }
+//            auto ee = ss;
+//            while (temp_e > 0){
+//                temp_e--;
+//                ee++;
+//            }
+//            //binned_neighbours[counter_new].reserve(end-start);
+//            //binned_neighbours[counter_new].begin(),
+//
+//            //binned_neighbours[counter_new].insert(ss, ee);
+//
+//            counter_new++;
+//        }
     }
 }
 
-
+template <class Neighbours_Type>
+void
+bin_neighbours(Neighbours_Type neighbours, componentToVertexSet_t& binned_neighbours, size_t bin_size = 5)
+{
+    cout<<"entered bin-neighbours"<<endl;
+    componentToVertexSet_t compToVertset(1,vertexSet_t(neighbours.first, neighbours.second));
+    cout<<"size of 1: "<<compToVertset[0].size()<<endl;
+    if (compToVertset[0].size() > bin_size)
+    {
+        bin_components(compToVertset, binned_neighbours, bin_size);
+    }
+    else
+    {
+        binned_neighbours = compToVertset;
+    }
+}
 
 //template <class Neighbours_Type>
 //void
@@ -1366,18 +1411,36 @@ main(int argc, char* argv[])
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
 
+
+        /////////////////////////////////////////////////// binning version
 		bin_neighbours(neighbours, componentsVec);
 
-
+        start = timeNow();
 		for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
 		{
-		    graph_t& subgraph = g.create_subgraph(componentsVec[i].begin(), componentsVec[i].end());
+		    cout<<" Entered "<<endl;
+		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //biconnectedComponents(subgraph, vertexToComponent);
             //community_detection_cosine_similarity(subgraph, vertexToComponent, false);
 		    community_detection_k3_cliques(subgraph, vertexToComponent);
+		    vertexCount++;
 		}
+	    stop = timeNow();
+	    duration_temp2 = duration_cast<microseconds>(stop - start);
+	    time_sum +=  duration_temp2.count();
 
-        //neighborhood_size = 50;
+//	    if (vertexCount % 10 == 0)
+//	    {
+//	        std::cerr<<"processing "<<vertexCount<<"(/"<<vertexCount2<<")th subgraph of ";
+//	        //std::cerr<<boost::num_vertices(subgraph)<<" vertices ("<<boost::num_vertices(g)<<" subgraphs in total)."<<endl;
+//	        std::cerr<< "\ttime since last report (micro-s): "<<duration_temp2.count() << endl;
+//	        std::cerr<< "\ttime sum (micro-s): "<<time_sum << endl;
+//        }
+        /////////////////////////////////////////////////// binning version }
+
+
+        /////////////////////////////////////////////////// no-binning version
+        neighborhood_size = 50;
 		//for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
 		//    neighborhood_size++;
 		//}
@@ -1407,6 +1470,9 @@ main(int argc, char* argv[])
 //	        duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
 //	        duration_if_all += duration_temp2.count();
 //		}
+        /////////////////////////////////////////////////// no-binning version end }
+
+
 		if (vertexCount == 200){
 		    break;
 		}
@@ -1429,7 +1495,7 @@ main(int argc, char* argv[])
 //	        cout<<"\tnode to com:"<<it2->first.name()<<","<<it2->second<<endl;
 //	}
 	std::cerr<<"Total time for the loop:"<<duration_loop_all<<endl;
-	std::cerr<<"Total time for the if-statement:"<<duration_if_all<<endl;
+//	std::cerr<<"Total time for the if-statement:"<<duration_if_all<<endl;
 	std::cerr<<"Total time for com-det:"<<time_sum<<endl;
 
 	cout<<endl;
