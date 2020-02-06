@@ -1430,7 +1430,7 @@ main(int argc, char* argv[])
         start = timeNow();
 		for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
 		{
-		    if(vertexCount2 % 50 == 0 && comp_i==0)
+		    if(vertexCount2 % 100000 == 0 && comp_i==0)
                 std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph)";
 		    //cout<<" Entered: "<<comp_i<<endl;
 		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
@@ -1444,9 +1444,9 @@ main(int argc, char* argv[])
 	    stop = timeNow();
 	    duration_temp2 = duration_cast<microseconds>(stop - start);
 	    time_sum +=  duration_temp2.count();
-        if (vertexCount2 == 5000){
-		    break;
-		}
+//        if (vertexCount2 == 500000){
+//		    break;
+//		}
 //	    if (vertexCount % 10 == 0)
 //	    {
 //	        std::cerr<<"processing "<<vertexCount<<"(/"<<vertexCount2<<")th subgraph of ";
