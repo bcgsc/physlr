@@ -1431,7 +1431,7 @@ main(int argc, char* argv[])
 		for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
 		{
 		    if(vertexCount2 % 50 == 0 && comp_i==0)
-                std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph);
+                std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph)";
 		    //cout<<" Entered: "<<comp_i<<endl;
 		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
