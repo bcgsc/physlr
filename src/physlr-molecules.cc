@@ -1407,9 +1407,9 @@ main(int argc, char* argv[])
 	size_t initial_community_id = 0;
 
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
+        start_loop_all = timeNow();
         initial_community_id = 0;
         vertexCount2++;
-        start_loop_all = timeNow();
 		componentToVertexSet_t componentsVec;
         vertexToComponent_t vertexToComponent;
         if (vertexToComponent.size() > 0 ){
@@ -1422,11 +1422,16 @@ main(int argc, char* argv[])
 
 
         /////////////////////////////////////////////////// binning version
+		start_if_all = timeNow();
 		bin_neighbours(neighbours, componentsVec, 5);
-
+        stop_if_all = timeNow();
+        duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
+	    duration_if_all += duration_temp2.count();
         start = timeNow();
 		for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
 		{
+		    if(vertexCount2 % 50 == 0 && comp_i==0)
+                std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph);
 		    //cout<<" Entered: "<<comp_i<<endl;
 		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
@@ -1507,9 +1512,8 @@ main(int argc, char* argv[])
 //	        cout<<"\tnode to com:"<<it2->first.name()<<","<<it2->second<<endl;
 //	}
 	std::cerr<<"Total time for the loop:"<<duration_loop_all<<endl;
-//	std::cerr<<"Total time for the if-statement:"<<duration_if_all<<endl;
+	std::cerr<<"Total time for the if-statement (or binning):"<<duration_if_all<<endl;
 	std::cerr<<"Total time for com-det:"<<time_sum<<endl;
-
 	std::cerr<<endl;
 	std::cerr<<"k-cliques total time:"<<duration_cliques_all<<endl;
 	std::cerr<<"cliques_bron total time:"<<duration_cliques_bron<<endl;
