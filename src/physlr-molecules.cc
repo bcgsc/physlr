@@ -101,8 +101,30 @@ using indexToVertex_t = std::unordered_map<size_t, vertex_t>; // wanna improve t
 using adjacencyMatrix_t = std::vector<std::vector<uint_fast32_t>>;
 using adjacencyVector_t = std::vector<uint_fast32_t>;
 using Clique_type = std::unordered_map<vertex_t, size_t>;
+//using Clique_type = std::unordered_set<vertex_t>;
 
 #define timeNow() std::chrono::high_resolution_clock::now()
+//std::chrono::duration<double> duration_cliques_bron;
+//std::chrono::duration<double> duration_cliques_other;
+//std::chrono::duration<double> duration_cosine_1;
+//std::chrono::duration<double> duration_cosine_2;
+//std::chrono::duration<double> duration_cosine_3;
+//std::chrono::duration<double> duration_cosine_4;
+std::chrono::duration<long double> duration_temp;
+std::chrono::duration<long double> duration_temp2;
+
+long double duration_loop_all = 0;
+long double duration_if_all = 0;
+long double time_sum = 0;
+long double duration_cliques_all = 0;
+long double duration_cliques_bron = 0;
+long double duration_cliques_other = 0;
+
+long double duration_cosine_all = 0;
+long double duration_cosine_1 = 0;
+long double duration_cosine_2 = 0;
+long double duration_cosine_3 = 0;
+long double duration_cosine_4 = 0;
 
 struct cliques_visitor {
     // This is the visitor that will process each clique found by bron_kerbosch algorithm
@@ -118,14 +140,15 @@ struct cliques_visitor {
     void clique(const Clique& clique, const Graph& g)
     {
         Clique_type current_clique;
-        // Clique_type current_clique(clique);
-        // Clique_type current_clique(clique.begin(), clique.end());
+//         Clique_type current_clique(clique);
+//        Clique_type current_clique(clique.begin(), clique.end());
         if (clique.size() > 2)
         {
             for(auto it = clique.begin(); it != clique.end(); ++it)
             {
                 // May need changes
                 current_clique[*it] = 1;
+                //current_clique.insert(*it);
             }
             cliquesVec.push_back(current_clique);
         }
@@ -395,7 +418,7 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
     // - vertexToIndex (referenced input)
 
     int N = boost::num_vertices(subgraph);
-    cout<<"  inner subgraph size:"<<N<<endl;
+    //-cout<<"  inner subgraph size:"<<N<<endl;
     adjacencyVector_t tempVector(N, 0);
     adjacencyMatrix_t adj_mat(N, tempVector);
 
@@ -658,7 +681,7 @@ cosine_similarity_vectors(
         return mul / sqrt(d_i * d_j);
     else
     {
-        cout<<"BUG OF cos: "<<mul<<" - "<<d_i<<" - "<<d_j<<" - "<<sqrt(d_i * d_j)<<endl;
+        std::cerr<<"BUG in calculation of cosine similarity: "<<mul<<" - "<<d_i<<" - "<<d_j<<" - "<<sqrt(d_i * d_j)<<endl;
         return 0;
     }
 }
@@ -763,21 +786,28 @@ std::unordered_map<V,K> inverse_map(std::unordered_map<K,V> &map)
 void
 community_detection_cosine_similarity(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
-    bool squaring = true, double threshold=0.2)
+    bool squaring = true, double threshold=0.3)
 {
     // Detect communities using cosine similarity of vertices
 
-    // 1- Calculate the cosine similarity:
+    // 0- Map indices and vertex names
 //    vertexToIndex_t vertexToIndex(num_vertices(subgraph));
+    auto startAll = timeNow();
     vertexToIndex_t vertexToIndex;
     vertexToIndex.reserve(boost::num_vertices(subgraph));
-    cout<<"size of vertexToInex: "<<vertexToIndex.size()<<endl;
-
+    //-cout<<"size of vertexToInex: "<<vertexToIndex.size()<<endl;
+    auto start1 = timeNow();
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
     indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
-    cout<<" size of subgraph:"<<num_vertices(subgraph)<<endl;
-    cout<<" size of adj_mat:"<<adj_mat.size();
-    cout<<" size of vertexToInex: "<<vertexToIndex.size()<<"\n size of indexToVer: "<<indexToVertex.size()<<endl;
+    auto stop1 = timeNow();
+    duration_temp = duration_cast<microseconds>(stop1 - start1);
+    duration_cosine_1 += duration_temp.count();
+
+    // 1- Calculate the cosine similarity:
+    auto start2 = timeNow();
+    //-cout<<" size of subgraph:"<<num_vertices(subgraph)<<endl;
+    //-cout<<" size of adj_mat:"<<adj_mat.size();
+    //-cout<<" size of vertexToInex: "<<vertexToIndex.size()<<"\n size of indexToVer: "<<indexToVertex.size()<<endl;
 
     int size_adj_mat = adj_mat.size();
     vector<double> tempVector(size_adj_mat, 0);
@@ -792,60 +822,65 @@ community_detection_cosine_similarity(
     else
         calculate_cosine_similarity_2d(adj_mat, cosSimilarity2d);
 
-    cout<<"adj mat values: "<<endl;
-    for (size_t i = 0; i < adj_mat.size(); i++)
-    {
-        for (size_t j = 0; j < adj_mat.size(); j++)
-        {
-            cout<<" "<<adj_mat[i][j];
-        }
-        cout<<endl;
-    }
-
-    cout<<"Cosim values: "<<endl;
-    for (size_t i = 0; i < cosSimilarity2d.size(); i++)
-    {
-        for (size_t j = 0; j < cosSimilarity2d.size(); j++)
-        {
-            cout<<" "<<cosSimilarity2d[i][j];
-        }
-        cout<<endl;
-    }
+    auto stop2 = timeNow();
+    duration_temp = duration_cast<microseconds>(stop2 - start2);
+    duration_cosine_2 += duration_temp.count();
+//    cout<<"adj mat values: "<<endl;
+//    for (size_t i = 0; i < adj_mat.size(); i++)
+//    {
+//        for (size_t j = 0; j < adj_mat.size(); j++)
+//        {
+//            cout<<" "<<adj_mat[i][j];
+//        }
+//        cout<<endl;
+//    }
+//
+//    cout<<"Cosim values: "<<endl;
+//    for (size_t i = 0; i < cosSimilarity2d.size(); i++)
+//    {
+//        for (size_t j = 0; j < cosSimilarity2d.size(); j++)
+//        {
+//            cout<<" "<<cosSimilarity2d[i][j];
+//        }
+//        cout<<endl;
+//    }
     // 2- Determine the threshold:
     // not implemented yet; so use a predefined universal threshold.
     threshold = threshold;
 
     // 3- Filter out edges:
+    auto start3 = timeNow();
     for (int i = 0; i < adj_mat.size() ; i++)
     {
         for (int j = i+1; j < adj_mat.size() ; j++)
             {
                 if (cosSimilarity2d[i][j] < threshold)
-                    cout<<" cosim less than threshold found;"<<endl;
-                if (cosSimilarity2d[i][j] < threshold)
                 {
+                    //cout<<" cosim less than threshold found;"<<endl;
                     adj_mat[i][j] = 0;
                     adj_mat[j][i] = 0;
                 }
             }
     }
-
-    cout<<"filtered adj mat values: "<<endl;
-    for (size_t i = 0; i < adj_mat.size(); i++)
-    {
-        for (size_t j = 0; j < adj_mat.size(); j++)
-        {
-            cout<<" "<<adj_mat[i][j];
-        }
-        cout<<endl;
-    }
+    auto stop3 = timeNow();
+    duration_temp = duration_cast<microseconds>(stop3 - start3);
+    duration_cosine_3 += duration_temp.count();
+//    cout<<"filtered adj mat values: "<<endl;
+//    for (size_t i = 0; i < adj_mat.size(); i++)
+//    {
+//        for (size_t j = 0; j < adj_mat.size(); j++)
+//        {
+//            cout<<" "<<adj_mat[i][j];
+//        }
+//        cout<<endl;
+//    }
     // 4- Detect Communities (find connected components - DFS)
     //      Alternative implementation: convert to adjacency list and use boost to find cc
 
     // / use .reserve to set the capacity of the below 2d vector instead of initialization
 //    const int max_communities = 100;
 //    vector<vector<uint_fast32_t>> communities(max_communities,vector<uint_fast32_t>(adj_mat.size(),-1));
-
+    auto start4 = timeNow();
     size_t community_id = 0;
     stack<size_t> toCheck;
     stack<size_t> toAdd;
@@ -902,27 +937,29 @@ community_detection_cosine_similarity(
         }
         if (toAdd.size() < 2)
         {
-            cout<<"small comm - skipped"<<endl;
+            //-cout<<"small comm - skipped"<<endl;
             while(!toAdd.empty())
                 toAdd.pop();
         }
         else
         {
-            cout<<"community "<<community_id<<" nodes: ";
+            //-cout<<"community "<<community_id<<" nodes: ";
             while(!toAdd.empty())
             {
                 node_to_add = toAdd.top();
                 toAdd.pop();
                 auto vt = indexToVertex.find(node_to_add);
-                cout<<node_to_add<<": ";
+                //-cout<<node_to_add<<": ";
                 if (vt != indexToVertex.end() ){
-                    vertexToComponent[vt->second] = community_id;
-                    cout<<subgraph[vt->second].name<<" - ";
+                    vertexToComponent[subgraph[vt->second].indexOriginal] = community_id;
+                    //componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
+                    //vertexToComponent[vt->second] = community_id;
+                    //-cout<<subgraph[vt->second].name<<" - ";
                 }
                 else
-                    cout<<"BUG: not found in the map!"<<endl;
+                    std::cerr<<"BUG: not found in the map!"<<endl;
             }
-            cout<<endl;
+            //-cout<<endl;
             community_id++;
         }
 
@@ -948,6 +985,13 @@ community_detection_cosine_similarity(
 //            ++community_id;
 //        ++community_id;
     }
+    auto stop4 = timeNow();
+    duration_temp = duration_cast<microseconds>(stop4 - start4);
+    duration_cosine_4 += duration_temp.count();
+
+    auto stopAll = timeNow();
+    duration_temp = duration_cast<microseconds>(stopAll - startAll);
+    duration_cosine_all += duration_temp.count();
 }
 
 int
@@ -974,21 +1018,14 @@ inline share_edges(Clique_type& a, Clique_type& b)
     return 0;
 }
 
+
 void
-Community_detection_k3_cliques(
+community_detection_k3_cliques_v2(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
     int k = 3)
 {
-    // k-cliques community detection in case of k=3
-    // based on matrix multiplication
-    if (k != 3)
-    {
-        cout<<" This implementation of k-cliques does not support any k other than 3.";
-        exit (EXIT_FAILURE);
-    }
-
     /// TEST WHICH IS FASTER:
-    /// 1- MATRIX MULTIPLICATION TO FIND TRIANGLES?
+    /// 2- MATRIX MULTIPLICATION TO FIND TRIANGLES?
 //    vertexToIndex_t vertexToIndex(num_vertices(subgraph));
 //    adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
 //    indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
@@ -1021,20 +1058,45 @@ Community_detection_k3_cliques(
 //    // Now go over these triangles to mix them.
 //    // ...
 
-    /// 2- GRAPH TRAVERSAL TO FIND TRIANGLES (without squaring)
+    /// 3- GRAPH TRAVERSAL TO FIND TRIANGLES (without squaring)
 
-    /// 3- MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
+    /// 4- MATRIX TO VECTOR CONVERSION + BITWISE AND ON INTEGERS (compacted vectors)?
 
-    /// 4- NORMAL K-CLIQUE DETECTION using boost
-    // vector<vector<int> > vecs(3,vector<int>(5));
-    // std::vector<Clique_type> allCliquesVec(100, Clique_type(1000));
+    /// 5- K-CLIQUE DETECTION using Google OR-Tools
+
+    /// 6- K-CLIQUE DETECTION using Cliquer
+}
+
+size_t
+community_detection_k3_cliques(
+    graph_t& subgraph, vertexToComponent_t& vertexToComponent,
+    size_t initial_community_id = 0, int k = 3)
+{
+    // k-cliques community detection (only supports k=3 currently)
+    // based on the original algorithm
+
+    size_t community_id = initial_community_id;
+    auto startAll = timeNow();
+    if (k != 3)
+    {
+        cout<<" This implementation of k-cliques does not support any k other than 3.";
+        exit (EXIT_FAILURE);
+    }
+    /// 1- NORMAL K-CLIQUE DETECTION using boost
+
     std::vector<Clique_type> allCliquesVec;
-//    allCliquesVec.resize(100);                              // resize the columns
-//    for (auto &row : allCliquesVec) { row.reserve(1000); }   // resize the rows
+    //allCliquesVec.resize(100);                              // resize the columns
+    //for (auto &row : allCliquesVec) { row.reserve(1000); }   // resize the rows
     cliques_visitor visitor(allCliquesVec);
-    // - use the Bron-Kerbosch algorithm to find all cliques
-    boost::bron_kerbosch_all_cliques(subgraph, visitor);
 
+    // - use the Bron-Kerbosch algorithm to find all cliques
+    auto start = timeNow();
+    boost::bron_kerbosch_all_cliques(subgraph, visitor);
+    auto stop = timeNow();
+    duration_temp = duration_cast<microseconds>(stop - start);
+    duration_cliques_bron += duration_temp.count();
+
+    auto start2 = timeNow();
     // - find adjacent cliques sharing 2 vertices at least (one edge at least)
     size_t cliquesCount = allCliquesVec.size();
     //cout<<"size of allCliqueVec: "<<cliquesCount<<endl;
@@ -1064,7 +1126,6 @@ Community_detection_k3_cliques(
     k3CliquesVec.resize(100);                              // resize the columns
     for (auto &row : k3CliquesVec) { row.reserve(1000); }   // resize the rows
 
-    size_t community_id = 0;
     stack<size_t> toCheck;
     vector<size_t> isDetected(cliquesCount,0);
     //int max_communities = 100;
@@ -1091,7 +1152,8 @@ Community_detection_k3_cliques(
             for (auto& x:allCliquesVec[ii])
             {
                 //cout<<"Community ID being assigned to: "<<ii<<" - "<<"- id: "<<community_id<<endl;
-                vertexToComponent[x.first] = community_id;
+                //vertexToComponent[x.first] = community_id;
+                vertexToComponent[subgraph[x.first].indexOriginal] = community_id;
             }
 
             for (size_t j = 0 ; j < cliquesCount; j++)
@@ -1106,6 +1168,17 @@ Community_detection_k3_cliques(
         }
         community_id++;
     }
+    auto stop2 = timeNow();
+    duration_temp = duration_cast<microseconds>(stop2 - start2);
+    duration_cliques_other += duration_temp.count();
+
+
+    auto stopAll = timeNow();
+    duration_temp = duration_cast<microseconds>(stopAll - startAll);
+    duration_cliques_all += duration_temp.count();
+
+    return community_id;
+
     // in case you use k3CliquesVec: iterate over communities and add them to vertexToComponent
 //    for (int i = 0; i < k3CliquesVec.size(); i++)
 //    {
@@ -1114,10 +1187,65 @@ Community_detection_k3_cliques(
 //                vertexToComponent[k3CliquesVec[i][j]] = i;
 //            }
 //    }
-    /// 5- K-CLIQUE DETECTION using Google OR-Tools
 
-    /// 6- K-CLIQUE DETECTION using Cliquer
 }
+
+template <class Neighbours_Type>
+void
+bin_neighbours(Neighbours_Type neighbours, componentToVertexSet_t& binned_neighbours, size_t bin_size = 50)
+{
+    componentToVertexSet_t compToVertset(1,vertexSet(neighbours.first, neighbours.second));
+    if (compToVertset[i].size() > bin_size)
+    {
+        bin_components(compToVertset, binned_neighbours, bin_size);
+    }
+}
+
+void
+bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_neighbours, size_t bin_size = 50)
+{
+    vector<size_t> components_size;
+    size_t neighborhood_size;
+    size_t components_count;
+    for (int i = 0; i < source.size(); i++){
+        neighborhood_size = source[i].size();
+//        for (auto neigh_it = source[i].begin(); neigh_it < source[i].end(); ++neigh_it)
+//        {
+//    	    neighborhood_size++;
+//	    }
+	    components_count = ((neighborhood_size-1) / bin_size)+1;
+	    components_count.push_back(components_count);
+    }
+    binned_neighbours.resize(std::accumulate(components_count.begin(),components_count.end(), 0));
+
+    size_t counter_new = 0;
+    size_t base_com_size;
+    size_t leftover;
+
+    for (int i = 0; i < source.size(); i++){
+        neighborhood_size = 0
+	    random_shuffle(source[i].begin(), source[i].end());
+        // source[i].size
+        base_com_size = source[i].size() / components_count[i];
+        leftover = source[i].size() % components_count[i];
+        int yet_leftover = (leftover ? 1 : 0 );
+        size_t start = 0;
+        size_t end = 0;
+        for ( ; start < source[i].size(); start = end )
+        {
+            if (--leftover == 0)
+                yet_leftover = 0;
+            end = start + base_com_size + leftover;
+            if (counter_new > binned_neighbours.size())
+                cout<<"BUG IN SIZE OF binned_neighbours"<<endl;
+            binned_neighbours[counter_new].reserve(end-start);
+            binned_neighbours[counter_new].insert(source[i].begin()+start, source[i].begin()+end);
+            counter_new++;
+        }
+    }
+}
+
+
 
 //template <class Neighbours_Type>
 //void
@@ -1135,9 +1263,21 @@ Community_detection_k3_cliques(
 //
 //}
 
+template <typename T> std::string type_name();
+
 int
 main(int argc, char* argv[])
 {
+//    auto start0 = timeNow();
+//	auto stop0 = timeNow();
+//    duration_cliques_bron = duration_cast<microseconds>(stop0 - start0);
+//    duration_cliques_other = duration_cast<microseconds>(stop0 - start0);
+//    duration_cosine_1 = duration_cast<microseconds>(stop0 - start0);
+//    duration_cosine_2 = duration_cast<microseconds>(stop0 - start0);
+//    duration_cosine_3 = duration_cast<microseconds>(stop0 - start0);
+//    duration_cosine_4 = duration_cast<microseconds>(stop0 - start0);
+
+
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
@@ -1191,84 +1331,8 @@ main(int argc, char* argv[])
 	indexToBarcode_t indexToBarcode;
 	std::string node1;
 
-//	node1 = "A";
-//	auto u = boost::add_vertex(g);
-//    g[u].name = node1;
-//	g[u].weight = 10;
-//	g[u].indexOriginal = u;
-//	barcodeToIndex[node1] = u;
-//	indexToBarcode[u] = node1;
-//
-//    node1 = "B";
-//	u = boost::add_vertex(g);
-//    g[u].name = node1;
-//	g[u].weight = 10;
-//	g[u].indexOriginal = u;
-//	barcodeToIndex[node1] = u;
-//	indexToBarcode[u] = node1;
-//
-//    node1 = "C";
-//	u = boost::add_vertex(g);
-//    g[u].name = node1;
-//	g[u].weight = 10;
-//	g[u].indexOriginal = u;
-//	barcodeToIndex[node1] = u;
-//	indexToBarcode[u] = node1;
-//
-//    node1 = "D";
-//	u = boost::add_vertex(g);
-//    g[u].name = node1;
-//	g[u].weight = 10;
-//	g[u].indexOriginal = u;
-//	barcodeToIndex[node1] = u;
-//	indexToBarcode[u] = node1;
-//
-//    node1 = "E";
-//	u = boost::add_vertex(g);
-//    g[u].name = node1;
-//	g[u].weight = 10;
-//	g[u].indexOriginal = u;
-//	barcodeToIndex[node1] = u;
-//	indexToBarcode[u] = node1;
-//
-//    vector<vector<int>> aaaa;
-//    aaaa.resize(100);
-//    for (auto &row : aaaa) { row.reserve(1000); }
-//    //cout<<"size:"<<aaaa[1].size()<<endl;
-////    cout<<aaaa[1]<<endl;
-//
-//	auto ab = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["B"], g).first;
-//	g[ab].weight = 10;
-//
-//	auto ac = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["C"], g).first;
-//	g[ac].weight = 10;
-//
-//	auto ad = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["D"], g).first;
-//	g[ad].weight = 10;
-//
-//	auto ae = boost::add_edge(barcodeToIndex["A"], barcodeToIndex["E"], g).first;
-//	g[ae].weight = 10;
-//
-//	auto bc = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["C"], g).first;
-//	g[bc].weight = 10;
-//
-//	auto bd = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["D"], g).first;
-//	g[bd].weight = 10;
-//
-//	auto be = boost::add_edge(barcodeToIndex["B"], barcodeToIndex["E"], g).first;
-//	g[be].weight = 10;
-//
-//	auto cd = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["D"], g).first;
-//	g[cd].weight = 10;
-//
-//	auto ce = boost::add_edge(barcodeToIndex["C"], barcodeToIndex["E"], g).first;
-//	g[ce].weight = 10;
-//
-//	auto de = boost::add_edge(barcodeToIndex["D"], barcodeToIndex["E"], g).first;
-//	g[de].weight = 10;
-
-    printGraph(g);
-    cout<<"\n\n\n";
+    //printGraph(g);
+    //cout<<"\n\n\n";
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
 
@@ -1277,42 +1341,75 @@ main(int argc, char* argv[])
 #endif
 	auto vertexItRange = vertices(g);
 	size_t vertexCount = 0;
-	cout<<"Total number of subgraphs: "<<boost::num_vertices(g)<<endl;
+	size_t vertexCount2 = 0;
+
+	//cout<<"Total number of subgraphs: "<<boost::num_vertices(g)<<endl;
 	auto start = timeNow();
-	auto stop = high_resolution_clock::now();
+	auto start_loop_all = timeNow();
+	auto stop_loop_all = timeNow();
+	auto start_if_all = timeNow();
+	auto stop_if_all = timeNow();
+	auto stop = timeNow();
 	auto duration = duration_cast<microseconds>(stop - start);
+	size_t neighborhood_size = 0;
+
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
+        vertexCount2++;
+        start_loop_all = timeNow();
+		componentToVertexSet_t componentsVec;
+        vertexToComponent_t vertexToComponent;
+        if (vertexToComponent.size() > 0 ){
+    	   std::cerr<<"\n BIG BUG\n ";
+	    }
+
+
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
-        vertexCount++;
 
-		if (vertexCount % 100 == 0){
-		    cout<<"processing "<<vertexCount<<"th subgraph of "<<boost::num_vertices(g)<<endl;
-		    stop = high_resolution_clock::now();
-            duration = duration_cast<microseconds>(stop - start);
-            cout << "\ttime since last report (micro-s): "<<duration.count() << endl;
-		    start = timeNow();
-		}
-//		if (vertexCount == 1000){
-//		    break;
-//		}
-//		vector<decltype(neighbours)> binned_neighbours;
-//		bin_neighbours(neighbours, binned_neighbours);
-//		size_t neighborhood_size = 0;
-//		for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
-//		    neighborhood_size++;
-//		}
-//		cout<<"Size: "<<neighborhood_size++<<endl;
-		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
-        cout<<" ||| Processing subgraph "<<vertexCount<<" - node count: "<<num_vertices(subgraph)<<endl;
-		vertexToComponent_t vertexToComponent;
-		if (vertexToComponent.size() > 0 ){
-		    cout<<"\n BIG BUG\n ";
-		}
-		//biconnectedComponents(subgraph, vertexToComponent);
-        community_detection_cosine_similarity(subgraph, vertexToComponent, false);
-        //Community_detection_k3_cliques(subgraph, vertexToComponent);
+		bin_neighbours(neighbours, componentsVec);
 
+
+		for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
+		{
+		    graph_t& subgraph = g.create_subgraph(componentsVec[i].begin(), componentsVec[i].end());
+		    //biconnectedComponents(subgraph, vertexToComponent);
+            //community_detection_cosine_similarity(subgraph, vertexToComponent, false);
+		    community_detection_k3_cliques(subgraph, vertexToComponent);
+		}
+
+        //neighborhood_size = 50;
+		//for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
+		//    neighborhood_size++;
+		//}
+		//cout<<"Size: "<<neighborhood_size++<<endl;
+//		if (neighborhood_size < 60 && neighborhood_size > 30){
+//            start_if_all = timeNow();
+//		    graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
+//            //- cout<<" ||| Processing subgraph "<<vertexCount<<" - node count: "<<num_vertices(subgraph)<<endl;
+//        //if (boost::num_vertices(subgraph) < 60 && boost::num_vertices(subgraph) > 30){
+//
+//		    start = timeNow();
+//		    //biconnectedComponents(subgraph, vertexToComponent);
+//            //community_detection_cosine_similarity(subgraph, vertexToComponent, false);
+//		    community_detection_k3_cliques(subgraph, vertexToComponent);
+//		    stop = timeNow();
+//		    duration_temp2 = duration_cast<microseconds>(stop - start);
+//		    time_sum +=  duration_temp2.count();
+//		    vertexCount++;
+//		    if (vertexCount % 10 == 0)
+//		    {
+//		        std::cerr<<"processing "<<vertexCount<<"(/"<<vertexCount2<<")th subgraph of ";
+//		        std::cerr<<boost::num_vertices(subgraph)<<" vertices ("<<boost::num_vertices(g)<<" subgraphs in total)."<<endl;
+//		        std::cerr<< "\ttime since last report (micro-s): "<<duration_temp2.count() << endl;
+//		        std::cerr<< "\ttime sum (micro-s): "<<time_sum << endl;
+//            }
+//            stop_if_all = timeNow();
+//	        duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
+//	        duration_if_all += duration_temp2.count();
+//		}
+		if (vertexCount == 200){
+		    break;
+		}
 		// Delete subgraph to keep memory in control
 		for (auto& i : g.m_children) {
 			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
@@ -1321,14 +1418,32 @@ main(int argc, char* argv[])
 		g.m_children.clear();
 
 		vecVertexToComponent[*vertexIt] = vertexToComponent;
-		cout<<"\n\nHERE HAHA:"<<*vertexIt<<endl;
+		//cout<<"\n\nHERE HAHA:"<<*vertexIt<<endl;
+	    stop_loop_all = timeNow();
+	    duration_temp2 = duration_cast<microseconds>(stop_loop_all - start_loop_all);
+	    duration_loop_all += duration_temp2.count();
 	}
 //	for (auto it1 = vecVertexToComponent.begin(); it1 < vecVertexToComponent.end(); ++it1){
 //	    cout<<"New:"<<endl;
 //	    for(auto& it2 = it1->begin(); it2 != it1->end(); ++it2)
 //	        cout<<"\tnode to com:"<<it2->first.name()<<","<<it2->second<<endl;
 //	}
-	std::cerr << "Finished molecule separation ";
+	std::cerr<<"Total time for the loop:"<<duration_loop_all<<endl;
+	std::cerr<<"Total time for the if-statement:"<<duration_if_all<<endl;
+	std::cerr<<"Total time for com-det:"<<time_sum<<endl;
+
+	cout<<endl;
+	std::cerr<<"k-cliques total time:"<<duration_cliques_all<<endl;
+	std::cerr<<"cliques_bron total time:"<<duration_cliques_bron<<endl;
+	std::cerr<<"cliques_other total time:"<<duration_cliques_other<<endl;
+	cout<<endl;
+	std::cerr<<"cosine total time:"<<duration_cosine_all<<endl;
+	std::cerr<<"cosine_1 total time:"<<duration_cosine_1<<endl;
+	std::cerr<<"cosine_2 total time:"<<duration_cosine_2<<endl;
+	std::cerr<<"cosine_3 total time:"<<duration_cosine_3<<endl;
+	std::cerr<<"cosine_4 total time:"<<duration_cosine_4<<endl;
+
+	std::cerr<<"Finished molecule separation ";
 #if _OPENMP
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
 	sTime = omp_get_wtime();
