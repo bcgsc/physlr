@@ -748,7 +748,7 @@ calculate_cosine_similarity_2d_v2(
     vector<double>::iterator out_col = out_row->begin();
     if (adj_mat.size() != cosimilarity.size())
     {
-       cout<<" Error: Input Matrices are not of the same size.";
+       std::cerr<<" Error: Input Matrices are not of the same size.";
        exit (EXIT_FAILURE);
     }
 
@@ -1080,7 +1080,7 @@ community_detection_k3_cliques(
     auto startAll = timeNow();
     if (k != 3)
     {
-        cout<<" This implementation of k-cliques does not support any k other than 3.";
+        std::cerr<<" This implementation of k-cliques does not support any k other than 3.";
         exit (EXIT_FAILURE);
     }
     /// 1- NORMAL K-CLIQUE DETECTION using boost
@@ -1510,11 +1510,11 @@ main(int argc, char* argv[])
 //	std::cerr<<"Total time for the if-statement:"<<duration_if_all<<endl;
 	std::cerr<<"Total time for com-det:"<<time_sum<<endl;
 
-	cout<<endl;
+	std::cerr<<endl;
 	std::cerr<<"k-cliques total time:"<<duration_cliques_all<<endl;
 	std::cerr<<"cliques_bron total time:"<<duration_cliques_bron<<endl;
 	std::cerr<<"cliques_other total time:"<<duration_cliques_other<<endl;
-	cout<<endl;
+	std::cerr<<endl;
 	std::cerr<<"cosine total time:"<<duration_cosine_all<<endl;
 	std::cerr<<"cosine_1 total time:"<<duration_cosine_1<<endl;
 	std::cerr<<"cosine_2 total time:"<<duration_cosine_2<<endl;
