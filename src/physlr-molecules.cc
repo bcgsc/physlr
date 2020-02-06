@@ -1237,12 +1237,14 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
 
             for (int i = 0; i < length; i++)
             {
-                binned_neighbours[counter_new].insert(*elementIt);
-                elementIt;
+                if (counter_new >= binned_neighbours.size())
+                    cerr<<" WAS NOT EXPECTED 1!"<<endl;
                 if (elementIt == source[i].end()){
-                    cerr<<" WAS NOT EXPECTED!"<<endl;
+                    cerr<<" WAS NOT EXPECTED 2!"<<endl;
                     break;
                 }
+                binned_neighbours[counter_new].insert(*elementIt);
+                ++elementIt;
             }
             counter_new++;
         }
@@ -1284,6 +1286,7 @@ bin_neighbours(Neighbours_Type neighbours, componentToVertexSet_t& binned_neighb
     cout<<"size of 1: "<<compToVertset[0].size()<<endl;
     if (compToVertset[0].size() > bin_size)
     {
+        cout<<"lets resize"<<endl;
         bin_components(compToVertset, binned_neighbours, bin_size);
     }
     else
@@ -1397,8 +1400,10 @@ main(int argc, char* argv[])
 	auto stop = timeNow();
 	auto duration = duration_cast<microseconds>(stop - start);
 	size_t neighborhood_size = 0;
+	size_t initial_community_id = 0;
 
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
+        initial_community_id = 0;
         vertexCount2++;
         start_loop_all = timeNow();
 		componentToVertexSet_t componentsVec;
@@ -1413,16 +1418,18 @@ main(int argc, char* argv[])
 
 
         /////////////////////////////////////////////////// binning version
-		bin_neighbours(neighbours, componentsVec);
+		bin_neighbours(neighbours, componentsVec, 5);
 
         start = timeNow();
 		for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
 		{
-		    cout<<" Entered "<<endl;
+		    cout<<" Entered: "<<comp_i<<endl;
 		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
 		    //biconnectedComponents(subgraph, vertexToComponent);
             //community_detection_cosine_similarity(subgraph, vertexToComponent, false);
-		    community_detection_k3_cliques(subgraph, vertexToComponent);
+		    cout<<"initial community id:"<<initial_community_id<<endl;
+		    initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
 		    vertexCount++;
 		}
 	    stop = timeNow();
