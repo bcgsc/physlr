@@ -1199,21 +1199,21 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
     vector<size_t> components_size;
     size_t neighborhood_size;
     size_t components_count;
-    cout<<"size of source is:"<<source.size()<<endl;
+    //cout<<"size of source is:"<<source.size()<<endl;
     for (int i = 0; i < source.size(); i++){
-        cout<<"size of dim "<<i<<"of source is:"<<source[i].size()<<endl;
+        //cout<<"size of dim "<<i<<"of source is:"<<source[i].size()<<endl;
         neighborhood_size = source[i].size();
 //        for (auto neigh_it = source[i].begin(); neigh_it < source[i].end(); ++neigh_it)
 //        {
 //    	    neighborhood_size++;
 //	    }
 	    components_count = ((neighborhood_size-1) / bin_size)+1;
-	    cout<<"so comp count is: "<<components_count<<endl;
+	    //cout<<"so comp count is: "<<components_count<<endl;
 	    components_size.push_back(components_count);
     }
     size_t new_size = std::accumulate(components_size.begin(),components_size.end(), 0);
     binned_neighbours.resize(new_size);
-    cout<<"binned_neighbours resized to "<<new_size<<endl;
+    //cout<<"binned_neighbours resized to "<<new_size<<endl;
     size_t counter_new = 0;
     size_t base_com_size;
     size_t leftover;
@@ -1238,8 +1238,12 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
             for (int i = 0; i < length; i++)
             {
                 if (counter_new >= binned_neighbours.size())
+                {
                     cerr<<" WAS NOT EXPECTED 1!"<<endl;
-                if (elementIt == source[i].end()){
+                    break;
+                }
+                if (elementIt == source[i].end())
+                {
                     cerr<<" WAS NOT EXPECTED 2!"<<endl;
                     break;
                 }
@@ -1281,12 +1285,12 @@ template <class Neighbours_Type>
 void
 bin_neighbours(Neighbours_Type neighbours, componentToVertexSet_t& binned_neighbours, size_t bin_size = 5)
 {
-    cout<<"entered bin-neighbours"<<endl;
+    //cout<<"entered bin-neighbours"<<endl;
     componentToVertexSet_t compToVertset(1,vertexSet_t(neighbours.first, neighbours.second));
-    cout<<"size of 1: "<<compToVertset[0].size()<<endl;
+    //cout<<"size of 1: "<<compToVertset[0].size()<<endl;
     if (compToVertset[0].size() > bin_size)
     {
-        cout<<"lets resize"<<endl;
+        //cout<<"lets resize"<<endl;
         bin_components(compToVertset, binned_neighbours, bin_size);
     }
     else
@@ -1423,19 +1427,21 @@ main(int argc, char* argv[])
         start = timeNow();
 		for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
 		{
-		    cout<<" Entered: "<<comp_i<<endl;
+		    //cout<<" Entered: "<<comp_i<<endl;
 		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
-		    cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
+		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
 		    //biconnectedComponents(subgraph, vertexToComponent);
             //community_detection_cosine_similarity(subgraph, vertexToComponent, false);
-		    cout<<"initial community id:"<<initial_community_id<<endl;
+		    //cout<<"initial community id:"<<initial_community_id<<endl;
 		    initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
 		    vertexCount++;
 		}
 	    stop = timeNow();
 	    duration_temp2 = duration_cast<microseconds>(stop - start);
 	    time_sum +=  duration_temp2.count();
-
+        if (vertexCount2 == 200){
+		    break;
+		}
 //	    if (vertexCount % 10 == 0)
 //	    {
 //	        std::cerr<<"processing "<<vertexCount<<"(/"<<vertexCount2<<")th subgraph of ";
@@ -1447,7 +1453,7 @@ main(int argc, char* argv[])
 
 
         /////////////////////////////////////////////////// no-binning version
-        neighborhood_size = 50;
+        //neighborhood_size = 50;
 		//for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
 		//    neighborhood_size++;
 		//}
@@ -1477,12 +1483,11 @@ main(int argc, char* argv[])
 //	        duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
 //	        duration_if_all += duration_temp2.count();
 //		}
+//        if (vertexCount == 200){
+//		    break;
+//		}
         /////////////////////////////////////////////////// no-binning version end }
 
-
-		if (vertexCount == 200){
-		    break;
-		}
 		// Delete subgraph to keep memory in control
 		for (auto& i : g.m_children) {
 			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
