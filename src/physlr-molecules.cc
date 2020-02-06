@@ -1439,7 +1439,7 @@ main(int argc, char* argv[])
 	    stop = timeNow();
 	    duration_temp2 = duration_cast<microseconds>(stop - start);
 	    time_sum +=  duration_temp2.count();
-        if (vertexCount2 == 200){
+        if (vertexCount2 == 5000){
 		    break;
 		}
 //	    if (vertexCount % 10 == 0)
