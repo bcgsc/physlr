@@ -784,18 +784,21 @@ std::unordered_map<V,K> inverse_map(std::unordered_map<K,V> &map)
 	return inverse;
 }
 
-void
+size_t
 community_detection_cosine_similarity(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
-    bool squaring = true, double threshold=0.3)
+    size_t initial_community_id = 0, bool squaring = true, double threshold=0.3)
 {
     // Detect communities using cosine similarity of vertices
 
     // 0- Map indices and vertex names
-//    vertexToIndex_t vertexToIndex(num_vertices(subgraph));
+    //vertexToIndex_t vertexToIndex(num_vertices(subgraph));
     auto startAll = timeNow();
     vertexToIndex_t vertexToIndex;
-    vertexToIndex.reserve(boost::num_vertices(subgraph));
+    size_t subgraph_size = boost::num_vertices(subgraph);
+    vertexToIndex.reserve(subgraph_size);
+    if (subgraph_size < 10)
+        threshold = 0;
     //-cout<<"size of vertexToInex: "<<vertexToIndex.size()<<endl;
     auto start1 = timeNow();
     adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
@@ -882,7 +885,7 @@ community_detection_cosine_similarity(
 //    const int max_communities = 100;
 //    vector<vector<uint_fast32_t>> communities(max_communities,vector<uint_fast32_t>(adj_mat.size(),-1));
     auto start4 = timeNow();
-    size_t community_id = 0;
+    size_t community_id = initial_community_id;
     stack<size_t> toCheck;
     stack<size_t> toAdd;
     //unordered_map<int, int>;
@@ -993,6 +996,8 @@ community_detection_cosine_similarity(
     auto stopAll = timeNow();
     duration_temp = duration_cast<microseconds>(stopAll - startAll);
     duration_cosine_all += duration_temp.count();
+
+    return community_id;
 }
 
 int
@@ -1436,9 +1441,9 @@ main(int argc, char* argv[])
 		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
 		    //biconnectedComponents(subgraph, vertexToComponent);
-            //community_detection_cosine_similarity(subgraph, vertexToComponent, false);
+            initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
 		    //cout<<"initial community id:"<<initial_community_id<<endl;
-		    initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
+		    //initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
 		    vertexCount++;
 		}
 	    stop = timeNow();
