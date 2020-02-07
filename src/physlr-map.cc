@@ -8,7 +8,6 @@
 #include <getopt.h>
 #include <iomanip>
 #include <iostream>
-#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -53,7 +52,7 @@ memory_usage()
 using BarcodeID = uint32_t;
 using BarcodeID = uint32_t;
 using Minimizer = uint64_t;
-using pair = std::pair<size_t, size_t>;
+using pair = std::pair<uint64_t, uint64_t>;
 
 static void
 printVersion()
@@ -92,10 +91,10 @@ printErrorMsg(const std::string& progname, const std::string& msg)
 	          << " --help' for more information.\n";
 }
 
-size_t
-lowerMedian(std::vector<size_t> scores)
+uint64_t
+lowerMedian(std::vector<uint64_t> scores)
 {
-	size_t size = scores.size();
+	uint64_t size = scores.size();
 
 	if (size == 0) {
 		return 0;
@@ -109,10 +108,10 @@ lowerMedian(std::vector<size_t> scores)
 	}
 }
 
-size_t
-upperMedian(std::vector<size_t> scores)
+uint64_t
+upperMedian(std::vector<uint64_t> scores)
 {
-	size_t size = scores.size();
+	uint64_t size = scores.size();
 
 	if (size == 0) {
 		return 0;
@@ -123,9 +122,9 @@ upperMedian(std::vector<size_t> scores)
 }
 
 std::string
-determineOrientation(size_t prev, size_t curr, size_t next)
+determineOrientation(uint64_t prev, uint64_t curr, uint64_t next)
 {
-	size_t max = std::numeric_limits<std::size_t>::max();
+	uint64_t max = std::numeric_limits<std::uint64_t>::max();
 
 	if (prev != max && next != max) {
 		if (prev == curr && curr == next) {
@@ -213,7 +212,7 @@ getMoleculeToMinimizer(
 
 		moleculeToMinimizer[molecule] = std::vector<Minimizer>();
 		while (ss >> minimizerAndLoc) {
-			size_t colonLoc = minimizerAndLoc.find(":");
+			uint64_t colonLoc = minimizerAndLoc.find(":");
 			if (colonLoc == std::string::npos) {
 				minimizer = std::stoull(minimizerAndLoc.c_str());
 				moleculeToMinimizer[molecule].emplace_back(minimizer);
@@ -240,9 +239,9 @@ getMinimizerToPos(
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
-	for (size_t targetId = 0; targetId < paths.size(); ++targetId) {
+	for (uint64_t targetId = 0; targetId < paths.size(); ++targetId) {
 		auto& path = paths[targetId];
-		for (size_t pos = 0; pos < path.size(); ++pos) {
+		for (uint64_t pos = 0; pos < path.size(); ++pos) {
 			const auto& molecule = path[pos];
 			const auto& minimizers = moleculeToMinimizer.at(molecule);
 			for (const auto& minimizer : minimizers) {
@@ -279,18 +278,18 @@ mapQueryToTarget(
 #if _OPENMP
 #pragma omp parallel for
 #endif
-	for (size_t i = 0; i < queryToMinimizerkeys.size(); ++i) {
+	for (uint64_t i = 0; i < queryToMinimizerkeys.size(); ++i) {
 		const auto& queryId = queryToMinimizerkeys.at(i);
 		const auto& minimizers = queryToMinimizer.at(queryId);
-		tsl::robin_map<pair, std::vector<size_t>, boost::hash<pair>> targetIdPosToQuerypos;
+		tsl::robin_map<pair, std::vector<uint64_t>, boost::hash<pair>> targetIdPosToQuerypos;
 
-		for (size_t queryPos = 0; queryPos < minimizers.size(); ++queryPos) {
+		for (uint64_t queryPos = 0; queryPos < minimizers.size(); ++queryPos) {
 			auto& minimizer = minimizers[queryPos];
 			if (minimizerToPos.find(minimizer) != minimizerToPos.end()) {
 				auto& vectorTargetIdPos = minimizerToPos.at(minimizer);
 				for (const auto& targetIdPos : vectorTargetIdPos) {
 					if (targetIdPosToQuerypos.find(targetIdPos) == targetIdPosToQuerypos.end()) {
-						targetIdPosToQuerypos[targetIdPos] = std::vector<size_t>();
+						targetIdPosToQuerypos[targetIdPos] = std::vector<uint64_t>();
 						targetIdPosToQuerypos[targetIdPos].emplace_back(queryPos);
 					} else {
 						targetIdPosToQuerypos[targetIdPos].emplace_back(queryPos);
@@ -307,7 +306,7 @@ mapQueryToTarget(
 			targetIdPosToQuerypos[targetIdPos] = { lowerMedian(queryPos) };
 		}
 
-		tsl::robin_map<pair, size_t, boost::hash<pair>> targetIdPosToCount;
+		tsl::robin_map<pair, uint64_t, boost::hash<pair>> targetIdPosToCount;
 		for (const auto& minimizer : minimizers) {
 			if (minimizerToPos.find(minimizer) != minimizerToPos.end()) {
 				auto& vectorTargetIdPos = minimizerToPos.at(minimizer);
@@ -333,11 +332,11 @@ mapQueryToTarget(
 				mapped = true;
 				auto& targetId = std::get<0>(targetIdPos);
 				auto& targetPos = std::get<1>(targetIdPos);
-				size_t max = std::numeric_limits<std::size_t>::max();
+				uint64_t max = std::numeric_limits<std::uint64_t>::max();
 				std::string orientation;
-				size_t prev;
-				size_t next;
-				size_t curr = targetIdPosToQuerypos[targetIdPos][0];
+				uint64_t prev;
+				uint64_t next;
+				uint64_t curr = targetIdPosToQuerypos[targetIdPos][0];
 
 				if (opt::mapPositions == 1) {
 
@@ -357,7 +356,7 @@ mapQueryToTarget(
 					}
 				} else {
 
-					std::vector<size_t> prevVec;
+					std::vector<uint64_t> prevVec;
 
 					for (unsigned i = 1; i <= opt::mapPositions; ++i) {
 						auto prevPair = std::make_pair(targetId, targetPos - i);
@@ -371,7 +370,7 @@ mapQueryToTarget(
 					}
 					prev = lowerMedian(prevVec);
 
-					std::vector<size_t> nextVec;
+					std::vector<uint64_t> nextVec;
 
 					for (unsigned i = 1; i <= opt::mapPositions; ++i) {
 						auto nextPair = std::make_pair(targetId, targetPos + i);
