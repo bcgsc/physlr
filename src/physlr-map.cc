@@ -81,7 +81,7 @@ printHelpDialog()
 	    "  --help     display this help and exit\n"
 	    "Report bugs to <jowong@bcgsc.ca>.";
 	std::cerr << dialog << std::endl;
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
 static void
