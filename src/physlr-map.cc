@@ -129,33 +129,34 @@ determineOrientation(uint64_t prev, uint64_t curr, uint64_t next)
 	if (prev != max && next != max) {
 		if (prev == curr && curr == next) {
 			return ".";
-		} else if (prev <= curr && curr <= next) {
-			return "+";
-		} else if (prev >= curr && curr >= next) {
-			return "-";
-		} else {
-			return ".";
 		}
+		if (prev <= curr && curr <= next) {
+			return "+";
+		}
+		if (prev >= curr && curr >= next) {
+			return "-";
+		}
+		return ".";
 	}
 
 	if (prev != max) {
 		if (prev < curr) {
 			return "+";
-		} else if (prev > curr) {
-			return "-";
-		} else {
-			return ".";
 		}
+		if (prev > curr) {
+			return "-";
+		}
+		return ".";
 	}
 
 	if (next != max) {
 		if (curr < next) {
 			return "+";
-		} else if (curr > next) {
-			return "-";
-		} else {
-			return ".";
 		}
+		if (curr > next) {
+			return "-";
+		}
+		return ".";
 	}
 
 	return ".";
@@ -212,12 +213,12 @@ getMoleculeToMinimizer(
 
 		moleculeToMinimizer[molecule] = std::vector<Minimizer>();
 		while (ss >> minimizerAndLoc) {
-			uint64_t colonLoc = minimizerAndLoc.find(":");
+			uint64_t colonLoc = minimizerAndLoc.find(':');
 			if (colonLoc == std::string::npos) {
-				minimizer = std::stoull(minimizerAndLoc.c_str());
+				minimizer = std::stoull(minimizerAndLoc);
 				moleculeToMinimizer[molecule].emplace_back(minimizer);
 			} else {
-				minimizer = std::stoull(minimizerAndLoc.substr(0, colonLoc).c_str());
+				minimizer = std::stoull(minimizerAndLoc.substr(0, colonLoc));
 				moleculeToMinimizer[molecule].emplace_back(minimizer);
 			}
 		}
@@ -278,7 +279,7 @@ mapQueryToTarget(
 #if _OPENMP
 #pragma omp parallel for
 #endif
-	for (uint64_t i = 0; i < queryToMinimizerkeys.size(); ++i) {
+	for (uint64_t i = 0; i < queryToMinimizerkeys.size(); ++i) { // NOLINT(modernize-loop-convert)
 		const auto& queryId = queryToMinimizerkeys.at(i);
 		const auto& minimizers = queryToMinimizer.at(queryId);
 		tsl::robin_map<pair, std::vector<uint64_t>, boost::hash<pair>> targetIdPosToQuerypos;
@@ -365,7 +366,7 @@ mapQueryToTarget(
 						}
 					}
 
-					if (prevVec.size() == 0) {
+					if (prevVec.empty()) {
 						prevVec.emplace_back(max);
 					}
 					prev = lowerMedian(prevVec);
@@ -379,7 +380,7 @@ mapQueryToTarget(
 						}
 					}
 
-					if (nextVec.size() == 0) {
+					if (nextVec.empty()) {
 						nextVec.emplace_back(max);
 					}
 
