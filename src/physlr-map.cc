@@ -524,6 +524,9 @@ main(int argc, char* argv[])
 	tsl::robin_map<std::string, std::vector<Minimizer>> queryToMinimizer;
 	getMoleculeToMinimizer(queryToMinimizer, inputFiles[2]);
 
+	tsl::robin_map<Minimizer, tsl::robin_set<pair, boost::hash<pair>>> minimizerToPos;
+	getMinimizerToPos(paths, moleculeToMinimizer, minimizerToPos);
+
 	if (verbose) {
 		std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB"
 		          << std::endl;
