@@ -98,14 +98,12 @@ lowerMedian(std::vector<uint64_t> scores)
 
 	if (size == 0) {
 		return 0;
-	} else {
-		sort(scores.begin(), scores.end());
-		if (size % 2 == 0) {
-			return (scores[size / 2 - 1]);
-		} else {
-			return scores[size / 2];
-		}
 	}
+	sort(scores.begin(), scores.end());
+	if (size % 2 == 0) {
+		return (scores[size / 2 - 1]);
+	}
+	return scores[size / 2];
 }
 
 uint64_t
@@ -115,10 +113,9 @@ upperMedian(std::vector<uint64_t> scores)
 
 	if (size == 0) {
 		return 0;
-	} else {
-		sort(scores.begin(), scores.end());
-		return scores[size / 2];
 	}
+	sort(scores.begin(), scores.end());
+	return scores[size / 2];
 }
 
 std::string
@@ -169,9 +166,13 @@ readPaths(std::vector<std::vector<std::string>>& paths, const std::string& pathF
 	double sTime = omp_get_wtime();
 #endif
 	std::ifstream fh;
-	fh.open(pathFile);
-	std::string line;
 	std::cerr << "Loading file " << pathFile << std::endl;
+	fh.open(pathFile);
+	if (!fh) {
+		std::cerr << "Invalid file: " << pathFile << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	std::string line;
 	while (getline(fh, line)) {
 		std::stringstream ss(line);
 		std::string molecule;
@@ -204,9 +205,13 @@ getMoleculeToMinimizer(
 	// 283275954102976652
 
 	std::ifstream fh;
-	fh.open(inputFile);
-	std::string line;
 	std::cerr << "Loading file " << inputFile << std::endl;
+	fh.open(inputFile);
+	if (!fh) {
+		std::cerr << "Invalid file: " << pathFile << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	std::string line;
 	while (getline(fh, line)) {
 		std::stringstream ss(line);
 		ss >> molecule;
