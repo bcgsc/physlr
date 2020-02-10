@@ -509,7 +509,7 @@ main(int argc, char* argv[])
 		printErrorMsg(PROGRAM, "missing file operand");
 		die = true;
 	}
-	pathFil std::vector<std::vector<std::string>> paths;
+	std::vector<std::vector<std::string>> paths;
 	readPaths(paths, inputFiles[0]);
 
 	tsl::robin_map<std::string, std::vector<Minimizer>> moleculeToMinimizer;
