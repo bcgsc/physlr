@@ -28,6 +28,8 @@ static unsigned scoreThreshold = 10;
 static unsigned mapPositions = 10;
 } // namespace opt
 
+uint64_t max = std::numeric_limits<std::uint64_t>::max();
+
 #define PROGRAM "physlr-map"
 #define PACKAGE_NAME "physlr"
 #define GIT_REVISION "pre-autotools"
@@ -121,7 +123,6 @@ upperMedian(std::vector<uint64_t> scores)
 std::string
 determineOrientation(uint64_t prev, uint64_t curr, uint64_t next)
 {
-	uint64_t max = std::numeric_limits<std::uint64_t>::max();
 
 	if (prev != max && next != max) {
 		if (prev == curr && curr == next) {
@@ -338,7 +339,6 @@ mapQueryToTarget(
 				mapped = true;
 				auto& targetId = std::get<0>(targetIdPos);
 				auto& targetPos = std::get<1>(targetIdPos);
-				uint64_t max = std::numeric_limits<std::uint64_t>::max();
 				std::string orientation;
 				uint64_t prev;
 				uint64_t next;
