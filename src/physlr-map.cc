@@ -493,6 +493,11 @@ main(int argc, char* argv[])
 		exit(EXIT_SUCCESS);
 	}
 
+	if (die) {
+		printHelpDialog();
+		exit(EXIT_FAILURE);
+	}
+
 #if _OPENMP
 	omp_set_num_threads(opt::threads);
 #endif
