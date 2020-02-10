@@ -19,14 +19,14 @@ jobs:
     displayName: Install clang-format and clang-tidy
   - script: sudo apt-get install -qq libboost-dev
     displayName: Install boost
+  - script: make -C src lint
+    displayName: Run clang-format and clang-tidy
   - script: pip3 install pylint .
     displayName: Install Python packages
   - script: make lint
     displayName: Run pylint
   - script: make -C src all
     displayName: Compile C++ executables
-  - script: make -C src lint
-    displayName: Run clang-format and clang-tidy
   - script: make -C src check
     displayName: Test C++ executables
   - script: make -C data test python_executable=python m=1 prune_branches=1 prune_bridges=1

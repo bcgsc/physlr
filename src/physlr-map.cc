@@ -525,6 +525,4 @@ main(int argc, char* argv[])
 		std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB"
 		          << std::endl;
 	}
-
-	mapQueryToTarget(queryToMinimizer, minimizerToPos);
 }
