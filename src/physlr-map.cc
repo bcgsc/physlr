@@ -208,7 +208,7 @@ getMoleculeToMinimizer(
 	std::cerr << "Loading file " << inputFile << std::endl;
 	fh.open(inputFile);
 	if (!fh) {
-		std::cerr << "Invalid file: " << pathFile << std::endl;
+		std::cerr << "Invalid file: " << inputFile << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	std::string line;
@@ -435,6 +435,9 @@ main(int argc, char* argv[])
 		switch (c) {
 		case 't': {
 			std::stringstream convert(optarg);
+			if (!convert) {
+				exit(EXIT_FAILURE);
+			}
 			if (!(convert >> opt::threads)) {
 				printErrorMsg(PROGRAM, "Invalid parameters! t: ");
 				die = true;
@@ -447,6 +450,9 @@ main(int argc, char* argv[])
 		}
 		case 'm': {
 			std::stringstream convert(optarg);
+			if (!convert) {
+				exit(EXIT_FAILURE);
+			}
 			if (!(convert >> opt::mapPositions)) {
 				printErrorMsg(PROGRAM, "Invalid parameters! m: ");
 				die = true;
@@ -459,6 +465,9 @@ main(int argc, char* argv[])
 		}
 		case 'n': {
 			std::stringstream convert(optarg);
+			if (!convert) {
+				exit(EXIT_FAILURE);
+			}
 			if (!(convert >> opt::scoreThreshold)) {
 				printErrorMsg(PROGRAM, "Invalid parameters! n: ");
 				die = true;
@@ -500,13 +509,7 @@ main(int argc, char* argv[])
 		printErrorMsg(PROGRAM, "missing file operand");
 		die = true;
 	}
-
-	if (die) {
-		printHelpDialog();
-		exit(EXIT_FAILURE);
-	}
-
-	std::vector<std::vector<std::string>> paths;
+	pathFil std::vector<std::vector<std::string>> paths;
 	readPaths(paths, inputFiles[0]);
 
 	tsl::robin_map<std::string, std::vector<Minimizer>> moleculeToMinimizer;
