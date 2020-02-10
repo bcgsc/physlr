@@ -14,7 +14,7 @@ lint: clang-format clang-tidy
 
 # Check the C++ source code for errors with clang-tidy.
 clang-tidy:
-	clang-tidy -warnings-as-errors='*' include/*.h *.cc -- -std=c++11 -x c++ -I./include -I./vendor
+	clang-tidy -warnings-as-errors='*' physlr-map.cc -- -std=c++11 -x c++ -I./include -I./vendor
 
 # Check the C++ source code for white-space errors with clang-format.
 clang-format:
