@@ -52,7 +52,6 @@ memory_usage()
 }
 
 using BarcodeID = uint32_t;
-using BarcodeID = uint32_t;
 using Minimizer = uint64_t;
 using pair = std::pair<uint64_t, uint64_t>;
 
