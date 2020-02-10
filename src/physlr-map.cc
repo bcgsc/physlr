@@ -364,7 +364,7 @@ mapQueryToTarget(
 
 					std::vector<uint64_t> prevVec;
 
-					for (unsigned i = 1; i <= opt::mapPositions; ++i) {
+					for (unsigned i = 0; i < opt::mapPositions; ++i) {
 						auto prevPair = std::make_pair(targetId, targetPos - i);
 						if (targetIdPosToQuerypos.find(prevPair) != targetIdPosToQuerypos.end()) {
 							prevVec.emplace_back(targetIdPosToQuerypos[prevPair][0]);
@@ -378,7 +378,7 @@ mapQueryToTarget(
 
 					std::vector<uint64_t> nextVec;
 
-					for (unsigned i = 1; i <= opt::mapPositions; ++i) {
+					for (unsigned i = 0; i < opt::mapPositions; ++i) {
 						auto nextPair = std::make_pair(targetId, targetPos + i);
 						if (targetIdPosToQuerypos.find(nextPair) != targetIdPosToQuerypos.end()) {
 							nextVec.emplace_back(targetIdPosToQuerypos[nextPair][0]);
@@ -523,9 +523,6 @@ main(int argc, char* argv[])
 
 	tsl::robin_map<std::string, std::vector<Minimizer>> queryToMinimizer;
 	getMoleculeToMinimizer(queryToMinimizer, inputFiles[2]);
-
-	tsl::robin_map<Minimizer, tsl::robin_set<pair, boost::hash<pair>>> minimizerToPos;
-	getMinimizerToPos(paths, moleculeToMinimizer, minimizerToPos);
 
 	if (verbose) {
 		std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB"
