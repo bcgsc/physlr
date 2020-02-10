@@ -208,7 +208,7 @@ getMoleculeToMinimizer(
 	std::cerr << "Loading file " << inputFile << std::endl;
 	fh.open(inputFile);
 	if (!fh) {
-		std::cerr << "Invalid file: " << pathFile << std::endl;
+		std::cerr << "Invalid file: " << inputFile << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	std::string line;
