@@ -246,12 +246,24 @@ getMinimizerToPos(
 	double sTime = omp_get_wtime();
 #endif
 	for (uint64_t targetId = 0; targetId < paths.size(); ++targetId) {
-		auto& path = paths[targetId];
+
+		const auto& path = paths[targetId];
 		for (uint64_t pos = 0; pos < path.size(); ++pos) {
-			const auto& molecule = path[pos];
-			const auto& minimizers = moleculeToMinimizer.at(molecule);
+
+			const auto& molecule;
+			const auto& minimizers;
+
+			try {
+				molecule = path.at(pos);
+				minimizers = moleculeToMinimizer.at(molecule);
+			} catch (const std::out_of_range& oor) {
+				std::cerr << "Out of Range error: " << oor.what() << '\n';
+			}
+
 			for (const auto& minimizer : minimizers) {
+
 				if (minimizerToPos.find(minimizer) == minimizerToPos.end()) {
+
 					minimizerToPos[minimizer] = tsl::robin_set<pair, boost::hash<pair>>();
 					minimizerToPos[minimizer].insert(std::make_pair(targetId, pos));
 				} else {
@@ -285,14 +297,27 @@ mapQueryToTarget(
 #pragma omp parallel for
 #endif
 	for (uint64_t i = 0; i < queryToMinimizerkeys.size(); ++i) { // NOLINT(modernize-loop-convert)
-		const auto& queryId = queryToMinimizerkeys.at(i);
-		const auto& minimizers = queryToMinimizer.at(queryId);
+		const auto& queryId;
+		const auto& minimizers;
+
+		try {
+			queryId = queryToMinimizerkeys.at(i);
+			minimizers = queryToMinimizer.at(queryId);
+		} catch (const std::out_of_range& oor) {
+			std::cerr << "Out of Range error: " << oor.what() << '\n';
+		}
+
 		tsl::robin_map<pair, std::vector<uint64_t>, boost::hash<pair>> targetIdPosToQuerypos;
 
 		for (uint64_t queryPos = 0; queryPos < minimizers.size(); ++queryPos) {
 			auto& minimizer = minimizers[queryPos];
 			if (minimizerToPos.find(minimizer) != minimizerToPos.end()) {
-				auto& vectorTargetIdPos = minimizerToPos.at(minimizer);
+				auto& vectorTargetIdPos;
+				try {
+					vectorTargetIdPos = minimizerToPos.at(minimizer);
+				} catch (const std::out_of_range& oor) {
+					std::cerr << "Out of Range error: " << oor.what() << '\n';
+				}
 				for (const auto& targetIdPos : vectorTargetIdPos) {
 					if (targetIdPosToQuerypos.find(targetIdPos) == targetIdPosToQuerypos.end()) {
 						targetIdPosToQuerypos[targetIdPos] = std::vector<uint64_t>();
@@ -315,7 +340,13 @@ mapQueryToTarget(
 		tsl::robin_map<pair, uint64_t, boost::hash<pair>> targetIdPosToCount;
 		for (const auto& minimizer : minimizers) {
 			if (minimizerToPos.find(minimizer) != minimizerToPos.end()) {
-				auto& vectorTargetIdPos = minimizerToPos.at(minimizer);
+				auto& vectorTargetIdPos;
+				try {
+					vectorTargetIdPos = minimizerToPos.at(minimizer);
+				} catch (const std::out_of_range& oor) {
+					std::cerr << "Out of Range error: " << oor.what() << '\n';
+				}
+
 				for (const auto& targetIdPos : vectorTargetIdPos) {
 					if (targetIdPosToCount.find(targetIdPos) == targetIdPosToCount.end()) {
 						targetIdPosToCount[targetIdPos] = 1;
