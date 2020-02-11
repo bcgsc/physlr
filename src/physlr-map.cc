@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <boost/functional/hash.hpp>
@@ -100,10 +101,13 @@ lowerMedian(std::vector<uint64_t> scores)
 	if (size == 0) {
 		return 0;
 	}
+
 	sort(scores.begin(), scores.end());
+
 	if (size % 2 == 0) {
 		return (scores[size / 2 - 1]);
 	}
+
 	return scores[size / 2];
 }
 
@@ -115,6 +119,7 @@ upperMedian(std::vector<uint64_t> scores)
 	if (size == 0) {
 		return 0;
 	}
+
 	sort(scores.begin(), scores.end());
 	return scores[size / 2];
 }
@@ -172,6 +177,7 @@ readPaths(std::vector<std::vector<std::string>>& paths, const std::string& pathF
 		std::cerr << "Invalid file: " << pathFile << std::endl;
 		exit(EXIT_FAILURE);
 	}
+
 	std::string line;
 	while (getline(fh, line)) {
 		std::stringstream ss(line);
@@ -181,10 +187,10 @@ readPaths(std::vector<std::vector<std::string>>& paths, const std::string& pathF
 			paths[paths.size() - 1].emplace_back(molecule);
 		}
 	}
+
 	std::cerr << "Loaded" << std::endl;
 #if _OPENMP
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-	sTime = omp_get_wtime();
 #endif
 }
 
@@ -211,12 +217,13 @@ getMoleculeToMinimizer(
 		std::cerr << "Invalid file: " << inputFile << std::endl;
 		exit(EXIT_FAILURE);
 	}
+
 	std::string line;
 	while (getline(fh, line)) {
 		std::stringstream ss(line);
 		ss >> molecule;
-
 		moleculeToMinimizer[molecule] = std::vector<Minimizer>();
+
 		while (ss >> minimizerAndLoc) {
 			uint64_t colonLoc = minimizerAndLoc.find(':');
 			if (colonLoc == std::string::npos) {
@@ -228,10 +235,10 @@ getMoleculeToMinimizer(
 			}
 		}
 	}
+
 	std::cerr << "Loaded" << std::endl;
 #if _OPENMP
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-	sTime = omp_get_wtime();
 #endif
 }
 
@@ -248,7 +255,15 @@ getMinimizerToPos(
 	for (uint64_t targetId = 0; targetId < paths.size(); ++targetId) {
 		auto& path = paths[targetId];
 		for (uint64_t pos = 0; pos < path.size(); ++pos) {
-			const auto& molecule = path[pos];
+			auto molecule = path[pos];
+			if (moleculeToMinimizer.find(molecule) == moleculeToMinimizer.end()) {
+				uint64_t underscoreLoc = molecule.rfind("_");
+				molecule = molecule.substr(0, underscoreLoc);
+				if (moleculeToMinimizer.find(molecule) == moleculeToMinimizer.end()) {
+					uint64_t underscoreLoc = molecule.rfind("_");
+					molecule = molecule.substr(0, underscoreLoc);
+				}
+			}
 			const auto& minimizers = moleculeToMinimizer.at(molecule);
 			for (const auto& minimizer : minimizers) {
 				if (minimizerToPos.find(minimizer) == minimizerToPos.end()) {
@@ -263,7 +278,6 @@ getMinimizerToPos(
 	std::cerr << "Mapped" << std::endl;
 #if _OPENMP
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-	sTime = omp_get_wtime();
 #endif
 }
 
@@ -272,6 +286,11 @@ mapQueryToTarget(
     const tsl::robin_map<std::string, std::vector<Minimizer>>& queryToMinimizer,
     const tsl::robin_map<Minimizer, tsl::robin_set<pair, boost::hash<pair>>>& minimizerToPos)
 {
+
+	std::cerr << "Mapping query to target" << std::endl;
+#if _OPENMP
+	double sTime = omp_get_wtime();
+#endif
 
 	std::vector<std::string> queryToMinimizerkeys;
 	queryToMinimizerkeys.reserve(queryToMinimizer.size());
@@ -290,7 +309,7 @@ mapQueryToTarget(
 		tsl::robin_map<pair, std::vector<uint64_t>, boost::hash<pair>> targetIdPosToQuerypos;
 
 		for (uint64_t queryPos = 0; queryPos < minimizers.size(); ++queryPos) {
-			auto& minimizer = minimizers[queryPos];
+			const auto& minimizer = minimizers.at(queryPos);
 			if (minimizerToPos.find(minimizer) != minimizerToPos.end()) {
 				auto& vectorTargetIdPos = minimizerToPos.at(minimizer);
 				for (const auto& targetIdPos : vectorTargetIdPos) {
@@ -315,7 +334,7 @@ mapQueryToTarget(
 		tsl::robin_map<pair, uint64_t, boost::hash<pair>> targetIdPosToCount;
 		for (const auto& minimizer : minimizers) {
 			if (minimizerToPos.find(minimizer) != minimizerToPos.end()) {
-				auto& vectorTargetIdPos = minimizerToPos.at(minimizer);
+				const auto& vectorTargetIdPos = minimizerToPos.at(minimizer);
 				for (const auto& targetIdPos : vectorTargetIdPos) {
 					if (targetIdPosToCount.find(targetIdPos) == targetIdPosToCount.end()) {
 						targetIdPosToCount[targetIdPos] = 1;
@@ -336,8 +355,8 @@ mapQueryToTarget(
 			if (score >= opt::scoreThreshold) {
 
 				mapped = true;
-				auto& targetId = std::get<0>(targetIdPos);
-				auto& targetPos = std::get<1>(targetIdPos);
+				const auto& targetId = std::get<0>(targetIdPos);
+				const auto& targetPos = std::get<1>(targetIdPos);
 				std::string orientation;
 				uint64_t prev;
 				uint64_t next;
@@ -363,7 +382,7 @@ mapQueryToTarget(
 
 					std::vector<uint64_t> prevVec;
 
-					for (unsigned i = 1; i <= opt::mapPositions; ++i) {
+					for (unsigned i = 0; i < opt::mapPositions; ++i) {
 						auto prevPair = std::make_pair(targetId, targetPos - i);
 						if (targetIdPosToQuerypos.find(prevPair) != targetIdPosToQuerypos.end()) {
 							prevVec.emplace_back(targetIdPosToQuerypos[prevPair][0]);
@@ -373,11 +392,12 @@ mapQueryToTarget(
 					if (prevVec.empty()) {
 						prevVec.emplace_back(max);
 					}
+
 					prev = lowerMedian(prevVec);
 
 					std::vector<uint64_t> nextVec;
 
-					for (unsigned i = 1; i <= opt::mapPositions; ++i) {
+					for (unsigned i = 0; i < opt::mapPositions; ++i) {
 						auto nextPair = std::make_pair(targetId, targetPos + i);
 						if (targetIdPosToQuerypos.find(nextPair) != targetIdPosToQuerypos.end()) {
 							nextVec.emplace_back(targetIdPosToQuerypos[nextPair][0]);
@@ -409,7 +429,10 @@ mapQueryToTarget(
 	}
 	std::cerr << "Mapped " << num_mapped << " sequences of " << queryToMinimizer.size() << " ("
 	          << std::fixed << std::setprecision(2) << 100 * num_mapped / queryToMinimizer.size()
-	          << "%))" << std::endl;
+	          << "%)" << std::endl;
+#if _OPENMP
+	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+#endif
 }
 
 int
@@ -509,10 +532,20 @@ main(int argc, char* argv[])
 	readPaths(paths, inputFiles[0]);
 
 	tsl::robin_map<std::string, std::vector<Minimizer>> moleculeToMinimizer;
-	getMoleculeToMinimizer(moleculeToMinimizer, inputFiles[1]);
-
 	tsl::robin_map<std::string, std::vector<Minimizer>> queryToMinimizer;
-	getMoleculeToMinimizer(queryToMinimizer, inputFiles[2]);
+
+	if (opt::threads == 1) {
+		getMoleculeToMinimizer(moleculeToMinimizer, inputFiles[1]);
+		getMoleculeToMinimizer(queryToMinimizer, inputFiles[2]);
+
+	} else {
+		std::thread t1(
+		    getMoleculeToMinimizer, std::ref(moleculeToMinimizer), std::ref(inputFiles[1]));
+		std::thread t2(getMoleculeToMinimizer, std::ref(queryToMinimizer), std::ref(inputFiles[2]));
+
+		t1.join();
+		t2.join();
+	}
 
 	tsl::robin_map<Minimizer, tsl::robin_set<pair, boost::hash<pair>>> minimizerToPos;
 	getMinimizerToPos(paths, moleculeToMinimizer, minimizerToPos);
