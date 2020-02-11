@@ -257,10 +257,10 @@ getMinimizerToPos(
 		for (uint64_t pos = 0; pos < path.size(); ++pos) {
 			auto molecule = path[pos];
 			if (moleculeToMinimizer.find(molecule) == moleculeToMinimizer.end()) {
-				uint64_t underscoreLoc = molecule.rfind("_");
+				uint64_t underscoreLoc = molecule.rfind('_');
 				molecule = molecule.substr(0, underscoreLoc);
 				if (moleculeToMinimizer.find(molecule) == moleculeToMinimizer.end()) {
-					uint64_t underscoreLoc = molecule.rfind("_");
+					uint64_t underscoreLoc = molecule.rfind('_');
 					molecule = molecule.substr(0, underscoreLoc);
 				}
 			}
