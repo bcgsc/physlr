@@ -55,6 +55,10 @@ memory_usage()
 using BarcodeID = uint32_t;
 using Minimizer = uint64_t;
 using pair = std::pair<uint64_t, uint64_t>;
+using barcodeToMinimizer_t = tsl::robin_map<std::string, std::vector<Minimizer>>;
+using path_t = std::vector<std::string>;
+using paths_t = std::vector<path_t>;
+using minimizerToPos_t = tsl::robin_map<Minimizer, tsl::robin_set<pair, boost::hash<pair>>>;
 
 static void
 printVersion()
@@ -165,7 +169,7 @@ determineOrientation(uint64_t prev, uint64_t curr, uint64_t next)
 }
 
 void
-readPaths(std::vector<std::vector<std::string>>& paths, const std::string& pathFile)
+readPaths(paths_t& paths, const std::string& pathFile)
 {
 #if _OPENMP
 	double sTime = omp_get_wtime();
@@ -182,7 +186,7 @@ readPaths(std::vector<std::vector<std::string>>& paths, const std::string& pathF
 	while (getline(fh, line)) {
 		std::stringstream ss(line);
 		std::string molecule;
-		paths.emplace_back(std::vector<std::string>());
+		paths.emplace_back(path_t());
 		while (ss >> molecule) {
 			paths[paths.size() - 1].emplace_back(molecule);
 		}
@@ -195,9 +199,7 @@ readPaths(std::vector<std::vector<std::string>>& paths, const std::string& pathF
 }
 
 void
-getMoleculeToMinimizer(
-    tsl::robin_map<std::string, std::vector<Minimizer>>& moleculeToMinimizer,
-    std::string& inputFile)
+getMoleculeToMinimizer(barcodeToMinimizer_t& moleculeToMinimizer, std::string& inputFile)
 {
 #if _OPENMP
 	double sTime = omp_get_wtime();
@@ -244,9 +246,9 @@ getMoleculeToMinimizer(
 
 void
 getMinimizerToPos(
-    const std::vector<std::vector<std::string>>& paths,
-    const tsl::robin_map<std::string, std::vector<Minimizer>>& moleculeToMinimizer,
-    tsl::robin_map<Minimizer, tsl::robin_set<pair, boost::hash<pair>>>& minimizerToPos)
+    const paths_t& paths,
+    const barcodeToMinimizer_t& moleculeToMinimizer,
+    minimizerToPos_t& minimizerToPos)
 {
 	std::cerr << "Mapping Minimizers to positions" << std::endl;
 #if _OPENMP
@@ -283,8 +285,8 @@ getMinimizerToPos(
 
 void
 mapQueryToTarget(
-    const tsl::robin_map<std::string, std::vector<Minimizer>>& queryToMinimizer,
-    const tsl::robin_map<Minimizer, tsl::robin_set<pair, boost::hash<pair>>>& minimizerToPos)
+    const barcodeToMinimizer_t& queryToMinimizer,
+    const minimizerToPos_t& minimizerToPos)
 {
 
 	std::cerr << "Mapping query to target" << std::endl;
@@ -528,11 +530,11 @@ main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	std::vector<std::vector<std::string>> paths;
+	paths_t paths;
 	readPaths(paths, inputFiles[0]);
 
-	tsl::robin_map<std::string, std::vector<Minimizer>> moleculeToMinimizer;
-	tsl::robin_map<std::string, std::vector<Minimizer>> queryToMinimizer;
+	barcodeToMinimizer_t moleculeToMinimizer;
+	barcodeToMinimizer_t queryToMinimizer;
 
 	if (opt::threads == 1) {
 		getMoleculeToMinimizer(moleculeToMinimizer, inputFiles[1]);
@@ -547,7 +549,7 @@ main(int argc, char* argv[])
 		t2.join();
 	}
 
-	tsl::robin_map<Minimizer, tsl::robin_set<pair, boost::hash<pair>>> minimizerToPos;
+	minimizerToPos_t minimizerToPos;
 	getMinimizerToPos(paths, moleculeToMinimizer, minimizerToPos);
 
 	if (verbose) {
