@@ -20,6 +20,9 @@ mol_strategy=distributed+sqcosbin
 # Path to the Physlr project.
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 
+# Path to the directory for profiling
+path_profile=$(physlr_path)/data/
+
 # Path to the Physlr executable.
 bin=$(physlr_path)/bin
 
@@ -1310,7 +1313,7 @@ $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
 
 # profile physlr (time and memory) - naming of the output file is flexible so you can manually include the parameter settings in the name
 %.prof.html:
-	Rscript -e 'rmarkdown::render("$(physlr_path)/data/profile-physlr.Rmd", "html_document", "$(physlr_path)/data/$*.prof.html", knit_root_dir="$(physlr_path)/data/", params=list(path="$(physlr_path)/data/"))'
+	Rscript -e 'rmarkdown::render("$(physlr_path)/data/profile-physlr.Rmd", "html_document", "$(physlr_path)/data/$*.prof.html", knit_root_dir="$(physlr_path)/data/", params=list(path="$(path_profile)")'
 
 # Compare assembly metrics.
 %.quast.html: %.quast.tsv
