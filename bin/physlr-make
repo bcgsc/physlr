@@ -1308,6 +1308,10 @@ $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
 %.paf.gz.pdf: %.paf.gz
 	Rscript -e 'rmarkdown::render("$(physlr_path)/data/plotpaf.rmd", "html_document", "$*.paf.gz.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_paf="$<"))'
 
+# profile physlr (time and memory) - naming of the output file is flexible so you can manually include the parameter settings in the name
+%.prof.html:
+    Rscript -e 'rmarkdown::render("$(physlr_path)/data/profile-code.rmd", "html_document", "$*.prof.html", knit_root_dir="$(PWD)", #output_dir="$(PWD)", params=list(path="$(PWD)"))'
+
 # Compare assembly metrics.
 %.quast.html: %.quast.tsv
 	Rscript -e 'rmarkdown::render("$(physlr_path)/data/quast.rmd", "html_document", "$*.quast.html", knit_root_dir="$(PWD)", output_dir="$(PWD)", params=list(input_tsv="$<", output_tsv="$*.quast.table.tsv"))'
