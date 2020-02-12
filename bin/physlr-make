@@ -21,7 +21,7 @@ mol_strategy=distributed+sqcosbin
 physlr_path=$(shell dirname $$(dirname $(realpath $(MAKEFILE_LIST))))
 
 # Path to the directory for profiling
-path_profile=$(physlr_path)/data/
+path_profile=$(pwd)
 
 # Path to the Physlr executable.
 bin=$(physlr_path)/bin
