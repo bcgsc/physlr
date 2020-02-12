@@ -6,7 +6,7 @@ output: html_document
 params:
   path:
     label: "Path where the *.time files are stored"
-    value: "/projects/btl/jowong/github/physlr/data_hg004_stlfr/v2release"
+    value: "./"
     input: text
 ---
 
