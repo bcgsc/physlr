@@ -1,0 +1,280 @@
+---
+title: "Physlr profiling - time and memory"
+author: "Amirhossein Afshinfard"
+date: "2/11/2020"
+output: html_document
+params:
+  path:
+    label: "Path where the *.time files are stored"
+    value: "/projects/btl/jowong/github/physlr/data_hg004_stlfr/v2release"
+    input: text
+---
+
+
+```{r setup, include=FALSE}
+#Rscript -e 'rmarkdown::render("$(physlr_path)/data/profile-code.rmd", "html_document", "$*.prof.html", knit_root_dir="$(PWD)", #output_dir="$(PWD)", params=list(path="$(physlr_path)/data/"))'
+knitr::opts_chunk$set(echo = TRUE)
+list.of.packages <- c("ggplot2", "dplyr", "stringr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+library("stringr")
+library("ggplot2")
+library("dplyr")
+
+knit_print.data.frame <- function(x, ...) kable(x) %>% paste(collapse = "\n") %>% asis_output
+path <- params$path
+
+```
+
+## General information:
+
+Some sescription
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+m <- matrix(ncol = 7)
+df = data.frame(m)
+colnames(df)=c("step",
+               "total_time_min",
+               "time_hr",
+               "time_min",
+               "time_sec",
+               "mem",
+               "pl")
+
+#path <- "/projects/btl/jowong/github/physlr/data_hg004_stlfr/v2release"
+
+if (substr(path,nchar(path),nchar(path)) != "/")
+  path <- paste(path,"/",sep="")
+ldir <-  normalizePath(path)
+
+
+```
+
+The profiling directory including *.time files:
+
+```{r echo=FALSE}
+cat(ldir)
+
+finf <- file.info(dir(path = ldir, full.names = TRUE), extra_cols = FALSE)
+sorted_finf <- finf[with(finf, order(as.POSIXct(ctime))), ]
+sorted_files <- rownames(sorted_finf)
+sorted_time_files <- sorted_files[substr(sorted_files,
+                                         nchar(sorted_files)-4,nchar(sorted_files)) == ".time"]
+
+# Or alternatively:
+#file.info("/projects/btl/jowong/github/physlr/data_hg004_stlfr/v2release/hg004_k40.histogram.time")
+#details = file.info(list.files(path, pattern="*.time", full.names = TRUE))
+#details = details[with(details, order(as.POSIXct(ctime))), ]
+#files = rownames(details)
+
+```
+
+Unacceptable *.time files if any:
+```{r echo=FALSE}
+for (i in 1:length(sorted_time_files))
+{
+  lines_of_file <- readLines(sorted_time_files[i])
+  if (length(lines_of_file) != 23)
+  {
+    cat(paste("The time-file is corrupted: \n", sorted_time_files[i]))
+    next
+  }
+  ## Exit status
+  exit_line_no = grep('Exit',lines_of_file)
+  exit_status <- substr(lines_of_file[exit_line_no],
+                        nchar(lines_of_file[exit_line_no]), nchar(lines_of_file[exit_line_no]))
+  if (exit_status != "0")
+  {
+    cat("The job you are profiling did not exit normally, relative file:\n")
+    print(sorted_time_files[i])
+    next
+  }
+
+  ## Time
+  time_line_no = grep('Elapsed',lines_of_file)
+  time_line <- lines_of_file[time_line_no]
+  time = str_match(time_line, regex('(?<=or m:ss[[:punct:]][[:punct:]]\ ).*',
+                                    ignore.case=TRUE, perl=TRUE))[1,1]
+
+  len = nchar(time_line)
+  colon_marks = str_match_all(time, regex(':',
+                                          ignore.case=TRUE, perl=TRUE))[[1]]
+
+  if (dim(colon_marks)[1] == 0)
+  {
+    cat(paste("Unexpected format"))
+  }else if (dim(colon_marks)[1] == 2)
+  {
+    df[i,"time_sec"] = strtoi(substr(time, nchar(time)-1, nchar(time)), base=10L)
+    df[i,"time_min"] = strtoi(str_match(time, regex('[[:digit:]]*(?<=:)[[:digit:]]*(?=:)',
+                                                    ignore.case=TRUE, perl=TRUE)), base=10L)
+    df[i,"time_hr"] = strtoi(str_match(time, regex('[[:digit:]]*(?=:)',
+                                                   ignore.case=TRUE, perl=TRUE)), base=10L)
+
+  }else if (dim(colon_marks)[1] == 1)
+  {
+    sec = str_match(time, regex('[[:digit:]]*(?<=:)[[:digit:]]*(?=.)',
+                                ignore.case=TRUE, perl=TRUE))
+    df[i,"time_sec"] = strtoi(sec, base=10L)
+    df[i,"time_min"] = strtoi(str_match(time, regex('[[:digit:]]*(?=:)',
+                                                    ignore.case=TRUE, perl=TRUE)), base=10L)
+    df[i,"time_hr"] = 0
+  }
+  if (df[i,"time_hr"]==0 && df[i,"time_min"] ==0)
+  {
+    df[i,"time_min"] = 1
+  }
+  df[i,"total_time_min"] = df[i,"time_hr"]*60 + df[i,"time_min"]
+
+  ## Memory
+  mem_line_no = grep('Maximum',lines_of_file)
+  mem_line <- lines_of_file[mem_line_no]
+  mem_loci <- str_locate_all(mem_line, "\\:")
+  len = nchar(mem_line)
+  df[i,"mem"] = strtoi(substr(mem_line,mem_loci[[1]][1]+1 , len))
+
+  ## Name and programming language
+  py_pattern = str_match(lines_of_file[1], regex('/bin/physlr\ \\S*'))
+  if (! is.na(py_pattern[1,1]))
+  {
+    #name_loci = str_locate_all(lines_of_file[1], "bin/physlr")
+    df[i,"step"] = str_match(py_pattern, regex('(?<=\ ).*',
+                                               ignore.case=TRUE, perl=TRUE))
+    df[i,"pl"] = "python"
+  }else
+  {
+    cpp_pattern = str_match(lines_of_file[1], regex('/src/physlr-\\S*'))
+    if (! is.na(cpp_pattern[1,1]))
+    {
+      df[i,"step"] = str_match(cpp_pattern, regex('(?<=-).*',
+                                                  ignore.case=TRUE, perl=TRUE))
+      df[i,"pl"] = "c/c++"
+    }else
+    {
+      pattern = str_match(lines_of_file[1], regex('being timed:\ \"\\S*'))
+      if(! is.na(pattern[1,1]))
+      {
+        df[i,"step"] = str_match(pattern, regex('(?<=being timed:\ \").*',
+                                                ignore.case=TRUE, perl=TRUE))
+        df[i,"pl"] = "third-party tool"
+      }else
+      {
+        cat("Unknown command patrtern:\n")
+        print(lines_of_file[1])
+        df[i,"step"] = "unknown name"
+        df[i,"pl"] = "unknown"
+      }
+    }
+  }
+}
+
+df_temp = df
+df = df_temp
+
+to_be_removed = which(is.na(df[,1]))
+
+if(length(to_be_removed) > 0){
+  cat("Following file(s) will be skipped due to having no step name\n")
+  print(sorted_time_files[to_be_removed])
+}
+
+df = df[!is.na(df[,1]),]
+to_be_removed2 = array()
+
+for (i in 1:dim(df)[1]){
+  if (sum(is.na(df[i,])) > 0){
+    to_be_removed2[length(to_be_removed2)[1]+1] = i
+  }
+}
+
+if(length(to_be_removed2) > 1){
+  to_be_removed2 = to_be_removed2[2:length(to_be_removed2)]
+  cat("Following file(s) will be skipped due to having NA values")
+  print(print(sorted_time_files[to_be_removed2]))
+  print(df[to_be_removed2,])
+}
+
+df[,"start"]=0
+for(i in 1:dim(df)[1]){
+  if(i>1)
+    df[i,"start"]=sum(df[1:(i-1),"total_time_min"])
+  df[i,"end"]=df[i,"start"]+df[i,"total_time_min"]
+}
+
+duplicates = duplicated(df[,1])
+
+if (sum(duplicates) > 1 ){
+  cat("Following rows will be deleted from the report as they're duplicated steps:")
+  print(df[duplicates,c(1,3,4,6,7)])
+  df = df[!duplicates,]
+}
+
+df$step <- factor(df$step, levels = df$step[order(df$start)])
+df$mem = ceiling(df$mem * 10 / (1000000))/10.0
+
+p_time <- ggplot(df, aes(x=step, y=end, colour=pl))
+p_time <- p_time +
+  geom_linerange(aes(ymin=df$start, ymax=df$end), size=7) +
+  coord_flip() +
+  theme(text = element_text(size=12)) +
+  labs(title = "Physlr - time Gantt chart",
+       subtitle = paste("path:",ldir ),
+       caption = "physlr version: 0.2.0")+
+  theme(
+    plot.title = element_text(color = "black", face = "bold"),
+    plot.subtitle = element_text(color = "darkblue", size = 8),
+    plot.caption = element_text(color = "darkgreen", face = "bold", size = 8)
+  )+
+  theme(legend.title=element_blank())+
+  geom_text(label=sprintf(paste(df$time_hr, ":", df$time_min,":",df$time_sec, sep="")),
+            size=2.7, hjust=-0.1, vjust=-0.1, check_overlap = T) +
+  ylim(0,df$end[dim(df)[1]]*1.1) +
+  ylab("Time in minutes") +
+  xlab("Physlr Step")
+
+p_mem <- ggplot(df, aes(x=step, y=mem, colour=pl))
+p_mem <- p_mem +
+  geom_linerange(aes(ymin=0, ymax=df$mem), size=7) +
+  coord_flip() +
+  theme(text = element_text(size=12)) +
+  labs(title = "Physlr - memory usage",
+       subtitle = paste("path:",ldir ),
+       caption = "physlr version: 0.2.0")+
+  theme(
+    plot.title = element_text(color = "black", face = "bold"),
+    plot.subtitle = element_text(color = "darkblue", size = 8),
+    plot.caption = element_text(color = "darkgreen", face = "bold", size = 8)
+  )+
+  theme(legend.title=element_blank())+
+  geom_text(label=sprintf("%1.0f GB",df$mem),
+            size=2.7, hjust=-0.1, vjust=-0.1, check_overlap = T) +
+  ylim(0,max(df$mem)*1.1) +
+  ylab("Memory in GB") +
+  xlab("Physlr Step")
+
+```
+
+
+## Data to be plotted
+
+```{r}
+df[,c(1,3,4,6,7)]
+```
+
+
+## Time:
+
+```{r echo=FALSE, out.width = '100%'}
+p_time
+
+```
+
+## Memory:
+```{r echo=FALSE, out.width = '100%'}
+p_mem
+
+```
+
+
