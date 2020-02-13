@@ -1477,24 +1477,23 @@ class Physlr:
         u_old_to_new = dict()
         gout = nx.Graph()
 
-        for u_old in progress(gin):
-            m = gin.nodes[u_old]["m"]
-            u_barcode = u_old.rsplit("_", 1)[0]
+        for u_in in progress(gin):
+            m = gin.nodes[u_in]["m"]
+            u_barcode = u_in.rsplit("_", 1)[0]
             if u_barcode in molecule_id_tracker:
                 new_id = molecule_id_tracker[u_barcode].size()
-                molecule_id_tracker[u_barcode].append(u_old)
+                molecule_id_tracker[u_barcode].append(u_in)
             else:
-                molecule_id_tracker[u_barcode] = [u_old]
+                molecule_id_tracker[u_barcode] = [u_in]
                 new_id = 0
             gout.add_node(f"{u_barcode}_{new_id}", m=m)
-            u_new = u_barcode + "_" + str(new_id)
-            u_old_to_new[u_old] = u_new
+            u_out = u_barcode + "_" + str(new_id)
+            u_old_to_new[u_in] = u_out
 
-        for (u_old, v_old), prop in gin.edges.items():
-            # Skip singleton and cut vertices, which are excluded from the partition.
-            u_new = u_old_to_new[u_old]
+        for (u_in, v_old), prop in gin.edges.items():
+            u_out = u_old_to_new[u_in]
             v_new = u_old_to_new[v_old]
-            gout.add_edge(f"{u_new}", f"{v_new}", m=prop["m"])
+            gout.add_edge(f"{u_out}", f"{v_new}", m=prop["m"])
 
         return gout
 
@@ -1961,7 +1960,7 @@ class Physlr:
             gout = 0
 
         if self.args.report_remaining_junctions:
-            # No effect on results
+            # No effects on results, but affects the processing time.
             # only set to True to report the number of junctions after last round of mol-sep
             self.identify_junctions_graph(gin)
 
