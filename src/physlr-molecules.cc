@@ -1197,7 +1197,6 @@ community_detection_k3_cliques(
 }
 
 
-
 void
 bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_neighbours, size_t bin_size = 50)
 {
@@ -1339,6 +1338,8 @@ main(int argc, char* argv[])
 	int optindex = 0;
 	static int help = 0;
 	std::string separationStrategy = "bc";
+	size_t threads_count = 1;
+
 	bool verbose = false;
 	bool failed = false;
 	static const struct option longopts[] = {
@@ -1383,6 +1384,8 @@ main(int argc, char* argv[])
 
 	graph_t g;
 	readTSV(g, infiles, verbose);
+
+    # vector<graph_t > (threads_count, g);
 
 	barcodeToIndex_t barcodeToIndex;
 	indexToBarcode_t indexToBarcode;
