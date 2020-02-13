@@ -1462,6 +1462,52 @@ class Physlr:
         return "_" + str(random.choice(max_hits)), 0, 1
 
     @staticmethod
+    def reformat_molecule_ids(gin):
+        """
+        Reformat messy molecule ids into correct and ordered molecule ids.
+        :param gin: a graph wih messy molecule ids.
+        :return: the new graph with correct/ordered molecule ids.
+        """
+        print(
+            int(timeit.default_timer() - t0),
+            "Making a new graph with correct, ordered molecule ids:\n\t",
+            file=sys.stderr)
+
+        molecule_id_tracker = dict()
+        u_old_to_new = dict()
+        gout = nx.Graph()
+
+        for u_old in progress(gin):
+            m = gin.nodes[u_old]["m"]
+            u_barcode = u_old.rsplit("_", 1)[0]
+            if u_barcode in molecule_id_tracker:
+                new_id = molecule_id_tracker[u_barcode].size()
+                molecule_id_tracker[u_barcode].append(u_old)
+            else:
+                molecule_id_tracker[u_barcode] = [u_old]
+                new_id = 0
+            gout.add_node(f"{u_barcode}_{new_id}", m=m)
+            u_new = u_barcode + "_" + str(new_id)
+            u_old_to_new[u_old] = u_new
+
+        for (u_old, v_old), prop in gin.edges.items():
+            # Skip singleton and cut vertices, which are excluded from the partition.
+            u_new = u_old_to_new[u_old]
+            v_new = u_old_to_new[v_old]
+            gout.add_edge(f"{u_new}", f"{v_new}", m=prop["m"])
+
+        return gout
+
+    def physlr_reformat_molecule_ids(self):
+        """
+        Given a graph with messy molecule ids (ACGT_0_0_1_0_2),
+        it outputs a graph with correct/ordered molecule ids
+        """
+        gin = self.read_graph(self.args.FILES)
+        gout = reformat_molecule_ids(gin)
+        self.write_graph(gout, sys.stdout, self.args.graph_format)
+
+    @staticmethod
     def detect_communities_biconnected_components(g, node_set):
         """Separate bi-connected components. Return components."""
         # if len(node_set) < Physlr.args.skip_small:
@@ -1815,13 +1861,13 @@ class Physlr:
         round_num = self.args.round
         for alg_list in alg_list_2d:
             if self.args.set_settings and len(alg_list_2d) > 1:
-                Physlr.set_settings(round_num)
+                self.set_settings(round_num)
             if round_num > 1:
                 print(
                     int(timeit.default_timer() - t0),
                     "Detecting junction-causing barcodes",
                     file=sys.stderr)
-                junctions = Physlr.identify_junctions_graph(gin)
+                junctions = self.identify_junctions_graph(gin)
             if junctions:
                 print(
                     int(timeit.default_timer() - t0),
@@ -1831,7 +1877,7 @@ class Physlr:
                         "sqcosbin" in alg_list or "cosbin" in alg_list:
                     print(
                         int(timeit.default_timer() - t0),
-                        "cost:", Physlr.args.cost, "sqcost:", Physlr.args.sqcost,
+                        "cost:", self.args.cost, "sqcost:", self.args.sqcost,
                         file=sys.stderr)
                 nodes_to_process = junctions
             else:
@@ -1917,8 +1963,12 @@ class Physlr:
         if self.args.report_remaining_junctions:
             # No effect on results
             # only set to True to report the number of junctions after last round of mol-sep
-            Physlr.identify_junctions_graph(gin)
-        gout = gin
+            self.identify_junctions_graph(gin)
+
+        if round_num > 2:
+            gout = self.reformat_molecule_ids(gin)
+        else:
+            gout = gin
         self.write_graph(gout, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
