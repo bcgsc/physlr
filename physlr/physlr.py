@@ -1504,7 +1504,7 @@ class Physlr:
         it outputs a graph with correct/ordered molecule ids
         """
         gin = self.read_graph(self.args.FILES)
-        gout = reformat_molecule_ids(gin)
+        gout = self.reformat_molecule_ids(gin)
         self.write_graph(gout, sys.stdout, self.args.graph_format)
 
     @staticmethod
