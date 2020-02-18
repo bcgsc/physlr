@@ -283,10 +283,25 @@ getMinimizerToPos(
 #endif
 }
 
+static std::vector<double>
+quantile(std::vector<double> quantiles, std::vector<uint64_t> values)
+{
+	std::sort(values.begin(), values.end());
+	std::vector<double> qs;
+	qs.reserve(quantiles.size());
+	std::fesetround(FE_TONEAREST);
+	for (const auto& p : quantiles) {
+		qs.push_back(values[size_t(std::nearbyint(p * (values.size() - 1)))]);
+	}
+	return qs;
+}
+
 void
 mapQueryToTarget(
     const barcodeToMinimizer_t& queryToMinimizer,
-    const minimizerToPos_t& minimizerToPos)
+    const minimizerToPos_t& minimizerToPos,
+    const int& paf,
+    const paths_t& paths)
 {
 
 	std::cerr << "Mapping query to target" << std::endl;
@@ -315,6 +330,7 @@ mapQueryToTarget(
 			if (minimizerToPos.find(minimizer) != minimizerToPos.end()) {
 				auto& vectorTargetIdPos = minimizerToPos.at(minimizer);
 				for (const auto& targetIdPos : vectorTargetIdPos) {
+
 					if (targetIdPosToQuerypos.find(targetIdPos) == targetIdPosToQuerypos.end()) {
 						targetIdPosToQuerypos[targetIdPos] = std::vector<uint64_t>();
 						targetIdPosToQuerypos[targetIdPos].emplace_back(queryPos);
@@ -329,8 +345,15 @@ mapQueryToTarget(
 
 			auto& targetIdPos = targetIdPosToQueryposKeyVal.first;
 			auto& queryPos = targetIdPosToQueryposKeyVal.second;
-
-			targetIdPosToQuerypos[targetIdPos] = { lowerMedian(queryPos) };
+			if (paf == 0) {
+				targetIdPosToQuerypos[targetIdPos] = { lowerMedian(queryPos) };
+			} else {
+				std::vector<double> q = { 0, 0.25, 0.5, 0.75, 1 };
+				q = quantile(q, queryPos);
+				uint64_t lowWhisker = (uint64_t)(q[3] + 1.5 * (q[3] - q[1]));
+				uint64_t highWhisker = (uint64_t)(q[3] + 1.5 * (q[3] - q[1]));
+				targetIdPosToQuerypos[targetIdPos] = { lowWhisker, (uint64_t)q[2], highWhisker };
+			}
 		}
 
 		tsl::robin_map<pair, uint64_t, boost::hash<pair>> targetIdPosToCount;
@@ -362,9 +385,64 @@ mapQueryToTarget(
 				std::string orientation;
 				uint64_t prev;
 				uint64_t next;
-				uint64_t curr = targetIdPosToQuerypos[targetIdPos][0];
+				uint64_t curr;
+				std::vector<uint64_t> startMedianEnd;
 
-				if (opt::mapPositions == 1) {
+				if (paf == 0) {
+					curr = targetIdPosToQuerypos[targetIdPos][0];
+					if (opt::mapPositions == 1) {
+
+						auto prevPair = std::make_pair(targetId, targetPos - 1);
+						auto nextPair = std::make_pair(targetId, targetPos + 1);
+
+						if (targetIdPosToQuerypos.find(prevPair) == targetIdPosToQuerypos.end()) {
+							prev = max;
+						} else {
+							prev = targetIdPosToQuerypos[prevPair][0];
+						}
+
+						if (targetIdPosToQuerypos.find(nextPair) == targetIdPosToQuerypos.end()) {
+							next = max;
+						} else {
+							next = targetIdPosToQuerypos[nextPair][0];
+						}
+					} else {
+
+						std::vector<uint64_t> prevVec;
+
+						for (unsigned i = 0; i < opt::mapPositions; ++i) {
+							auto prevPair = std::make_pair(targetId, targetPos - i);
+							if (targetIdPosToQuerypos.find(prevPair) !=
+							    targetIdPosToQuerypos.end()) {
+								prevVec.emplace_back(targetIdPosToQuerypos[prevPair][0]);
+							}
+						}
+
+						if (prevVec.empty()) {
+							prevVec.emplace_back(max);
+						}
+
+						prev = lowerMedian(prevVec);
+
+						std::vector<uint64_t> nextVec;
+
+						for (unsigned i = 0; i < opt::mapPositions; ++i) {
+							auto nextPair = std::make_pair(targetId, targetPos + i);
+							if (targetIdPosToQuerypos.find(nextPair) !=
+							    targetIdPosToQuerypos.end()) {
+								nextVec.emplace_back(targetIdPosToQuerypos[nextPair][0]);
+							}
+						}
+
+						if (nextVec.empty()) {
+							nextVec.emplace_back(max);
+						}
+
+						next = upperMedian(nextVec);
+					}
+				} else {
+					startMedianEnd = targetIdPosToQuerypos[targetIdPos];
+					curr = startMedianEnd[1];
 
 					auto prevPair = std::make_pair(targetId, targetPos - 1);
 					auto nextPair = std::make_pair(targetId, targetPos + 1);
@@ -372,53 +450,38 @@ mapQueryToTarget(
 					if (targetIdPosToQuerypos.find(prevPair) == targetIdPosToQuerypos.end()) {
 						prev = max;
 					} else {
-						prev = targetIdPosToQuerypos[prevPair][0];
+						prev = targetIdPosToQuerypos[prevPair][1];
 					}
 
 					if (targetIdPosToQuerypos.find(nextPair) == targetIdPosToQuerypos.end()) {
 						next = max;
 					} else {
-						next = targetIdPosToQuerypos[nextPair][0];
+						next = targetIdPosToQuerypos[nextPair][1];
 					}
-				} else {
-
-					std::vector<uint64_t> prevVec;
-
-					for (unsigned i = 0; i < opt::mapPositions; ++i) {
-						auto prevPair = std::make_pair(targetId, targetPos - i);
-						if (targetIdPosToQuerypos.find(prevPair) != targetIdPosToQuerypos.end()) {
-							prevVec.emplace_back(targetIdPosToQuerypos[prevPair][0]);
-						}
-					}
-
-					if (prevVec.empty()) {
-						prevVec.emplace_back(max);
-					}
-
-					prev = lowerMedian(prevVec);
-
-					std::vector<uint64_t> nextVec;
-
-					for (unsigned i = 0; i < opt::mapPositions; ++i) {
-						auto nextPair = std::make_pair(targetId, targetPos + i);
-						if (targetIdPosToQuerypos.find(nextPair) != targetIdPosToQuerypos.end()) {
-							nextVec.emplace_back(targetIdPosToQuerypos[nextPair][0]);
-						}
-					}
-
-					if (nextVec.empty()) {
-						nextVec.emplace_back(max);
-					}
-
-					next = upperMedian(nextVec);
 				}
 
 				orientation = determineOrientation(prev, curr, next);
+				if (paf != 0) {
+					uint64_t qLength = minimizers.size();
+					uint64_t tLength = paths[targetId].size();
+					auto& qStart = startMedianEnd[0];
+					auto& qEnd = startMedianEnd[2];
+					double rawMapQ = 100 * score / (qEnd - qStart);
+					int64_t mapQ = (int64_t)rawMapQ;
 #if _OPENMP
 #pragma omp critical
 #endif
-				std::cout << targetId << "\t" << targetPos << "\t" << targetPos + 1 << "\t"
-				          << queryId << "\t" << score << "\t" << orientation << std::endl;
+					std::cout << queryId << "\t" << qLength << "\t" << qStart << "\t" << qEnd
+					          << "\t" << orientation << "\t" << targetId << "\t" << tLength << "\t"
+					          << targetPos << "\t" << targetPos + 1 << "\t" << score << "\t"
+					          << qEnd - qStart << "\t" << mapQ << std::endl;
+				} else {
+#if _OPENMP
+#pragma omp critical
+#endif
+					std::cout << targetId << "\t" << targetPos << "\t" << targetPos + 1 << "\t"
+					          << queryId << "\t" << score << "\t" << orientation << std::endl;
+				}
 			}
 		}
 
@@ -445,10 +508,12 @@ main(int argc, char* argv[])
 	bool verbose = false;
 	static int help = 0;
 	static int version = 0;
+	static int paf = 0;
 	int optindex = 0;
 
 	// long form arguments
 	static struct option longopts[] = { { "help", no_argument, &help, 1 },
+		                                { "paf", no_argument, &paf, 1 },
 		                                { "mapPositions", required_argument, nullptr, 'm' },
 		                                { "scoreThreshold", required_argument, nullptr, 'n' },
 		                                { "threads", required_argument, nullptr, 't' },
@@ -557,5 +622,5 @@ main(int argc, char* argv[])
 		          << std::endl;
 	}
 
-	mapQueryToTarget(queryToMinimizer, minimizerToPos);
+	mapQueryToTarget(queryToMinimizer, minimizerToPos, paf, paths);
 }
