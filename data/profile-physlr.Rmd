@@ -109,28 +109,27 @@ for (i in 1:length(sorted_time_files))
     cat(paste("Unexpected format"))
   } else if (dim(colon_marks)[1] == 2)
   {
-    df[i, "time_sec"] = strtoi(substr(time, nchar(time) - 1, nchar(time)), base =
-                                 10L)
-    df[i, "time_min"] = strtoi(str_match(
+    df[i, "time_sec"] = substr(time, nchar(time) - 1, nchar(time))
+    df[i, "time_min"] = str_match(
       time,
       regex(
         '[[:digit:]]*(?<=:)[[:digit:]]*(?=:)',
         ignore.case = TRUE,
         perl = TRUE
       )
-    ), base = 10L)
-    df[i, "time_hr"] = strtoi(str_match(
+    )
+    df[i, "time_hr"] = str_match(
       time,
       regex(
         '[[:digit:]]*(?=:)',
         ignore.case = TRUE,
         perl = TRUE
       )
-    ), base = 10L)
+    )
 
   } else if (dim(colon_marks)[1] == 1)
   {
-    sec = str_match(
+    df[i, "time_sec"] = str_match(
       time,
       regex(
         '[[:digit:]]*(?<=:)[[:digit:]]*(?=.)',
@@ -138,22 +137,22 @@ for (i in 1:length(sorted_time_files))
         perl = TRUE
       )
     )
-    df[i, "time_sec"] = strtoi(sec, base = 10L)
-    df[i, "time_min"] = strtoi(str_match(
+
+    df[i, "time_min"] = str_match(
       time,
       regex(
         '[[:digit:]]*(?=:)',
         ignore.case = TRUE,
         perl = TRUE
       )
-    ), base = 10L)
+    )
     df[i, "time_hr"] = 0
   }
   if (df[i, "time_hr"] == 0 && df[i, "time_min"] == 0)
   {
     df[i, "time_min"] = 1
   }
-  df[i, "total_time_min"] = df[i, "time_hr"] * 60 + df[i, "time_min"]
+  df[i, "total_time_min"] = strtoi(df[i, "time_hr"], base = 10L) * 60 + strtoi(df[i, "time_min"], base = 10L)
 
   ## Memory
   mem_line_no = grep('Maximum', lines_of_file)
@@ -307,7 +306,9 @@ if (dim(df)[1] == 0) {
           ) +
           ylim(0, df$end[dim(df)[1]] * 1.1) +
           ylab("Time in minutes") +
-          xlab("Physlr Step")
+          xlab("Physlr Step") +
+          scale_color_manual(
+            values=c("#008000", "#8E44AD", "#2E86C1", "#808080"))
 
         p_mem <- ggplot(df, aes(
           x = step,
@@ -342,7 +343,9 @@ if (dim(df)[1] == 0) {
           ) +
           ylim(0, max(df$mem) * 1.1) +
           ylab("Memory in GB") +
-          xlab("Physlr Step")
+          xlab("Physlr Step") +
+          scale_color_manual(
+            values=c("#008000", "#8E44AD", "#2E86C1", "#808080"))
       }
     }
   }
