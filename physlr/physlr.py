@@ -1423,6 +1423,12 @@ class Physlr:
         return "_" + str(random.choice(max_hits)), 0, 1
 
     @staticmethod
+    def detect_communities_connected_components(g, node_set):
+        """Separate connected components. Return components."""
+        components = list(nx.connected_components(g.subgraph(node_set)))
+        return components
+
+    @staticmethod
     def detect_communities_biconnected_components(g, node_set):
         """Separate bi-connected components. Return components."""
         cut_vertices = set(nx.articulation_points(g.subgraph(node_set)))
@@ -1572,11 +1578,15 @@ class Physlr:
         communities = [g[u].keys()]
         if junctions:
             if u not in junctions:
-                strategy = "bc"
+                strategy = "cc"
         alg_list = strategy.split("+")
         for algorithm in alg_list:
             communities_temp = []
-            if algorithm == "bc":
+            if algorithm == "cc":
+                for component in communities:
+                    communities_temp.extend(
+                        Physlr.detect_communities_connected_components(g, component))
+            elif algorithm == "bc":
                 for component in communities:
                     communities_temp.extend(
                         Physlr.detect_communities_biconnected_components(g, component))
@@ -1655,7 +1665,7 @@ class Physlr:
 
     def physlr_molecules(self):
         "Separate barcodes into molecules."
-        alg_white_list = {"bc", "cn2", "cn3", "k3", "k3bin", "k4",
+        alg_white_list = {"cc", "bc", "cn2", "cn3", "k3", "k3bin", "k4",
                           "cos", "sqcos", "sqcosbin", "louvain", "distributed"}
         alg_list = self.args.strategy.split("+")
         if not alg_list:
