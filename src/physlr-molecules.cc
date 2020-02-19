@@ -1001,7 +1001,7 @@ community_detection_cosine_similarity(
 }
 
 int
-inline share_edges(Clique_type& a, Clique_type& b)
+inline share_edges(Clique_type& a, Clique_type& b, int min_shared = 1)
 {
     // whether two cliques share at least an edge.
     // two cliques (Clique_type) share edges if they share at least 2 vertices.
@@ -1014,7 +1014,7 @@ inline share_edges(Clique_type& a, Clique_type& b)
             count++;
 //            cout<<"connection -"<<endl;
         }
-        if (count > 1)
+        if (count > min_shared)
         {
 //            cout<<"count > 1"<<endl;
             return 1;
@@ -1200,17 +1200,15 @@ community_detection_k3_cliques(
 void
 bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_neighbours, size_t bin_size = 50)
 {
+    // //   Iterate over each component and if its bigger than bin_size:
+    // //   randomly split the component (set of vertices) into smaller even bins
+
     vector<size_t> components_size;
     size_t neighborhood_size;
     size_t components_count;
     //cout<<"size of source is:"<<source.size()<<endl;
     for (int i = 0; i < source.size(); i++){
-        //cout<<"size of dim "<<i<<"of source is:"<<source[i].size()<<endl;
         neighborhood_size = source[i].size();
-//        for (auto neigh_it = source[i].begin(); neigh_it < source[i].end(); ++neigh_it)
-//        {
-//    	    neighborhood_size++;
-//	    }
 	    components_count = ((neighborhood_size-1) / bin_size)+1;
 	    //cout<<"so comp count is: "<<components_count<<endl;
 	    components_size.push_back(components_count);
@@ -1288,18 +1286,23 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
 template <class Graph, class vertexIter>
 make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
 {
+    // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
+
     for (auto& vIter1 = vBegin; vIter1 != end ; ++vIter1)
     {
         for (auto& vIter2 = vBegin; vIter2 != end ; ++vIter2)
         {
             if (vIter1 != vIter2)
             {
-
+                auto& edge = edge(vIter1, vIter2, g)
+                if (edge.second)
+                {
+                    auto new_edge = add_edge(g[*vIter1].name, g[*vIter2].name, subgraph).first;
+                    subgraph[new_edge].weight = g[edge.first].weight;
+		        }
             }
         }
     }
-    using vertex_t = graph_t::vertex_descriptor;
-create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end())
 }
 
 // so we probably need to run connected components instead of bi-connected
@@ -1309,12 +1312,11 @@ bin_neighbours(Neighbours_Type neighbours,
     componentToVertexSet_t& binned_neighbours,
     size_t bin_size = 50)
 {
-    //cout<<"entered bin-neighbours"<<endl;
+    // //   Randomly split the set of vertices (neighbours) into bins
+
     componentToVertexSet_t compToVertset(1,vertexSet_t(neighbours.first, neighbours.second));
-    //cout<<"size of 1: "<<compToVertset[0].size()<<endl;
     if (compToVertset[0].size() > bin_size)
     {
-        //cout<<"lets resize"<<endl;
         bin_components(compToVertset, binned_neighbours, bin_size);
     }
     else
@@ -1450,7 +1452,7 @@ main(int argc, char* argv[])
 
         /////////////////////////////////////////////////// binning version
 		start_if_all = timeNow();
-		bin_neighbours(neighbours, componentsVec, 5);
+		bin_neighbours(neighbours, componentsVec, 50);
         stop_if_all = timeNow();
         duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
 	    duration_if_all += duration_temp2.count();
@@ -1462,10 +1464,10 @@ main(int argc, char* argv[])
 		    //cout<<" Entered: "<<comp_i<<endl;
 		    //graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    graph_t& subgraph;
-		    make_subgraph(subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end())
+		    make_subgraph(subgraph, g, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
-		    //biconnectedComponents(subgraph, vertexToComponent);
-            initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
+		    biconnectedComponents(subgraph, vertexToComponent);
+            //initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
 		    //cout<<"initial community id:"<<initial_community_id<<endl;
 		    //initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
 		    vertexCount++;
