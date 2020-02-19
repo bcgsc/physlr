@@ -158,9 +158,7 @@ for (i in 1:length(sorted_time_files))
   ## Memory
   mem_line_no = grep('Maximum', lines_of_file)
   mem_line <- lines_of_file[mem_line_no]
-  mem_loci <- str_locate_all(mem_line, "\\:")
-  len = nchar(mem_line)
-  df[i, "mem"] = strtoi(substr(mem_line, mem_loci[[1]][1] + 1 , len))
+  df[i, "mem"] = strtoi(str_match(lines_of_file[mem_line_no], regex('(?<=:\ ).*')))
 
   ## Name and programming language
   py_pattern = str_match(lines_of_file[1], regex('/bin/physlr\ \\S*'))
