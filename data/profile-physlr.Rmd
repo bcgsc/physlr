@@ -1,7 +1,6 @@
 ---
 title: "Physlr profiling - time and memory"
 author: "Amirhossein Afshinfard"
-date: "2/11/2020"
 output: html_document
 params:
   path:
@@ -62,12 +61,6 @@ sorted_finf <- finf[with(finf, order(as.POSIXct(ctime))), ]
 sorted_files <- rownames(sorted_finf)
 sorted_time_files <- sorted_files[substr(sorted_files,
                                          nchar(sorted_files)-4,nchar(sorted_files)) == ".time"]
-
-# Or alternatively:
-#file.info("/projects/btl/jowong/github/physlr/data_hg004_stlfr/v2release/hg004_k40.histogram.time")
-#details = file.info(list.files(path, pattern="*.time", full.names = TRUE))
-#details = details[with(details, order(as.POSIXct(ctime))), ]
-#files = rownames(details)
 
 ```
 
@@ -203,7 +196,7 @@ for (i in 1:length(sorted_time_files))
         df[i, "pl"] = "third-party"
       } else
       {
-        cat("Unknown command patrtern:\n")
+        cat("Unknown command pattern:\n")
         print(lines_of_file[1])
         df[i, "step"] = "unknown name"
         df[i, "pl"] = "unknown"
