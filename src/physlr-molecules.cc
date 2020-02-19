@@ -1285,9 +1285,29 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
     }
 }
 
+template <class Graph, class vertexIter>
+make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
+{
+    for (auto& vIter1 = vBegin; vIter1 != end ; ++vIter1)
+    {
+        for (auto& vIter2 = vBegin; vIter2 != end ; ++vIter2)
+        {
+            if (vIter1 != vIter2)
+            {
+
+            }
+        }
+    }
+    using vertex_t = graph_t::vertex_descriptor;
+create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end())
+}
+
+// so we probably need to run connected components instead of bi-connected
 template <class Neighbours_Type>
 void
-bin_neighbours(Neighbours_Type neighbours, componentToVertexSet_t& binned_neighbours, size_t bin_size = 5)
+bin_neighbours(Neighbours_Type neighbours,
+    componentToVertexSet_t& binned_neighbours,
+    size_t bin_size = 50)
 {
     //cout<<"entered bin-neighbours"<<endl;
     componentToVertexSet_t compToVertset(1,vertexSet_t(neighbours.first, neighbours.second));
@@ -1318,6 +1338,7 @@ bin_neighbours(Neighbours_Type neighbours, componentToVertexSet_t& binned_neighb
 //	binned_neighbours.resize(neighborhood_size);
 //
 //}
+
 
 template <typename T> std::string type_name();
 
@@ -1424,10 +1445,8 @@ main(int argc, char* argv[])
     	   std::cerr<<"\n BIG BUG\n ";
 	    }
 
-
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
-
 
         /////////////////////////////////////////////////// binning version
 		start_if_all = timeNow();
@@ -1441,7 +1460,9 @@ main(int argc, char* argv[])
 		    if(vertexCount2 % 100000 == 0 && comp_i==0)
                 std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph)"<<endl;
 		    //cout<<" Entered: "<<comp_i<<endl;
-		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    //graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    graph_t& subgraph;
+		    make_subgraph(subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end())
 		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
 		    //biconnectedComponents(subgraph, vertexToComponent);
             initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
