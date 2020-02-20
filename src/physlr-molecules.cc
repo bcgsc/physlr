@@ -315,14 +315,14 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 }
 
 
-template <class Graph, class vertexIter>
+template <class vertexIter>
 void
-make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
+make_subgraph(graph_t& g, graph_t& subgraph, vertexIter vBegin, vertexIter vEnd)
 {
     // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
 
     if (boost::num_vertices(subgraph) > 0)
-        cerr<<"BUG HERE: subgraph is not empty initially!"<<endl;
+        std::cerr<<"BUG HERE: subgraph is not empty initially!\n";
 
     for (auto vIter1 = vBegin; vIter1 != vEnd ; ++vIter1)
     {
@@ -343,10 +343,10 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
             {
 //                auto old_edge = boost::edge(subgraph[*vIter1].indexOriginal,
 //                                        subgraph[*vIter2].indexOriginal, g);
-                auto old_edge = boost::edge(vIter1->indexOriginal, vIter2->indexOriginal, g);
+                auto old_edge = boost::edge(subgraph[*vIter1].indexOriginal, subgraph[*vIter2].indexOriginal, g);
                 if (old_edge.second)
                 {
-                    auto new_edge = boost::add_edge(vIter1 , vIter2, subgraph);
+                    auto new_edge = boost::add_edge(*vIter1 , *vIter2, subgraph);
                     subgraph[new_edge].weight = g[old_edge.first].weight;
 		        }
             }
@@ -417,7 +417,7 @@ main(int argc, char* argv[])
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
-		//graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
+//		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
 
         graph_t subgraph;
         make_subgraph(g, subgraph, neighbours.first, neighbours.second);
@@ -426,11 +426,11 @@ main(int argc, char* argv[])
 		biconnectedComponents(subgraph, vertexToComponent);
 
 		// Delete subgraph to keep memory in control
-		for (auto& i : g.m_children) {
-			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-			delete i;
-		}
-		g.m_children.clear();
+//		for (auto& i : g.m_children) {
+//			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+//			delete i;
+//		}
+//		g.m_children.clear();
 
 		vecVertexToComponent[*vertexIt] = vertexToComponent;
 	}
