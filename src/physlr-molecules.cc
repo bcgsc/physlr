@@ -121,6 +121,10 @@ long double duration_cliques_all = 0;
 long double duration_cliques_bron = 0;
 long double duration_cliques_other = 0;
 
+long double duration_createsubgraph_all = 0;
+long double duration_makesubgraph_all = 0;
+long double duration_makesubgraph2_all = 0;
+
 long double duration_cosine_all = 0;
 long double duration_cosine_1 = 0;
 long double duration_cosine_2 = 0;
@@ -1288,6 +1292,8 @@ void
 make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
 {
     // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
+
+    auto startAll = timeNow();
     if (boost::num_vertices(subgraph) > 0)
         cerr<<"BUG HERE: subgraph is not empty initially!"<<endl;
 
@@ -1318,12 +1324,17 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
             }
         }
     }
+
+    auto stopAll = timeNow();
+    duration_temp = duration_cast<microseconds>(stopAll - startAll);
+    duration_makesubgraph_all += duration_temp.count();
 }
 
 template <class Graph, class vertexIter>
 void
 make_subgraph_2(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
 {
+    auto startAll = timeNow();
     if (boost::num_vertices(subgraph) > 0)
         cerr<<"BUG HERE: subgraph is not empty initially!"<<endl;
 
@@ -1347,23 +1358,25 @@ make_subgraph_2(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
 		indexOriginalToVertex[subgraph[u].indexOriginal] = u;
     }
 
-    graph_t::vertex_iterator vIter, vEnd;
+    graph_t::vertex_iterator vIter1, vEnd1;
 
-    for (boost::tie(vIter, vEnd) = vertices(subgraph); vIter != vEnd; ++vIter)
+    for (boost::tie(vIter1, vEnd1) = vertices(subgraph); vIter1 != vEnd1; ++vIter1)
     {
         auto neighbours = boost::adjacent_vertices(g[subgraph[*vIter1].indexOriginal], g);
-        for (auto iter = neighbours.first; iter ! neighbours.second; ++iter){
+        for (auto iter = neighbours.first; iter != neighbours.second; ++iter){
             indexToVertex_t::const_iterator dest =
                 indexOriginalToVertex.find(g[*iter].indexOriginal);
             if ( dest !=  indexOriginalToVertex.end() )
             {
                 auto new_edge = boost::add_edge(*vIter1 , dest, subgraph).first;
                 subgraph[new_edge].weight =
-                    boost::edge(subgraph[*vIter].indexOriginal, subgraph[dest].indexOriginal, g).first.weight;
+                    boost::edge(subgraph[*vIter1].indexOriginal, subgraph[dest].indexOriginal, g).first.weight;
             }
         }
     }
-
+    auto stopAll = timeNow();
+    duration_temp = duration_cast<microseconds>(stopAll - startAll);
+    duration_makesubgraph2_all += duration_temp.count();
 }
 
 template <class Neighbours_Type>
@@ -1510,7 +1523,7 @@ main(int argc, char* argv[])
 		start_if_all = timeNow();
 
 		// binning
-		bin_neighbours(neighbours, componentsVec, 50);
+		bin_neighbours(neighbours, componentsVec, 500000);
 
         stop_if_all = timeNow();
         duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
@@ -1522,9 +1535,15 @@ main(int argc, char* argv[])
 		    if(vertexCount2 % 1000 == 0 && comp_i==0)
                 std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph)"<<endl;
 		    //cout<<" Entered: "<<comp_i<<endl;
-//		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    //auto startcreate = timeNow();
+		    //graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    //auto stopcreate = timeNow();
+		    //duration_temp2 = duration_cast<microseconds>(stopcreate - startcreate);
+	        //duration_createsubgraph_all +=  duration_temp2.count();
+
 		    graph_t subgraph;
-		    make_subgraph(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    //make_subgraph(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    make_subgraph_2(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
 		    biconnectedComponents(subgraph, vertexToComponent);
             //initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
@@ -1605,6 +1624,10 @@ main(int argc, char* argv[])
 	std::cerr<<"Total time for the loop:"<<duration_loop_all<<endl;
 	std::cerr<<"Total time for the if-statement (or binning):"<<duration_if_all<<endl;
 	std::cerr<<"Total time for com-det:"<<time_sum<<endl;
+	std::cerr<<endl;
+	std::cerr<<"Total time for create_subgraph:"<<duration_createsubgraph_all<<endl;
+	std::cerr<<"Total time for make_subgraph:"<<duration_makesubgraph_all<<endl;
+	std::cerr<<"Total time for make_subgraph_2:"<<duration_makesubgraph2_all<<endl;
 	std::cerr<<endl;
 	std::cerr<<"k-cliques total time:"<<duration_cliques_all<<endl;
 	std::cerr<<"cliques_bron total time:"<<duration_cliques_bron<<endl;
