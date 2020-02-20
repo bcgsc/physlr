@@ -346,7 +346,7 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
                 auto old_edge = boost::edge(vIter1->indexOriginal, vIter2->indexOriginal, g);
                 if (old_edge.second)
                 {
-                    auto new_edge = boost::add_edge(vIter1 , vIter2, subgraph;
+                    auto new_edge = boost::add_edge(vIter1 , vIter2, subgraph);
                     subgraph[new_edge].weight = g[old_edge.first].weight;
 		        }
             }
