@@ -1291,13 +1291,13 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
     if (boost::num_vertices(subgraph) > 0)
         cerr<<"BUG HERE: subgraph is not empty initially!"<<endl;
 
-    for (auto& vIter1 = vBegin; vIter1 != vEnd ; ++vIter1)
+    for (auto& vIter = vBegin; vIter != vEnd ; ++vIter)
     {
         auto u = boost::add_vertex(subgraph);
 
-        subgraph[u].name = g[*vIter1].name;
-        subgraph[u].weight = g[*vIter1].weight;
-		subgraph[u].indexOriginal = g[*vIter1].indexOriginal;
+        subgraph[u].name = g[*vIter].name;
+        subgraph[u].weight = g[*vIter].weight;
+		subgraph[u].indexOriginal = g[*vIter].indexOriginal;
     }
 
     graph_t::vertex_iterator vIter1, vIter2, vend1, vend2;
@@ -1318,24 +1318,6 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
             }
         }
     }
-
-//
-//    for (auto& vIter1 = vBegin; vIter1 != vEnd ; ++vIter1)
-//    {
-//        for (auto& vIter2 = vBegin; vIter2 != vEnd ; ++vIter2)
-//        {
-//            if (vIter1 != vIter2)
-//            {
-//                auto old_edge = edge(g[*vIter1].indexOriginal, g[*vIter2].indexOriginal, g);
-//                if (old_edge.second)
-//                {
-//
-//                    auto new_edge = add_edge(u, v, subgraph).first;
-//                    subgraph[new_edge].weight = g[old_edge.first].weight;
-//		        }
-//            }
-//        }
-//    }
 }
 
 // so we probably need to run connected components instead of bi-connected
@@ -1483,7 +1465,7 @@ main(int argc, char* argv[])
 		start_if_all = timeNow();
 
 		// binning
-		bin_neighbours(neighbours, componentsVec, 50000);
+		bin_neighbours(neighbours, componentsVec, 50);
 
         stop_if_all = timeNow();
         duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
@@ -1492,12 +1474,12 @@ main(int argc, char* argv[])
         start = timeNow();
 		for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
 		{
-		    if(vertexCount2 % 100000 == 0 && comp_i==0)
+		    if(vertexCount2 % 1000 == 0 && comp_i==0)
                 std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph)"<<endl;
 		    //cout<<" Entered: "<<comp_i<<endl;
 //		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    graph_t subgraph;
-		    make_subgraph( g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    make_subgraph(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
 		    biconnectedComponents(subgraph, vertexToComponent);
             //initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
@@ -1558,11 +1540,11 @@ main(int argc, char* argv[])
         /////////////////////////////////////////////////// no-binning version end }
 
 		// Delete subgraph to keep memory in control
-		for (auto& i : g.m_children) {
-			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-			delete i;
-		}
-		g.m_children.clear();
+//		for (auto& i : g.m_children) {
+//			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+//			delete i;
+//		}
+//		g.m_children.clear();
 
 		vecVertexToComponent[*vertexIt] = vertexToComponent;
 		//cout<<"\n\nHERE HAHA:"<<*vertexIt<<endl;
