@@ -1523,7 +1523,7 @@ main(int argc, char* argv[])
 		start_if_all = timeNow();
 
 		// binning
-		bin_neighbours(neighbours, componentsVec, 500000);
+		bin_neighbours(neighbours, componentsVec, 50);
 
         stop_if_all = timeNow();
         duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
@@ -1542,8 +1542,8 @@ main(int argc, char* argv[])
 	        //duration_createsubgraph_all +=  duration_temp2.count();
 
 		    graph_t subgraph;
-		    //make_subgraph(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
-		    make_subgraph_2(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    make_subgraph(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    //make_subgraph_2(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
 		    biconnectedComponents(subgraph, vertexToComponent);
             //initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
