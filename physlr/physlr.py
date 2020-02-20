@@ -1578,7 +1578,9 @@ class Physlr:
         communities = [g[u].keys()]
         if junctions:
             if u not in junctions:
-                strategy = "cc"
+                communities.sort(key=len, reverse=True)
+                return u, {v: i for i, vs in enumerate(communities) if len(vs) > 1 for v in vs}
+
         alg_list = strategy.split("+")
         for algorithm in alg_list:
             communities_temp = []
