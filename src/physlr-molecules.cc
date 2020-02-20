@@ -1320,7 +1320,52 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
     }
 }
 
-// so we probably need to run connected components instead of bi-connected
+template <class Graph, class vertexIter>
+void
+make_subgraph_2(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
+{
+    if (boost::num_vertices(subgraph) > 0)
+        cerr<<"BUG HERE: subgraph is not empty initially!"<<endl;
+
+    size_t subgraph_size = 0;
+    for (auto& vIter = vBegin; vIter != vEnd ; ++vIter)
+    {
+        subgraph_size++;
+    }
+
+    indexToVertex_t indexOriginalToVertex;
+    indexOriginalToVertex.reserve(subgraph_size);
+
+    for (auto& vIter = vBegin; vIter != vEnd ; ++vIter)
+    {
+        auto u = boost::add_vertex(subgraph);
+
+        subgraph[u].name = g[*vIter].name;
+        subgraph[u].weight = g[*vIter].weight;
+		subgraph[u].indexOriginal = g[*vIter].indexOriginal;
+
+		indexOriginalToVertex[subgraph[u].indexOriginal] = u;
+    }
+
+    graph_t::vertex_iterator vIter, vEnd;
+
+    for (boost::tie(vIter, vEnd) = vertices(subgraph); vIter != vEnd; ++vIter)
+    {
+        auto neighbours = boost::adjacent_vertices(g[subgraph[*vIter1].indexOriginal], g);
+        for (auto iter = neighbours.first; iter ! neighbours.second; ++iter){
+            indexToVertex_t::const_iterator dest =
+                indexOriginalToVertex.find(g[*iter].indexOriginal);
+            if ( dest !=  indexOriginalToVertex.end() )
+            {
+                auto new_edge = boost::add_edge(*vIter1 , dest, subgraph).first;
+                subgraph[new_edge].weight =
+                    boost::edge(subgraph[*vIter].indexOriginal, subgraph[dest].indexOriginal, g).first.weight;
+            }
+        }
+    }
+
+}
+
 template <class Neighbours_Type>
 void
 bin_neighbours(Neighbours_Type neighbours,
