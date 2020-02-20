@@ -314,6 +314,46 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 	}
 }
 
+
+template <class Graph, class vertexIter>
+void
+make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
+{
+    // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
+
+    if (boost::num_vertices(subgraph) > 0)
+        cerr<<"BUG HERE: subgraph is not empty initially!"<<endl;
+
+    for (auto vIter1 = vBegin; vIter1 != vEnd ; ++vIter1)
+    {
+        auto u = boost::add_vertex(subgraph);
+
+        subgraph[u].name = g[*vIter1].name;
+        subgraph[u].weight = g[*vIter1].weight;
+		subgraph[u].indexOriginal = g[*vIter1].indexOriginal;
+    }
+
+    graph_t::vertex_iterator vIter1, vIter2, vend1, vend2;
+
+    for (boost::tie(vIter1, vend1) = vertices(subgraph); vIter1 != vend1; ++vIter1)
+    {
+        for (boost::tie(vIter2, vend2) = vertices(subgraph); vIter2 != vend2; ++vIter2)
+        {
+            if (vIter1 != vIter2)
+            {
+//                auto old_edge = boost::edge(subgraph[*vIter1].indexOriginal,
+//                                        subgraph[*vIter2].indexOriginal, g);
+                auto old_edge = boost::edge(vIter1->indexOriginal, vIter2->indexOriginal, g);
+                if (old_edge.second)
+                {
+                    auto new_edge = boost::add_edge(vIter1 , vIter2, subgraph;
+                    subgraph[new_edge].weight = g[old_edge.first].weight;
+		        }
+            }
+        }
+    }
+}
+
 int
 main(int argc, char* argv[])
 {
