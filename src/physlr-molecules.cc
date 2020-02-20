@@ -1284,25 +1284,58 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
 }
 
 template <class Graph, class vertexIter>
+void
 make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
 {
     // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
+    if (boost::num_vertices(subgraph) > 0)
+        cerr<<"BUG HERE: subgraph is not empty initially!"<<endl;
 
-    for (auto& vIter1 = vBegin; vIter1 != end ; ++vIter1)
+    for (auto& vIter1 = vBegin; vIter1 != vEnd ; ++vIter1)
     {
-        for (auto& vIter2 = vBegin; vIter2 != end ; ++vIter2)
+        auto u = boost::add_vertex(subgraph);
+
+        subgraph[u].name = g[*vIter1].name;
+        subgraph[u].weight = g[*vIter1].weight;
+		subgraph[u].indexOriginal = g[*vIter1].indexOriginal;
+    }
+
+    graph_t::vertex_iterator vIter1, vIter2, vend1, vend2;
+
+    for (boost::tie(vIter1, vend1) = vertices(subgraph); vIter1 != vend1; ++vIter1)
+    {
+        for (boost::tie(vIter2, vend2) = vertices(subgraph); vIter2 != vend2; ++vIter2)
         {
             if (vIter1 != vIter2)
             {
-                auto& edge = edge(vIter1, vIter2, g)
-                if (edge.second)
+                auto old_edge = boost::edge(subgraph[*vIter1].indexOriginal,
+                                        subgraph[*vIter2].indexOriginal, g);
+                if (old_edge.second)
                 {
-                    auto new_edge = add_edge(g[*vIter1].name, g[*vIter2].name, subgraph).first;
-                    subgraph[new_edge].weight = g[edge.first].weight;
+                    auto new_edge = boost::add_edge(vIter1 , vIter2, subgraph).first;
+                    subgraph[new_edge].weight = g[old_edge.first].weight;
 		        }
             }
         }
     }
+
+//
+//    for (auto& vIter1 = vBegin; vIter1 != vEnd ; ++vIter1)
+//    {
+//        for (auto& vIter2 = vBegin; vIter2 != vEnd ; ++vIter2)
+//        {
+//            if (vIter1 != vIter2)
+//            {
+//                auto old_edge = edge(g[*vIter1].indexOriginal, g[*vIter2].indexOriginal, g);
+//                if (old_edge.second)
+//                {
+//
+//                    auto new_edge = add_edge(u, v, subgraph).first;
+//                    subgraph[new_edge].weight = g[old_edge.first].weight;
+//		        }
+//            }
+//        }
+//    }
 }
 
 // so we probably need to run connected components instead of bi-connected
@@ -1408,7 +1441,7 @@ main(int argc, char* argv[])
 	graph_t g;
 	readTSV(g, infiles, verbose);
 
-    # vector<graph_t > (threads_count, g);
+    // vector<graph_t > (threads_count, g);
 
 	barcodeToIndex_t barcodeToIndex;
 	indexToBarcode_t indexToBarcode;
@@ -1443,28 +1476,28 @@ main(int argc, char* argv[])
         vertexCount2++;
 		componentToVertexSet_t componentsVec;
         vertexToComponent_t vertexToComponent;
-        if (vertexToComponent.size() > 0 ){
-    	   std::cerr<<"\n BIG BUG\n ";
-	    }
 
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
 
-        /////////////////////////////////////////////////// binning version
 		start_if_all = timeNow();
-		bin_neighbours(neighbours, componentsVec, 50);
+
+		// binning
+		bin_neighbours(neighbours, componentsVec, 50000);
+
         stop_if_all = timeNow();
         duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
 	    duration_if_all += duration_temp2.count();
+
         start = timeNow();
 		for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
 		{
 		    if(vertexCount2 % 100000 == 0 && comp_i==0)
                 std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph)"<<endl;
 		    //cout<<" Entered: "<<comp_i<<endl;
-		    //graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
-		    graph_t& subgraph;
-		    make_subgraph(subgraph, g, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+//		    graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    graph_t subgraph;
+		    make_subgraph( g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
 		    biconnectedComponents(subgraph, vertexToComponent);
             //initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
