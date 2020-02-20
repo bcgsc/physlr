@@ -324,13 +324,13 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
     if (boost::num_vertices(subgraph) > 0)
         std::cerr<<"BUG HERE: subgraph is not empty initially!\n";
 
-    for (auto& vIter1 = vBegin; vIter1 != vEnd ; ++vIter1)
+    for (auto& vIter = vBegin; vIter != vEnd ; ++vIter)
     {
         auto u = boost::add_vertex(subgraph);
 
-        subgraph[u].name = g[*vIter1].name;
-        subgraph[u].weight = g[*vIter1].weight;
-		subgraph[u].indexOriginal = g[*vIter1].indexOriginal;
+        subgraph[u].name = g[*vIter].name;
+        subgraph[u].weight = g[*vIter].weight;
+		subgraph[u].indexOriginal = g[*vIter].indexOriginal;
     }
 
     graph_t::vertex_iterator vIter1, vIter2, vend1, vend2;
