@@ -434,11 +434,6 @@ main(int argc, char* argv[])
 		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
 		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
 		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
-//		edge_set.insert(
-//		    std::pair<<std::pair<std::size_t,size_t>, pair_hash>,
-//                        int>
-//                (std::pair<size_t, size_t>(node1, node2),
-//                        weight))
 	}
 
 #if _OPENMP
@@ -448,20 +443,12 @@ main(int argc, char* argv[])
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
-//		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
 
         graph_t subgraph;
         make_subgraph(g, subgraph, edge_set, neighbours.first, neighbours.second);
 
 		vertexToComponent_t vertexToComponent;
 		biconnectedComponents(subgraph, vertexToComponent);
-
-		// Delete subgraph to keep memory in control
-//		for (auto& i : g.m_children) {
-//			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-//			delete i;
-//		}
-//		g.m_children.clear();
 
 		vecVertexToComponent[*vertexIt] = vertexToComponent;
 	}
