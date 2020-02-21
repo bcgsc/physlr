@@ -321,9 +321,7 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
 {
     // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
 
-    if (boost::num_vertices(subgraph) > 0)
-        std::cerr<<"BUG HERE: subgraph is not empty initially!\n";
-
+    // Add vertices into the subgraph but set indexOriginal the index of it in the source graph.
     for (auto& vIter = vBegin; vIter != vEnd ; ++vIter)
     {
         auto u = boost::add_vertex(subgraph);
@@ -333,20 +331,26 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
 		subgraph[u].indexOriginal = g[*vIter].indexOriginal;
     }
 
+    // Iterate over pairs of vertices:
+    // check whether there exist an edge between their corresponding vertices in the graph.
     graph_t::vertex_iterator vIter1, vIter2, vend1, vend2;
-
     for (boost::tie(vIter1, vend1) = vertices(subgraph); vIter1 != vend1; ++vIter1)
     {
         for (boost::tie(vIter2, vend2) = vertices(subgraph); vIter2 != vend2; ++vIter2)
         {
             if (vIter1 != vIter2)
             {
-                auto old_edge = boost::edge(subgraph[*vIter1].indexOriginal,
-                                        subgraph[*vIter2].indexOriginal, g);
-                if (old_edge.second)
-                {
-                    auto new_edge = boost::add_edge(*vIter1 , *vIter2, subgraph).first;
-                    subgraph[new_edge].weight = g[old_edge.first].weight;
+		        std::unordered_map<
+		                std::pair<std::size_t,size_t>, int, pair_hash>::const_iterator got =
+		                    edge_set.find (
+                                std::pair<std::size_t,size_t>(
+                                    subgraph[*vIter1].indexOriginal,
+                                    subgraph[*vIter2].indexOriginal));
+
+		        if ( got != edge_set.end() )
+		        {
+		            auto new_edge = boost::add_edge(*vIter1 , *vIter2, subgraph).first;
+                    subgraph[new_edge].weight = got->second;
 		        }
             }
         }
