@@ -323,7 +323,6 @@ main(int argc, char* argv[])
 	static int help = 0;
 	std::string separationStrategy = "bc";
 	size_t threads = 1;
-
 	bool verbose = false;
 	bool failed = false;
 	static const struct option longopts[] = {
