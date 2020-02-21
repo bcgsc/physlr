@@ -124,6 +124,9 @@ long double duration_cliques_other = 0;
 long double duration_createsubgraph_all = 0;
 long double duration_makesubgraph_all = 0;
 long double duration_makesubgraph2_all = 0;
+long double duration_makesubgraph_1 = 0;
+long double duration_makesubgraph_2 = 0;
+long double duration_makesubgraph_3 = 0;
 
 long double duration_cosine_all = 0;
 long double duration_cosine_1 = 0;
@@ -162,6 +165,21 @@ struct cliques_visitor {
     std::vector<Clique_type>& cliquesVec;
 };
 
+// pair as key to unordered_set:
+//typedef std::pair<std::string, int> Pair;
+struct pair_hash
+{
+	template <class T1, class T2>
+	std::size_t operator () (std::pair<T1, T2> const &pair) const
+	{
+		std::size_t h1 = std::hash<T1>()(pair.first);
+		std::size_t h2 = std::hash<T2>()(pair.second);
+
+		return h1 ^ h2;
+	}
+};
+std::unordered_map<std::pair<std::size_t,size_t>, int, pair_hash> edge_set;
+// /
 
 static void
 printVersion()
@@ -1293,6 +1311,7 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
 {
     // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
 
+    auto start1 = timeNow();
     auto startAll = timeNow();
     if (boost::num_vertices(subgraph) > 0)
         cerr<<"BUG HERE: subgraph is not empty initially!"<<endl;
@@ -1305,6 +1324,11 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
         subgraph[u].weight = g[*vIter].weight;
 		subgraph[u].indexOriginal = g[*vIter].indexOriginal;
     }
+    auto stop1 = timeNow();
+    duration_temp = duration_cast<microseconds>(stop1 - start1);
+    duration_makesubgraph_1 += duration_temp.count();
+
+    auto start2 = timeNow();
 
     graph_t::vertex_iterator vIter1, vIter2, vend1, vend2;
 
@@ -1314,16 +1338,41 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
         {
             if (vIter1 != vIter2)
             {
-                auto old_edge = boost::edge(subgraph[*vIter1].indexOriginal,
-                                        subgraph[*vIter2].indexOriginal, g);
-                if (old_edge.second)
-                {
-                    auto new_edge = boost::add_edge(*vIter1 , *vIter2, subgraph).first;
-                    subgraph[new_edge].weight = g[old_edge.first].weight;
+                // version 1
+//                auto start3 = timeNow();
+//                auto old_edge = boost::edge(subgraph[*vIter1].indexOriginal,
+//                                        subgraph[*vIter2].indexOriginal, g);
+//                auto stop3 = timeNow();
+//                duration_temp = duration_cast<microseconds>(stop3 - start3);
+//                duration_makesubgraph_3 += duration_temp.count();
+//                if (old_edge.second)
+//                {
+//                    auto new_edge = boost::add_edge(*vIter1 , *vIter2, subgraph).first;
+//                    subgraph[new_edge].weight = g[old_edge.first].weight;
+//		        }
+
+		        // version 2
+		        auto start3 = timeNow();
+		        std::unordered_map<
+		                std::pair<std::size_t,size_t>, int, pair_hash>::const_iterator got =
+		                    edge_set.find (
+                                std::pair<std::size_t,size_t>(
+                                    subgraph[*vIter1].indexOriginal,
+                                    subgraph[*vIter2].indexOriginal));
+		        auto stop3 = timeNow();
+                duration_temp = duration_cast<microseconds>(stop3 - start3);
+                duration_makesubgraph_3 += duration_temp.count();
+		        if ( got != edge_set.end() )
+		        {
+		            auto new_edge = boost::add_edge(*vIter1 , *vIter2, subgraph).first;
+                    subgraph[new_edge].weight = got->second;
 		        }
             }
         }
     }
+    auto stop2 = timeNow();
+    duration_temp = duration_cast<microseconds>(stop2 - start2);
+    duration_makesubgraph_2 += duration_temp.count();
 
     auto stopAll = timeNow();
     duration_temp = duration_cast<microseconds>(stopAll - startAll);
@@ -1510,6 +1559,26 @@ main(int argc, char* argv[])
 	size_t neighborhood_size = 0;
 	size_t initial_community_id = 0;
 
+    // // auxillary dataset: set of edges for faster lookup
+    //std::unordered_set<Pair, boost::hash<Pair>> edge_set;
+    //std::unordered_set<std::pair<std::size_t,size_t>, pair_hash> edge_set;
+
+
+//    auto edgeItRange = boost::edges(g);
+//	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
+//	{
+//	    auto& weight = g[*edgeIt].weight;
+//		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
+//		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
+//		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
+////		edge_set.insert(
+////		    std::pair<<std::pair<std::size_t,size_t>, pair_hash>,
+////                        int>
+////                (std::pair<size_t, size_t>(node1, node2),
+////                        weight))
+//	}
+
+    //#pragma omp parallel for
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
         start_loop_all = timeNow();
         initial_community_id = 0;
@@ -1628,6 +1697,9 @@ main(int argc, char* argv[])
 	std::cerr<<"Total time for create_subgraph:"<<duration_createsubgraph_all<<endl;
 	std::cerr<<"Total time for make_subgraph:"<<duration_makesubgraph_all<<endl;
 	std::cerr<<"Total time for make_subgraph_2:"<<duration_makesubgraph2_all<<endl;
+	std::cerr<<"Total time for make_subgraph_1_1:"<<duration_makesubgraph_1<<endl;
+	std::cerr<<"Total time for make_subgraph_1_2:"<<duration_makesubgraph_2<<endl;
+	std::cerr<<"Total time for make_subgraph_1_3:"<<duration_makesubgraph_3<<endl;
 	std::cerr<<endl;
 	std::cerr<<"k-cliques total time:"<<duration_cliques_all<<endl;
 	std::cerr<<"cliques_bron total time:"<<duration_cliques_bron<<endl;
