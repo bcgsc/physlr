@@ -327,9 +327,9 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 }
 
 
-template <class Graph, class vertexIter>
+template <class Graph, class vertexIter, class edgeSet>
 void
-make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
+make_subgraph(Graph& g, Graph& subgraph, edgeSet edge_set, vertexIter vBegin, vertexIter vEnd)
 {
     // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
 
@@ -451,7 +451,7 @@ main(int argc, char* argv[])
 //		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
 
         graph_t subgraph;
-        make_subgraph(g, subgraph, neighbours.first, neighbours.second);
+        make_subgraph(g, subgraph, edge_set, neighbours.first, neighbours.second);
 
 		vertexToComponent_t vertexToComponent;
 		biconnectedComponents(subgraph, vertexToComponent);
