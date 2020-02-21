@@ -57,6 +57,18 @@ struct edgeComponent_t
 	using kind = boost::edge_property_tag;
 } edgeComponent;
 
+struct pair_hash // pair as key to unordered_set:
+{
+	template <class T1, class T2>
+	std::size_t operator () (std::pair<T1, T2> const &pair) const
+	{
+		std::size_t h1 = std::hash<T1>()(pair.first);
+		std::size_t h2 = std::hash<T2>()(pair.second);
+
+		return h1 ^ h2;
+	}
+};
+
 using graph_t = boost::subgraph<boost::adjacency_list<
     boost::vecS,
     boost::vecS,
@@ -412,6 +424,22 @@ main(int argc, char* argv[])
 
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
+
+    std::unordered_map<std::pair<std::size_t,size_t>, int, pair_hash> edge_set;
+    edge_set.reserve(num_edges(g));
+    auto edgeItRange = boost::edges(g);
+	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
+	{
+	    auto& weight = g[*edgeIt].weight;
+		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
+		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
+		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
+//		edge_set.insert(
+//		    std::pair<<std::pair<std::size_t,size_t>, pair_hash>,
+//                        int>
+//                (std::pair<size_t, size_t>(node1, node2),
+//                        weight))
+	}
 
 #if _OPENMP
 	double sTime = omp_get_wtime();
