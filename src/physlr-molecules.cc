@@ -378,18 +378,36 @@ main(int argc, char* argv[])
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
 
+
+	const int array_size = boost::num_vertices(g);
+	boost::graph_traits<graph_t>::vertex_iterator iterators_array[ array_size ];
+
+	auto vertexItRange = vertices(g);
+	boost::graph_traits<graph_t>::vertex_iterator allocate_it = vertexItRange.first;
+	for (size_t j = 0; j < array_size; ++j)
+        iterators_array[j] = allocate_it++;
+
+    if (allocate_it != vertexItRange.second)
+    {
+        std::cerr << "BUG\n";
+    }
+
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
-	auto vertexItRange = vertices(g);
+
 #if _OPENMP
 	#pragma omp parallel for
 #endif
-	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
-		// Find neighbour of vertex and generate neighbour induced subgraph
-		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
-		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
+    for (size_t j = 0; j < array_size; ++j) {
 
+		// Find neighbour of vertex and generate neighbour induced subgraph
+		auto neighbours = boost::adjacent_vertices(*(iterators_array[j]), g);
+		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
+//#if _OPENMP
+//        int tnum = omp_get_thread_num();
+//        std::cerr<<"Thread num:"<<tnum<<"\n";
+//#endif
 		vertexToComponent_t vertexToComponent;
 		biconnectedComponents(subgraph, vertexToComponent);
 
@@ -400,7 +418,7 @@ main(int argc, char* argv[])
 		}
 		g.m_children.clear();
 
-		vecVertexToComponent[*vertexIt] = vertexToComponent;
+		vecVertexToComponent[*(iterators_array[j])] = vertexToComponent;
 	}
 
 	std::cerr << "Finished molecule separation ";
