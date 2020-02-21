@@ -347,7 +347,7 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
                 {
                     auto new_edge = boost::add_edge(*vIter1 , *vIter2, subgraph).first;
                     subgraph[new_edge].weight = g[old_edge.first].weight;
-		}
+		        }
             }
         }
     }
@@ -418,8 +418,8 @@ main(int argc, char* argv[])
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
 //		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
 
-        	graph_t subgraph;
-        	make_subgraph(g, subgraph, neighbours.first, neighbours.second);
+        graph_t subgraph;
+        make_subgraph(g, subgraph, neighbours.first, neighbours.second);
 
 		vertexToComponent_t vertexToComponent;
 		biconnectedComponents(subgraph, vertexToComponent);
