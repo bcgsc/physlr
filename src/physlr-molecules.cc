@@ -1570,7 +1570,7 @@ main(int argc, char* argv[])
     //std::unordered_set<Pair, boost::hash<Pair>> edge_set;
     //std::unordered_set<std::pair<std::size_t,size_t>, pair_hash> edge_set;
 
-
+    edge_set.reserve(num_edges(g));
 //    auto edgeItRange = boost::edges(g);
 //	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
 //	{
@@ -1585,7 +1585,6 @@ main(int argc, char* argv[])
 ////                        weight))
 //	}
 
-    edge_set.reserve(num_edges(g));
     #pragma omp parallel for
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
         start_loop_all = timeNow();
