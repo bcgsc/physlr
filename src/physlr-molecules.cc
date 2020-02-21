@@ -322,6 +322,8 @@ main(int argc, char* argv[])
 	int optindex = 0;
 	static int help = 0;
 	std::string separationStrategy = "bc";
+	size_t threads = 1;
+
 	bool verbose = false;
 	bool failed = false;
 	static const struct option longopts[] = {
@@ -329,12 +331,15 @@ main(int argc, char* argv[])
 		{ "separation-strategy", required_argument, nullptr, 's' },
 		{ nullptr, 0, nullptr, 0 }
 	};
-	for (int c; (c = getopt_long(argc, argv, "s:v", longopts, &optindex)) != -1;) {
+	for (int c; (c = getopt_long(argc, argv, "s:vt:", longopts, &optindex)) != -1;) {
 		switch (c) {
 		case 0:
 			break;
 		case 's':
 			separationStrategy.assign(optarg);
+			break;
+		case 't':
+			threads = std::stoi(optarg);
 			break;
 		case 'v':
 			verbose = true;
@@ -343,6 +348,10 @@ main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
+#if _OPENMP
+	omp_set_num_threads(threads);
+#endif
+
 	std::vector<std::string> infiles(&argv[optind], &argv[argc]);
 	if (argc < 1) {
 		failed = true;
@@ -374,6 +383,9 @@ main(int argc, char* argv[])
 	double sTime = omp_get_wtime();
 #endif
 	auto vertexItRange = vertices(g);
+#if _OPENMP
+	#pragma omp parallel for
+#endif
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
