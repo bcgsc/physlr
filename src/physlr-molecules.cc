@@ -1574,7 +1574,9 @@ main(int argc, char* argv[])
     //std::unordered_set<Pair, boost::hash<Pair>> edge_set;
     std::unordered_set<std::pair<std::size_t,size_t>, boost::hash<std::size_t,size_t>> edge_set;
     //tsl::robin_map<std::pair<std::size_t,size_t>, int, boost::hash<std::size_t,size_t>> edge_set
+
     edge_set.reserve(num_edges(g));
+
     auto edgeItRange = boost::edges(g);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
 	{
