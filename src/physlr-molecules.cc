@@ -11,6 +11,9 @@
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/subgraph.hpp>
 
+#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
+
 #if _OPENMP
 #include <omp.h>
 #endif
@@ -353,7 +356,9 @@ make_subgraph(Graph& g, Graph& subgraph, edgeSet edge_set, vertexIter vBegin, ve
             if (vIter1 != vIter2)
             {
 		        std::unordered_map<
-		                std::pair<std::size_t,size_t>, int, pair_hash>::const_iterator got =
+		                //std::pair<std::size_t,size_t>, int, pair_hash>::const_iterator got =
+		                std::pair<std::size_t,size_t>, int,
+		                          boost::hash<std::size_t,size_t>>::const_iterator got =
 		                    edge_set.find (
                                 std::pair<std::size_t,size_t>(
                                     subgraph[*vIter1].indexOriginal,
@@ -425,7 +430,8 @@ main(int argc, char* argv[])
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
 
-    std::unordered_map<std::pair<std::size_t,size_t>, int, pair_hash> edge_set;
+    //std::unordered_map<std::pair<std::size_t,size_t>, int, pair_hash> edge_set;
+    tsl::robin_map<std::pair<std::size_t,size_t>, int, boost::hash<std::size_t,size_t>> edge_set;
     edge_set.reserve(num_edges(g));
     auto edgeItRange = boost::edges(g);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
