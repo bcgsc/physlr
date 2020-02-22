@@ -430,9 +430,10 @@ main(int argc, char* argv[])
     auto edgeItRange = boost::edges(g);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
 	{
-	    auto& weight = g[*edgeIt].weight;
+		auto& weight = g[*edgeIt].weight;
 		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
 		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
+		
 		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
 	}
 
@@ -443,9 +444,9 @@ main(int argc, char* argv[])
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
-
-        graph_t subgraph;
-        make_subgraph(g, subgraph, edge_set, neighbours.first, neighbours.second);
+	
+		graph_t subgraph;
+		make_subgraph(g, subgraph, edge_set, neighbours.first, neighbours.second);
 
 		vertexToComponent_t vertexToComponent;
 		biconnectedComponents(subgraph, vertexToComponent);
