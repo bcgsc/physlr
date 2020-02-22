@@ -26,6 +26,9 @@
 #include <boost/graph/subgraph.hpp>
 #include <boost/graph/bron_kerbosch_all_cliques.hpp>
 
+#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
+
 #if _OPENMP
 #include <omp.h>
 #endif
@@ -1354,11 +1357,12 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
 		        // version 2
 		        auto start3 = timeNow();
 		        std::unordered_map<
-		                std::pair<std::size_t,size_t>, int, pair_hash>::const_iterator got =
-		                    edge_set.find (
-                                std::pair<std::size_t,size_t>(
-                                    subgraph[*vIter1].indexOriginal,
-                                    subgraph[*vIter2].indexOriginal));
+		            std::pair<std::size_t,size_t>, int,
+		                      boost::hash<std::size_t,size_t>>::const_iterator got =
+		                edge_set.find (
+                            std::pair<std::size_t,size_t>(
+                                subgraph[*vIter1].indexOriginal,
+                                subgraph[*vIter2].indexOriginal));
 		        auto stop3 = timeNow();
                 duration_temp = duration_cast<microseconds>(stop3 - start3);
                 duration_makesubgraph_3 += duration_temp.count();
@@ -1568,22 +1572,22 @@ main(int argc, char* argv[])
 
     // // auxillary dataset: set of edges for faster lookup
     //std::unordered_set<Pair, boost::hash<Pair>> edge_set;
-    //std::unordered_set<std::pair<std::size_t,size_t>, pair_hash> edge_set;
+    std::unordered_set<std::pair<std::size_t,size_t>, boost::hash<std::size_t,size_t>> edge_set;
+    //tsl::robin_map<std::pair<std::size_t,size_t>, int, boost::hash<std::size_t,size_t>> edge_set
 
-
-//    auto edgeItRange = boost::edges(g);
-//	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
-//	{
-//	    auto& weight = g[*edgeIt].weight;
-//		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
-//		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
-//		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
-////		edge_set.insert(
-////		    std::pair<<std::pair<std::size_t,size_t>, pair_hash>,
-////                        int>
-////                (std::pair<size_t, size_t>(node1, node2),
-////                        weight))
-//	}
+    auto edgeItRange = boost::edges(g);
+	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
+	{
+	    auto& weight = g[*edgeIt].weight;
+		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
+		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
+		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
+//		edge_set.insert(
+//		    std::pair<<std::pair<std::size_t,size_t>, pair_hash>,
+//                        int>
+//                (std::pair<size_t, size_t>(node1, node2),
+//                        weight))
+	}
 
     edge_set.reserve(num_edges(g));
     #pragma omp parallel for
