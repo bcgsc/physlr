@@ -332,7 +332,7 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 
 template <class Graph, class vertexIter, class edgeSet>
 void
-make_subgraph(Graph& g, Graph& subgraph, edgeSet edge_set, vertexIter vBegin, vertexIter vEnd)
+make_subgraph(Graph& g, Graph& subgraph, edgeSet& edge_set, vertexIter vBegin, vertexIter vEnd)
 {
     // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
 
