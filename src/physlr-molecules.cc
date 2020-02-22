@@ -1574,7 +1574,7 @@ main(int argc, char* argv[])
     //std::unordered_set<Pair, boost::hash<Pair>> edge_set;
     std::unordered_set<std::pair<std::size_t,size_t>, boost::hash<std::size_t,size_t>> edge_set;
     //tsl::robin_map<std::pair<std::size_t,size_t>, int, boost::hash<std::size_t,size_t>> edge_set
-
+    edge_set.reserve(num_edges(g));
     auto edgeItRange = boost::edges(g);
 	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
 	{
@@ -1589,7 +1589,20 @@ main(int argc, char* argv[])
 //                        weight))
 	}
 
-    edge_set.reserve(num_edges(g));
+//    auto edgeItRange = boost::edges(g);
+//	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
+//	{
+//	    auto& weight = g[*edgeIt].weight;
+//		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
+//		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
+//		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
+////		edge_set.insert(
+////		    std::pair<<std::pair<std::size_t,size_t>, pair_hash>,
+////                        int>
+////                (std::pair<size_t, size_t>(node1, node2),
+////                        weight))
+//	}
+
     #pragma omp parallel for
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
         start_loop_all = timeNow();
