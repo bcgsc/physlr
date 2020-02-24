@@ -1,3 +1,5 @@
+#include "include/tsl/robin_map.h"
+
 #include <fstream>
 #include <getopt.h>
 #include <iomanip>
@@ -26,8 +28,6 @@
 #include <boost/graph/subgraph.hpp>
 #include <boost/graph/bron_kerbosch_all_cliques.hpp>
 
-#include <tsl/robin_map.h>
-#include <tsl/robin_set.h>
 
 #if _OPENMP
 #include <omp.h>
@@ -1308,9 +1308,9 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
     }
 }
 
-template <class Graph, class vertexIter>
+template <class Graph, class vertexIter, class edgeSet>
 void
-make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
+make_subgraph(Graph& g, Graph& subgraph, edgeSet& edge_set, vertexIter vBegin, vertexIter vEnd)
 {
     // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
 
@@ -1356,13 +1356,18 @@ make_subgraph(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
 
 		        // version 2
 		        auto start3 = timeNow();
-		        std::unordered_map<
+
+		        tsl::robin_map<
 		            std::pair<std::size_t,size_t>, int,
-		                      boost::hash<std::size_t,size_t>>::const_iterator got =
-		                edge_set.find (
+		                boost::hash<std::pair<size_t,size_t>>>::const_iterator got =
+//		        std::unordered_map<
+//		            std::pair<std::size_t,size_t>, int,
+//		                      boost::hash<std::pair<std::size_t,size_t>>>::const_iterator got =
+		                edge_set.find(
                             std::pair<std::size_t,size_t>(
                                 subgraph[*vIter1].indexOriginal,
                                 subgraph[*vIter2].indexOriginal));
+
 		        auto stop3 = timeNow();
                 duration_temp = duration_cast<microseconds>(stop3 - start3);
                 duration_makesubgraph_3 += duration_temp.count();
@@ -1488,7 +1493,6 @@ main(int argc, char* argv[])
 	static int help = 0;
 	std::string separationStrategy = "bc";
 	size_t threads = 1;
-
 	bool verbose = false;
 	bool failed = false;
 	static const struct option longopts[] = {
@@ -1555,7 +1559,7 @@ main(int argc, char* argv[])
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
-	auto vertexItRange = vertices(g);
+
 	size_t vertexCount = 0;
 	size_t vertexCount2 = 0;
 
@@ -1570,10 +1574,14 @@ main(int argc, char* argv[])
 	size_t neighborhood_size = 0;
 	size_t initial_community_id = 0;
 
+    auto vertexItRange = vertices(g);
+
     // // auxillary dataset: set of edges for faster lookup
     //std::unordered_set<Pair, boost::hash<Pair>> edge_set;
-    std::unordered_set<std::pair<std::size_t,size_t>, boost::hash<std::size_t,size_t>> edge_set;
-    //tsl::robin_map<std::pair<std::size_t,size_t>, int, boost::hash<std::size_t,size_t>> edge_set
+    //std::unordered_set<std::pair<std::size_t,size_t>, int, boost::hash<std::size_t,size_t>> edge_set;
+    std::cerr<<"Making the edge set\n";
+
+    tsl::robin_map<std::pair<std::size_t,size_t>, int, boost::hash<std::pair<size_t,size_t>>> edge_set;
 
     edge_set.reserve(num_edges(g));
 
@@ -1585,28 +1593,33 @@ main(int argc, char* argv[])
 		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
 		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
 //		edge_set.insert(
-//		    std::pair<<std::pair<std::size_t,size_t>, pair_hash>,
+//		    std::pair<<std::pair<std::size_t,size_t>, boost::hash<std::size_t,size_t>>,
 //                        int>
 //                (std::pair<size_t, size_t>(node1, node2),
 //                        weight))
 	}
 
-//    auto edgeItRange = boost::edges(g);
-//	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
-//	{
-//	    auto& weight = g[*edgeIt].weight;
-//		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
-//		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
-//		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
-////		edge_set.insert(
-////		    std::pair<<std::pair<std::size_t,size_t>, pair_hash>,
-////                        int>
-////                (std::pair<size_t, size_t>(node1, node2),
-////                        weight))
-//	}
+//    std::cerr<<"Making the iterators array\n";
+//    const int array_size = boost::num_vertices(g);
+//	boost::graph_traits<graph_t>::vertex_iterator iterators_array[ array_size ];
+//
+//    std::cerr<<"adding to the iterators array\n";
 
-    #pragma omp parallel for
+//	boost::graph_traits<graph_t>::vertex_iterator allocate_it = vertexItRange.first;
+//	for (size_t j = 0; j < array_size; ++j)
+//        iterators_array[j] = allocate_it++;
+
+    std::cerr<<"Entering the for loop\n";
+#if _OPENMP
+	#pragma omp parallel for
+#endif
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
+//	for (size_t j = 0; j < array_size; ++j) {
+
+//#if _OPENMP
+//        int tnum = omp_get_thread_num();
+//        std::cerr<<"Thread num:"<<tnum<<"\n";
+//#endif
         start_loop_all = timeNow();
         initial_community_id = 0;
         vertexCount2++;
@@ -1615,6 +1628,7 @@ main(int argc, char* argv[])
 
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+//		auto neighbours = boost::adjacent_vertices(*(iterators_array[j]), g);
 
 		start_if_all = timeNow();
 
@@ -1638,7 +1652,7 @@ main(int argc, char* argv[])
 	        //duration_createsubgraph_all +=  duration_temp2.count();
 
 		    graph_t subgraph;
-		    make_subgraph(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+		    make_subgraph(g, subgraph, edge_set, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //make_subgraph_2(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
 		    biconnectedComponents(subgraph, vertexToComponent);
@@ -1707,6 +1721,8 @@ main(int argc, char* argv[])
 //		g.m_children.clear();
 
 		vecVertexToComponent[*vertexIt] = vertexToComponent;
+//		vecVertexToComponent[*(iterators_array[j])] = vertexToComponent;
+
 		//cout<<"\n\nHERE HAHA:"<<*vertexIt<<endl;
 	    stop_loop_all = timeNow();
 	    duration_temp2 = duration_cast<microseconds>(stop_loop_all - start_loop_all);
