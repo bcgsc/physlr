@@ -24,8 +24,6 @@
 
 static uint64_t
 
-// typedef boost::adjacency_matrix< undirectedS > MatrixGraph
-
 memory_usage()
 {
 	int mem = 0;
