@@ -344,7 +344,7 @@ bin_components(
 	std::vector<uint64_t> components_size;
 	uint64_t neighborhood_size;
 	uint64_t components_count;
-	for (int i = 0; i < source.size(); i++) {
+	for (uint64_t i = 0; i < source.size(); i++) {
 		neighborhood_size = source[i].size();
 		components_count = ((neighborhood_size - 1) / bin_size) + 1;
 		components_size.push_back(components_count);
@@ -355,7 +355,7 @@ bin_components(
 	uint64_t base_com_size;
 	uint64_t leftover;
 
-	for (int i = 0; i < source.size(); i++) {
+	for (uint64_t i = 0; i < source.size(); i++) {
 		neighborhood_size = 0;
 		// Using unordered_set, we make use of its random nature and we do not shuffle randomly
 		base_com_size = source[i].size() / components_size[i];
@@ -368,7 +368,7 @@ bin_components(
 			if (--leftover == 0)
 				yet_leftover = 0;
 
-			for (int i = 0; i < length; i++) {
+			for (uint64_t i = 0; i < length; i++) {
 				if (counter_new >= binned_neighbours.size()) {
 					std::cerr << " WAS NOT EXPECTED 1!" << std::endl;
 					exit(EXIT_FAILURE);
@@ -539,7 +539,7 @@ main(int argc, char* argv[])
 #endif
 
 	if (threads > 1 && openmp) {
-		const int array_size = boost::num_vertices(g);
+		const uint64_t array_size = boost::num_vertices(g);
 		// boost::graph_traits<graph_t>::vertex_iterator iterators_array[ array_size ];
 		std::vector<boost::graph_traits<graph_t>::vertex_iterator> iterators_array;
 		iterators_array.resize(array_size);
