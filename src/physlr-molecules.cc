@@ -360,11 +360,11 @@ bin_components(
 		// Using unordered_set, we make use of its random nature and we do not shuffle randomly
 		base_com_size = source[i].size() / components_size[i];
 		leftover = source[i].size() % components_size[i];
-		int yet_leftover = (leftover ? 1 : 0);
+		uint64_t yet_leftover = (leftover ? 1 : 0);
 
 		auto elementIt = source[i].begin();
 		while (elementIt != source[i].end()) {
-			int length = base_com_size + yet_leftover;
+			uint64_t length = base_com_size + yet_leftover;
 			if (--leftover == 0)
 				yet_leftover = 0;
 
