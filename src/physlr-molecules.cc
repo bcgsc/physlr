@@ -374,22 +374,16 @@ main(int argc, char* argv[])
 		{ "separation-strategy", required_argument, nullptr, 's' },
 		{ nullptr, 0, nullptr, 0 }
 	};
-#if _OPENMP
-	for (int c; (c = getopt_long(argc, argv, "s:vt:", longopts, &optindex)) != -1;) {
-#else
-	for (int c; (c = getopt_long(argc, argv, "s:v:", longopts, &optindex)) != -1;) {
-#endif
+for (int c; (c = getopt_long(argc, argv, "s:vt:", longopts, &optindex)) != -1;) {
 		switch (c) {
 		case 0:
 			break;
 		case 's':
 			separationStrategy.assign(optarg);
 			break;
-#if _OPENMP
 		case 't':
 			threads = std::stoi(optarg);
 			break;
-#endif
 		case 'v':
 			verbose = true;
 			break;
@@ -397,6 +391,7 @@ main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
+	std::cerr << " using " << threads << " thread(s)." << std::endl;
 #if _OPENMP
 	omp_set_num_threads(threads);
 #endif
