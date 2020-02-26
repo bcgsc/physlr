@@ -344,7 +344,7 @@ bin_components(
 	std::vector<uint64_t> components_size;
 	uint64_t neighborhood_size;
 	uint64_t components_count;
-	for (uint64_t i = 0; i < source.size(); i++) { //NOLINT
+	for (uint64_t i = 0; i < source.size(); i++) { // NOLINT
 		neighborhood_size = source[i].size();
 		components_count = ((neighborhood_size - 1) / bin_size) + 1;
 		components_size.push_back(components_count);
