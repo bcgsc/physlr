@@ -357,7 +357,7 @@ bin_components(
 
 	for (int i = 0; i < source.size(); i++) {
 		neighborhood_size = 0;
-		// random_shuffle(source[i].begin(), source[i].end());
+		// Using unordered_set, we make use of its random nature and we do not shuffle randomly
 		base_com_size = source[i].size() / components_size[i];
 		leftover = source[i].size() % components_size[i];
 		int yet_leftover = (leftover ? 1 : 0);
