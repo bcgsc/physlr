@@ -355,25 +355,27 @@ bin_components(
 	uint64_t base_com_size;
 	uint64_t leftover;
 
-	for (uint64_t i = 0; i < source.size(); i++) {
-		neighborhood_size = 0;
+	//for (uint64_t i = 0; i < source.size(); i++) {
+	for  (auto & set_of_vertices : source) {
 		// Using unordered_set, we make use of its random nature and we do not shuffle randomly
-		base_com_size = source[i].size() / components_size[i];
-		leftover = source[i].size() % components_size[i];
+		base_com_size = set_of_vertices.size() / components_size[i];
+		leftover = set_of_vertices.size() % components_size[i];
 		uint64_t yet_leftover = (leftover ? 1 : 0);
 
-		auto elementIt = source[i].begin();
-		while (elementIt != source[i].end()) {
+		auto elementIt = set_of_vertices.begin();
+		while (elementIt != set_of_vertices.end()) {
 			uint64_t length = base_com_size + yet_leftover;
 			if (--leftover == 0)
+			{
 				yet_leftover = 0;
+		    }
 
 			for (uint64_t i = 0; i < length; i++) {
 				if (counter_new >= binned_neighbours.size()) {
 					std::cerr << " WAS NOT EXPECTED 1!" << std::endl;
 					exit(EXIT_FAILURE);
 				}
-				if (elementIt == source[i].end()) {
+				if (elementIt == set_of_vertices.end()) {
 					std::cerr << " WAS NOT EXPECTED 2!" << std::endl;
 					exit(EXIT_FAILURE);
 				}
@@ -545,7 +547,9 @@ main(int argc, char* argv[])
 		iterators_array.resize(array_size);
 		boost::graph_traits<graph_t>::vertex_iterator allocate_it = vertexItRange.first;
 		for (uint64_t j = 0; j < array_size; ++j)
+		{
 			iterators_array[j] = allocate_it++;
+		}
 
 #pragma omp parallel for
 		for (uint64_t j = 0; j < array_size; ++j) {
@@ -559,14 +563,15 @@ main(int argc, char* argv[])
 			// binning
 			bin_neighbours(neighbours, componentsVec, 50);
 
-			for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++) {
+			//for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++) {
+			for  (auto & comp_i : componentsVec) {
 				graph_t subgraph;
 				make_subgraph(
 				    g,
 				    subgraph,
 				    edge_set,
-				    componentsVec[comp_i].begin(),
-				    componentsVec[comp_i].end());
+				    comp_i.begin(),
+				    comp_i.end());
 
 				initial_community_id =
 				    biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
@@ -585,16 +590,18 @@ main(int argc, char* argv[])
 			// binning
 			bin_neighbours(neighbours, componentsVec, 50);
 
-			for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++) {
+			//for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++) {
+			for  (auto & comp_i : componentsVec) {
 				graph_t subgraph;
 				make_subgraph(
 				    g,
 				    subgraph,
 				    edge_set,
-				    componentsVec[comp_i].begin(),
-				    componentsVec[comp_i].end());
+				    comp_i.begin(),
+				    comp_i.end());
 
-				biconnectedComponents(subgraph, vertexToComponent);
+				initial_community_id =
+				    biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
 			}
 			vecVertexToComponent[*vertexIt] = vertexToComponent;
 		}
