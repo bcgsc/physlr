@@ -61,7 +61,7 @@ struct edgeComponent_t
 } edgeComponent;
 
 // this definition assumes there is no redundant edge in the undirected graph
-using graph_t = boost::subgraph<boost::adjacency_list<
+using graph_t = boost::adjacency_list<
     boost::vecS,
     boost::vecS,
     boost::undirectedS,
@@ -69,7 +69,7 @@ using graph_t = boost::subgraph<boost::adjacency_list<
     boost::property<
         boost::edge_index_t,
         int,
-        boost::property<edgeComponent_t, std::uint64_t, edgeProperties>>>>;
+        boost::property<edgeComponent_t, std::uint64_t, edgeProperties>>>;
 using vertex_t = graph_t::vertex_descriptor;
 using edge_t = graph_t::edge_descriptor;
 using barcodeToIndex_t = std::unordered_map<std::string, vertex_t>;
@@ -347,10 +347,7 @@ make_subgraph(Graph& g, Graph& subgraph, edgeSet& edge_set, vertexIter vBegin, v
 	for (boost::tie(vIter1, vend1) = vertices(subgraph); vIter1 != vend1; ++vIter1) {
 		for (boost::tie(vIter2, vend2) = vertices(subgraph); vIter2 != vend2; ++vIter2) {
 			if (vIter1 != vIter2) {
-				//		        tsl::robin_map<
-				//		            std::pair<std::uint64_t,uint64_t>, int,
-				//		                boost::hash<std::pair<uint64_t,uint64_t>>>::const_iterator
-				auto got = edge_set.find(std::pair<std::uint64_t, uint64_t>(
+				auto got = edge_set.find(std::make_pair(
 				    subgraph[*vIter1].indexOriginal, subgraph[*vIter2].indexOriginal));
 
 				if (got != edge_set.end()) {
