@@ -349,7 +349,8 @@ bin_components(
 		components_count = ((neighborhood_size - 1) / bin_size) + 1;
 		components_size.push_back(components_count);
 	}
-	uint64_t new_size = std::accumulate(components_size.begin(), components_size.end(), uint64_t(0));
+	uint64_t new_size =
+	    std::accumulate(components_size.begin(), components_size.end(), uint64_t(0));
 	binned_neighbours.resize(new_size);
 	uint64_t counter_new = 0;
 	uint64_t base_com_size;
