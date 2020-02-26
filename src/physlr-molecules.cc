@@ -344,12 +344,12 @@ bin_components(
 	std::vector<uint64_t> components_size;
 	uint64_t neighborhood_size;
 	uint64_t components_count;
-	for (uint64_t i = 0; i < source.size(); i++) {
+	for (uint64_t i = 0; i < source.size(); i++) { //NOLINT
 		neighborhood_size = source[i].size();
 		components_count = ((neighborhood_size - 1) / bin_size) + 1;
 		components_size.push_back(components_count);
 	}
-	uint64_t new_size = std::accumulate(components_size.begin(), components_size.end(), 0);
+	int new_size = std::accumulate(components_size.begin(), components_size.end(), 0);
 	binned_neighbours.resize(new_size);
 	uint64_t counter_new = 0;
 	uint64_t base_com_size;
