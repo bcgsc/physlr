@@ -6,13 +6,13 @@
 #include <string>
 #include <vector>
 
+#include <algorithm>
+#include <tsl/robin_map.h>
+
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/biconnected_components.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/subgraph.hpp>
-
-#include <tsl/robin_map.h>
-#include <tsl/robin_set.h>
 
 #if _OPENMP
 #include <omp.h>
@@ -23,6 +23,9 @@
 #define GIT_REVISION "pre-autotools"
 
 static uint64_t
+
+// typedef boost::adjacency_matrix< undirectedS > MatrixGraph
+
 memory_usage()
 {
 	int mem = 0;
@@ -60,18 +63,7 @@ struct edgeComponent_t
 	using kind = boost::edge_property_tag;
 } edgeComponent;
 
-struct pair_hash // pair as key to unordered_set:
-{
-	template <class T1, class T2>
-	std::size_t operator () (std::pair<T1, T2> const &pair) const
-	{
-		std::size_t h1 = std::hash<T1>()(pair.first);
-		std::size_t h2 = std::hash<T2>()(pair.second);
-
-		return h1 ^ h2;
-	}
-};
-
+// this definition assumes there is no redundant edge in the undirected graph
 using graph_t = boost::subgraph<boost::adjacency_list<
     boost::vecS,
     boost::vecS,
@@ -89,6 +81,11 @@ using vertexSet_t = std::unordered_set<vertex_t>;
 using componentToVertexSet_t = std::vector<vertexSet_t>;
 using vertexToComponent_t = std::unordered_map<vertex_t, size_t>;
 using vecVertexToComponent_t = std::vector<vertexToComponent_t>;
+using vertexToIndex_t = std::unordered_map<vertex_t, size_t>; // wanna improve this? checkout boost::bimap
+using indexToVertex_t = std::unordered_map<size_t, vertex_t>; // wanna improve this? checkout boost::bimap
+using adjacencyMatrix_t = std::vector<std::vector<uint_fast32_t>>;
+using adjacencyVector_t = std::vector<uint_fast32_t>;
+using Clique_type = std::unordered_map<vertex_t, size_t>;
 
 static void
 printVersion()
@@ -329,14 +326,14 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 	}
 }
 
-
 template <class Graph, class vertexIter, class edgeSet>
 void
-make_subgraph(Graph& g, Graph& subgraph, edgeSet edge_set, vertexIter vBegin, vertexIter vEnd)
+make_subgraph(Graph& g, Graph& subgraph, edgeSet& edge_set, vertexIter vBegin, vertexIter vEnd)
 {
     // //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
+    // //   track the source node by indexOriginal
 
-    // Add vertices into the subgraph but set indexOriginal the index of it in the source graph.
+    // Add vertices into the subgraph, but set `indexOriginal` the index of it in the source graph.
     for (auto& vIter = vBegin; vIter != vEnd ; ++vIter)
     {
         auto u = boost::add_vertex(subgraph);
@@ -346,8 +343,8 @@ make_subgraph(Graph& g, Graph& subgraph, edgeSet edge_set, vertexIter vBegin, ve
 		subgraph[u].indexOriginal = g[*vIter].indexOriginal;
     }
 
-    // Iterate over pairs of vertices:
-    // check whether there exist an edge between their corresponding vertices in the graph.
+    // Iterate over all pairs of vertices in the subgraph:
+    // check whether there exist an edge between their corresponding vertices in the source graph.
     graph_t::vertex_iterator vIter1, vIter2, vend1, vend2;
     for (boost::tie(vIter1, vend1) = vertices(subgraph); vIter1 != vend1; ++vIter1)
     {
@@ -355,14 +352,13 @@ make_subgraph(Graph& g, Graph& subgraph, edgeSet edge_set, vertexIter vBegin, ve
         {
             if (vIter1 != vIter2)
             {
-		        std::unordered_map<
-		                //std::pair<std::size_t,size_t>, int, pair_hash>::const_iterator got =
-		                std::pair<std::size_t,size_t>, int,
-		                          boost::hash<std::size_t,size_t>>::const_iterator got =
-		                    edge_set.find (
-                                std::pair<std::size_t,size_t>(
-                                    subgraph[*vIter1].indexOriginal,
-                                    subgraph[*vIter2].indexOriginal));
+		        tsl::robin_map<
+		            std::pair<std::size_t,size_t>, int,
+		                boost::hash<std::pair<size_t,size_t>>>::const_iterator got =
+		                edge_set.find(
+                            std::pair<std::size_t,size_t>(
+                                subgraph[*vIter1].indexOriginal,
+                                subgraph[*vIter2].indexOriginal));
 
 		        if ( got != edge_set.end() )
 		        {
@@ -377,11 +373,11 @@ make_subgraph(Graph& g, Graph& subgraph, edgeSet edge_set, vertexIter vBegin, ve
 int
 main(int argc, char* argv[])
 {
-
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
 	std::string separationStrategy = "bc";
+	size_t threads = 1;
 	bool verbose = false;
 	bool failed = false;
 	static const struct option longopts[] = {
@@ -389,12 +385,15 @@ main(int argc, char* argv[])
 		{ "separation-strategy", required_argument, nullptr, 's' },
 		{ nullptr, 0, nullptr, 0 }
 	};
-	for (int c; (c = getopt_long(argc, argv, "s:v", longopts, &optindex)) != -1;) {
+	for (int c; (c = getopt_long(argc, argv, "s:vt:", longopts, &optindex)) != -1;) {
 		switch (c) {
 		case 0:
 			break;
 		case 's':
 			separationStrategy.assign(optarg);
+			break;
+		case 't':
+			threads = std::stoi(optarg);
 			break;
 		case 'v':
 			verbose = true;
@@ -403,6 +402,10 @@ main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
+#if _OPENMP
+	omp_set_num_threads(threads);
+#endif
+
 	std::vector<std::string> infiles(&argv[optind], &argv[argc]);
 	if (argc < 1) {
 		failed = true;
@@ -427,40 +430,47 @@ main(int argc, char* argv[])
 	graph_t g;
 	readTSV(g, infiles, verbose);
 
+	barcodeToIndex_t barcodeToIndex;
+	indexToBarcode_t indexToBarcode;
+	std::string node1;
+
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
-
-    //std::unordered_map<std::pair<std::size_t,size_t>, int, pair_hash> edge_set;
-    tsl::robin_map<std::pair<std::size_t,size_t>, int, boost::hash<std::size_t,size_t>> edge_set;
-    edge_set.reserve(num_edges(g));
-    auto edgeItRange = boost::edges(g);
-	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
-	{
-		auto& weight = g[*edgeIt].weight;
-		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
-		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
-		
-		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
-	}
 
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
-	auto vertexItRange = vertices(g);
-	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
-		// Find neighbour of vertex and generate neighbour induced subgraph
-		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
-	
-		graph_t subgraph;
-		make_subgraph(g, subgraph, edge_set, neighbours.first, neighbours.second);
 
-		vertexToComponent_t vertexToComponent;
-		biconnectedComponents(subgraph, vertexToComponent);
+    // // auxillary dataset: set of edges for faster lookup
+    tsl::robin_map<std::pair<std::size_t,size_t>, int, boost::hash<std::pair<size_t,size_t>>> edge_set;
+    edge_set.reserve(num_edges(g));
 
-		vecVertexToComponent[*vertexIt] = vertexToComponent;
+    auto edgeItRange = boost::edges(g);
+	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
+	{
+	    auto& weight = g[*edgeIt].weight;
+		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
+		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
+		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
 	}
 
-	std::cerr << "Finished molecule separation ";
+	auto vertexItRange = vertices(g);
+    for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt)
+	{
+   		componentToVertexSet_t componentsVec;
+        vertexToComponent_t vertexToComponent;
+
+	    // Find neighbour of vertex and generate neighbour induced subgraph
+       	auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+
+	    graph_t subgraph;
+  	    make_subgraph(g, subgraph, edge_set, neighbours.first, neighbours.second);
+
+        biconnectedComponents(subgraph, vertexToComponent);
+	    vecVertexToComponent[*vertexIt] = vertexToComponent;
+    }
+
+	std::cerr<<"Finished molecule separation ";
 #if _OPENMP
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
 	sTime = omp_get_wtime();
