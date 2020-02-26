@@ -23,6 +23,7 @@
 #define GIT_REVISION "pre-autotools"
 
 static uint64_t
+
 memory_usage()
 {
 	int mem = 0;
@@ -374,6 +375,7 @@ main(int argc, char* argv[])
 		{ "separation-strategy", required_argument, nullptr, 's' },
 		{ nullptr, 0, nullptr, 0 }
 	};
+
 #if _OPENMP
 	for (int c; (c = getopt_long(argc, argv, "s:vt:", longopts, &optindex)) != -1;) {
 #else
@@ -467,7 +469,7 @@ main(int argc, char* argv[])
 		vecVertexToComponent[*vertexIt] = vertexToComponent;
 	}
 
-	std::cerr << "Finished molecule separation ";
+	std::cerr<<"Finished molecule separation ";
 #if _OPENMP
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
 	sTime = omp_get_wtime();
@@ -486,3 +488,6 @@ main(int argc, char* argv[])
 #endif
 	}
 }
+
+
+
