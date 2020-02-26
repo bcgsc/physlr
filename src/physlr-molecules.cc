@@ -8,6 +8,10 @@
 
 #include <algorithm>
 #include <tsl/robin_map.h>
+#include <utility>
+#include <functional>
+#include <numeric>
+
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/biconnected_components.hpp>
@@ -279,8 +283,8 @@ componentsToNewGraph(
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
-void
-biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
+size_t
+biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent, size_t initial_community_id = 0)
 {
 	// Find biconnected components
 	boost::property_map<graph_t, edgeComponent_t>::type component =
@@ -312,7 +316,7 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 		}
 	}
 
-	uint64_t moleculeNum = 0;
+	uint64_t  moleculeNum = initial_community_id;
 
 	// Remove components with size less than 1
 	for (auto&& vertexSet : componentToVertexSet) {
@@ -324,6 +328,7 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 		}
 		++moleculeNum;
 	}
+	return moleculeNum;
 }
 
 void
@@ -332,7 +337,7 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
     // //   Iterate over each component and if its bigger than bin_size:
     // //   randomly split the component (set of vertices) into smaller even bins
 
-    vector<size_t> components_size;
+    std::vector<size_t> components_size;
     size_t neighborhood_size;
     size_t components_count;
     for (int i = 0; i < source.size(); i++){
@@ -364,12 +369,12 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
             {
                 if (counter_new >= binned_neighbours.size())
                 {
-                    cerr<<" WAS NOT EXPECTED 1!"<<endl;
+                    std::cerr << " WAS NOT EXPECTED 1!" << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 if (elementIt == source[i].end())
                 {
-                    cerr<<" WAS NOT EXPECTED 2!"<<endl;
+                    std::cerr << " WAS NOT EXPECTED 2!" << std::endl;
                     exit(EXIT_FAILURE);
                 }
                 binned_neighbours[counter_new].insert(*elementIt);
@@ -549,7 +554,6 @@ main(int argc, char* argv[])
     	for (size_t j = 0; j < array_size; ++j)
     	{
             initial_community_id = 0;
-            vertexCount++;
     		componentToVertexSet_t componentsVec;
             vertexToComponent_t vertexToComponent;
 
@@ -561,15 +565,10 @@ main(int argc, char* argv[])
 
 		    for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
 		    {
-		        if(vertexCount % 1000 == 0 && comp_i==0)
-                    std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount<<" normal subgraph)"<<endl;
-
     		    graph_t subgraph;
 	    	    make_subgraph(g, subgraph, edge_set, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 
 		        initial_community_id = biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
-                //initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
-		        //initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
 		    }
 		    vecVertexToComponent[*(iterators_array[j])] = vertexToComponent;
         }
@@ -578,7 +577,6 @@ main(int argc, char* argv[])
         for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt)
 	    {
 	        initial_community_id = 0;
-            vertexCount++;
     		componentToVertexSet_t componentsVec;
             vertexToComponent_t vertexToComponent;
 
@@ -590,9 +588,6 @@ main(int argc, char* argv[])
 
 		    for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
 		    {
-		        if(vertexCount % 1000 == 0 && comp_i==0)
-                    std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount<<" normal subgraph)"<<endl;
-
     		    graph_t subgraph;
 	    	    make_subgraph(g, subgraph, edge_set, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
 
