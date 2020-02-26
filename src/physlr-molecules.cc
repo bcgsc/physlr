@@ -434,7 +434,10 @@ main(int argc, char* argv[])
 #endif
 
 	// // auxillary dataset: set of edges for faster lookup
-	tsl::robin_map<std::pair<std::uint64_t, uint64_t>, int, boost::hash<std::pair<uint64_t, uint64_t>>>
+	tsl::robin_map<
+	    std::pair<std::uint64_t, uint64_t>,
+	    int,
+	    boost::hash<std::pair<uint64_t, uint64_t>>>
 	    edge_set;
 	edge_set.reserve(num_edges(g));
 
