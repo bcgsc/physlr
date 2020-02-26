@@ -375,7 +375,7 @@ main(int argc, char* argv[])
 		{ nullptr, 0, nullptr, 0 }
 	};
 
-for (int c; (c = getopt_long(argc, argv, "s:vt:", longopts, &optindex)) != -1;) {
+	for (int c; (c = getopt_long(argc, argv, "s:vt:", longopts, &optindex)) != -1;) {
 		switch (c) {
 		case 0:
 			break;
