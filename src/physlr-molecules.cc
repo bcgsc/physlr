@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 
+#include <algorithm>
+#include <tsl/robin_map.h>
+
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/biconnected_components.hpp>
 #include <boost/graph/graph_utility.hpp>
@@ -40,7 +43,7 @@ struct vertexProperties
 {
 	std::string name = "";
 	int weight = 0;
-	size_t indexOriginal = 0;
+	uint64_t indexOriginal = 0;
 };
 
 struct edgeProperties
@@ -57,7 +60,8 @@ struct edgeComponent_t
 	using kind = boost::edge_property_tag;
 } edgeComponent;
 
-using graph_t = boost::subgraph<boost::adjacency_list<
+// this definition assumes there is no redundant edge in the undirected graph
+using graph_t = boost::adjacency_list<
     boost::vecS,
     boost::vecS,
     boost::undirectedS,
@@ -65,15 +69,22 @@ using graph_t = boost::subgraph<boost::adjacency_list<
     boost::property<
         boost::edge_index_t,
         int,
-        boost::property<edgeComponent_t, std::size_t, edgeProperties>>>>;
+        boost::property<edgeComponent_t, std::uint64_t, edgeProperties>>>;
 using vertex_t = graph_t::vertex_descriptor;
 using edge_t = graph_t::edge_descriptor;
 using barcodeToIndex_t = std::unordered_map<std::string, vertex_t>;
 using indexToBarcode_t = std::unordered_map<vertex_t, std::string>;
 using vertexSet_t = std::unordered_set<vertex_t>;
 using componentToVertexSet_t = std::vector<vertexSet_t>;
-using vertexToComponent_t = std::unordered_map<vertex_t, size_t>;
+using vertexToComponent_t = std::unordered_map<vertex_t, uint64_t>;
 using vecVertexToComponent_t = std::vector<vertexToComponent_t>;
+using vertexToIndex_t =
+    std::unordered_map<vertex_t, uint64_t>; // wanna improve this? checkout boost::bimap
+using indexToVertex_t =
+    std::unordered_map<uint64_t, vertex_t>; // wanna improve this? checkout boost::bimap
+using adjacencyMatrix_t = std::vector<std::vector<uint_fast32_t>>;
+using adjacencyVector_t = std::vector<uint_fast32_t>;
+using Clique_type = std::unordered_map<vertex_t, uint64_t>;
 
 static void
 printVersion()
@@ -216,9 +227,9 @@ componentsToNewGraph(
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
-	for (size_t i = 0; i < vecVertexToComponent.size(); ++i) {
+	for (uint64_t i = 0; i < vecVertexToComponent.size(); ++i) {
 
-		size_t maxVal = 0;
+		uint64_t maxVal = 0;
 		if (!vecVertexToComponent[i].empty()) {
 			maxVal =
 			    std::max_element(
@@ -229,7 +240,7 @@ componentsToNewGraph(
 			        ->second;
 		}
 
-		for (size_t j = 0; j < maxVal + 1; ++j) {
+		for (uint64_t j = 0; j < maxVal + 1; ++j) {
 			auto u = boost::add_vertex(molSepG);
 			molSepG[u].name = inG[i].name + "_" + std::to_string(j);
 			molSepG[u].weight = inG[i].weight;
@@ -284,7 +295,7 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 	componentToVertexSet_t componentToVertexSet;
 
 	for (boost::tie(ei, ei_end) = boost::edges(subgraph); ei != ei_end; ++ei) {
-		size_t componentNum = component[*ei];
+		uint64_t componentNum = component[*ei];
 		if (componentNum + 1 > componentToVertexSet.size()) {
 			componentToVertexSet.resize(componentNum + 1);
 		}
@@ -300,7 +311,7 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 		}
 	}
 
-	size_t moleculeNum = 0;
+	uint64_t moleculeNum = 0;
 
 	// Remove components with size less than 1
 	for (auto&& vertexSet : componentToVertexSet) {
@@ -314,14 +325,48 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 	}
 }
 
+template<class Graph, class vertexIter, class edgeSet>
+void
+make_subgraph(Graph& g, Graph& subgraph, edgeSet& edge_set, vertexIter vBegin, vertexIter vEnd)
+{
+	// //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
+	// //   track the source node by indexOriginal
+
+	// Add vertices into the subgraph, but set `indexOriginal` the index of it in the source graph.
+	for (auto& vIter = vBegin; vIter != vEnd; ++vIter) {
+		auto u = boost::add_vertex(subgraph);
+
+		subgraph[u].name = g[*vIter].name;
+		subgraph[u].weight = g[*vIter].weight;
+		subgraph[u].indexOriginal = g[*vIter].indexOriginal;
+	}
+
+	// Iterate over all pairs of vertices in the subgraph:
+	// check whether there exist an edge between their corresponding vertices in the source graph.
+	graph_t::vertex_iterator vIter1, vIter2, vend1, vend2;
+	for (boost::tie(vIter1, vend1) = vertices(subgraph); vIter1 != vend1; ++vIter1) {
+		for (boost::tie(vIter2, vend2) = vertices(subgraph); vIter2 != vend2; ++vIter2) {
+			if (vIter1 != vIter2) {
+				auto got = edge_set.find(std::make_pair(
+				    subgraph[*vIter1].indexOriginal, subgraph[*vIter2].indexOriginal));
+
+				if (got != edge_set.end()) {
+					auto new_edge = boost::add_edge(*vIter1, *vIter2, subgraph).first;
+					subgraph[new_edge].weight = got->second;
+				}
+			}
+		}
+	}
+}
+
 int
 main(int argc, char* argv[])
 {
-
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
 	std::string separationStrategy = "bc";
+	uint64_t threads = 1;
 	bool verbose = false;
 	bool failed = false;
 	static const struct option longopts[] = {
@@ -329,13 +374,22 @@ main(int argc, char* argv[])
 		{ "separation-strategy", required_argument, nullptr, 's' },
 		{ nullptr, 0, nullptr, 0 }
 	};
-	for (int c; (c = getopt_long(argc, argv, "s:v", longopts, &optindex)) != -1;) {
+#if _OPENMP
+	for (int c; (c = getopt_long(argc, argv, "s:vt:", longopts, &optindex)) != -1;) {
+#else
+	for (int c; (c = getopt_long(argc, argv, "s:v:", longopts, &optindex)) != -1;) {
+#endif
 		switch (c) {
 		case 0:
 			break;
 		case 's':
 			separationStrategy.assign(optarg);
 			break;
+#if _OPENMP
+		case 't':
+			threads = std::stoi(optarg);
+			break;
+#endif
 		case 'v':
 			verbose = true;
 			break;
@@ -343,6 +397,10 @@ main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
+#if _OPENMP
+	omp_set_num_threads(threads);
+#endif
+
 	std::vector<std::string> infiles(&argv[optind], &argv[argc]);
 	if (argc < 1) {
 		failed = true;
@@ -367,28 +425,45 @@ main(int argc, char* argv[])
 	graph_t g;
 	readTSV(g, infiles, verbose);
 
+	barcodeToIndex_t barcodeToIndex;
+	indexToBarcode_t indexToBarcode;
+	std::string node1;
+
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
 
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
+
+	// // auxillary dataset: set of edges for faster lookup
+	tsl::robin_map<
+	    std::pair<std::uint64_t, uint64_t>,
+	    int,
+	    boost::hash<std::pair<uint64_t, uint64_t>>>
+	    edge_set;
+	edge_set.reserve(num_edges(g));
+
+	auto edgeItRange = boost::edges(g);
+	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
+		auto& weight = g[*edgeIt].weight;
+		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
+		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
+		edge_set[std::pair<uint64_t, uint64_t>(node1, node2)] = weight;
+	}
+
 	auto vertexItRange = vertices(g);
 	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
+		componentToVertexSet_t componentsVec;
+		vertexToComponent_t vertexToComponent;
+
 		// Find neighbour of vertex and generate neighbour induced subgraph
 		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
-		graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
 
-		vertexToComponent_t vertexToComponent;
+		graph_t subgraph;
+		make_subgraph(g, subgraph, edge_set, neighbours.first, neighbours.second);
+
 		biconnectedComponents(subgraph, vertexToComponent);
-
-		// Delete subgraph to keep memory in control
-		for (auto& i : g.m_children) {
-			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-			delete i;
-		}
-		g.m_children.clear();
-
 		vecVertexToComponent[*vertexIt] = vertexToComponent;
 	}
 
