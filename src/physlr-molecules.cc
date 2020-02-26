@@ -326,7 +326,80 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 	}
 }
 
-template<class Graph, class vertexIter, class edgeSet>
+void
+bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_neighbours, size_t bin_size = 50)
+{
+    // //   Iterate over each component and if its bigger than bin_size:
+    // //   randomly split the component (set of vertices) into smaller even bins
+
+    vector<size_t> components_size;
+    size_t neighborhood_size;
+    size_t components_count;
+    for (int i = 0; i < source.size(); i++){
+        neighborhood_size = source[i].size();
+	    components_count = ((neighborhood_size-1) / bin_size)+1;
+	    components_size.push_back(components_count);
+    }
+    size_t new_size = std::accumulate(components_size.begin(),components_size.end(), 0);
+    binned_neighbours.resize(new_size);
+    size_t counter_new = 0;
+    size_t base_com_size;
+    size_t leftover;
+
+    for (int i = 0; i < source.size(); i++){
+        neighborhood_size = 0;
+	    //random_shuffle(source[i].begin(), source[i].end());
+        base_com_size = source[i].size() / components_size[i];
+        leftover = source[i].size() % components_size[i];
+        int yet_leftover = (leftover ? 1 : 0 );
+
+        auto elementIt = source[i].begin();
+        while(elementIt != source[i].end())
+        {
+            int length = base_com_size + yet_leftover;
+            if (--leftover == 0 )
+                yet_leftover = 0;
+
+            for (int i = 0; i < length; i++)
+            {
+                if (counter_new >= binned_neighbours.size())
+                {
+                    cerr<<" WAS NOT EXPECTED 1!"<<endl;
+                    exit(EXIT_FAILURE);
+                }
+                if (elementIt == source[i].end())
+                {
+                    cerr<<" WAS NOT EXPECTED 2!"<<endl;
+                    exit(EXIT_FAILURE);
+                }
+                binned_neighbours[counter_new].insert(*elementIt);
+                ++elementIt;
+            }
+            counter_new++;
+        }
+    }
+}
+
+template <class Neighbours_Type>
+void
+bin_neighbours(Neighbours_Type neighbours,
+    componentToVertexSet_t& binned_neighbours,
+    size_t bin_size = 50)
+{
+    // //   Randomly split the set of vertices (neighbours) into bins
+
+    componentToVertexSet_t compToVertset(1,vertexSet_t(neighbours.first, neighbours.second));
+    if (compToVertset[0].size() > bin_size)
+    {
+        bin_components(compToVertset, binned_neighbours, bin_size);
+    }
+    else
+    {
+        binned_neighbours = compToVertset;
+    }
+}
+
+template <class Graph, class vertexIter, class edgeSet>
 void
 make_subgraph(Graph& g, Graph& subgraph, edgeSet& edge_set, vertexIter vBegin, vertexIter vEnd)
 {
@@ -429,7 +502,6 @@ main(int argc, char* argv[])
 
 	barcodeToIndex_t barcodeToIndex;
 	indexToBarcode_t indexToBarcode;
-	std::string node1;
 
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
@@ -437,6 +509,8 @@ main(int argc, char* argv[])
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
+
+	size_t initial_community_id = 0;
 
 	// // auxillary dataset: set of edges for faster lookup
 	tsl::robin_map<
@@ -455,19 +529,78 @@ main(int argc, char* argv[])
 	}
 
 	auto vertexItRange = vertices(g);
-	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
-		componentToVertexSet_t componentsVec;
-		vertexToComponent_t vertexToComponent;
 
-		// Find neighbour of vertex and generate neighbour induced subgraph
-		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+    bool openmp = false;
+#if _OPENMP
+	openmp = true;
+#endif
 
-		graph_t subgraph;
-		make_subgraph(g, subgraph, edge_set, neighbours.first, neighbours.second);
+    if (threads > 1 && openmp)
+    {
+        const int array_size = boost::num_vertices(g);
+	    //boost::graph_traits<graph_t>::vertex_iterator iterators_array[ array_size ];
+        std::vector<boost::graph_traits<graph_t>::vertex_iterator> iterators_array;
+        iterators_array.resize( array_size );
+    	boost::graph_traits<graph_t>::vertex_iterator allocate_it = vertexItRange.first;
+	    for (size_t j = 0; j < array_size; ++j)
+            iterators_array[j] = allocate_it++;
 
-		biconnectedComponents(subgraph, vertexToComponent);
-		vecVertexToComponent[*vertexIt] = vertexToComponent;
-	}
+	    #pragma omp parallel for
+    	for (size_t j = 0; j < array_size; ++j)
+    	{
+            initial_community_id = 0;
+            vertexCount++;
+    		componentToVertexSet_t componentsVec;
+            vertexToComponent_t vertexToComponent;
+
+		    // Find neighbour of vertex and generate neighbour induced subgraph
+            auto neighbours = boost::adjacent_vertices(*(iterators_array[j]), g);
+
+		    // binning
+		    bin_neighbours(neighbours, componentsVec, 50);
+
+		    for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
+		    {
+		        if(vertexCount % 1000 == 0 && comp_i==0)
+                    std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount<<" normal subgraph)"<<endl;
+
+    		    graph_t subgraph;
+	    	    make_subgraph(g, subgraph, edge_set, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+
+		        initial_community_id = biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
+                //initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
+		        //initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
+		    }
+		    vecVertexToComponent[*(iterators_array[j])] = vertexToComponent;
+        }
+    } else
+    {
+        for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt)
+	    {
+	        initial_community_id = 0;
+            vertexCount++;
+    		componentToVertexSet_t componentsVec;
+            vertexToComponent_t vertexToComponent;
+
+		    // Find neighbour of vertex and generate neighbour induced subgraph
+	    	auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+
+		    // binning
+		    bin_neighbours(neighbours, componentsVec, 50);
+
+		    for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
+		    {
+		        if(vertexCount % 1000 == 0 && comp_i==0)
+                    std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount<<" normal subgraph)"<<endl;
+
+    		    graph_t subgraph;
+	    	    make_subgraph(g, subgraph, edge_set, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+
+		        biconnectedComponents(subgraph, vertexToComponent);
+		    }
+		    vecVertexToComponent[*vertexIt] = vertexToComponent;
+	    }
+    }
 
 	std::cerr<<"Finished molecule separation ";
 #if _OPENMP
@@ -488,6 +621,3 @@ main(int argc, char* argv[])
 #endif
 	}
 }
-
-
-
