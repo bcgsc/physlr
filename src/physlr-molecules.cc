@@ -355,7 +355,7 @@ bin_components(
 	uint64_t base_com_size;
 	uint64_t leftover;
 
-    for (uint64_t i = 0; i < source.size(); i++) { //NOLINT
+	for (uint64_t i = 0; i < source.size(); i++) { // NOLINT
 		// Using unordered_set, we make use of its random nature and we do not shuffle randomly
 		base_com_size = source[i].size() / components_size[i];
 		leftover = source[i].size() % components_size[i];
