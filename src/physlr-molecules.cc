@@ -289,29 +289,27 @@ connectedComponents(
     uint64_t initial_community_id = 0)
 {
 	// Find biconnected components
-	boost::property_map<graph_t, edgeComponent_t>::type component =
-	    boost::get(edgeComponent, subgraph);
+//	boost::property_map<graph_t, edgeComponent_t>::type component =
+//	    boost::get(edgeComponent, subgraph);
 
-	boost::connected_components(subgraph, component);
-
-	uint64_t moleculeNum = initial_community_id;
+    std::vector<uint64_t> component(num_vertices(subgraph));
+	boost::connected_components(subgraph, &component[0]);
 
     boost::graph_traits<graph_t>::edge_iterator ei, ei_end;
 	componentToVertexSet_t componentToVertexSet;
 
-    // Add vertices into their components
-	for (boost::tie(ei, ei_end) = boost::edges(subgraph); ei != ei_end; ++ei) {
-		uint64_t componentNum = component[*ei];
+    auto vertices =	boost::vertices(subgraph);
+    uint64_t i = 0;
+    for (auto vertex = vertices.first; vertex != vertices.second; ++vertex){
+        i++;
+		uint64_t componentNum = component[i];
 		if (componentNum + 1 > componentToVertexSet.size()) {
 			componentToVertexSet.resize(componentNum + 1);
 		}
-
-		auto node1 = source(*ei, subgraph);
-		auto node2 = target(*ei, subgraph);
-
-    	componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
-		componentToVertexSet[componentNum].insert(subgraph[node2].indexOriginal);
+    	componentToVertexSet[componentNum].insert(subgraph[*vertex].indexOriginal);
 	}
+
+    uint64_t moleculeNum = initial_community_id;
 
 	// Remove components with size less than 1
 	for (auto&& vertexSet : componentToVertexSet) {
