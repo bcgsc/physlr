@@ -536,7 +536,7 @@ main(int argc, char* argv[])
 #endif
 
 	if (threads > 1 && openmp) {
-		const uint64_t array_size = boost::num_vertices(g);
+		const auto array_size = boost::num_vertices(g);
 		// boost::graph_traits<graph_t>::vertex_iterator iterators_array[ array_size ];
 		std::vector<boost::graph_traits<graph_t>::vertex_iterator> iterators_array;
 		iterators_array.resize(array_size);
