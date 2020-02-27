@@ -7,7 +7,10 @@
 #include <vector>
 
 #include <algorithm>
+#include <functional>
+#include <numeric>
 #include <tsl/robin_map.h>
+#include <utility>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/biconnected_components.hpp>
@@ -278,8 +281,11 @@ componentsToNewGraph(
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
-void
-biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
+uint64_t
+biconnectedComponents(
+    graph_t& subgraph,
+    vertexToComponent_t& vertexToComponent,
+    uint64_t initial_community_id = 0)
 {
 	// Find biconnected components
 	boost::property_map<graph_t, edgeComponent_t>::type component =
@@ -311,7 +317,7 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 		}
 	}
 
-	uint64_t moleculeNum = 0;
+	uint64_t moleculeNum = initial_community_id;
 
 	// Remove components with size less than 1
 	for (auto&& vertexSet : componentToVertexSet) {
@@ -322,6 +328,78 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 			vertexToComponent[vertex] = moleculeNum;
 		}
 		++moleculeNum;
+	}
+	return moleculeNum;
+}
+
+void
+bin_components(
+    componentToVertexSet_t& source,
+    componentToVertexSet_t& binned_neighbours,
+    uint64_t bin_size = 50)
+{
+	// //   Iterate over each component and if its bigger than bin_size:
+	// //   randomly split the component (set of vertices) into smaller even bins
+
+	std::vector<uint64_t> components_size;
+	uint64_t neighborhood_size;
+	uint64_t components_count;
+	for (uint64_t i = 0; i < source.size(); i++) { // NOLINT
+		neighborhood_size = source[i].size();
+		components_count = ((neighborhood_size - 1) / bin_size) + 1;
+		components_size.push_back(components_count);
+	}
+	uint64_t new_size =
+	    std::accumulate(components_size.begin(), components_size.end(), uint64_t(0));
+	binned_neighbours.resize(new_size);
+	uint64_t counter_new = 0;
+	uint64_t base_com_size;
+	uint64_t leftover;
+
+	for (uint64_t i = 0; i < source.size(); i++) { // NOLINT
+		// Using unordered_set, we make use of its random nature and we do not shuffle randomly
+		base_com_size = source[i].size() / components_size[i];
+		leftover = source[i].size() % components_size[i];
+		uint64_t yet_leftover = (leftover ? 1 : 0);
+
+		auto elementIt = source[i].begin();
+		while (elementIt != source[i].end()) {
+			uint64_t length = base_com_size + yet_leftover;
+			if (--leftover == 0) {
+				yet_leftover = 0;
+			}
+
+			for (uint64_t j = 0; j < length; j++) {
+				if (counter_new >= binned_neighbours.size()) {
+					std::cerr << " WAS NOT EXPECTED 1!" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+				if (elementIt == source[i].end()) {
+					std::cerr << " WAS NOT EXPECTED 2!" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+				binned_neighbours[counter_new].insert(*elementIt);
+				++elementIt;
+			}
+			counter_new++;
+		}
+	}
+}
+
+template<class Neighbours_Type>
+void
+bin_neighbours(
+    Neighbours_Type neighbours,
+    componentToVertexSet_t& binned_neighbours,
+    uint64_t bin_size = 50)
+{
+	// //   Randomly split the set of vertices (neighbours) into bins
+
+	componentToVertexSet_t compToVertset(1, vertexSet_t(neighbours.first, neighbours.second));
+	if (compToVertset[0].size() > bin_size) {
+		bin_components(compToVertset, binned_neighbours, bin_size);
+	} else {
+		binned_neighbours = compToVertset;
 	}
 }
 
@@ -424,7 +502,6 @@ main(int argc, char* argv[])
 
 	barcodeToIndex_t barcodeToIndex;
 	indexToBarcode_t indexToBarcode;
-	std::string node1;
 
 	vecVertexToComponent_t vecVertexToComponent;
 	vecVertexToComponent.resize(boost::num_vertices(g));
@@ -433,7 +510,9 @@ main(int argc, char* argv[])
 	double sTime = omp_get_wtime();
 #endif
 
-	// // auxillary dataset: set of edges for faster lookup
+	uint64_t initial_community_id = 0;
+
+	// // auxiliary data-set: set of edges for faster lookup
 	tsl::robin_map<
 	    std::pair<std::uint64_t, uint64_t>,
 	    int,
@@ -450,18 +529,66 @@ main(int argc, char* argv[])
 	}
 
 	auto vertexItRange = vertices(g);
-	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
-		componentToVertexSet_t componentsVec;
-		vertexToComponent_t vertexToComponent;
 
-		// Find neighbour of vertex and generate neighbour induced subgraph
-		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+	bool openmp = false;
+#if _OPENMP
+	openmp = true;
+#endif
 
-		graph_t subgraph;
-		make_subgraph(g, subgraph, edge_set, neighbours.first, neighbours.second);
+	if (threads > 1 && openmp) {
+		const uint64_t array_size = boost::num_vertices(g);
+		// boost::graph_traits<graph_t>::vertex_iterator iterators_array[ array_size ];
+		std::vector<boost::graph_traits<graph_t>::vertex_iterator> iterators_array;
+		iterators_array.resize(array_size);
+		boost::graph_traits<graph_t>::vertex_iterator allocate_it = vertexItRange.first;
+		for (uint64_t j = 0; j < array_size; ++j) {
+			iterators_array[j] = allocate_it++;
+		}
 
-		biconnectedComponents(subgraph, vertexToComponent);
-		vecVertexToComponent[*vertexIt] = vertexToComponent;
+#pragma omp parallel for
+		for (uint64_t j = 0; j < array_size; ++j) {
+			initial_community_id = 0;
+			componentToVertexSet_t componentsVec;
+			vertexToComponent_t vertexToComponent;
+
+			// Find neighbour of vertex and generate neighbour induced subgraph
+			auto neighbours = boost::adjacent_vertices(*(iterators_array[j]), g);
+
+			// binning
+			bin_neighbours(neighbours, componentsVec, 50);
+
+			// for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++) {
+			for (auto& comp_i : componentsVec) {
+				graph_t subgraph;
+				make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
+
+				initial_community_id =
+				    biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
+			}
+			vecVertexToComponent[*(iterators_array[j])] = vertexToComponent;
+		}
+	} else {
+		for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
+			initial_community_id = 0;
+			componentToVertexSet_t componentsVec;
+			vertexToComponent_t vertexToComponent;
+
+			// Find neighbour of vertex and generate neighbour induced subgraph
+			auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+
+			// binning
+			bin_neighbours(neighbours, componentsVec, 50);
+
+			// for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++) {
+			for (auto& comp_i : componentsVec) {
+				graph_t subgraph;
+				make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
+
+				initial_community_id =
+				    biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
+			}
+			vecVertexToComponent[*vertexIt] = vertexToComponent;
+		}
 	}
 
 	std::cerr << "Finished molecule separation ";
