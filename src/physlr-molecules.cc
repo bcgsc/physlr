@@ -61,7 +61,7 @@ struct vertexProperties
 {
 	std::string name = "";
 	int weight = 0;
-	size_t indexOriginal = 0;
+	uint64_t indexOriginal = 0;
 };
 
 struct edgeProperties
@@ -91,20 +91,20 @@ using graph_t = boost::subgraph<boost::adjacency_list<
     boost::property<
         boost::edge_index_t,
         int,
-        boost::property<edgeComponent_t, std::size_t, edgeProperties>>>>;
+        boost::property<edgeComponent_t, std::uint64_t, edgeProperties>>>>;
 using vertex_t = graph_t::vertex_descriptor;
 using edge_t = graph_t::edge_descriptor;
 using barcodeToIndex_t = std::unordered_map<std::string, vertex_t>;
 using indexToBarcode_t = std::unordered_map<vertex_t, std::string>;
 using vertexSet_t = std::unordered_set<vertex_t>;
 using componentToVertexSet_t = std::vector<vertexSet_t>;
-using vertexToComponent_t = std::unordered_map<vertex_t, size_t>;
+using vertexToComponent_t = std::unordered_map<vertex_t, uint64_t>;
 using vecVertexToComponent_t = std::vector<vertexToComponent_t>;
-using vertexToIndex_t = std::unordered_map<vertex_t, size_t>; // wanna improve this? checkout boost::bimap
-using indexToVertex_t = std::unordered_map<size_t, vertex_t>; // wanna improve this? checkout boost::bimap
+using vertexToIndex_t = std::unordered_map<vertex_t, uint64_t>; // wanna improve this? checkout boost::bimap
+using indexToVertex_t = std::unordered_map<uint64_t, vertex_t>; // wanna improve this? checkout boost::bimap
 using adjacencyMatrix_t = std::vector<std::vector<uint_fast32_t>>;
 using adjacencyVector_t = std::vector<uint_fast32_t>;
-using Clique_type = std::unordered_map<vertex_t, size_t>;
+using Clique_type = std::unordered_map<vertex_t, uint64_t>;
 //using Clique_type = std::unordered_set<vertex_t>;
 
 #define timeNow() std::chrono::high_resolution_clock::now()
@@ -173,15 +173,15 @@ struct cliques_visitor {
 struct pair_hash
 {
 	template <class T1, class T2>
-	std::size_t operator () (std::pair<T1, T2> const &pair) const
+	std::uint64_t operator () (std::pair<T1, T2> const &pair) const
 	{
-		std::size_t h1 = std::hash<T1>()(pair.first);
-		std::size_t h2 = std::hash<T2>()(pair.second);
+		std::uint64_t h1 = std::hash<T1>()(pair.first);
+		std::uint64_t h2 = std::hash<T2>()(pair.second);
 
 		return h1 ^ h2;
 	}
 };
-std::unordered_map<std::pair<std::size_t,size_t>, int, pair_hash> edge_set;
+std::unordered_map<std::pair<std::uint64_t,uint64_t>, int, pair_hash> edge_set;
 // /
 
 static void
@@ -325,9 +325,9 @@ componentsToNewGraph(
 #if _OPENMP
 	double sTime = omp_get_wtime();
 #endif
-	for (size_t i = 0; i < vecVertexToComponent.size(); ++i) {
+	for (uint64_t i = 0; i < vecVertexToComponent.size(); ++i) {
 
-		size_t maxVal = 0;
+		uint64_t maxVal = 0;
 		if (!vecVertexToComponent[i].empty()) {
 			maxVal =
 			    std::max_element(
@@ -338,7 +338,7 @@ componentsToNewGraph(
 			        ->second;
 		}
 
-		for (size_t j = 0; j < maxVal + 1; ++j) {
+		for (uint64_t j = 0; j < maxVal + 1; ++j) {
 			auto u = boost::add_vertex(molSepG);
 			molSepG[u].name = inG[i].name + "_" + std::to_string(j);
 			molSepG[u].weight = inG[i].weight;
@@ -376,8 +376,11 @@ componentsToNewGraph(
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
-void
-biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
+uint64_t
+biconnectedComponents(
+    graph_t& subgraph,
+    vertexToComponent_t& vertexToComponent,
+    uint64_t initial_community_id = 0)
 {
 	// Find biconnected components
 	boost::property_map<graph_t, edgeComponent_t>::type component =
@@ -393,7 +396,7 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 	componentToVertexSet_t componentToVertexSet;
 
 	for (boost::tie(ei, ei_end) = boost::edges(subgraph); ei != ei_end; ++ei) {
-		size_t componentNum = component[*ei];
+		uint64_t componentNum = component[*ei];
 		if (componentNum + 1 > componentToVertexSet.size()) {
 			componentToVertexSet.resize(componentNum + 1);
 		}
@@ -409,9 +412,9 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 		}
 	}
 
-	size_t moleculeNum = 0;
+	uint64_t moleculeNum = initial_community_id;
 
-	// Remove components with size less than 2
+	// Remove components with size less than 1
 	for (auto&& vertexSet : componentToVertexSet) {
 		if (vertexSet.size() <= 1) {
 			continue;
@@ -421,6 +424,7 @@ biconnectedComponents(graph_t& subgraph, vertexToComponent_t& vertexToComponent)
 		}
 		++moleculeNum;
 	}
+	return moleculeNum;
 }
 
 // Tools for cos_sim and k_cliques
@@ -459,7 +463,7 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 
     vertexToIndex_t::iterator got_a;
     vertexToIndex_t::iterator got_b;
-    size_t adj_mat_index = 0;
+    uint64_t adj_mat_index = 0;
     for (edge_iterator edge_iter = ei.first; edge_iter != ei.second; ++edge_iter)
     {
         vertex_t a = source(*edge_iter, subgraph);
@@ -470,10 +474,10 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
         // Now we implement by hash table lookup:
         // std::unordered_map<std::string,double>::const_iterator got_a = vertexToIndex.find(a)
         got_a = vertexToIndex.find(a);
-        size_t index_a;
+        uint64_t index_a;
         if ( got_a == vertexToIndex.end() )
         {
-            vertexToIndex.insert (std::pair<vertex_t, size_t>(a, adj_mat_index));
+            vertexToIndex.insert (std::pair<vertex_t, uint64_t>(a, adj_mat_index));
             index_a = adj_mat_index++;
         }
         else
@@ -482,10 +486,10 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
         }
         // std::unordered_map<std::string,double>::const_iterator got_b = vertexToIndex.find(b)
         got_b = vertexToIndex.find(b);
-        size_t index_b;
+        uint64_t index_b;
         if ( got_b == vertexToIndex.end() )
         {
-            vertexToIndex.insert (std::pair<vertex_t, size_t>(b, adj_mat_index));
+            vertexToIndex.insert (std::pair<vertex_t, uint64_t>(b, adj_mat_index));
             index_b = adj_mat_index++;
         }
         else
@@ -809,10 +813,10 @@ std::unordered_map<V,K> inverse_map(std::unordered_map<K,V> &map)
 	return inverse;
 }
 
-size_t
+uint64_t
 community_detection_cosine_similarity(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
-    size_t initial_community_id = 0, bool squaring = true, double threshold=0.3)
+    uint64_t initial_community_id = 0, bool squaring = true, double threshold=0.3)
 {
     // Detect communities using cosine similarity of vertices
 
@@ -820,7 +824,7 @@ community_detection_cosine_similarity(
     //vertexToIndex_t vertexToIndex(num_vertices(subgraph));
     auto startAll = timeNow();
     vertexToIndex_t vertexToIndex;
-    size_t subgraph_size = boost::num_vertices(subgraph);
+    uint64_t subgraph_size = boost::num_vertices(subgraph);
     vertexToIndex.reserve(subgraph_size);
     if (subgraph_size < 10)
         threshold = 0;
@@ -855,9 +859,9 @@ community_detection_cosine_similarity(
     duration_temp = duration_cast<microseconds>(stop2 - start2);
     duration_cosine_2 += duration_temp.count();
 //    cout<<"adj mat values: "<<endl;
-//    for (size_t i = 0; i < adj_mat.size(); i++)
+//    for (uint64_t i = 0; i < adj_mat.size(); i++)
 //    {
-//        for (size_t j = 0; j < adj_mat.size(); j++)
+//        for (uint64_t j = 0; j < adj_mat.size(); j++)
 //        {
 //            cout<<" "<<adj_mat[i][j];
 //        }
@@ -865,9 +869,9 @@ community_detection_cosine_similarity(
 //    }
 //
 //    cout<<"Cosim values: "<<endl;
-//    for (size_t i = 0; i < cosSimilarity2d.size(); i++)
+//    for (uint64_t i = 0; i < cosSimilarity2d.size(); i++)
 //    {
-//        for (size_t j = 0; j < cosSimilarity2d.size(); j++)
+//        for (uint64_t j = 0; j < cosSimilarity2d.size(); j++)
 //        {
 //            cout<<" "<<cosSimilarity2d[i][j];
 //        }
@@ -895,9 +899,9 @@ community_detection_cosine_similarity(
     duration_temp = duration_cast<microseconds>(stop3 - start3);
     duration_cosine_3 += duration_temp.count();
 //    cout<<"filtered adj mat values: "<<endl;
-//    for (size_t i = 0; i < adj_mat.size(); i++)
+//    for (uint64_t i = 0; i < adj_mat.size(); i++)
 //    {
-//        for (size_t j = 0; j < adj_mat.size(); j++)
+//        for (uint64_t j = 0; j < adj_mat.size(); j++)
 //        {
 //            cout<<" "<<adj_mat[i][j];
 //        }
@@ -910,16 +914,16 @@ community_detection_cosine_similarity(
 //    const int max_communities = 100;
 //    vector<vector<uint_fast32_t>> communities(max_communities,vector<uint_fast32_t>(adj_mat.size(),-1));
     auto start4 = timeNow();
-    size_t community_id = initial_community_id;
-    stack<size_t> toCheck;
-    stack<size_t> toAdd;
+    uint64_t community_id = initial_community_id;
+    stack<uint64_t> toCheck;
+    stack<uint64_t> toAdd;
     //unordered_map<int, int>;
     vector<int> zeros(adj_mat.size(),0);
     vector<int> isDetected(adj_mat.size(),0);
     //vector<int> isVisited(zeros);
     bool isSingleton = false;
     //cout<<"NEW TRACE: "<<adj_mat.size()<<"\n";
-    for (size_t i = 0 ; i < adj_mat.size(); i++)
+    for (uint64_t i = 0 ; i < adj_mat.size(); i++)
     {
         //cout<<"i : "<<i<<endl;
         // DFS traversal
@@ -929,8 +933,8 @@ community_detection_cosine_similarity(
         isDetected[i] = 1;
         isSingleton = true;
         //cout<<"entered"<<endl;
-        size_t ii;
-        size_t node_to_add;
+        uint64_t ii;
+        uint64_t node_to_add;
 
         while(!toCheck.empty()){
 
@@ -941,7 +945,7 @@ community_detection_cosine_similarity(
             toAdd.push(ii);
 //            auto vt = indexToVertex.find(ii);
 //            //cout<<"ii : "<<ii<<":"<<vt->second<<" | ";
-//            //vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
+//            //vertexToComponent.insert (std::pair<vertex_t, uint64_t>(vt->second, community_id));
 //            if (vt != indexToVertex.end())
 //                vertexToComponent[vt->second] = community_id;
 //                //componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
@@ -951,9 +955,9 @@ community_detection_cosine_similarity(
 //                continue;
 //            }
 //            if (vt != indexToVertex.end())
-//                vertexToComponent.insert (std::pair<vertex_t, size_t>(vt->second, community_id));
+//                vertexToComponent.insert (std::pair<vertex_t, uint64_t>(vt->second, community_id));
 
-            for (size_t j = 0 ; j < adj_mat.size(); j++)
+            for (uint64_t j = 0 ; j < adj_mat.size(); j++)
             {
                 if (isDetected[j])
                     continue; // this node is included in a community already.
@@ -1061,7 +1065,7 @@ community_detection_k3_cliques_v2(
 //    adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
 //    indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
 //
-//    size_t size_adj_mat = adj_mat.size();
+//    uint64_t size_adj_mat = adj_mat.size();
 //    typedef vector< tuple<int, int, int> > triangleVector_t;
 //
 //    adjacencyMatrix_t squared_adj_mat(square_matrix_ijk(adj_mat));
@@ -1098,15 +1102,15 @@ community_detection_k3_cliques_v2(
     /// 6- K-CLIQUE DETECTION using Cliquer
 }
 
-size_t
+uint64_t
 community_detection_k3_cliques(
     graph_t& subgraph, vertexToComponent_t& vertexToComponent,
-    size_t initial_community_id = 0, int k = 3)
+    uint64_t initial_community_id = 0, int k = 3)
 {
     // k-cliques community detection (only supports k=3 currently)
     // based on the original algorithm
 
-    size_t community_id = initial_community_id;
+    uint64_t community_id = initial_community_id;
     auto startAll = timeNow();
     if (k != 3)
     {
@@ -1129,15 +1133,15 @@ community_detection_k3_cliques(
 
     auto start2 = timeNow();
     // - find adjacent cliques sharing 2 vertices at least (one edge at least)
-    size_t cliquesCount = allCliquesVec.size();
+    uint64_t cliquesCount = allCliquesVec.size();
     //cout<<"size of allCliqueVec: "<<cliquesCount<<endl;
     vector<vector<int>> connections(cliquesCount,vector<int>(cliquesCount,0));
-    for (size_t i = 0; i < cliquesCount; i++)
+    for (uint64_t i = 0; i < cliquesCount; i++)
     {
         //cout<<"\t - size of allCliqueVec[i]: "<<allCliquesVec[i].size()<<endl;
         if (allCliquesVec[i].size() < 3)
             continue; // not a 3-clique
-        for (size_t j = i; j < cliquesCount; j++)
+        for (uint64_t j = i; j < cliquesCount; j++)
         {
             if (connections[i][j] > 0)
                 continue; // already connected
@@ -1157,18 +1161,18 @@ community_detection_k3_cliques(
     k3CliquesVec.resize(100);                              // resize the columns
     for (auto &row : k3CliquesVec) { row.reserve(1000); }   // resize the rows
 
-    stack<size_t> toCheck;
-    vector<size_t> isDetected(cliquesCount,0);
+    stack<uint64_t> toCheck;
+    vector<uint64_t> isDetected(cliquesCount,0);
     //int max_communities = 100;
-    // vector<vector<size_t>> communities(max_communities,vector<uint_fast32_t>(cliquesCount(),-1));
-    for (size_t i = 0 ; i < cliquesCount; i++)
+    // vector<vector<uint64_t>> communities(max_communities,vector<uint_fast32_t>(cliquesCount(),-1));
+    for (uint64_t i = 0 ; i < cliquesCount; i++)
     {
         // DFS traversal
         if (isDetected[i])
             continue; // this clique set is added to a community already.
         toCheck.push(i);
         isDetected[i] = 1;
-        size_t ii = -1;
+        uint64_t ii = -1;
 
         while(!toCheck.empty()){
 
@@ -1176,7 +1180,7 @@ community_detection_k3_cliques(
             toCheck.pop();
             //communities[community_id].push_back(ii);
             //k3CliquesVec[community_id].insert(allCliquesVec[ii].begin(), allCliquesVec[ii].end());
-            //for (size_t jj = 0; jj < allCliquesVec[ii].size(); jj++ ){
+            //for (uint64_t jj = 0; jj < allCliquesVec[ii].size(); jj++ ){
             //    cout<<"Community ID being assigned to: "<<ii<<" - "<<jj<<"- id: "<<community_id<<endl;
             //    vertexToComponent[allCliquesVec[ii][jj]] = community_id;
             //}
@@ -1187,7 +1191,7 @@ community_detection_k3_cliques(
                 vertexToComponent[subgraph[x.first].indexOriginal] = community_id;
             }
 
-            for (size_t j = 0 ; j < cliquesCount; j++)
+            for (uint64_t j = 0 ; j < cliquesCount; j++)
             {
                 if (isDetected[j])
                     continue; // this clique is included in this community already.
@@ -1223,14 +1227,14 @@ community_detection_k3_cliques(
 
 
 void
-bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_neighbours, size_t bin_size = 50)
+bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_neighbours, uint64_t bin_size = 50)
 {
     // //   Iterate over each component and if its bigger than bin_size:
     // //   randomly split the component (set of vertices) into smaller even bins
 
-    vector<size_t> components_size;
-    size_t neighborhood_size;
-    size_t components_count;
+    vector<uint64_t> components_size;
+    uint64_t neighborhood_size;
+    uint64_t components_count;
     //cout<<"size of source is:"<<source.size()<<endl;
     for (int i = 0; i < source.size(); i++){
         neighborhood_size = source[i].size();
@@ -1238,12 +1242,12 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
 	    //cout<<"so comp count is: "<<components_count<<endl;
 	    components_size.push_back(components_count);
     }
-    size_t new_size = std::accumulate(components_size.begin(),components_size.end(), 0);
+    uint64_t new_size = std::accumulate(components_size.begin(),components_size.end(), 0);
     binned_neighbours.resize(new_size);
     //cout<<"binned_neighbours resized to "<<new_size<<endl;
-    size_t counter_new = 0;
-    size_t base_com_size;
-    size_t leftover;
+    uint64_t counter_new = 0;
+    uint64_t base_com_size;
+    uint64_t leftover;
 
     for (int i = 0; i < source.size(); i++){
         neighborhood_size = 0;
@@ -1287,8 +1291,8 @@ bin_components(componentToVertexSet_t& source, componentToVertexSet_t& binned_ne
 //            if (counter_new > binned_neighbours.size())
 //                cout<<"BUG IN SIZE OF binned_neighbours"<<endl;
 //            auto ss = source[i].begin();
-//            size_t temp_s = start;
-//            size_t temp_e = end-start;
+//            uint64_t temp_s = start;
+//            uint64_t temp_e = end-start;
 //            while (temp_s > 0){
 //                temp_s--;
 //                ss++;
@@ -1358,13 +1362,13 @@ make_subgraph(Graph& g, Graph& subgraph, edgeSet& edge_set, vertexIter vBegin, v
 		        auto start3 = timeNow();
 
 		        tsl::robin_map<
-		            std::pair<std::size_t,size_t>, int,
-		                boost::hash<std::pair<size_t,size_t>>>::const_iterator got =
+		            std::pair<std::uint64_t,uint64_t>, int,
+		                boost::hash<std::pair<uint64_t,uint64_t>>>::const_iterator got =
 //		        std::unordered_map<
-//		            std::pair<std::size_t,size_t>, int,
-//		                      boost::hash<std::pair<std::size_t,size_t>>>::const_iterator got =
+//		            std::pair<std::uint64_t,uint64_t>, int,
+//		                      boost::hash<std::pair<std::uint64_t,uint64_t>>>::const_iterator got =
 		                edge_set.find(
-                            std::pair<std::size_t,size_t>(
+                            std::pair<std::uint64_t,uint64_t>(
                                 subgraph[*vIter1].indexOriginal,
                                 subgraph[*vIter2].indexOriginal));
 
@@ -1396,7 +1400,7 @@ make_subgraph_2(Graph& g, Graph& subgraph, vertexIter vBegin, vertexIter vEnd)
     if (boost::num_vertices(subgraph) > 0)
         cerr<<"BUG HERE: subgraph is not empty initially!"<<endl;
 
-    size_t subgraph_size = 0;
+    uint64_t subgraph_size = 0;
     for (auto& vIter = vBegin; vIter != vEnd ; ++vIter)
     {
         subgraph_size++;
@@ -1441,7 +1445,7 @@ template <class Neighbours_Type>
 void
 bin_neighbours(Neighbours_Type neighbours,
     componentToVertexSet_t& binned_neighbours,
-    size_t bin_size = 50)
+    uint64_t bin_size = 50)
 {
     // //   Randomly split the set of vertices (neighbours) into bins
 
@@ -1458,13 +1462,13 @@ bin_neighbours(Neighbours_Type neighbours,
 
 //template <class Neighbours_Type>
 //void
-//bin_neighbours(Neighbours_Type neighbours, vector<Neighbours_Type>& binned_neighbours, size_t = 50)
+//bin_neighbours(Neighbours_Type neighbours, vector<Neighbours_Type>& binned_neighbours, uint64_t = 50)
 //{
 //    // vector<vector<int> > vecs(3,vector<int>(5));
 //    // #reserve #reserve() reserve memory
 //
 //    // bin_neighbours(neighbours, binned_neighbours);
-//    size_t neighborhood_size = 0;
+//    uint64_t neighborhood_size = 0;
 //	for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
 //	    neighborhood_size++;
 //	}
@@ -1488,11 +1492,19 @@ main(int argc, char* argv[])
 //    duration_cosine_4 = duration_cast<microseconds>(stop0 - start0);
 
 
+
+//////////////////////copied
+
+
+
+
+
+//////////////////////endcopied
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
 	std::string separationStrategy = "bc";
-	size_t threads = 1;
+	uint64_t threads = 1;
 	bool verbose = false;
 	bool failed = false;
 	static const struct option longopts[] = {
@@ -1500,6 +1512,7 @@ main(int argc, char* argv[])
 		{ "separation-strategy", required_argument, nullptr, 's' },
 		{ nullptr, 0, nullptr, 0 }
 	};
+
 	for (int c; (c = getopt_long(argc, argv, "s:vt:", longopts, &optindex)) != -1;) {
 		switch (c) {
 		case 0:
@@ -1517,10 +1530,12 @@ main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	std::cerr << " using " << threads << " thread(s)." << std::endl;
 #if _OPENMP
 	omp_set_num_threads(threads);
 #endif
-	std::cerr << "Number of threads: " << threads << "\n";
+
 	std::vector<std::string> infiles(&argv[optind], &argv[argc]);
 	if (argc < 1) {
 		failed = true;
@@ -1560,8 +1575,8 @@ main(int argc, char* argv[])
 	double sTime = omp_get_wtime();
 #endif
 
-	size_t vertexCount = 0;
-	size_t vertexCount2 = 0;
+	uint64_t vertexCount = 0;
+	uint64_t vertexCount2 = 0;
 
 	//cout<<"Total number of subgraphs: "<<boost::num_vertices(g)<<endl;
 	auto start = timeNow();
@@ -1571,33 +1586,34 @@ main(int argc, char* argv[])
 	auto stop_if_all = timeNow();
 	auto stop = timeNow();
 	auto duration = duration_cast<microseconds>(stop - start);
-	size_t neighborhood_size = 0;
-	size_t initial_community_id = 0;
+	uint64_t neighborhood_size = 0;
+	uint64_t initial_community_id = 0;
 
     auto vertexItRange = vertices(g);
 
     // // auxillary dataset: set of edges for faster lookup
     //std::unordered_set<Pair, boost::hash<Pair>> edge_set;
-    //std::unordered_set<std::pair<std::size_t,size_t>, int, boost::hash<std::size_t,size_t>> edge_set;
+    //std::unordered_set<std::pair<std::uint64_t,uint64_t>, int, boost::hash<std::uint64_t,uint64_t>> edge_set;
     std::cerr<<"Making the edge set\n";
 
-    tsl::robin_map<std::pair<std::size_t,size_t>, int, boost::hash<std::pair<size_t,size_t>>> edge_set;
+//	uint64_t initial_community_id = 0;
 
-    edge_set.reserve(num_edges(g));
+	// // auxiliary data-set: set of edges for faster lookup
+	tsl::robin_map<
+	    std::pair<std::uint64_t, uint64_t>,
+	    int,
+	    boost::hash<std::pair<uint64_t, uint64_t>>>
+	    edge_set;
+	edge_set.reserve(num_edges(g));
 
-    auto edgeItRange = boost::edges(g);
-	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt)
-	{
-	    auto& weight = g[*edgeIt].weight;
+	auto edgeItRange = boost::edges(g);
+	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
+		auto& weight = g[*edgeIt].weight;
 		auto& node1 = g[boost::source(*edgeIt, g)].indexOriginal;
 		auto& node2 = g[boost::target(*edgeIt, g)].indexOriginal;
-		edge_set[std::pair<size_t, size_t>(node1, node2)] = weight;
-//		edge_set.insert(
-//		    std::pair<<std::pair<std::size_t,size_t>, boost::hash<std::size_t,size_t>>,
-//                        int>
-//                (std::pair<size_t, size_t>(node1, node2),
-//                        weight))
+		edge_set[std::pair<uint64_t, uint64_t>(node1, node2)] = weight;
 	}
+
 
 //    std::cerr<<"Making the iterators array\n";
 //    const int array_size = boost::num_vertices(g);
@@ -1606,128 +1622,235 @@ main(int argc, char* argv[])
 //    std::cerr<<"adding to the iterators array\n";
 
 //	boost::graph_traits<graph_t>::vertex_iterator allocate_it = vertexItRange.first;
-//	for (size_t j = 0; j < array_size; ++j)
+//	for (uint64_t j = 0; j < array_size; ++j)
 //        iterators_array[j] = allocate_it++;
 
     std::cerr<<"Entering the for loop\n";
+
+/////copied2
+	bool openmp = false;
 #if _OPENMP
-	#pragma omp parallel for
+	openmp = true;
 #endif
-	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
-//	for (size_t j = 0; j < array_size; ++j) {
+
+	if (threads > 1 && openmp) {
+		const uint64_t array_size = boost::num_vertices(g);
+		// boost::graph_traits<graph_t>::vertex_iterator iterators_array[ array_size ];
+		std::vector<boost::graph_traits<graph_t>::vertex_iterator> iterators_array;
+		iterators_array.resize(array_size);
+		boost::graph_traits<graph_t>::vertex_iterator allocate_it = vertexItRange.first;
+		for (uint64_t j = 0; j < array_size; ++j) {
+			iterators_array[j] = allocate_it++;
+		}
+
+#pragma omp parallel for
+		for (uint64_t j = 0; j < array_size; ++j) {
+			start_loop_all = timeNow();
+            initial_community_id = 0;
+            vertexCount2++;
+		    componentToVertexSet_t componentsVec;
+            vertexToComponent_t vertexToComponent;
+
+
+			// Find neighbour of vertex and generate neighbour induced subgraph
+			auto neighbours = boost::adjacent_vertices(*(iterators_array[j]), g);
+
+            start_if_all = timeNow();
+
+			// binning
+			bin_neighbours(neighbours, componentsVec, 50);
+
+            stop_if_all = timeNow();
+            duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
+	        duration_if_all += duration_temp2.count();
+			// for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++) {
+			int new_to_loop = 0;
+			for (auto& comp_i : componentsVec) {
+			    if(vertexCount2 % 1000 == 0 && new_to_loop==0){
+                    std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph)"<<endl;
+                    new_to_loop = 1;
+                }
+
+				graph_t subgraph;
+				make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
+				initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
+//    		    initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
+//				initial_community_id =
+//				    biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
+			}
+			stop = timeNow();
+	        duration_temp2 = duration_cast<microseconds>(stop - start);
+	        time_sum +=  duration_temp2.count();
+			vecVertexToComponent[*(iterators_array[j])] = vertexToComponent;
+			stop_loop_all = timeNow();
+	        duration_temp2 = duration_cast<microseconds>(stop_loop_all - start_loop_all);
+	        duration_loop_all += duration_temp2.count();
+		}
+	} else {
+		for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
+			start_loop_all = timeNow();
+            initial_community_id = 0;
+            vertexCount2++;
+		    componentToVertexSet_t componentsVec;
+            vertexToComponent_t vertexToComponent;
+
+			// Find neighbour of vertex and generate neighbour induced subgraph
+			auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+
+            start_if_all = timeNow();
+
+			// binning
+			bin_neighbours(neighbours, componentsVec, 50);
+
+            stop_if_all = timeNow();
+            duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
+	        duration_if_all += duration_temp2.count();
+			// for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++) {
+			int new_to_loop = 0;
+			for (auto& comp_i : componentsVec) {
+			    if(vertexCount2 % 1000 == 0 && new_to_loop==0){
+                    std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph)"<<endl;
+                    new_to_loop = 1;
+                }
+				graph_t subgraph;
+				make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
+
+				initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
+//    		    initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
+//				initial_community_id =
+//				    biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
+			}
+			stop = timeNow();
+	        duration_temp2 = duration_cast<microseconds>(stop - start);
+	        time_sum +=  duration_temp2.count();
+			vecVertexToComponent[*vertexIt] = vertexToComponent;
+			stop_loop_all = timeNow();
+	        duration_temp2 = duration_cast<microseconds>(stop_loop_all - start_loop_all);
+	        duration_loop_all += duration_temp2.count();
+		}
+	}
+////endcopied2
+
+
 
 //#if _OPENMP
-//        int tnum = omp_get_thread_num();
-//        std::cerr<<"Thread num:"<<tnum<<"\n";
+//	#pragma omp parallel for
 //#endif
-        start_loop_all = timeNow();
-        initial_community_id = 0;
-        vertexCount2++;
-		componentToVertexSet_t componentsVec;
-        vertexToComponent_t vertexToComponent;
-
-		// Find neighbour of vertex and generate neighbour induced subgraph
-		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
-//		auto neighbours = boost::adjacent_vertices(*(iterators_array[j]), g);
-
-		start_if_all = timeNow();
-
-		// binning
-		bin_neighbours(neighbours, componentsVec, 50);
-
-        stop_if_all = timeNow();
-        duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
-	    duration_if_all += duration_temp2.count();
-
-        start = timeNow();
-		for (size_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
-		{
-		    if(vertexCount2 % 1000 == 0 && comp_i==0)
-                std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph)"<<endl;
-		    //cout<<" Entered: "<<comp_i<<endl;
-		    //auto startcreate = timeNow();
-		    //graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
-		    //auto stopcreate = timeNow();
-		    //duration_temp2 = duration_cast<microseconds>(stopcreate - startcreate);
-	        //duration_createsubgraph_all +=  duration_temp2.count();
-
-		    graph_t subgraph;
-		    make_subgraph(g, subgraph, edge_set, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
-		    //make_subgraph_2(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
-		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
-		    biconnectedComponents(subgraph, vertexToComponent);
-            //initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
-		    //cout<<"initial community id:"<<initial_community_id<<endl;
-		    //initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
-		    vertexCount++;
-		}
-	    stop = timeNow();
-	    duration_temp2 = duration_cast<microseconds>(stop - start);
-	    time_sum +=  duration_temp2.count();
-//        if (vertexCount2 == 500000){
-//		    break;
-//		}
-//	    if (vertexCount % 10 == 0)
-//	    {
-//	        std::cerr<<"processing "<<vertexCount<<"(/"<<vertexCount2<<")th subgraph of ";
-//	        //std::cerr<<boost::num_vertices(subgraph)<<" vertices ("<<boost::num_vertices(g)<<" subgraphs in total)."<<endl;
-//	        std::cerr<< "\ttime since last report (micro-s): "<<duration_temp2.count() << endl;
-//	        std::cerr<< "\ttime sum (micro-s): "<<time_sum << endl;
-//        }
-        /////////////////////////////////////////////////// binning version }
-
-
-        /////////////////////////////////////////////////// no-binning version
-        //neighborhood_size = 50;
-		//for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
-		//    neighborhood_size++;
-		//}
-		//cout<<"Size: "<<neighborhood_size++<<endl;
-//		if (neighborhood_size < 60 && neighborhood_size > 30){
-//            start_if_all = timeNow();
-//		    graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
-//            //- cout<<" ||| Processing subgraph "<<vertexCount<<" - node count: "<<num_vertices(subgraph)<<endl;
-//        //if (boost::num_vertices(subgraph) < 60 && boost::num_vertices(subgraph) > 30){
+//	for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
+////	for (uint64_t j = 0; j < array_size; ++j) {
 //
-//		    start = timeNow();
-//		    //biconnectedComponents(subgraph, vertexToComponent);
-//            //community_detection_cosine_similarity(subgraph, vertexToComponent, false);
-//		    community_detection_k3_cliques(subgraph, vertexToComponent);
-//		    stop = timeNow();
-//		    duration_temp2 = duration_cast<microseconds>(stop - start);
-//		    time_sum +=  duration_temp2.count();
+////#if _OPENMP
+////        int tnum = omp_get_thread_num();
+////        std::cerr<<"Thread num:"<<tnum<<"\n";
+////#endif
+//        start_loop_all = timeNow();
+//        initial_community_id = 0;
+//        vertexCount2++;
+//		componentToVertexSet_t componentsVec;
+//        vertexToComponent_t vertexToComponent;
+//
+//		// Find neighbour of vertex and generate neighbour induced subgraph
+//		auto neighbours = boost::adjacent_vertices(*vertexIt, g);
+////		auto neighbours = boost::adjacent_vertices(*(iterators_array[j]), g);
+//
+//		start_if_all = timeNow();
+//
+//		// binning
+//		bin_neighbours(neighbours, componentsVec, 50);
+//
+//        stop_if_all = timeNow();
+//        duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
+//	    duration_if_all += duration_temp2.count();
+//
+//        start = timeNow();
+//		for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++)
+//		{
+//		    if(vertexCount2 % 1000 == 0 && comp_i==0)
+//                std::cerr<<"processing "<<vertexCount<<"th binned subgraph (/"<<vertexCount2<<" normal subgraph)"<<endl;
+//		    //cout<<" Entered: "<<comp_i<<endl;
+//		    //auto startcreate = timeNow();
+//		    //graph_t& subgraph = g.create_subgraph(componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+//		    //auto stopcreate = timeNow();
+//		    //duration_temp2 = duration_cast<microseconds>(stopcreate - startcreate);
+//	        //duration_createsubgraph_all +=  duration_temp2.count();
+//
+//		    graph_t subgraph;
+//		    make_subgraph(g, subgraph, edge_set, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+//		    //make_subgraph_2(g, subgraph, componentsVec[comp_i].begin(), componentsVec[comp_i].end());
+//		    //cout<<" size of subgraph: "<<num_vertices(subgraph)<<endl;
+//		    biconnectedComponents(subgraph, vertexToComponent);
+//            //initial_community_id = community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
+//		    //cout<<"initial community id:"<<initial_community_id<<endl;
+//		    //initial_community_id = community_detection_k3_cliques(subgraph, vertexToComponent, initial_community_id);
 //		    vertexCount++;
-//		    if (vertexCount % 10 == 0)
-//		    {
-//		        std::cerr<<"processing "<<vertexCount<<"(/"<<vertexCount2<<")th subgraph of ";
-//		        std::cerr<<boost::num_vertices(subgraph)<<" vertices ("<<boost::num_vertices(g)<<" subgraphs in total)."<<endl;
-//		        std::cerr<< "\ttime since last report (micro-s): "<<duration_temp2.count() << endl;
-//		        std::cerr<< "\ttime sum (micro-s): "<<time_sum << endl;
-//            }
-//            stop_if_all = timeNow();
-//	        duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
-//	        duration_if_all += duration_temp2.count();
 //		}
-//        if (vertexCount == 200){
-//		    break;
-//		}
-        /////////////////////////////////////////////////// no-binning version end }
-
-		// Delete subgraph to keep memory in control
-//		for (auto& i : g.m_children) {
-//			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-//			delete i;
-//		}
-//		g.m_children.clear();
-
-		vecVertexToComponent[*vertexIt] = vertexToComponent;
-//		vecVertexToComponent[*(iterators_array[j])] = vertexToComponent;
-
-		//cout<<"\n\nHERE HAHA:"<<*vertexIt<<endl;
-	    stop_loop_all = timeNow();
-	    duration_temp2 = duration_cast<microseconds>(stop_loop_all - start_loop_all);
-	    duration_loop_all += duration_temp2.count();
-	}
+//	    stop = timeNow();
+//	    duration_temp2 = duration_cast<microseconds>(stop - start);
+//	    time_sum +=  duration_temp2.count();
+////        if (vertexCount2 == 500000){
+////		    break;
+////		}
+////	    if (vertexCount % 10 == 0)
+////	    {
+////	        std::cerr<<"processing "<<vertexCount<<"(/"<<vertexCount2<<")th subgraph of ";
+////	        //std::cerr<<boost::num_vertices(subgraph)<<" vertices ("<<boost::num_vertices(g)<<" subgraphs in total)."<<endl;
+////	        std::cerr<< "\ttime since last report (micro-s): "<<duration_temp2.count() << endl;
+////	        std::cerr<< "\ttime sum (micro-s): "<<time_sum << endl;
+////        }
+//        /////////////////////////////////////////////////// binning version }
+//
+//
+//        /////////////////////////////////////////////////// no-binning version
+//        //neighborhood_size = 50;
+//		//for (auto neigh_it = neighbours.first; neigh_it < neighbours.second; ++neigh_it){
+//		//    neighborhood_size++;
+//		//}
+//		//cout<<"Size: "<<neighborhood_size++<<endl;
+////		if (neighborhood_size < 60 && neighborhood_size > 30){
+////            start_if_all = timeNow();
+////		    graph_t& subgraph = g.create_subgraph(neighbours.first, neighbours.second);
+////            //- cout<<" ||| Processing subgraph "<<vertexCount<<" - node count: "<<num_vertices(subgraph)<<endl;
+////        //if (boost::num_vertices(subgraph) < 60 && boost::num_vertices(subgraph) > 30){
+////
+////		    start = timeNow();
+////		    //biconnectedComponents(subgraph, vertexToComponent);
+////            //community_detection_cosine_similarity(subgraph, vertexToComponent, false);
+////		    community_detection_k3_cliques(subgraph, vertexToComponent);
+////		    stop = timeNow();
+////		    duration_temp2 = duration_cast<microseconds>(stop - start);
+////		    time_sum +=  duration_temp2.count();
+////		    vertexCount++;
+////		    if (vertexCount % 10 == 0)
+////		    {
+////		        std::cerr<<"processing "<<vertexCount<<"(/"<<vertexCount2<<")th subgraph of ";
+////		        std::cerr<<boost::num_vertices(subgraph)<<" vertices ("<<boost::num_vertices(g)<<" subgraphs in total)."<<endl;
+////		        std::cerr<< "\ttime since last report (micro-s): "<<duration_temp2.count() << endl;
+////		        std::cerr<< "\ttime sum (micro-s): "<<time_sum << endl;
+////            }
+////            stop_if_all = timeNow();
+////	        duration_temp2 = duration_cast<microseconds>(stop_if_all - start_if_all);
+////	        duration_if_all += duration_temp2.count();
+////		}
+////        if (vertexCount == 200){
+////		    break;
+////		}
+//        /////////////////////////////////////////////////// no-binning version end }
+//
+//		// Delete subgraph to keep memory in control
+////		for (auto& i : g.m_children) {
+////			// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+////			delete i;
+////		}
+////		g.m_children.clear();
+//
+//		vecVertexToComponent[*vertexIt] = vertexToComponent;
+////		vecVertexToComponent[*(iterators_array[j])] = vertexToComponent;
+//
+//		//cout<<"\n\nHERE HAHA:"<<*vertexIt<<endl;
+//	    stop_loop_all = timeNow();
+//	    duration_temp2 = duration_cast<microseconds>(stop_loop_all - start_loop_all);
+//	    duration_loop_all += duration_temp2.count();
+//	}
 //	for (auto it1 = vecVertexToComponent.begin(); it1 < vecVertexToComponent.end(); ++it1){
 //	    cout<<"New:"<<endl;
 //	    for(auto& it2 = it1->begin(); it2 != it1->end(); ++it2)
