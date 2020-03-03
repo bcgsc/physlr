@@ -349,8 +349,8 @@ mapQueryToTarget(
 			} else {
 				std::vector<double> q = { 0, 0.25, 0.5, 0.75, 1 };
 				q = quantile(q, queryPos);
-				uint64_t lowWhisker = (uint64_t)(q[3] + 1.5 * (q[3] - q[1]));
-				uint64_t highWhisker = (uint64_t)(q[3] + 1.5 * (q[3] - q[1]));
+				auto lowWhisker = static_cast<uint64_t>(q[3] + 1.5 * (q[3] - q[1]));
+				auto highWhisker = static_cast<uint64_t>(q[3] + 1.5 * (q[3] - q[1]));
 				targetIdPosToQuerypos[targetIdPos] = { lowWhisker, (uint64_t)q[2], highWhisker };
 			}
 		}
@@ -461,12 +461,12 @@ mapQueryToTarget(
 
 				orientation = determineOrientation(prev, curr, next);
 				if (paf != 0) {
-					uint64_t qLength = minimizers.size();
-					uint64_t tLength = paths[targetId].size();
+					auto qLength = minimizers.size();
+					auto tLength = paths[targetId].size();
 					auto& qStart = startMedianEnd[0];
 					auto& qEnd = startMedianEnd[2];
 					double rawMapQ = 100 * score / (qEnd - qStart);
-					int64_t mapQ = (int64_t)rawMapQ;
+					auto mapQ = static_cast<int64_t>(rawMapQ);
 #if _OPENMP
 #pragma omp critical
 #endif
