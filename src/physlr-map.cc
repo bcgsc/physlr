@@ -351,7 +351,9 @@ mapQueryToTarget(
 				q = quantile(q, queryPos);
 				auto lowWhisker = static_cast<uint64_t>(q[3] + 1.5 * (q[3] - q[1]));
 				auto highWhisker = static_cast<uint64_t>(q[3] + 1.5 * (q[3] - q[1]));
-				targetIdPosToQuerypos[targetIdPos] = { lowWhisker, (uint64_t)q[2], highWhisker };
+				targetIdPosToQuerypos[targetIdPos] = { lowWhisker,
+					                                   static_cast<uint64_t>(q[2]),
+					                                   highWhisker };
 			}
 		}
 
@@ -465,7 +467,7 @@ mapQueryToTarget(
 					auto tLength = paths[targetId].size();
 					auto& qStart = startMedianEnd[0];
 					auto& qEnd = startMedianEnd[2];
-					double rawMapQ = 100 * score / (qEnd - qStart);
+					double rawMapQ = 100.0 * score / (qEnd - qStart);
 					auto mapQ = static_cast<int64_t>(rawMapQ);
 #if _OPENMP
 #pragma omp critical
