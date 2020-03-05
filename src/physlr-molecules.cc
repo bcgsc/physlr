@@ -522,16 +522,15 @@ main(int argc, char* argv[])
 
 	auto vertexItRange = vertices(g);
 
-#if ! _OPENMP
-    if (threads > 1) {
-        threads = 1;
-        std::cerr << "Setting threads to 1." << std::endl;
-    }
+#if !_OPENMP
+	if (threads > 1) {
+		threads = 1;
+		std::cerr << "Setting threads to 1." << std::endl;
+	}
 #endif
 
 	if (threads > 1) {
 		const uint64_t array_size = boost::num_vertices(g);
-		// boost::graph_traits<graph_t>::vertex_iterator iterators_array[ array_size ];
 		std::vector<boost::graph_traits<graph_t>::vertex_iterator> iterators_array;
 		iterators_array.resize(array_size);
 		boost::graph_traits<graph_t>::vertex_iterator allocate_it = vertexItRange.first;
