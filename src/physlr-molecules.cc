@@ -429,6 +429,176 @@ make_subgraph(Graph& g, Graph& subgraph, edgeSet& edge_set, vertexIter vBegin, v
 	}
 }
 
+adjacencyMatrix_t
+convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
+{
+    // Inputs:
+    // - subgraph: adjacency list to convert to adjacency list
+    // - vertexToIndex: (empty, to be filled in)
+    //      Dictionary of (vertex name) -> (index in temporary adjacency matrix)
+    // Ouput(s):
+    // - adj_mat: the adjacency matrix for subgraph
+    // - vertexToIndex (referenced input)
+
+    int N = boost::num_vertices(subgraph);
+    adjacencyVector_t tempVector(N, 0);
+    adjacencyMatrix_t adj_mat(N, tempVector);
+
+    typedef boost::graph_traits<graph_t>::edge_iterator edge_iterator;
+
+    pair<edge_iterator, edge_iterator> ei = edges(subgraph);
+
+    vertexToIndex_t::iterator got_a;
+    vertexToIndex_t::iterator got_b;
+    uint64_t adj_mat_index = 0;
+    for (edge_iterator edge_iter = ei.first; edge_iter != ei.second; ++edge_iter)
+    {
+        vertex_t a = source(*edge_iter, subgraph);
+        vertex_t b = target(*edge_iter, subgraph);
+        // if not visited a or b
+        //      add to dictionary
+        // Could be more efficient by adding a "visited" property to vertices of the graph
+        // Now we implement by hash table lookup:
+
+        got_a = vertexToIndex.find(a);
+        uint64_t index_a;
+        if ( got_a == vertexToIndex.end()) {
+            vertexToIndex.insert (std::pair<vertex_t, uint64_t>(a, adj_mat_index));
+            index_a = adj_mat_index++;
+        }
+        else {
+            index_a = got_a -> second;
+        }
+
+        got_b = vertexToIndex.find(b);
+        uint64_t index_b;
+        if ( got_b == vertexToIndex.end()) {
+            vertexToIndex.insert (std::pair<vertex_t, uint64_t>(b, adj_mat_index));
+            index_b = adj_mat_index++;
+        }
+        else {
+            index_b = got_b -> second;
+        }
+
+        adj_mat[index_a][index_b] = (int)subgraph[*edge_iter].weight;
+        adj_mat[index_b][index_a] = adj_mat[index_a][index_b];
+    }
+    return adj_mat;
+}
+
+uint64_t
+community_detection_cosine_similarity(
+    graph_t& subgraph,
+    vertexToComponent_t& vertexToComponent,
+    uint64_t initial_community_id = 0,
+    bool squaring = true,
+    double threshold=0.3)
+{
+    // Detect communities using cosine similarity of vertices
+
+    // 0- Map indices and vertex names
+
+    vertexToIndex_t vertexToIndex;
+    uint64_t subgraph_size = boost::num_vertices(subgraph);
+    vertexToIndex.reserve(subgraph_size);
+    if (subgraph_size < 10)
+        threshold = 0;
+
+    adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
+    indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
+
+    // 1- Calculate the cosine similarity:
+
+    int size_adj_mat = adj_mat.size();
+    vector<double> tempVector(size_adj_mat, 0);
+    vector<vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
+
+    if (squaring) {
+        calculate_cosine_similarity_2d(square_matrix_ikj(adj_mat, true),
+                                        // may need some change
+                                        //square_matrix_ijk(adj_mat, true),
+                                        //square_matrix_boost(adj_mat),
+                                        cosSimilarity2d);
+    } else {
+        calculate_cosine_similarity_2d(adj_mat, cosSimilarity2d);
+    }
+
+    // 2- Determine the threshold:
+    // not implemented yet; so use a predefined universal threshold.
+
+    threshold = threshold;
+
+    // 3- Filter out edges:
+
+    auto start3 = timeNow();
+    for (int i = 0; i < adj_mat.size() ; i++)
+    {
+        for (int j = i+1; j < adj_mat.size() ; j++)
+            {
+                if (cosSimilarity2d[i][j] < threshold)
+                {
+                    adj_mat[i][j] = 0;
+                    adj_mat[j][i] = 0;
+                }
+            }
+    }
+
+    // 4- Detect Communities (find connected components - DFS)
+    //      Alternative implementation: convert to adjacency list and use boost to find cc
+
+    uint64_t community_id = initial_community_id;
+    stack<uint64_t> toCheck;
+    stack<uint64_t> toAdd;
+    vector<int> zeros(adj_mat.size(),0);
+    vector<int> isDetected(adj_mat.size(),0);
+    bool isSingleton = false;
+    for (uint64_t i = 0 ; i < adj_mat.size(); i++) {
+        // DFS traversal
+        if (isDetected[i])
+            continue; // this node is included in a community already.
+        toCheck.push(i);
+        isDetected[i] = 1;
+        isSingleton = true;
+        uint64_t ii;
+        uint64_t node_to_add;
+
+        while (!toCheck.empty()) {
+            ii = toCheck.top();
+            toCheck.pop();
+            toAdd.push(ii);
+            for (uint64_t j = 0 ; j < adj_mat.size(); j++)
+            {
+                if (isDetected[j])
+                    continue; // this node is included in a community already.
+                if (adj_mat[ii][j] > 0){
+                    toCheck.push(j);
+                    isDetected[j]=1;
+                    isSingleton = false;
+                }
+            }
+        }
+        if (toAdd.size() < 2) {
+            while (!toAdd.empty())
+                toAdd.pop();
+        }
+        else
+        {
+            while (!toAdd.empty()) {
+                node_to_add = toAdd.top();
+                toAdd.pop();
+                auto vt = indexToVertex.find(node_to_add);
+                if (vt != indexToVertex.end() ){
+                    vertexToComponent[subgraph[vt->second].indexOriginal] = community_id;
+                }
+                else
+                    std::cerr<<"BUG: not found in the map!"<<endl;
+            }
+            community_id++;
+        }
+
+    return community_id;
+}
+
 int
 main(int argc, char* argv[])
 {
