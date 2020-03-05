@@ -360,7 +360,7 @@ bin_components(
 		// Using unordered_set, we make use of its random nature and we do not shuffle randomly
 		base_com_size = source[i].size() / components_size[i];
 		leftover = source[i].size() % components_size[i];
-		auto yet_leftover = (leftover ? 1 : 0);
+		uint64_t yet_leftover = (leftover ? 1 : 0);
 
 		auto elementIt = source[i].begin();
 		while (elementIt != source[i].end()) {
@@ -370,14 +370,6 @@ bin_components(
 			}
 
 			for (uint64_t j = 0; j < length; j++) {
-				if (counter_new >= binned_neighbours.size()) {
-					std::cerr << " WAS NOT EXPECTED 1!" << std::endl;
-					exit(EXIT_FAILURE);
-				}
-				if (elementIt == source[i].end()) {
-					std::cerr << " WAS NOT EXPECTED 2!" << std::endl;
-					exit(EXIT_FAILURE);
-				}
 				binned_neighbours[counter_new].insert(*elementIt);
 				++elementIt;
 			}
@@ -530,13 +522,15 @@ main(int argc, char* argv[])
 
 	auto vertexItRange = vertices(g);
 
-	bool openmp = false;
-#if _OPENMP
-	openmp = true;
+#if ! _OPENMP
+    if (threads > 1) {
+        threads = 1;
+        std::cerr << "Setting threads to 1." << std::endl;
+    }
 #endif
 
-	if (threads > 1 && openmp) {
-		const auto array_size = boost::num_vertices(g);
+	if (threads > 1) {
+		const uint64_t array_size = boost::num_vertices(g);
 		// boost::graph_traits<graph_t>::vertex_iterator iterators_array[ array_size ];
 		std::vector<boost::graph_traits<graph_t>::vertex_iterator> iterators_array;
 		iterators_array.resize(array_size);
