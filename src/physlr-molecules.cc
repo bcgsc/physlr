@@ -1,16 +1,16 @@
+#include "tsl/robin_map.h"
+
+#include <algorithm>
 #include <fstream>
+#include <functional>
 #include <getopt.h>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <sstream>
 #include <string>
-#include <vector>
-
-#include <algorithm>
-#include <functional>
-#include <numeric>
-#include <tsl/robin_map.h>
 #include <utility>
+#include <vector>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/biconnected_components.hpp>
