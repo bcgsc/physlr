@@ -483,128 +483,116 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 	return adj_mat;
 }
 
-
-
-
 uint64_t
 community_detection_cosine_similarity(
     graph_t& subgraph,
     vertexToComponent_t& vertexToComponent,
     uint64_t initial_community_id = 0,
     bool squaring = true,
-    double threshold=0.3)
+    double threshold = 0.3)
 {
-    // Detect communities using cosine similarity of vertices
+	// Detect communities using cosine similarity of vertices
 
-    // 0- Map indices and vertex names
+	// 0- Map indices and vertex names
 
-    vertexToIndex_t vertexToIndex;
-    uint64_t subgraph_size = boost::num_vertices(subgraph);
-    vertexToIndex.reserve(subgraph_size);
+	vertexToIndex_t vertexToIndex;
+	uint64_t subgraph_size = boost::num_vertices(subgraph);
+	vertexToIndex.reserve(subgraph_size);
 
-    if (subgraph_size < 10)
-        // Do nothing on subgraphs smaller than a certain size
-        threshold = 0;
+	if (subgraph_size < 10)
+		// Do nothing on subgraphs smaller than a certain size
+		threshold = 0;
 
-    adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
-    indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
+	adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
+	indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
 
-    // 1- Calculate the cosine similarity:
+	// 1- Calculate the cosine similarity:
 
-    int size_adj_mat = adj_mat.size();
-    vector<double> tempVector(size_adj_mat, 0);
-    vector<vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
+	int size_adj_mat = adj_mat.size();
+	vector<double> tempVector(size_adj_mat, 0);
+	vector<vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
 
-    if (squaring){
-        calculate_cosine_similarity_2d(square_matrix_ikj(adj_mat, true),
-                                        // may need some change
-                                        //square_matrix_ijk(adj_mat, true),
-                                        //square_matrix_boost(adj_mat),
-                                        cosSimilarity2d);
-    }else{
-        calculate_cosine_similarity_2d(adj_mat, cosSimilarity2d);
-        }
+	if (squaring) {
+		calculate_cosine_similarity_2d(
+		    square_matrix_ikj(adj_mat, true),
+		    // may need some change
+		    // square_matrix_ijk(adj_mat, true),
+		    // square_matrix_boost(adj_mat),
+		    cosSimilarity2d);
+	} else {
+		calculate_cosine_similarity_2d(adj_mat, cosSimilarity2d);
+	}
 
-    // 2- Determine the threshold:
-    // not implemented yet; so use a predefined universal threshold.
+	// 2- Determine the threshold:
+	// not implemented yet; so use a predefined universal threshold.
 
-    threshold = threshold;
+	threshold = threshold;
 
-    // 3- Filter out edges:
+	// 3- Filter out edges:
 
-    auto start3 = timeNow();
-    for (int i = 0; i < adj_mat.size() ; i++)
-    {
-        for (int j = i+1; j < adj_mat.size() ; j++)
-            {
-                if (cosSimilarity2d[i][j] < threshold)
-                {
-                    adj_mat[i][j] = 0;
-                    adj_mat[j][i] = 0;
-                }
-            }
-    }
+	auto start3 = timeNow();
+	for (int i = 0; i < adj_mat.size(); i++) {
+		for (int j = i + 1; j < adj_mat.size(); j++) {
+			if (cosSimilarity2d[i][j] < threshold) {
+				adj_mat[i][j] = 0;
+				adj_mat[j][i] = 0;
+			}
+		}
+	}
 
-    // 4- Detect Communities (find connected components - DFS)
-    //      Alternative implementation: convert to adjacency list and use boost to find cc
+	// 4- Detect Communities (find connected components - DFS)
+	//      Alternative implementation: convert to adjacency list and use boost to find cc
 
-    uint64_t community_id = initial_community_id;
-    stack<uint64_t> toCheck;
-    stack<uint64_t> toAdd;
-    vector<int> zeros(adj_mat.size(),0);
-    vector<int> isDetected(adj_mat.size(),0);
-    bool isSingleton = false;
-    for (uint64_t i = 0 ; i < adj_mat.size(); i++)
-    {
-        // DFS traversal
-        if (isDetected[i])
-            continue; // this node is included in a community already.
-        toCheck.push(i);
-        isDetected[i] = 1;
-        isSingleton = true;
-        uint64_t ii;
-        uint64_t node_to_add;
+	uint64_t community_id = initial_community_id;
+	stack<uint64_t> toCheck;
+	stack<uint64_t> toAdd;
+	vector<int> zeros(adj_mat.size(), 0);
+	vector<int> isDetected(adj_mat.size(), 0);
+	bool isSingleton = false;
+	for (uint64_t i = 0; i < adj_mat.size(); i++) {
+		// DFS traversal
+		if (isDetected[i])
+			continue; // this node is included in a community already.
+		toCheck.push(i);
+		isDetected[i] = 1;
+		isSingleton = true;
+		uint64_t ii;
+		uint64_t node_to_add;
 
-        while(!toCheck.empty()){
+		while (!toCheck.empty()) {
 
-            ii = toCheck.top();
-            toCheck.pop();
-            toAdd.push(ii);
-            for (uint64_t j = 0 ; j < adj_mat.size(); j++)
-            {
-                if (isDetected[j])
-                    continue; // this node is included in a community already.
-                if (adj_mat[ii][j] > 0){
-                    toCheck.push(j);
-                    isDetected[j]=1;
-                    isSingleton = false;
-                }
-            }
-        }
-        if (toAdd.size() < 2)
-        {
-            while(!toAdd.empty())
-                toAdd.pop();
-        }
-        else
-        {
-            while(!toAdd.empty())
-            {
-                node_to_add = toAdd.top();
-                toAdd.pop();
-                auto vt = indexToVertex.find(node_to_add);
-                if (vt != indexToVertex.end() ){
-                    vertexToComponent[subgraph[vt->second].indexOriginal] = community_id;
-                }
-                else{
-                    std::cerr<<"BUG: not found in the hash table!"<<std::endl;
-                    }
-            }
-            community_id++;
-        }
-    }
+			ii = toCheck.top();
+			toCheck.pop();
+			toAdd.push(ii);
+			for (uint64_t j = 0; j < adj_mat.size(); j++) {
+				if (isDetected[j])
+					continue; // this node is included in a community already.
+				if (adj_mat[ii][j] > 0) {
+					toCheck.push(j);
+					isDetected[j] = 1;
+					isSingleton = false;
+				}
+			}
+		}
+		if (toAdd.size() < 2) {
+			while (!toAdd.empty())
+				toAdd.pop();
+		} else {
+			while (!toAdd.empty()) {
+				node_to_add = toAdd.top();
+				toAdd.pop();
+				auto vt = indexToVertex.find(node_to_add);
+				if (vt != indexToVertex.end()) {
+					vertexToComponent[subgraph[vt->second].indexOriginal] = community_id;
+				} else {
+					std::cerr << "BUG: not found in the hash table!" << std::endl;
+				}
+			}
+			community_id++;
+		}
+	}
 
-    return community_id;
+	return community_id;
 }
 
 int
