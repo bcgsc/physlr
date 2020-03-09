@@ -670,7 +670,6 @@ community_detection_cosine_similarity(
 			community_id++;
 		}
 	}
-
 	return community_id;
 }
 
