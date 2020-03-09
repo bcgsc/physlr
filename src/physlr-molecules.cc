@@ -8,7 +8,10 @@
 #include <iostream>
 #include <numeric>
 #include <sstream>
+#include <stdexcept>
+#include <stdint.h>
 #include <string>
+#include <tgmath.h>
 #include <utility>
 #include <vector>
 
@@ -457,7 +460,7 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 
 	typedef boost::graph_traits<graph_t>::edge_iterator edge_iterator;
 
-	pair<edge_iterator, edge_iterator> ei = edges(subgraph);
+	std::pair<edge_iterator, edge_iterator> ei = edges(subgraph);
 
 	vertexToIndex_t::iterator got_a;
 	vertexToIndex_t::iterator got_b;
@@ -494,17 +497,18 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 	return adj_mat;
 }
 
-adjacencyMatrix_t
+template<class vector_type>
+std::vector<vector_type>
 square_matrix_ikj( // Might be faster than ijk, benchmark it
-    adjacencyMatrix_t M,
+    std::vector<vector_type> M,
     bool symmetric=true)
 {
     // Square the input matrix iterating i, k, then j
 
     // Fast initialization:
     int n = M.size();
-    adjacencyVector_t tempVector(n, 0);
-    adjacencyMatrix_t M2(n, tempVector);
+    vector_type tempVector(n, 0);
+    std::vector<vector_type> M2(n, tempVector);
     // Multiplication
     for (int i = 0; i < n; i++) {
         for (int k = 0; k < n; k++) {
@@ -526,33 +530,32 @@ inline
 void
 calculate_cosine_similarity_2d(
     adjacencyMatrix_t adj_mat, // CHANGE: to a reference!
-    vector<vector<double>>& cosimilarity)
+    std::vector<std::vector<double>>& cosimilarity)
 {
     // calculate the cosine similarity of the input 2d-matrix with itself
     // Strategy: row-normalize then square the matrix.
 
     int n = adj_mat.size();
-    vector<double> temp(n, 0.0);
-    vector<vector<double> > normalized(n, temp);
+    std::vector<double> temp(n, 0.0);
+    std::vector<std::vector<double> > normalized(n, temp);
     double row_sum = 0;
     uint_fast32_t init = 0;
 
     adjacencyMatrix_t::iterator row_i;
-    vector<vector<double> >::iterator normalized_row_i = normalized.begin();
+    std::vector<std::vector<double> >::iterator normalized_row_i = normalized.begin();
     for (row_i = adj_mat.begin(); row_i != adj_mat.end(); ++row_i, ++normalized_row_i)
     {
         row_sum = 0;
-        vector<uint_fast32_t>::iterator first = row_i->begin();
-        vector<uint_fast32_t>::iterator last = row_i->end();
+        std::vector<uint_fast32_t>::iterator first = row_i->begin();
+        std::vector<uint_fast32_t>::iterator last = row_i->end();
         while(first!=last){
-            row_sum += *first * *first;
-            row_sum += *first * *first;
+            row_sum += (*first) * (*first);
             ++first;
         }
 
         first = row_i->begin();
-        vector<double>::iterator first_normalized = normalized_row_i->begin();
-        vector<double>::iterator last_normalized = normalized_row_i->end();
+        std::vector<double>::iterator first_normalized = normalized_row_i->begin();
+        std::vector<double>::iterator last_normalized = normalized_row_i->end();
         while(first!=last){
             if (row_sum)
                 *first_normalized = *first / sqrt(1.0 * row_sum);
@@ -562,6 +565,13 @@ calculate_cosine_similarity_2d(
             ++first_normalized;
         }
     }
+    std::cerr << " Normalized:" << std::endl;
+	for (std::vector<std::vector<double>>::iterator row = normalized.begin(); row != normalized.end(); ++row){
+	    for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col){
+	        std::cerr << " " << *col;
+	    }
+	    std::cerr << std::endl;
+	}
     cosimilarity = square_matrix_ikj(normalized);
 }
 
@@ -571,7 +581,7 @@ community_detection_cosine_similarity(
     vertexToComponent_t& vertexToComponent,
     uint64_t initial_community_id = 0,
     bool squaring = true,
-    double threshold = 0.3)
+    double threshold = 0.5)
 {
 	// Detect communities using cosine similarity of vertices
 
@@ -591,8 +601,16 @@ community_detection_cosine_similarity(
 	// 1- Calculate the cosine similarity:
 
 	int size_adj_mat = adj_mat.size();
-	vector<double> tempVector(size_adj_mat, 0);
-	vector<vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
+	std::vector<double> tempVector(size_adj_mat, 0);
+	std::vector<std::vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
+
+	std::cerr << " Adj mat:" << std::endl;
+	for (adjacencyMatrix_t::iterator row = adj_mat.begin(); row != adj_mat.end(); ++row){
+	    for (adjacencyVector_t::iterator col = row->begin(); col != row->end(); ++col){
+	        std::cerr << " " << *col;
+	    }
+	    std::cerr << std::endl;
+	}
 
 	if (squaring) {
 		calculate_cosine_similarity_2d(
@@ -600,6 +618,13 @@ community_detection_cosine_similarity(
 		    cosSimilarity2d);
 	} else {
 		calculate_cosine_similarity_2d(adj_mat, cosSimilarity2d);
+	}
+	std::cerr << " Cosine Sim:" << std::endl;
+	for (std::vector<std::vector<double>>::iterator row = cosSimilarity2d.begin(); row != cosSimilarity2d.end(); ++row){
+	    for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col){
+	        std::cerr << " " << *col;
+	    }
+	    std::cerr << std::endl;
 	}
 
 	// 2- Determine the threshold:
@@ -609,7 +634,6 @@ community_detection_cosine_similarity(
 
 	// 3- Filter out edges:
 
-	auto start3 = timeNow();
 	for (int i = 0; i < adj_mat.size(); i++) {
 		for (int j = i + 1; j < adj_mat.size(); j++) {
 			if (cosSimilarity2d[i][j] < threshold) {
@@ -623,10 +647,10 @@ community_detection_cosine_similarity(
 	//      Alternative implementation: convert to adjacency list and use boost to find cc
 
 	uint64_t community_id = initial_community_id;
-	stack<uint64_t> toCheck;
-	stack<uint64_t> toAdd;
-	vector<int> zeros(adj_mat.size(), 0);
-	vector<int> isDetected(adj_mat.size(), 0);
+	std::stack<uint64_t> toCheck;
+	std::stack<uint64_t> toAdd;
+	std::vector<int> zeros(adj_mat.size(), 0);
+	std::vector<int> isDetected(adj_mat.size(), 0);
 	bool isSingleton = false;
 	for (uint64_t i = 0; i < adj_mat.size(); i++) {
 		// DFS traversal
@@ -822,7 +846,8 @@ main(int argc, char* argv[])
 				make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
 
 				initial_community_id =
-				    biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
+				    //biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
+				    community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id);
 			}
 			vecVertexToComponent[*vertexIt] = vertexToComponent;
 		}
