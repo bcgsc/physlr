@@ -433,11 +433,11 @@ make_subgraph(Graph& g, Graph& subgraph, edgeSet& edge_set, vertexIter vBegin, v
 }
 
 template<typename K, typename V>
-std::unordered_map<V,K>
-inverse_map(std::unordered_map<K,V> &map)
+std::unordered_map<V, K>
+inverse_map(std::unordered_map<K, V>& map)
 {
-	std::unordered_map<V,K> inverse;
-	for (const auto &p: map) {
+	std::unordered_map<V, K> inverse;
+	for (const auto& p : map) {
 		inverse.insert(std::make_pair(p.second, p.first));
 	}
 	return inverse;
@@ -501,78 +501,78 @@ template<class vector_type>
 std::vector<vector_type>
 square_matrix_ikj( // Might be faster than ijk, benchmark it
     std::vector<vector_type> M,
-    bool symmetric=true)
+    bool symmetric = true)
 {
-    // Square the input matrix iterating i, k, then j
+	// Square the input matrix iterating i, k, then j
 
-    // Fast initialization:
-    int n = M.size();
-    vector_type tempVector(n, 0);
-    std::vector<vector_type> M2(n, tempVector);
-    // Multiplication
-    for (int i = 0; i < n; i++) {
-        for (int k = 0; k < n; k++) {
-            if ( !M[i][k] )
-                continue;
-            for (int j = 0; j < n; j++) {
-                if ( j < i && symmetric ) {
-                    M2[i][j] = M2[j][i];
-                    continue;
-                }
-                M2[i][j] += M[i][k] * M[k][j];
-            }
-        }
-    }
-    return M2;
+	// Fast initialization:
+	int n = M.size();
+	vector_type tempVector(n, 0);
+	std::vector<vector_type> M2(n, tempVector);
+	// Multiplication
+	for (int i = 0; i < n; i++) {
+		for (int k = 0; k < n; k++) {
+			if (!M[i][k])
+				continue;
+			for (int j = 0; j < n; j++) {
+				if (j < i && symmetric) {
+					M2[i][j] = M2[j][i];
+					continue;
+				}
+				M2[i][j] += M[i][k] * M[k][j];
+			}
+		}
+	}
+	return M2;
 }
 
-inline
-void
+inline void
 calculate_cosine_similarity_2d(
     adjacencyMatrix_t adj_mat, // CHANGE: to a reference!
     std::vector<std::vector<double>>& cosimilarity)
 {
-    // calculate the cosine similarity of the input 2d-matrix with itself
-    // Strategy: row-normalize then square the matrix.
+	// calculate the cosine similarity of the input 2d-matrix with itself
+	// Strategy: row-normalize then square the matrix.
 
-    int n = adj_mat.size();
-    std::vector<double> temp(n, 0.0);
-    std::vector<std::vector<double> > normalized(n, temp);
-    double row_sum = 0;
-    uint_fast32_t init = 0;
+	int n = adj_mat.size();
+	std::vector<double> temp(n, 0.0);
+	std::vector<std::vector<double>> normalized(n, temp);
+	double row_sum = 0;
+	uint_fast32_t init = 0;
 
-    adjacencyMatrix_t::iterator row_i;
-    std::vector<std::vector<double> >::iterator normalized_row_i = normalized.begin();
-    for (row_i = adj_mat.begin(); row_i != adj_mat.end(); ++row_i, ++normalized_row_i)
-    {
-        row_sum = 0;
-        std::vector<uint_fast32_t>::iterator first = row_i->begin();
-        std::vector<uint_fast32_t>::iterator last = row_i->end();
-        while(first!=last){
-            row_sum += (*first) * (*first);
-            ++first;
-        }
+	adjacencyMatrix_t::iterator row_i;
+	std::vector<std::vector<double>>::iterator normalized_row_i = normalized.begin();
+	for (row_i = adj_mat.begin(); row_i != adj_mat.end(); ++row_i, ++normalized_row_i) {
+		row_sum = 0;
+		std::vector<uint_fast32_t>::iterator first = row_i->begin();
+		std::vector<uint_fast32_t>::iterator last = row_i->end();
+		while (first != last) {
+			row_sum += (*first) * (*first);
+			++first;
+		}
 
-        first = row_i->begin();
-        std::vector<double>::iterator first_normalized = normalized_row_i->begin();
-        std::vector<double>::iterator last_normalized = normalized_row_i->end();
-        while(first!=last){
-            if (row_sum)
-                *first_normalized = *first / sqrt(1.0 * row_sum);
-            else
-                *first_normalized = 0;
-            ++first;
-            ++first_normalized;
-        }
-    }
-    std::cerr << " Normalized:" << std::endl;
-	for (std::vector<std::vector<double>>::iterator row = normalized.begin(); row != normalized.end(); ++row){
-	    for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col){
-	        std::cerr << " " << *col;
-	    }
-	    std::cerr << std::endl;
+		first = row_i->begin();
+		std::vector<double>::iterator first_normalized = normalized_row_i->begin();
+		std::vector<double>::iterator last_normalized = normalized_row_i->end();
+		while (first != last) {
+			if (row_sum)
+				*first_normalized = *first / sqrt(1.0 * row_sum);
+			else
+				*first_normalized = 0;
+			++first;
+			++first_normalized;
+		}
 	}
-    cosimilarity = square_matrix_ikj(normalized);
+	std::cerr << " Normalized:" << std::endl;
+	for (std::vector<std::vector<double>>::iterator row = normalized.begin();
+	     row != normalized.end();
+	     ++row) {
+		for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col) {
+			std::cerr << " " << *col;
+		}
+		std::cerr << std::endl;
+	}
+	cosimilarity = square_matrix_ikj(normalized);
 }
 
 uint64_t
@@ -605,26 +605,26 @@ community_detection_cosine_similarity(
 	std::vector<std::vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
 
 	std::cerr << " Adj mat:" << std::endl;
-	for (adjacencyMatrix_t::iterator row = adj_mat.begin(); row != adj_mat.end(); ++row){
-	    for (adjacencyVector_t::iterator col = row->begin(); col != row->end(); ++col){
-	        std::cerr << " " << *col;
-	    }
-	    std::cerr << std::endl;
+	for (adjacencyMatrix_t::iterator row = adj_mat.begin(); row != adj_mat.end(); ++row) {
+		for (adjacencyVector_t::iterator col = row->begin(); col != row->end(); ++col) {
+			std::cerr << " " << *col;
+		}
+		std::cerr << std::endl;
 	}
 
 	if (squaring) {
-		calculate_cosine_similarity_2d(
-		    square_matrix_ikj(adj_mat, true),
-		    cosSimilarity2d);
+		calculate_cosine_similarity_2d(square_matrix_ikj(adj_mat, true), cosSimilarity2d);
 	} else {
 		calculate_cosine_similarity_2d(adj_mat, cosSimilarity2d);
 	}
 	std::cerr << " Cosine Sim:" << std::endl;
-	for (std::vector<std::vector<double>>::iterator row = cosSimilarity2d.begin(); row != cosSimilarity2d.end(); ++row){
-	    for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col){
-	        std::cerr << " " << *col;
-	    }
-	    std::cerr << std::endl;
+	for (std::vector<std::vector<double>>::iterator row = cosSimilarity2d.begin();
+	     row != cosSimilarity2d.end();
+	     ++row) {
+		for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col) {
+			std::cerr << " " << *col;
+		}
+		std::cerr << std::endl;
 	}
 
 	// 2- Determine the threshold:
@@ -846,8 +846,9 @@ main(int argc, char* argv[])
 				make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
 
 				initial_community_id =
-				    //biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
-				    community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id);
+				    // biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
+				    community_detection_cosine_similarity(
+				        subgraph, vertexToComponent, initial_community_id);
 			}
 			vecVertexToComponent[*vertexIt] = vertexToComponent;
 		}
