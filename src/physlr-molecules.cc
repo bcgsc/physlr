@@ -417,7 +417,7 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 			index_b = got_b->second;
 		}
 
-		adj_mat[index_a][index_b] = (int)subgraph[*edge_iter].weight;
+		adj_mat[index_a][index_b] = subgraph[*edge_iter].weight;
 		adj_mat[index_b][index_a] = adj_mat[index_a][index_b];
 	}
 	return adj_mat;
@@ -609,7 +609,7 @@ calculate_cosine_similarity_2d(
 		first = row_i->begin();
 		auto first_normalized = normalized_row_i->begin();
 		while (first != last) {
-			if (row_sum) {
+			if (row_sum > 0) {
 				*first_normalized = *first / sqrt(1.0 * row_sum);
 			} else {
 				*first_normalized = 0;
