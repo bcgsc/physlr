@@ -94,12 +94,14 @@ using adjacencyVector_t = std::vector<uint_fast32_t>;
 using Clique_type = std::unordered_map<vertex_t, uint64_t>;
 
 enum valid_strategies {
+    cc,
     bc,
     cosq,
     coss
 };
 
 valid_strategies hashStrategy (std::string const& inString) {
+    if (inString == "cc") return cc;
     if (inString == "bc") return bc;
     if (inString == "coss") return coss;
     if (inString == "cos") return coss;
@@ -344,7 +346,7 @@ biconnectedComponents(
 
     uint64_t moleculeNum = initial_community_id;
 
-	// Remove components with size less than 1
+	// Remove components with size less than 1, and assign molecule number
 	for (auto&& vertexSet : componentToVertexSet) {
 		if (vertexSet.size() <= 1) {
 			continue;
@@ -645,26 +647,25 @@ calculate_cosine_similarity_2d(
 			++first_normalized;
 		}
 	}
-	std::cerr << " Normalized:" << std::endl;
-	for (std::vector<std::vector<double>>::iterator row = normalized.begin();
-	     row != normalized.end();
-	     ++row) {
-		for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col) {
-			std::cerr << " " << *col;
-		}
-		std::cerr << std::endl;
-	}
+//	std::cerr << " Normalized:" << std::endl;
+//	for (std::vector<std::vector<double>>::iterator row = normalized.begin();
+//	     row != normalized.end();
+//	     ++row) {
+//		for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col) {
+//			std::cerr << " " << *col;
+//		}
+//		std::cerr << std::endl;
+//	}
 	cosimilarity = square_matrix_ikj(normalized);
 }
 
 
-uint64_t
+void
 community_detection_cosine_similarity_core(
     graph_t& subgraph,
-    vertexToComponent_t& vertexToComponent,
-    uint64_t initial_community_id = 0,
+    componentToVertexSet_t& componentToVertexSet,
     bool squaring = true,
-    double threshold = 0.5)
+    double threshold = 0.9)
 {
 	// Detect communities using cosine similarity of vertices
 
@@ -687,28 +688,28 @@ community_detection_cosine_similarity_core(
 	std::vector<double> tempVector(size_adj_mat, 0);
 	std::vector<std::vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
 
-	std::cerr << " Adj mat:" << std::endl;
-	for (adjacencyMatrix_t::iterator row = adj_mat.begin(); row != adj_mat.end(); ++row) {
-		for (adjacencyVector_t::iterator col = row->begin(); col != row->end(); ++col) {
-			std::cerr << " " << *col;
-		}
-		std::cerr << std::endl;
-	}
+//	std::cerr << " Adj mat:" << std::endl;
+//	for (adjacencyMatrix_t::iterator row = adj_mat.begin(); row != adj_mat.end(); ++row) {
+//		for (adjacencyVector_t::iterator col = row->begin(); col != row->end(); ++col) {
+//			std::cerr << " " << *col;
+//		}
+//		std::cerr << std::endl;
+//	}
 
 	if (squaring) {
 		calculate_cosine_similarity_2d(square_matrix_ikj(adj_mat, true), cosSimilarity2d);
 	} else {
 		calculate_cosine_similarity_2d(adj_mat, cosSimilarity2d);
 	}
-	std::cerr << " Cosine Sim:" << std::endl;
-	for (std::vector<std::vector<double>>::iterator row = cosSimilarity2d.begin();
-	     row != cosSimilarity2d.end();
-	     ++row) {
-		for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col) {
-			std::cerr << " " << *col;
-		}
-		std::cerr << std::endl;
-	}
+//	std::cerr << " Cosine Sim:" << std::endl;
+//	for (std::vector<std::vector<double>>::iterator row = cosSimilarity2d.begin();
+//	     row != cosSimilarity2d.end();
+//	     ++row) {
+//		for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col) {
+//			std::cerr << " " << *col;
+//		}
+//		std::cerr << std::endl;
+//	}
 
 	// 2- Determine the threshold:
 	// not implemented yet; so use a predefined universal threshold.
@@ -725,22 +726,12 @@ community_detection_cosine_similarity_core(
 			}
 		}
 	}
-}
-
-uint64_t
-community_detection_cosine_similarity(
-    graph_t& subgraph,
-    vertexToComponent_t& vertexToComponent,
-    uint64_t initial_community_id = 0,
-    bool squaring = true,
-    double threshold = 0.5)
-{
-
 
 	// 4- Detect Communities (find connected components - DFS)
-	//      Alternative implementation: convert to adjacency list and use boost to find cc
+	//      Alternative implementation: convert to boost::adjacency_list and use boost to find cc
 
-	uint64_t community_id = initial_community_id;
+	uint64_t componentNum = 0;
+
 	std::stack<uint64_t> toCheck;
 	std::stack<uint64_t> toAdd;
 	std::vector<int> zeros(adj_mat.size(), 0);
@@ -775,20 +766,59 @@ community_detection_cosine_similarity(
 			while (!toAdd.empty())
 				toAdd.pop();
 		} else {
-			while (!toAdd.empty()) {
-				node_to_add = toAdd.top();
-				toAdd.pop();
-				auto vt = indexToVertex.find(node_to_add);
-				if (vt != indexToVertex.end()) {
-					vertexToComponent[subgraph[vt->second].indexOriginal] = community_id;
-				} else {
-					std::cerr << "BUG: not found in the hash table!" << std::endl;
-				}
-			}
-			community_id++;
+		    if (componentNum + 1 > componentToVertexSet.size()) {
+			    componentToVertexSet.resize(componentNum + 1);
+		    }
+   			while (!toAdd.empty()) {
+    			node_to_add = toAdd.top();
+	    		toAdd.pop();
+		    	auto vt = indexToVertex.find(node_to_add);
+			    if (vt != indexToVertex.end()) {
+				    //vertexToComponent[subgraph[vt->second].indexOriginal] = community_id;
+				    componentToVertexSet[componentNum].insert(subgraph[vt->second].indexOriginal);
+   				} else {
+    				std::cerr << "BUG: not found in the hash table!" << std::endl;
+	    		}
+		    }
+			componentNum++;
 		}
 	}
-	return community_id;
+}
+
+void
+community_detection_cosine_similarity(
+    graph_t& subgraph,
+    componentToVertexSet_t& componentToVertexSet,
+    bool squaring = true,
+    double threshold = 0.5)
+{
+    community_detection_cosine_similarity_core(subgraph, componentToVertexSet, threshold, squaring);
+}
+
+uint64_t
+community_detection_cosine_similarity(
+    graph_t& subgraph,
+    vertexToComponent_t& vertexToComponent,
+    uint64_t initial_community_id,
+    bool squaring = true,
+    double threshold = 0.5)
+{
+    componentToVertexSet_t componentToVertexSet;
+    community_detection_cosine_similarity_core(subgraph, componentToVertexSet, threshold, squaring);
+
+    uint64_t moleculeNum = initial_community_id;
+
+	// Remove components with size less than 1, and assign molecule number
+	for (auto&& vertexSet : componentToVertexSet) {
+		if (vertexSet.size() <= 1) {
+			continue;
+		}
+		for (auto&& vertex : vertexSet) {
+			vertexToComponent[vertex] = moleculeNum;
+		}
+		++moleculeNum;
+	}
+	return moleculeNum;
 }
 
 template <class Container>
@@ -812,7 +842,7 @@ recursive_community_detection(
     vertexToComponent_t& vertexToComponent,
     uint64_t initial_community_id)
 {
-//    std::string strategy = strategies[depth];
+    std::string strategy = strategies[depth];
 //    std::cerr << "Entered - depth:"<< depth << " - strategy:"<< strategy <<std::endl;
 //    std::cerr << "ss size: " << strategies.size() <<std::endl;
     if ( strategies.size() == depth + 1){
@@ -820,9 +850,9 @@ recursive_community_detection(
             case bc:
 	            return biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
 		    case coss:
-		        return community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id);
+		        return community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
 		    case cosq:
-		        return community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id);
+		        return community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, true);
 		    default:
 		        ;
 		}
@@ -833,9 +863,9 @@ recursive_community_detection(
 		    case bc:
 			    biconnectedComponents(subgraph, componentToVertexSet);
             case coss:
-                ;//community_detection_cosine_similarity(subgraph, componentToVertexSet);
+                community_detection_cosine_similarity(subgraph, componentToVertexSet, false);
             case cosq:
-                ;//community_detection_cosine_similarity(subgraph, componentToVertexSet);
+                community_detection_cosine_similarity(subgraph, componentToVertexSet, true);
             default:
                 ;
         }
@@ -858,7 +888,7 @@ main(int argc, char* argv[])
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
-	std::string separationStrategy = "bc+bc";
+	std::string separationStrategy = "bc+cos";
 	uint64_t threads = 1;
 	bool verbose = false;
 	bool failed = false;
