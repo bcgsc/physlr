@@ -1,6 +1,8 @@
 #include "tsl/robin_map.h"
 
 #include <algorithm>
+#include <cstdint>
+#include <ctgmath>
 #include <fstream>
 #include <functional>
 #include <getopt.h>
@@ -9,9 +11,7 @@
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
-#include <stdint.h>
 #include <string>
-#include <tgmath.h>
 #include <utility>
 #include <vector>
 
@@ -79,6 +79,7 @@ using graph_t = boost::adjacency_list<
         boost::property<edgeComponent_t, std::uint64_t, edgeProperties>>>;
 using vertex_t = graph_t::vertex_descriptor;
 using edge_t = graph_t::edge_descriptor;
+using edge_iterator = boost::graph_traits<graph_t>::edge_iterator;
 using barcodeToIndex_t = std::unordered_map<std::string, vertex_t>;
 using indexToBarcode_t = std::unordered_map<vertex_t, std::string>;
 using vertexSet_t = std::unordered_set<vertex_t>;
@@ -105,16 +106,21 @@ enum valid_strategies
 valid_strategies
 hashStrategy(std::string const& inString)
 {
-	if (inString == "cc")
+	if (inString == "cc") {
 		return cc;
-	if (inString == "bc")
+	}
+	if (inString == "bc") {
 		return bc;
-	if (inString == "coss")
+    }
+	if (inString == "coss") {
 		return coss;
-	if (inString == "cos")
+	}
+	if (inString == "cos") {
 		return coss;
-	if (inString == "cosq")
+	}
+	if (inString == "cosq") {
 		return cosq;
+	}
 	return not_valid;
 }
 
@@ -380,8 +386,6 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 	adjacencyVector_t tempVector(N, 0);
 	adjacencyMatrix_t adj_mat(N, tempVector);
 
-	typedef boost::graph_traits<graph_t>::edge_iterator edge_iterator;
-
 	std::pair<edge_iterator, edge_iterator> ei = edges(subgraph);
 
 	vertexToIndex_t::iterator got_a;
@@ -562,8 +566,9 @@ square_matrix_ikj( // Might be faster than ijk, benchmark it
 	// Multiplication
 	for (int i = 0; i < n; i++) {
 		for (int k = 0; k < n; k++) {
-			if (!M[i][k])
+			if (!M[i][k]){
 				continue;
+			}
 			for (int j = 0; j < n; j++) {
 				if (j < i && symmetric) {
 					M2[i][j] = M2[j][i];
@@ -590,24 +595,26 @@ calculate_cosine_similarity_2d(
 	double row_sum = 0;
 
 	adjacencyMatrix_t::iterator row_i;
-	std::vector<std::vector<double>>::iterator normalized_row_i = normalized.begin();
+
+	auto normalized_row_i = normalized.begin();
 	for (row_i = adj_mat.begin(); row_i != adj_mat.end(); ++row_i, ++normalized_row_i) {
 		row_sum = 0;
-		std::vector<uint_fast32_t>::iterator first = row_i->begin();
-		std::vector<uint_fast32_t>::iterator last = row_i->end();
+		auto first = row_i->begin();
+		auto last = row_i->end();
 		while (first != last) {
 			row_sum += (*first) * (*first);
 			++first;
 		}
 
 		first = row_i->begin();
-		std::vector<double>::iterator first_normalized = normalized_row_i->begin();
-		std::vector<double>::iterator last_normalized = normalized_row_i->end();
+		auto first_normalized = normalized_row_i->begin();
+		auto last_normalized = normalized_row_i->end();
 		while (first != last) {
-			if (row_sum)
+			if (row_sum){
 				*first_normalized = *first / sqrt(1.0 * row_sum);
-			else
+			} else {
 				*first_normalized = 0;
+			}
 			++first;
 			++first_normalized;
 		}
@@ -630,9 +637,10 @@ community_detection_cosine_similarity_core(
 	uint64_t subgraph_size = boost::num_vertices(subgraph);
 	vertexToIndex.reserve(subgraph_size);
 
-	if (subgraph_size < 10)
+	if (subgraph_size < 10) {
 		// Do nothing on subgraphs smaller than a certain size
 		threshold = 0;
+	}
 
 	adjacencyMatrix_t adj_mat(convert_adj_list_adj_mat(subgraph, vertexToIndex));
 	indexToVertex_t indexToVertex = inverse_map(vertexToIndex);
@@ -676,8 +684,9 @@ community_detection_cosine_similarity_core(
 	std::vector<int> isDetected(adj_mat.size(), 0);
 	for (uint64_t i = 0; i < adj_mat.size(); i++) {
 		// DFS traversal
-		if (isDetected[i])
+		if (isDetected[i]) {
 			continue; // this node is included in a community already.
+		}
 		toCheck.push(i);
 		isDetected[i] = 1;
 		uint64_t ii;
@@ -688,8 +697,9 @@ community_detection_cosine_similarity_core(
 			toCheck.pop();
 			toAdd.push(ii);
 			for (uint64_t j = 0; j < adj_mat.size(); j++) {
-				if (isDetected[j])
+				if (isDetected[j]) {
 					continue; // this node is included in a community already.
+				}
 				if (adj_mat[ii][j] > 0) {
 					toCheck.push(j);
 					isDetected[j] = 1;
@@ -697,8 +707,9 @@ community_detection_cosine_similarity_core(
 			}
 		}
 		if (toAdd.size() < 2) {
-			while (!toAdd.empty())
+			while (!toAdd.empty()) {
 				toAdd.pop();
+			}
 		} else {
 			if (componentNum + 1 > componentToVertexSet.size()) {
 				componentToVertexSet.resize(componentNum + 1);
@@ -725,7 +736,7 @@ community_detection_cosine_similarity(
     bool squaring = true,
     double threshold = 0.5)
 {
-	community_detection_cosine_similarity_core(subgraph, componentToVertexSet, threshold, squaring);
+	community_detection_cosine_similarity_core(subgraph, componentToVertexSet, squaring, threshold);
 }
 
 uint64_t
@@ -737,7 +748,7 @@ community_detection_cosine_similarity(
     double threshold = 0.5)
 {
 	componentToVertexSet_t componentToVertexSet;
-	community_detection_cosine_similarity_core(subgraph, componentToVertexSet, threshold, squaring);
+	community_detection_cosine_similarity_core(subgraph, componentToVertexSet, squaring, threshold);
 
 	uint64_t moleculeNum = initial_community_id;
 
@@ -818,7 +829,7 @@ main(int argc, char* argv[])
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
-	std::string separationStrategy = "bc";
+	std::string separationStrategy = "bc+cosq";
 	uint64_t threads = 1;
 	bool verbose = false;
 	bool failed = false;
