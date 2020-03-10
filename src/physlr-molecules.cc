@@ -820,7 +820,7 @@ main(int argc, char* argv[])
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
-	std::string separationStrategy = "bc+cosq";
+	std::string separationStrategy = "bc";
 	uint64_t threads = 1;
 	bool verbose = false;
 	bool failed = false;
