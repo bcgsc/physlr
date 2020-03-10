@@ -15,11 +15,11 @@
 #include <utility>
 #include <vector>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/biconnected_components.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/subgraph.hpp>
-#include <boost/algorithm/string.hpp>
 
 #if _OPENMP
 #include <omp.h>
@@ -93,19 +93,27 @@ using adjacencyMatrix_t = std::vector<std::vector<uint_fast32_t>>;
 using adjacencyVector_t = std::vector<uint_fast32_t>;
 using Clique_type = std::unordered_map<vertex_t, uint64_t>;
 
-enum valid_strategies {
-    cc,
-    bc,
-    cosq,
-    coss
+enum valid_strategies
+{
+	cc,
+	bc,
+	cosq,
+	coss
 };
 
-valid_strategies hashStrategy (std::string const& inString) {
-    if (inString == "cc") return cc;
-    if (inString == "bc") return bc;
-    if (inString == "coss") return coss;
-    if (inString == "cos") return coss;
-    if (inString == "cosq") return cosq;
+valid_strategies
+hashStrategy(std::string const& inString)
+{
+	if (inString == "cc")
+		return cc;
+	if (inString == "bc")
+		return bc;
+	if (inString == "coss")
+		return coss;
+	if (inString == "cos")
+		return coss;
+	if (inString == "cosq")
+		return cosq;
 }
 
 static void
@@ -236,188 +244,16 @@ readTSV(graph_t& g, const std::vector<std::string>& infiles, bool verbose)
 	}
 }
 
-/* Generate a molecule separated graph (molSepG) using component/community information from
-molecule separation (vecVertexToComponent). The input graph (inG) is the barcode overlap graph
-or a molecule separated graph from the previous round of molecule separation.*/
+template<class Container>
 void
-componentsToNewGraph(
-    const graph_t& inG,
-    graph_t& molSepG,
-    vecVertexToComponent_t& vecVertexToComponent)
+splitter(const std::string& str, Container& output, char delim = '+')
 {
-	barcodeToIndex_t molSepGBarcodeToIndex;
-#if _OPENMP
-	double sTime = omp_get_wtime();
-#endif
-	for (uint64_t i = 0; i < vecVertexToComponent.size(); ++i) {
-
-		uint64_t maxVal = 0;
-		if (!vecVertexToComponent[i].empty()) {
-			maxVal =
-			    std::max_element(
-			        vecVertexToComponent[i].begin(),
-			        vecVertexToComponent[i].end(),
-			        [](const vertexToComponent_t::value_type& p1,
-			           const vertexToComponent_t::value_type& p2) { return p1.second < p2.second; })
-			        ->second;
-		}
-
-		for (uint64_t j = 0; j < maxVal + 1; ++j) {
-			auto u = boost::add_vertex(molSepG);
-			molSepG[u].name = inG[i].name + "_" + std::to_string(j);
-			molSepG[u].weight = inG[i].weight;
-			molSepG[u].indexOriginal = u;
-			molSepGBarcodeToIndex[molSepG[u].name] = u;
-		}
-	}
-
-	auto edgeItRange = boost::edges(inG);
-	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
-		auto& u = inG[boost::source(*edgeIt, inG)].indexOriginal;
-		auto& v = inG[boost::target(*edgeIt, inG)].indexOriginal;
-
-		if (vecVertexToComponent[u].find(v) == vecVertexToComponent[u].end() ||
-		    vecVertexToComponent[v].find(u) == vecVertexToComponent[v].end()) {
-			continue;
-		}
-
-		auto& uMolecule = vecVertexToComponent[u][v];
-		auto& vMolecule = vecVertexToComponent[v][u];
-		auto uName = inG[u].name + "_" + std::to_string(uMolecule);
-		auto vName = inG[v].name + "_" + std::to_string(vMolecule);
-		auto e =
-		    boost::add_edge(molSepGBarcodeToIndex[uName], molSepGBarcodeToIndex[vName], molSepG)
-		        .first;
-		molSepG[e].weight = inG[*edgeIt].weight;
-	}
-
-	std::cerr << "Generated new graph ";
-#if _OPENMP
-	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-	sTime = omp_get_wtime();
-#endif
-
-	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
-}
-
-uint64_t
-biconnectedComponents_core(
-    graph_t& subgraph,
-    componentToVertexSet_t& componentToVertexSet)
-{
-	// Find biconnected components
-	boost::property_map<graph_t, edgeComponent_t>::type component =
-	    boost::get(edgeComponent, subgraph);
-
-	std::vector<vertex_t> artPointsVec;
-	boost::biconnected_components(subgraph, component, std::back_inserter(artPointsVec));
-
-	vertexSet_t artPoints(artPointsVec.begin(), artPointsVec.end());
-
-	// Remove articulation points from biconnected components
-	boost::graph_traits<graph_t>::edge_iterator ei, ei_end;
-
-	for (boost::tie(ei, ei_end) = boost::edges(subgraph); ei != ei_end; ++ei) {
-		uint64_t componentNum = component[*ei];
-		if (componentNum + 1 > componentToVertexSet.size()) {
-			componentToVertexSet.resize(componentNum + 1);
-		}
-
-		auto node1 = source(*ei, subgraph);
-		auto node2 = target(*ei, subgraph);
-
-		if (artPoints.find(node1) == artPoints.end()) {
-			componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
-		}
-		if (artPoints.find(node2) == artPoints.end()) {
-			componentToVertexSet[componentNum].insert(subgraph[node2].indexOriginal);
-		}
+	std::stringstream ss(str);
+	std::string token;
+	while (std::getline(ss, token, delim)) {
+		output.push_back(token);
 	}
 }
-
-uint64_t
-biconnectedComponents(
-    graph_t& subgraph,
-    vertexToComponent_t& vertexToComponent,
-    uint64_t initial_community_id = 0)
-{
-    componentToVertexSet_t componentToVertexSet;
-    biconnectedComponents_core(subgraph, componentToVertexSet);
-
-    uint64_t moleculeNum = initial_community_id;
-
-	// Remove components with size less than 1, and assign molecule number
-	for (auto&& vertexSet : componentToVertexSet) {
-		if (vertexSet.size() <= 1) {
-			continue;
-		}
-		for (auto&& vertex : vertexSet) {
-			vertexToComponent[vertex] = moleculeNum;
-		}
-		++moleculeNum;
-	}
-	return moleculeNum;
-}
-
-void
-biconnectedComponents(
-    graph_t& subgraph,
-    componentToVertexSet_t& componentToVertexSet)
-{
-    // Note that this function does not remove components of size 1
-    biconnectedComponents_core(subgraph, componentToVertexSet);
-}
-
-//uint64_t
-//biconnectedComponents(
-//    graph_t& subgraph,
-//    vertexToComponent_t& vertexToComponent,
-//    uint64_t initial_community_id = 0)
-//{
-//	// Find biconnected components
-//	boost::property_map<graph_t, edgeComponent_t>::type component =
-//	    boost::get(edgeComponent, subgraph);
-//
-//	std::vector<vertex_t> artPointsVec;
-//	boost::biconnected_components(subgraph, component, std::back_inserter(artPointsVec));
-//
-//	vertexSet_t artPoints(artPointsVec.begin(), artPointsVec.end());
-//
-//	// Remove articulation points from biconnected components
-//	boost::graph_traits<graph_t>::edge_iterator ei, ei_end;
-//	componentToVertexSet_t componentToVertexSet;
-//
-//	for (boost::tie(ei, ei_end) = boost::edges(subgraph); ei != ei_end; ++ei) {
-//		uint64_t componentNum = component[*ei];
-//		if (componentNum + 1 > componentToVertexSet.size()) {
-//			componentToVertexSet.resize(componentNum + 1);
-//		}
-//
-//		auto node1 = source(*ei, subgraph);
-//		auto node2 = target(*ei, subgraph);
-//
-//		if (artPoints.find(node1) == artPoints.end()) {
-//			componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
-//		}
-//		if (artPoints.find(node2) == artPoints.end()) {
-//			componentToVertexSet[componentNum].insert(subgraph[node2].indexOriginal);
-//		}
-//	}
-//
-//	uint64_t moleculeNum = initial_community_id;
-//
-//	// Remove components with size less than 1
-//	for (auto&& vertexSet : componentToVertexSet) {
-//		if (vertexSet.size() <= 1) {
-//			continue;
-//		}
-//		for (auto&& vertex : vertexSet) {
-//			vertexToComponent[vertex] = moleculeNum;
-//		}
-//		++moleculeNum;
-//	}
-//	return moleculeNum;
-//}
 
 void
 bin_components(
@@ -581,6 +417,134 @@ convert_adj_list_adj_mat(graph_t& subgraph, vertexToIndex_t& vertexToIndex)
 	return adj_mat;
 }
 
+/* Generate a molecule separated graph (molSepG) using component/community information from
+molecule separation (vecVertexToComponent). The input graph (inG) is the barcode overlap graph
+or a molecule separated graph from the previous round of molecule separation.*/
+void
+componentsToNewGraph(
+    const graph_t& inG,
+    graph_t& molSepG,
+    vecVertexToComponent_t& vecVertexToComponent)
+{
+	barcodeToIndex_t molSepGBarcodeToIndex;
+#if _OPENMP
+	double sTime = omp_get_wtime();
+#endif
+	for (uint64_t i = 0; i < vecVertexToComponent.size(); ++i) {
+
+		uint64_t maxVal = 0;
+		if (!vecVertexToComponent[i].empty()) {
+			maxVal =
+			    std::max_element(
+			        vecVertexToComponent[i].begin(),
+			        vecVertexToComponent[i].end(),
+			        [](const vertexToComponent_t::value_type& p1,
+			           const vertexToComponent_t::value_type& p2) { return p1.second < p2.second; })
+			        ->second;
+		}
+
+		for (uint64_t j = 0; j < maxVal + 1; ++j) {
+			auto u = boost::add_vertex(molSepG);
+			molSepG[u].name = inG[i].name + "_" + std::to_string(j);
+			molSepG[u].weight = inG[i].weight;
+			molSepG[u].indexOriginal = u;
+			molSepGBarcodeToIndex[molSepG[u].name] = u;
+		}
+	}
+
+	auto edgeItRange = boost::edges(inG);
+	for (auto edgeIt = edgeItRange.first; edgeIt != edgeItRange.second; ++edgeIt) {
+		auto& u = inG[boost::source(*edgeIt, inG)].indexOriginal;
+		auto& v = inG[boost::target(*edgeIt, inG)].indexOriginal;
+
+		if (vecVertexToComponent[u].find(v) == vecVertexToComponent[u].end() ||
+		    vecVertexToComponent[v].find(u) == vecVertexToComponent[v].end()) {
+			continue;
+		}
+
+		auto& uMolecule = vecVertexToComponent[u][v];
+		auto& vMolecule = vecVertexToComponent[v][u];
+		auto uName = inG[u].name + "_" + std::to_string(uMolecule);
+		auto vName = inG[v].name + "_" + std::to_string(vMolecule);
+		auto e =
+		    boost::add_edge(molSepGBarcodeToIndex[uName], molSepGBarcodeToIndex[vName], molSepG)
+		        .first;
+		molSepG[e].weight = inG[*edgeIt].weight;
+	}
+
+	std::cerr << "Generated new graph ";
+#if _OPENMP
+	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
+	sTime = omp_get_wtime();
+#endif
+
+	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
+}
+
+uint64_t
+biconnectedComponents_core(graph_t& subgraph, componentToVertexSet_t& componentToVertexSet)
+{
+	// Find biconnected components
+	boost::property_map<graph_t, edgeComponent_t>::type component =
+	    boost::get(edgeComponent, subgraph);
+
+	std::vector<vertex_t> artPointsVec;
+	boost::biconnected_components(subgraph, component, std::back_inserter(artPointsVec));
+
+	vertexSet_t artPoints(artPointsVec.begin(), artPointsVec.end());
+
+	// Remove articulation points from biconnected components
+	boost::graph_traits<graph_t>::edge_iterator ei, ei_end;
+
+	for (boost::tie(ei, ei_end) = boost::edges(subgraph); ei != ei_end; ++ei) {
+		uint64_t componentNum = component[*ei];
+		if (componentNum + 1 > componentToVertexSet.size()) {
+			componentToVertexSet.resize(componentNum + 1);
+		}
+
+		auto node1 = source(*ei, subgraph);
+		auto node2 = target(*ei, subgraph);
+
+		if (artPoints.find(node1) == artPoints.end()) {
+			componentToVertexSet[componentNum].insert(subgraph[node1].indexOriginal);
+		}
+		if (artPoints.find(node2) == artPoints.end()) {
+			componentToVertexSet[componentNum].insert(subgraph[node2].indexOriginal);
+		}
+	}
+}
+
+uint64_t
+biconnectedComponents(
+    graph_t& subgraph,
+    vertexToComponent_t& vertexToComponent,
+    uint64_t initial_community_id = 0)
+{
+	componentToVertexSet_t componentToVertexSet;
+	biconnectedComponents_core(subgraph, componentToVertexSet);
+
+	uint64_t moleculeNum = initial_community_id;
+
+	// Remove components with size less than 1, and assign molecule number
+	for (auto&& vertexSet : componentToVertexSet) {
+		if (vertexSet.size() <= 1) {
+			continue;
+		}
+		for (auto&& vertex : vertexSet) {
+			vertexToComponent[vertex] = moleculeNum;
+		}
+		++moleculeNum;
+	}
+	return moleculeNum;
+}
+
+void
+biconnectedComponents(graph_t& subgraph, componentToVertexSet_t& componentToVertexSet)
+{
+	// Note that this function does not remove components of size 1
+	biconnectedComponents_core(subgraph, componentToVertexSet);
+}
+
 template<class vector_type>
 std::vector<vector_type>
 square_matrix_ikj( // Might be faster than ijk, benchmark it
@@ -647,25 +611,15 @@ calculate_cosine_similarity_2d(
 			++first_normalized;
 		}
 	}
-//	std::cerr << " Normalized:" << std::endl;
-//	for (std::vector<std::vector<double>>::iterator row = normalized.begin();
-//	     row != normalized.end();
-//	     ++row) {
-//		for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col) {
-//			std::cerr << " " << *col;
-//		}
-//		std::cerr << std::endl;
-//	}
 	cosimilarity = square_matrix_ikj(normalized);
 }
-
 
 void
 community_detection_cosine_similarity_core(
     graph_t& subgraph,
     componentToVertexSet_t& componentToVertexSet,
     bool squaring = true,
-    double threshold = 0.9)
+    double threshold = 0.5)
 {
 	// Detect communities using cosine similarity of vertices
 
@@ -688,31 +642,14 @@ community_detection_cosine_similarity_core(
 	std::vector<double> tempVector(size_adj_mat, 0);
 	std::vector<std::vector<double>> cosSimilarity2d(size_adj_mat, tempVector);
 
-//	std::cerr << " Adj mat:" << std::endl;
-//	for (adjacencyMatrix_t::iterator row = adj_mat.begin(); row != adj_mat.end(); ++row) {
-//		for (adjacencyVector_t::iterator col = row->begin(); col != row->end(); ++col) {
-//			std::cerr << " " << *col;
-//		}
-//		std::cerr << std::endl;
-//	}
-
 	if (squaring) {
 		calculate_cosine_similarity_2d(square_matrix_ikj(adj_mat, true), cosSimilarity2d);
 	} else {
 		calculate_cosine_similarity_2d(adj_mat, cosSimilarity2d);
 	}
-//	std::cerr << " Cosine Sim:" << std::endl;
-//	for (std::vector<std::vector<double>>::iterator row = cosSimilarity2d.begin();
-//	     row != cosSimilarity2d.end();
-//	     ++row) {
-//		for (std::vector<double>::iterator col = row->begin(); col != row->end(); ++col) {
-//			std::cerr << " " << *col;
-//		}
-//		std::cerr << std::endl;
-//	}
 
 	// 2- Determine the threshold:
-	// not implemented yet; so use a predefined universal threshold.
+	// not implemented yet; uses a predefined universal threshold.
 
 	threshold = threshold;
 
@@ -748,7 +685,6 @@ community_detection_cosine_similarity_core(
 		uint64_t node_to_add;
 
 		while (!toCheck.empty()) {
-
 			ii = toCheck.top();
 			toCheck.pop();
 			toAdd.push(ii);
@@ -766,20 +702,19 @@ community_detection_cosine_similarity_core(
 			while (!toAdd.empty())
 				toAdd.pop();
 		} else {
-		    if (componentNum + 1 > componentToVertexSet.size()) {
-			    componentToVertexSet.resize(componentNum + 1);
-		    }
-   			while (!toAdd.empty()) {
-    			node_to_add = toAdd.top();
-	    		toAdd.pop();
-		    	auto vt = indexToVertex.find(node_to_add);
-			    if (vt != indexToVertex.end()) {
-				    //vertexToComponent[subgraph[vt->second].indexOriginal] = community_id;
-				    componentToVertexSet[componentNum].insert(subgraph[vt->second].indexOriginal);
-   				} else {
-    				std::cerr << "BUG: not found in the hash table!" << std::endl;
-	    		}
-		    }
+			if (componentNum + 1 > componentToVertexSet.size()) {
+				componentToVertexSet.resize(componentNum + 1);
+			}
+			while (!toAdd.empty()) {
+				node_to_add = toAdd.top();
+				toAdd.pop();
+				auto vt = indexToVertex.find(node_to_add);
+				if (vt != indexToVertex.end()) {
+					componentToVertexSet[componentNum].insert(subgraph[vt->second].indexOriginal);
+				} else {
+					std::cerr << "BUG: not found in the hash table!" << std::endl;
+				}
+			}
 			componentNum++;
 		}
 	}
@@ -792,7 +727,7 @@ community_detection_cosine_similarity(
     bool squaring = true,
     double threshold = 0.5)
 {
-    community_detection_cosine_similarity_core(subgraph, componentToVertexSet, threshold, squaring);
+	community_detection_cosine_similarity_core(subgraph, componentToVertexSet, threshold, squaring);
 }
 
 uint64_t
@@ -803,10 +738,10 @@ community_detection_cosine_similarity(
     bool squaring = true,
     double threshold = 0.5)
 {
-    componentToVertexSet_t componentToVertexSet;
-    community_detection_cosine_similarity_core(subgraph, componentToVertexSet, threshold, squaring);
+	componentToVertexSet_t componentToVertexSet;
+	community_detection_cosine_similarity_core(subgraph, componentToVertexSet, threshold, squaring);
 
-    uint64_t moleculeNum = initial_community_id;
+	uint64_t moleculeNum = initial_community_id;
 
 	// Remove components with size less than 1, and assign molecule number
 	for (auto&& vertexSet : componentToVertexSet) {
@@ -821,16 +756,6 @@ community_detection_cosine_similarity(
 	return moleculeNum;
 }
 
-template <class Container>
-void splitter(const std::string& str, Container& output, char delim = '+')
-{
-    std::stringstream ss(str);
-    std::string token;
-    while (std::getline(ss, token, delim)) {
-        output.push_back(token);
-    }
-}
-
 template<class edgeSet>
 uint64_t
 recursive_community_detection(
@@ -842,44 +767,51 @@ recursive_community_detection(
     vertexToComponent_t& vertexToComponent,
     uint64_t initial_community_id)
 {
-    std::string strategy = strategies[depth];
-//    std::cerr << "Entered - depth:"<< depth << " - strategy:"<< strategy <<std::endl;
-//    std::cerr << "ss size: " << strategies.size() <<std::endl;
-    if ( strategies.size() == depth + 1){
-        switch(hashStrategy(strategy)){
-            case bc:
-	            return biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
-		    case coss:
-		        return community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, false);
-		    case cosq:
-		        return community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id, true);
-		    default:
-		        ;
+	// Detect communities recursively/hierarchically
+
+	std::string strategy = strategies[depth];
+	if (strategies.size() == depth + 1) {
+		switch (hashStrategy(strategy)) {
+		case bc:
+			return biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
+		case coss:
+			return community_detection_cosine_similarity(
+			    subgraph, vertexToComponent, initial_community_id, false);
+		case cosq:
+			return community_detection_cosine_similarity(
+			    subgraph, vertexToComponent, initial_community_id, true);
+		default:;
 		}
-    } else {
-        componentToVertexSet_t componentToVertexSet;
+	} else {
+		componentToVertexSet_t componentToVertexSet;
 
-        switch(hashStrategy(strategy)){
-		    case bc:
-			    biconnectedComponents(subgraph, componentToVertexSet);
-            case coss:
-                community_detection_cosine_similarity(subgraph, componentToVertexSet, false);
-            case cosq:
-                community_detection_cosine_similarity(subgraph, componentToVertexSet, true);
-            default:
-                ;
-        }
+		switch (hashStrategy(strategy)) {
+		case bc:
+			biconnectedComponents(subgraph, componentToVertexSet);
+		case coss:
+			community_detection_cosine_similarity(subgraph, componentToVertexSet, false);
+		case cosq:
+			community_detection_cosine_similarity(subgraph, componentToVertexSet, true);
+		default:;
+		}
 
-        for (auto&& vertexSet : componentToVertexSet) {
-            if (vertexSet.size() <= 1) {
-	            continue;
-    	    }
-	        graph_t subgraph;
-		    make_subgraph(g, subgraph, edge_set, vertexSet.begin(), vertexSet.end());
-		    initial_community_id = recursive_community_detection(depth + 1, g, edge_set, subgraph, strategies, vertexToComponent, initial_community_id);
+		for (auto&& vertexSet : componentToVertexSet) {
+			if (vertexSet.size() <= 1) {
+				continue;
+			}
+			graph_t subgraph;
+			make_subgraph(g, subgraph, edge_set, vertexSet.begin(), vertexSet.end());
+			initial_community_id = recursive_community_detection(
+			    depth + 1,
+			    g,
+			    edge_set,
+			    subgraph,
+			    strategies,
+			    vertexToComponent,
+			    initial_community_id);
 		}
 		return initial_community_id;
-    }
+	}
 }
 
 int
@@ -888,7 +820,7 @@ main(int argc, char* argv[])
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
-	std::string separationStrategy = "bc+cos";
+	std::string separationStrategy = "bc+cosq";
 	uint64_t threads = 1;
 	bool verbose = false;
 	bool failed = false;
@@ -916,9 +848,8 @@ main(int argc, char* argv[])
 		}
 	}
 
-    std::vector<std::string> strategies;
-    splitter(separationStrategy, strategies);
-
+	std::vector<std::string> strategies;
+	splitter(separationStrategy, strategies);
 
 	std::cerr << " using " << threads << " thread(s)." << std::endl;
 #if _OPENMP
@@ -938,15 +869,16 @@ main(int argc, char* argv[])
 		failed = true;
 	}
 
+	std::cerr << " molecule separation strategies: " << std::endl << "\t";
 	for (auto& strategy : strategies) {
-	    if (strategy != "bc" &&
-	        strategy != "cos" &&
-	        strategy != "coss" &&
-	        strategy != "cosq") {
-	            printErrorMsg(progname, "unsupported molecule separation strategy:"+strategy);
-		        failed = true;
-	        }
+		if (strategy != "bc" && strategy != "cos" && strategy != "coss" && strategy != "cosq") {
+			printErrorMsg(progname, "unsupported molecule separation strategy:" + strategy);
+			failed = true;
+		} else {
+			std::cerr << strategy << " ,";
+		}
 	}
+	std::cerr << std::endl;
 
 	if (failed) {
 		printUsage(progname);
@@ -1014,177 +946,12 @@ main(int argc, char* argv[])
 			// binning
 			bin_neighbours(neighbours, componentsVec, 50);
 			for (auto& comp_i : componentsVec) {
-			    graph_t subgraph;
-			    make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
-			    initial_community_id = recursive_community_detection(0, g, edge_set, subgraph, strategies, vertexToComponent, initial_community_id);
+				graph_t subgraph;
+				make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
+				initial_community_id = recursive_community_detection(
+				    0, g, edge_set, subgraph, strategies, vertexToComponent, initial_community_id);
 			}
 			vecVertexToComponent[*(iterators_array[j])] = vertexToComponent;
-
-//            uint64_t counter = 0;
-//            componentToVertexSet_t componentToVertexSet;
-//            for (auto& strategy : strategies) {
-//                graph_t subgraph;
-//                if (counter == 0){
-//                    for (auto& comp_i : componentsVec) {
-//                        make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
-//                    }
-//                } else {
-//                    for (auto&& vertexSet : componentToVertexSet) {
-//		                if (vertexSet.size() <= 1) {
-//			                continue;
-//    		            }
-//	    	            // empty the subgraph;
-//		    		    make_subgraph(g, subgraph, edge_set, vertexSet.begin(), vertexSet.end());
-//		    		}
-//                }
-//
-//                if (counter = last){
-//
-//                } else {
-//                    switch(strategy){
-//				            case "bc":
-//				                biconnectedComponents(subgraph, componentToVertexSet);
-//				            case "cos":
-//				                community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id);
-//				            case "cosq":
-//				                community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id);
-//				            default:
-//				                ;
-//				        }
-//                }
-//
-//            }
-//            //////////////
-//            uint64_t counter = 0;
-//            for (auto& strategy : strategies) {
-//                std::vector<graph_t> subgraphs;
-//                if (counter == 0) {
-//                    for (auto& comp_i : componentsVec) {
-//                        graph_t subgraph;
-//                        make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
-//                        subgraphs.push_back(subgraph);
-//                    }
-//                } else {
-//                    for (auto&& vertexSet : componentToVertexSet) {
-//	                    if (vertexSet.size() <= 1) {
-//		                    continue;
-//   		                }
-//    	                graph_t subgraph;
-//	    		        make_subgraph(g, subgraph, edge_set, vertexSet.begin(), vertexSet.end());
-//	    		        subgraphs.push_back(subgraph);
-//                    }
-//                }
-//                for (auto subgraph : subgraphs) {
-//                    if (counter == strategies.size() - 1) {
-//                        switch(strategy){
-//				            case "bc":
-//				                biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
-//				            case "cos":
-//				                community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id);
-//				            case "cosq":
-//				                community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id);
-//				            default:
-//				                ;
-//				        }
-//                    } else {
-//                        switch(strategy){
-//				            case "bc":
-//				                biconnectedComponents(subgraph, componentToVertexSet);
-//				            case "cos":
-//				                community_detection_cosine_similarity(subgraph, componentToVertexSet);
-//				            case "cosq":
-//				                community_detection_cosine_similarity(subgraph, componentToVertexSet);
-//				            default:
-//				                ;
-//				        }
-//                    }
-//                }
-//
-//                counter++;
-//            }
-            // done, now submit communities
-
-
-
-            ////////
-
-//            for (auto& comp_i : componentsVec) {
-//                uint64_t counter = 0;
-//                std::vector<graph_t> subgraphs;
-//                if (counter == 0 ) {
-//
-//                } else {
-//
-//                }
-//
-//
-//
-//                counter++;
-//            }
-
-
-            ///////////////
-			// for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++) {
-//			for (auto& comp_i : componentsVec) {
-//                uint64_t counter = 0;
-//				for (auto& strategy : strategies) {
-//				    componentToVertexSet_t componentToVertexSet;
-//				    graph_t subgraph;
-//				    if (counter == 0 && counter != strategies.size()){
-//				        make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
-//				        switch(strategy){
-//				            case "bc":
-//				                biconnectedComponents(subgraph, componentToVertexSet);
-//				            case "cos":
-//				                community_detection_cosine_similarity(subgraph, componentToVertexSet, initial_community_id);
-//				            case "cosq":
-//				                community_detection_cosine_similarity(subgraph, componentToVertexSet, initial_community_id);
-//				            default:
-//				                ;
-//				        }
-//				    } else if (counter == strategies.size()){
-//
-//				    } else {
-//				        for (auto&& vertexSet : componentToVertexSet) {
-//		                    if (vertexSet.size() <= 1) {
-//			                    continue;
-//    		                }
-//	    	                // empty the subgraph;
-//		    		        make_subgraph(g, subgraph, edge_set, vertexSet.begin(), vertexSet.end());
-//		    		        switch(strategy){
-//				                case "bc":
-//				                    biconnectedComponents(subgraph, componentToVertexSet);
-//				                case "cos":
-//				                    community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id);
-//				                case "cosq":
-//				                    community_detection_cosine_similarity(subgraph, vertexToComponent, initial_community_id);
-//				                default:
-//				                    ;
-//				            }
-//				        }
-//				    }
-//
-//
-//
-//				}
-//
-//
-//
-//
-//
-//                for (auto&& vertexSet : componentToVertexSet) {
-//		            if (vertexSet.size() <= 1) {
-//			            continue;
-//		            }
-//		            graph_t subgraph;
-//				    make_subgraph(g, subgraph, edge_set, vertexSet.begin(), vertexSet.end());
-//		            std::cout<<"The graph:\n";
-//		            printGraph(subgraph);
-//		            initial_community_id =
-//				        biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
-//		        }
-//			}
-
 		}
 	} else {
 		for (auto vertexIt = vertexItRange.first; vertexIt != vertexItRange.second; ++vertexIt) {
@@ -1198,34 +965,12 @@ main(int argc, char* argv[])
 			// binning
 			bin_neighbours(neighbours, componentsVec, 50);
 			for (auto& comp_i : componentsVec) {
-			    graph_t subgraph;
-			    make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
-			    initial_community_id = recursive_community_detection(0, g, edge_set, subgraph, strategies, vertexToComponent, initial_community_id);
+				graph_t subgraph;
+				make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
+				initial_community_id = recursive_community_detection(
+				    0, g, edge_set, subgraph, strategies, vertexToComponent, initial_community_id);
 			}
 			vecVertexToComponent[*vertexIt] = vertexToComponent;
-
-//			for (auto& comp_i : componentsVec) {
-//				graph_t subgraph;
-//				make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
-//
-//				componentToVertexSet_t componentToVertexSet;
-//				biconnectedComponents(subgraph, componentToVertexSet);
-//				std::cout<<"Size: "<<componentToVertexSet.size()<<std::endl;
-//                for (auto&& vertexSet : componentToVertexSet) {
-//		            if (vertexSet.size() <= 1) {
-//			            continue;
-//		            }
-//		            graph_t subgraph;
-//				    make_subgraph(g, subgraph, edge_set, vertexSet.begin(), vertexSet.end());
-//				    std::cout<<"The graph:\n";
-//		            printGraph(subgraph);
-//		            initial_community_id =
-//				        biconnectedComponents(subgraph, vertexToComponent, initial_community_id);
-//		        }
-////				    community_detection_cosine_similarity(
-////				        subgraph, vertexToComponent, initial_community_id);
-//			}
-
 		}
 	}
 
