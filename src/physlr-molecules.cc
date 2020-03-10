@@ -111,7 +111,7 @@ hashStrategy(std::string const& inString)
 	}
 	if (inString == "bc") {
 		return bc;
-    }
+	}
 	if (inString == "coss") {
 		return coss;
 	}
@@ -566,7 +566,7 @@ square_matrix_ikj( // Might be faster than ijk, benchmark it
 	// Multiplication
 	for (int i = 0; i < n; i++) {
 		for (int k = 0; k < n; k++) {
-			if (!M[i][k]){
+			if (!M[i][k]) {
 				continue;
 			}
 			for (int j = 0; j < n; j++) {
@@ -610,7 +610,7 @@ calculate_cosine_similarity_2d(
 		auto first_normalized = normalized_row_i->begin();
 		auto last_normalized = normalized_row_i->end();
 		while (first != last) {
-			if (row_sum){
+			if (row_sum) {
 				*first_normalized = *first / sqrt(1.0 * row_sum);
 			} else {
 				*first_normalized = 0;
