@@ -674,14 +674,12 @@ community_detection_cosine_similarity_core(
 	std::stack<uint64_t> toAdd;
 	std::vector<int> zeros(adj_mat.size(), 0);
 	std::vector<int> isDetected(adj_mat.size(), 0);
-
 	for (uint64_t i = 0; i < adj_mat.size(); i++) {
 		// DFS traversal
 		if (isDetected[i])
 			continue; // this node is included in a community already.
 		toCheck.push(i);
 		isDetected[i] = 1;
-		isSingleton = true;
 		uint64_t ii;
 		uint64_t node_to_add;
 
@@ -695,7 +693,6 @@ community_detection_cosine_similarity_core(
 				if (adj_mat[ii][j] > 0) {
 					toCheck.push(j);
 					isDetected[j] = 1;
-					isSingleton = false;
 				}
 			}
 		}
