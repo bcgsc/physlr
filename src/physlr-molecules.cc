@@ -98,7 +98,8 @@ enum valid_strategies
 	cc,
 	bc,
 	cosq,
-	coss
+	coss,
+	not_valid
 };
 
 valid_strategies
@@ -114,6 +115,7 @@ hashStrategy(std::string const& inString)
 		return coss;
 	if (inString == "cosq")
 		return cosq;
+	return not_valid;
 }
 
 static void
@@ -481,7 +483,7 @@ componentsToNewGraph(
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
 
-uint64_t
+void
 biconnectedComponents_core(graph_t& subgraph, componentToVertexSet_t& componentToVertexSet)
 {
 	// Find biconnected components
@@ -586,7 +588,6 @@ calculate_cosine_similarity_2d(
 	std::vector<double> temp(n, 0.0);
 	std::vector<std::vector<double>> normalized(n, temp);
 	double row_sum = 0;
-	uint_fast32_t init = 0;
 
 	adjacencyMatrix_t::iterator row_i;
 	std::vector<std::vector<double>>::iterator normalized_row_i = normalized.begin();
@@ -655,8 +656,8 @@ community_detection_cosine_similarity_core(
 
 	// 3- Filter out edges:
 
-	for (int i = 0; i < adj_mat.size(); i++) {
-		for (int j = i + 1; j < adj_mat.size(); j++) {
+	for (uint64_t i = 0; i < adj_mat.size(); i++) {
+		for (uint64_t j = i + 1; j < adj_mat.size(); j++) {
 			if (cosSimilarity2d[i][j] < threshold) {
 				adj_mat[i][j] = 0;
 				adj_mat[j][i] = 0;
@@ -673,7 +674,7 @@ community_detection_cosine_similarity_core(
 	std::stack<uint64_t> toAdd;
 	std::vector<int> zeros(adj_mat.size(), 0);
 	std::vector<int> isDetected(adj_mat.size(), 0);
-	bool isSingleton = false;
+
 	for (uint64_t i = 0; i < adj_mat.size(); i++) {
 		// DFS traversal
 		if (isDetected[i])
@@ -759,7 +760,7 @@ community_detection_cosine_similarity(
 template<class edgeSet>
 uint64_t
 recursive_community_detection(
-    int depth,
+    uint64_t depth,
     graph_t& g,
     edgeSet& edge_set,
     graph_t& subgraph,
@@ -810,8 +811,8 @@ recursive_community_detection(
 			    vertexToComponent,
 			    initial_community_id);
 		}
-		return initial_community_id;
 	}
+	return initial_community_id;
 }
 
 int
