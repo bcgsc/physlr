@@ -608,7 +608,6 @@ calculate_cosine_similarity_2d(
 
 		first = row_i->begin();
 		auto first_normalized = normalized_row_i->begin();
-		auto last_normalized = normalized_row_i->end();
 		while (first != last) {
 			if (row_sum) {
 				*first_normalized = *first / sqrt(1.0 * row_sum);
