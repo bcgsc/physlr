@@ -622,6 +622,67 @@ calculate_cosine_similarity_2d(
 }
 
 void
+connected_components_adjacency_matrix(
+    graph_t& subgraph,
+    adjacencyMatrix_t& adj_mat,
+    indexToVertex_t& indexToVertex,
+    componentToVertexSet_t& componentToVertexSet)
+{
+
+	uint64_t componentNum = 0;
+
+	std::stack<uint64_t> toCheck;
+	std::stack<uint64_t> toAdd;
+	std::vector<int> zeros(adj_mat.size(), 0);
+	std::vector<int> isDetected(adj_mat.size(), 0);
+	for (uint64_t i = 0; i < adj_mat.size(); i++) {
+		// DFS traversal
+		if (isDetected[i]) {
+			continue; // this node is included in a community already.
+		}
+		toCheck.push(i);
+		isDetected[i] = 1;
+		uint64_t ii;
+		uint64_t node_to_add;
+
+		while (!toCheck.empty()) {
+			ii = toCheck.top();
+			toCheck.pop();
+			toAdd.push(ii);
+			for (uint64_t j = 0; j < adj_mat.size(); j++) {
+				if (isDetected[j]) {
+					continue; // this node is included in a community already.
+				}
+				if (adj_mat[ii][j] > 0) {
+					toCheck.push(j);
+					isDetected[j] = 1;
+				}
+			}
+		}
+		if (toAdd.size() < 2) {
+			while (!toAdd.empty()) {
+				toAdd.pop();
+			}
+		} else {
+			if (componentNum + 1 > componentToVertexSet.size()) {
+				componentToVertexSet.resize(componentNum + 1);
+			}
+			while (!toAdd.empty()) {
+				node_to_add = toAdd.top();
+				toAdd.pop();
+				auto vt = indexToVertex.find(node_to_add);
+				if (vt != indexToVertex.end()) {
+					componentToVertexSet[componentNum].insert(subgraph[vt->second].indexOriginal);
+				} else {
+					std::cerr << "BUG: not found in the hash table!" << std::endl;
+				}
+			}
+			componentNum++;
+		}
+	}
+}
+
+void
 community_detection_cosine_similarity_core(
     graph_t& subgraph,
     componentToVertexSet_t& componentToVertexSet,
@@ -675,57 +736,7 @@ community_detection_cosine_similarity_core(
 	// 4- Detect Communities (find connected components - DFS)
 	//      Alternative implementation: convert to boost::adjacency_list and use boost to find cc
 
-	uint64_t componentNum = 0;
-
-	std::stack<uint64_t> toCheck;
-	std::stack<uint64_t> toAdd;
-	std::vector<int> zeros(adj_mat.size(), 0);
-	std::vector<int> isDetected(adj_mat.size(), 0);
-	for (uint64_t i = 0; i < adj_mat.size(); i++) {
-		// DFS traversal
-		if (isDetected[i]) {
-			continue; // this node is included in a community already.
-		}
-		toCheck.push(i);
-		isDetected[i] = 1;
-		uint64_t ii;
-		uint64_t node_to_add;
-
-		while (!toCheck.empty()) {
-			ii = toCheck.top();
-			toCheck.pop();
-			toAdd.push(ii);
-			for (uint64_t j = 0; j < adj_mat.size(); j++) {
-				if (isDetected[j]) {
-					continue; // this node is included in a community already.
-				}
-				if (adj_mat[ii][j] > 0) {
-					toCheck.push(j);
-					isDetected[j] = 1;
-				}
-			}
-		}
-		if (toAdd.size() < 2) {
-			while (!toAdd.empty()) {
-				toAdd.pop();
-			}
-		} else {
-			if (componentNum + 1 > componentToVertexSet.size()) {
-				componentToVertexSet.resize(componentNum + 1);
-			}
-			while (!toAdd.empty()) {
-				node_to_add = toAdd.top();
-				toAdd.pop();
-				auto vt = indexToVertex.find(node_to_add);
-				if (vt != indexToVertex.end()) {
-					componentToVertexSet[componentNum].insert(subgraph[vt->second].indexOriginal);
-				} else {
-					std::cerr << "BUG: not found in the hash table!" << std::endl;
-				}
-			}
-			componentNum++;
-		}
-	}
+	connected_components_adjacency_matrix(subgraph, adj_mat, indexToVertex, componentToVertexSet);
 }
 
 void
@@ -828,7 +839,7 @@ main(int argc, char* argv[])
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
-	std::string separationStrategy = "bc+cosq";
+	std::string separationStrategy = "bc";
 	uint64_t threads = 1;
 	bool verbose = false;
 	bool failed = false;
@@ -883,7 +894,7 @@ main(int argc, char* argv[])
 			printErrorMsg(progname, "unsupported molecule separation strategy:" + strategy);
 			failed = true;
 		} else {
-			std::cerr << strategy << " ,";
+			std::cerr << strategy << ", ";
 		}
 	}
 	std::cerr << std::endl;
