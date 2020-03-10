@@ -19,6 +19,7 @@
 #include <boost/graph/biconnected_components.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/subgraph.hpp>
+#include <boost/algorithm/string.hpp>
 
 #if _OPENMP
 #include <omp.h>
@@ -697,13 +698,23 @@ community_detection_cosine_similarity(
 	return community_id;
 }
 
+template <class Container>
+void splitter(const std::string& str, Container& output, char delim = '+')
+{
+    std::stringstream ss(str);
+    std::string token;
+    while (std::getline(ss, token, delim)) {
+        output.push_back(token);
+    }
+}
+
 int
 main(int argc, char* argv[])
 {
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
-	std::string separationStrategy = "bc";
+	std::string separationStrategy = "bc+cos";
 	uint64_t threads = 1;
 	bool verbose = false;
 	bool failed = false;
@@ -731,6 +742,9 @@ main(int argc, char* argv[])
 		}
 	}
 
+    std::vector<std::string> std::vector<std::string>;
+    splitter(separationStrategy, strategies);
+
 	std::cerr << " using " << threads << " thread(s)." << std::endl;
 #if _OPENMP
 	omp_set_num_threads(threads);
@@ -748,10 +762,16 @@ main(int argc, char* argv[])
 		printErrorMsg(progname, "missing file operand");
 		failed = true;
 	}
-	if (separationStrategy != "bc") {
-		printErrorMsg(progname, "unsupported molecule separation strategy");
-		failed = true;
+
+	for (auto& strategy : strategies) {
+	    if (strategy != "bc" &&
+	        strategy != "cos" &&
+	        strategy != "cosq" &&) {
+	            printErrorMsg(progname, "unsupported molecule separation strategy:", strategy );
+		        failed = true;
+	        }
 	}
+
 	if (failed) {
 		printUsage(progname);
 		exit(EXIT_FAILURE);
@@ -840,7 +860,6 @@ main(int argc, char* argv[])
 			// binning
 			bin_neighbours(neighbours, componentsVec, 50);
 
-			// for (uint64_t comp_i = 0; comp_i < componentsVec.size(); comp_i++) {
 			for (auto& comp_i : componentsVec) {
 				graph_t subgraph;
 				make_subgraph(g, subgraph, edge_set, comp_i.begin(), comp_i.end());
