@@ -280,8 +280,7 @@ bin_components(
 		componentsCount = ((neighborhoodSize - 1) / binSize) + 1;
 		componentsSize.push_back(componentsCount);
 	}
-	uint64_t newSize =
-	    std::accumulate(componentsSize.begin(), componentsSize.end(), uint64_t(0));
+	uint64_t newSize = std::accumulate(componentsSize.begin(), componentsSize.end(), uint64_t(0));
 	binnedNeighbours.resize(newSize);
 	uint64_t counterNew = 0;
 	uint64_t baseCompSize;
@@ -326,9 +325,9 @@ bin_neighbours(
 	}
 }
 
-template<class Graph, class vertexIter, class edgeSet>
+template<class Graph, class vertexIter, class edgeSet_c>
 void
-make_subgraph(Graph& g, Graph& subgraph, edgeSet& edgeSet, vertexIter vBegin, vertexIter vEnd)
+make_subgraph(Graph& g, Graph& subgraph, edgeSet_c& edgeSet, vertexIter vBegin, vertexIter vEnd)
 {
 	// //   Make a vertex-induced subgraph of graph g, based on vertices from vBegin to vEnd
 	// //   track the source node by indexOriginal
@@ -597,7 +596,8 @@ calculate_cosine_similarity_2d(
 	adjacencyMatrix_t::iterator row_i;
 
 	auto normalizedRow_i = normalized.begin();
-	for (row_i = adjacencyMatrix.begin(); row_i != adjacencyMatrix.end(); ++row_i, ++normalizedRow_i) {
+	for (row_i = adjacencyMatrix.begin(); row_i != adjacencyMatrix.end();
+	     ++row_i, ++normalizedRow_i) {
 		rowSum = 0;
 		auto first = row_i->begin();
 		auto last = row_i->end();
@@ -736,7 +736,8 @@ community_detection_cosine_similarity_core(
 	// 4- Detect Communities (find connected components - DFS)
 	//      Alternative implementation: convert to boost::adjacency_list and use boost to find cc
 
-	connected_components_adjacency_matrix(subgraph, adjacencyMatrix, indexToVertex, componentToVertexSet);
+	connected_components_adjacency_matrix(
+	    subgraph, adjacencyMatrix, indexToVertex, componentToVertexSet);
 }
 
 void
@@ -775,12 +776,12 @@ community_detection_cosine_similarity(
 	return moleculeNum;
 }
 
-template<class edgeSet>
+template<class edgeSet_c>
 uint64_t
 recursive_community_detection(
     uint64_t depth,
     graph_t& g,
-    edgeSet& edgeSet,
+    edgeSet_c& edgeSet,
     graph_t& subgraph,
     std::vector<std::string>& strategies,
     vertexToComponent_t& vertexToComponent,
@@ -821,13 +822,7 @@ recursive_community_detection(
 			graph_t subgraph;
 			make_subgraph(g, subgraph, edgeSet, vertexSet.begin(), vertexSet.end());
 			initialCommunityID = recursive_community_detection(
-			    depth + 1,
-			    g,
-			    edgeSet,
-			    subgraph,
-			    strategies,
-			    vertexToComponent,
-			    initialCommunityID);
+			    depth + 1, g, edgeSet, subgraph, strategies, vertexToComponent, initialCommunityID);
 		}
 	}
 	return initialCommunityID;
@@ -839,7 +834,7 @@ main(int argc, char* argv[])
 	auto progname = "physlr-molecules";
 	int optindex = 0;
 	static int help = 0;
-	std::string separationStrategy = "bc";
+	std::string separationStrategy = "bc+cosq";
 	uint64_t threads = 1;
 	bool verbose = false;
 	bool failed = false;
