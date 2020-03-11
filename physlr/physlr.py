@@ -780,7 +780,7 @@ class Physlr:
         return backbones
 
     @staticmethod
-    def wrap_up_messages_and_pass(mst, messages, sender, receiver):
+    def wrap_up_messages_and_pass(mst, messages, sender, receiver, weighted = 0):
         """
         Wrap up all incoming messages to this node (sender) except the one from receiver;
         and set (pass) the message from sender to receiver.
@@ -789,6 +789,8 @@ class Physlr:
             length = 0
         else:
             length = max(messages[(sender, u)] for u in mst.neighbors(sender) if u != receiver)
+        if weighted != 0:
+            length = length + mst[receiver][sender]['weight'] - 1
         messages[(receiver, sender)] = 1 + length
 
     @staticmethod
