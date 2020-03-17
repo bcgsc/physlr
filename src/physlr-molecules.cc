@@ -712,7 +712,8 @@ community_detection_cosine_similarity_core(
 	std::vector<std::vector<double>> cosSimilarity2d(sizeAdjacencyMatrix, tempVector);
 
 	if (squaring) {
-		calculate_cosine_similarity_2d(square_matrix_ikj(adjacencyMatrix, true), cosSimilarity2d);
+		adjacencyMatrix_t squaredAdjacencyMatrix(square_matrix_ikj(adjacencyMatrix, true));
+		calculate_cosine_similarity_2d(squaredAdjacencyMatrix, cosSimilarity2d);
 	} else {
 		calculate_cosine_similarity_2d(adjacencyMatrix, cosSimilarity2d);
 	}
