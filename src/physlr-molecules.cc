@@ -582,7 +582,7 @@ square_matrix_ikj( // Might be faster than ijk, benchmark it
 
 inline void
 calculate_cosine_similarity_2d(
-    adjacencyMatrix_t adjacencyMatrix, // CHANGE: to a reference!
+    adjacencyMatrix_t& adjacencyMatrix,
     std::vector<std::vector<double>>& cosimilarity)
 {
 	// calculate the cosine similarity of the input 2d-matrix with itself
