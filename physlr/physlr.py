@@ -976,6 +976,10 @@ class Physlr:
         g = self.read_graph(self.args.FILES)
         if self.args.d == 1:
             vertices.update(v for u in vertices for v in g.neighbors(u))
+        if self.args.d > 1:
+            for u in vertices:
+                vertices.update(
+                    nx.bfs_tree(g, source=u, depth_limit=self.args.d))
         subgraph = g.subgraph(vertices - exclude_vertices)
         print(int(timeit.default_timer() - t0), "Extracted subgraph", file=sys.stderr)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
@@ -984,7 +988,7 @@ class Physlr:
     def physlr_subgraphs(self):
         "Extract multiple vertex-induced subgraphs."
         if self.args.output is None:
-            sys.exit("physlr subgraphs: missing parameter: --output is need but not provided.")
+            sys.exit("physlr subgraphs: missing parameter: --output is needed but not provided.")
         if self.args.d not in (0, 1):
             sys.exit("physlr subgraphs: error: Only -d0 and -d1 are currently supported.")
         vertices = set(self.args.v.split(","))
@@ -1002,6 +1006,9 @@ class Physlr:
                 vertices_u.add(u)
             if self.args.d == 1:
                 vertices_u.update(v for v in g.neighbors(u))
+            if self.args.d > 1:
+                vertices_u.update(
+                    nx.bfs_tree(g, source=u, depth_limit=self.args.d))
             subgraph = g.subgraph(vertices_u - exclude_vertices)
             if subgraph.number_of_nodes() == 0:
                 num_empty_subgraphs += 1
