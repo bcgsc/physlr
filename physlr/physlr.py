@@ -1002,13 +1002,24 @@ class Physlr:
             os.makedirs(self.args.output)
         for u in progress(vertices):
             vertices_u = set()
+            u_barcode = set()
+            if self.args.convert_to_molecule == 1:
+                #u_barcode.update(u+"_"+str(i) for i in range(100) if u+"_"+str(i) in g)
+                for i in range(100):
+                    if u+"_"+str(i) in g:
+                        u_barcode.update(u+"_"+str(i))
+                    else:
+                        break
+            else:
+                u_barcode = set(u)
             if self.args.exclude_source == 0:
-                vertices_u.add(u)
+                vertices_u.add(u_prime for u_prime in u_barcode)
             if self.args.d == 1:
-                vertices_u.update(v for v in g.neighbors(u))
+                vertices_u.update(v for u_prime in u_barcode for v in g.neighbors(u_prime))
             if self.args.d > 1:
-                vertices_u.update(
-                    nx.bfs_tree(g, source=u, depth_limit=self.args.d))
+                for u_prime in u_barcode:
+                    vertices_u.update(
+                        nx.bfs_tree(g, source=u_prime, depth_limit=self.args.d))
             subgraph = g.subgraph(vertices_u - exclude_vertices)
             if subgraph.number_of_nodes() == 0:
                 num_empty_subgraphs += 1
@@ -2711,6 +2722,9 @@ class Physlr:
         argparser.add_argument(
             "--exclude-source", action="store", dest="exclude_source", type=int, default=1,
             help="exclude the barcode itself from the subgraph (0 or 1) [1]")
+        argparser.add_argument(
+            "--convert-to-molecule", action="store", dest="convert_to_molecule", type=int, default=0,
+            help="convert source barcodes to a set of molecules by adding underscore and numbers (0 or 1) [0]")
         argparser.add_argument(
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away [0]")
