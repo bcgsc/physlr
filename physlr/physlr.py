@@ -1003,15 +1003,14 @@ class Physlr:
         for u in progress(vertices):
             vertices_u = set()
             u_mol = set()
-            if self.args.convert_to_molecule == 1:
-                #u_barcode.update(u+"_"+str(i) for i in range(100) if u+"_"+str(i) in g)
+            if u in g:
+                u_mol.update(u)
+            else:
                 for i in range(100):
                     if u+"_"+str(i) in g:
                         u_mol.update(u+"_"+str(i))
                     else:
                         break
-            else:
-                u_mol = set(u)
             if self.args.exclude_source == 0:
                 vertices_u.add(u_prime for u_prime in u_mol)
             if self.args.d == 1:
@@ -2724,9 +2723,6 @@ class Physlr:
         argparser.add_argument(
             "--exclude-source", action="store", dest="exclude_source", type=int, default=0,
             help="exclude the barcode itself from the subgraph (0 or 1) [1]")
-        argparser.add_argument(
-            "--convert-to-molecule", action="store", dest="convert_to_molecule", type=int, default=0,
-            help="convert source barcodes to a set of molecules by adding underscore and numbers (0 or 1) [0]")
         argparser.add_argument(
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away [0]")
