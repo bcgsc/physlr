@@ -1004,17 +1004,20 @@ class Physlr:
             vertices_u = set()
             u_mol = set()
             if u in g:
-                u_mol.update(u)
+                u_mol.add(u)
             else:
                 for i in range(100):
-                    if u+"_"+str(i) in g:
-                        u_mol.update(u+"_"+str(i))
+                    to_mol = u+"_"+str(i)
+                    if to_mol in g:
+                        u_mol.add(to_mol)
                     else:
                         break
             if self.args.exclude_source == 0:
-                vertices_u.add(u_prime for u_prime in u_mol)
+                #vertices_u.update(u_prime for u_prime in u_mol)
+                vertices_u.update(u_mol)
             if self.args.d == 1:
-                vertices_u.update(v for u_prime in u_mol for v in g.neighbors(u_prime))
+                #vertices_u.update(v for u_prime in u_mol for v in g.neighbors(u_prime))
+                vertices_u.update(g.neighbors(u_prime) for u_prime in u_mol)
             if self.args.d > 1:
                 for u_prime in u_mol:
                     vertices_u.update(
