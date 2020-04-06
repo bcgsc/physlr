@@ -992,7 +992,8 @@ class Physlr:
         if self.args.d < 0:
             sys.exit("physlr subgraphs: error: -d must be non-negative.")
         if self.args.d > self.args.d_max:
-            sys.exit("physlr subgraphs: error: -d must be a non-negative value smaller than " + str(self.args.d_max) + ".")
+            sys.exit("physlr subgraphs: error: -d must be a non-negative value smaller than "
+                     + str(self.args.d_max) + ".")
         vertices = set(self.args.v.split(","))
         exclude_vertices = set(self.args.exclude_vertices.split(","))
         g = self.read_graph(self.args.FILES)
