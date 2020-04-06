@@ -967,8 +967,11 @@ class Physlr:
 
     def physlr_subgraph(self):
         "Extract a vertex-induced subgraph."
-        if self.args.d > 50:
-            sys.exit("physlr subgraphs: error: values in [0,50] are currently acceptable for -d.")
+        if self.args.d < 0:
+            sys.exit("physlr subgraphs: error: -d must be non-negative.")
+        if self.args.d > self.args.d_max:
+            sys.exit("physlr subgraphs: error: -d must be a non-negative value smaller than "
+                     + str(self.args.d_max) + ".")
         vertices = set(self.args.v.split(","))
         if not self.args.exclude_vertices and len(vertices) == 1 and self.args.d == 1:
             self.args.exclude_vertices = self.args.v
