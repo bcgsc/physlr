@@ -11,6 +11,9 @@ w=32
 # Number of threads.
 t=16
 
+# distance (depth) for extracting subgraphs
+d=1
+
 # Size of Bloom filter
 bloom_filter_size=10000000000 #10GB
 
