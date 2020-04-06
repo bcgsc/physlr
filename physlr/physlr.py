@@ -990,7 +990,9 @@ class Physlr:
         if self.args.output is None:
             sys.exit("physlr subgraphs: missing parameter: --output is needed but not provided.")
         if self.args.d < 0:
-            sys.exit("physlr subgraphs: error: -d accepts non-negative values.")
+            sys.exit("physlr subgraphs: error: -d must be non-negative.")
+        if self.args.d > self.args.d_max:
+            sys.exit("physlr subgraphs: error: -d must be a non-negative value smaller than " + str(self.args.d_max) + ".")
         vertices = set(self.args.v.split(","))
         exclude_vertices = set(self.args.exclude_vertices.split(","))
         g = self.read_graph(self.args.FILES)
@@ -2727,6 +2729,9 @@ class Physlr:
         argparser.add_argument(
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away [0]")
+        argparser.add_argument(
+            "--distance-max", action="store", dest="d_max", type=int, default=20,
+            help="maximum acceptable value for -d (--distance) argument to avoid slow runs [20]")
         argparser.add_argument(
             "-o", "--output", action="store", dest="output",
             help="the output file or directory")
