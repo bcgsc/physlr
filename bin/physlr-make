@@ -1139,7 +1139,7 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 
 # Make multiple vertex-induced subgraphs
 %.subgraphs: %.tsv
-	$(python) $(bin)/physlr subgraphs -v$v -d$d -V$V -o $*.subgraphs $<
+	$(python) $(bin)/physlr subgraphs -v$v -d$d -V$V -o $*.subgraphs.$d $<
 
 # Extract statistics of the subgraphs
 %.subgraphs-stats.tsv: %.tsv
