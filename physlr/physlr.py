@@ -989,8 +989,8 @@ class Physlr:
         "Extract multiple vertex-induced subgraphs."
         if self.args.output is None:
             sys.exit("physlr subgraphs: missing parameter: --output is needed but not provided.")
-        if self.args.d > 50:
-            sys.exit("physlr subgraphs: error: values in [0,50] are currently acceptable for -d.")
+        if self.args.d < 0:
+            sys.exit("physlr subgraphs: error: -d accepts non-negative values.")
         vertices = set(self.args.v.split(","))
         exclude_vertices = set(self.args.exclude_vertices.split(","))
         g = self.read_graph(self.args.FILES)
@@ -1006,12 +1006,12 @@ class Physlr:
             if u in g:
                 u_mol.add(u)
             else:
-                for i in range(100):
-                    to_mol = u+"_"+str(i)
-                    if to_mol in g:
-                        u_mol.add(to_mol)
-                    else:
-                        break
+                mol = 0
+                to_mol = u + "_" + str(mol)
+                while to_mol in g:
+                    u_mol.add(to_mol)
+                    mol = mol + 1
+                    to_mol = u + "_" + str(mol)
             if self.args.exclude_source == 0:
                 vertices_u.update(u_mol)
             if self.args.d == 1:
