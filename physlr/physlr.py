@@ -967,8 +967,11 @@ class Physlr:
 
     def physlr_subgraph(self):
         "Extract a vertex-induced subgraph."
-        if self.args.d not in (0, 1):
-            sys.exit("physlr subgraph: error: Only -d0 and -d1 are currently supported.")
+        if self.args.d < 0:
+            sys.exit("physlr subgraphs: error: -d must be non-negative.")
+        if self.args.d > self.args.d_max:
+            sys.exit("physlr subgraphs: error: -d must be a non-negative value smaller than "
+                     + str(self.args.d_max) + ".")
         vertices = set(self.args.v.split(","))
         if not self.args.exclude_vertices and len(vertices) == 1 and self.args.d == 1:
             self.args.exclude_vertices = self.args.v
@@ -976,6 +979,10 @@ class Physlr:
         g = self.read_graph(self.args.FILES)
         if self.args.d == 1:
             vertices.update(v for u in vertices for v in g.neighbors(u))
+        if self.args.d > 1:
+            for u in vertices:
+                vertices.update(
+                    nx.bfs_tree(g, source=u, depth_limit=self.args.d))
         subgraph = g.subgraph(vertices - exclude_vertices)
         print(int(timeit.default_timer() - t0), "Extracted subgraph", file=sys.stderr)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
@@ -984,9 +991,12 @@ class Physlr:
     def physlr_subgraphs(self):
         "Extract multiple vertex-induced subgraphs."
         if self.args.output is None:
-            sys.exit("physlr subgraphs: missing parameter: --output is need but not provided.")
-        if self.args.d not in (0, 1):
-            sys.exit("physlr subgraphs: error: Only -d0 and -d1 are currently supported.")
+            sys.exit("physlr subgraphs: missing parameter: --output is needed but not provided.")
+        if self.args.d < 0:
+            sys.exit("physlr subgraphs: error: -d must be non-negative.")
+        if self.args.d > self.args.d_max:
+            sys.exit("physlr subgraphs: error: -d must be a non-negative value smaller than "
+                     + str(self.args.d_max) + ".")
         vertices = set(self.args.v.split(","))
         exclude_vertices = set(self.args.exclude_vertices.split(","))
         g = self.read_graph(self.args.FILES)
@@ -998,10 +1008,26 @@ class Physlr:
             os.makedirs(self.args.output)
         for u in progress(vertices):
             vertices_u = set()
+            u_mol = set()
+            if u in g:
+                u_mol.add(u)
+            else:
+                mol = 0
+                to_mol = u + "_" + str(mol)
+                while to_mol in g:
+                    u_mol.add(to_mol)
+                    mol = mol + 1
+                    to_mol = u + "_" + str(mol)
             if self.args.exclude_source == 0:
-                vertices_u.add(u)
+                vertices_u.update(u_mol)
             if self.args.d == 1:
-                vertices_u.update(v for v in g.neighbors(u))
+                vertices_u.update(g.neighbors(u_prime) for u_prime in u_mol)
+            if self.args.d > 1:
+                for u_prime in u_mol:
+                    vertices_u.update(
+                        nx.bfs_tree(g, source=u_prime, depth_limit=self.args.d))
+                if self.args.exclude_source == 1:
+                    vertices_u.discard(u_prime for u_prime in u_mol)
             subgraph = g.subgraph(vertices_u - exclude_vertices)
             if subgraph.number_of_nodes() == 0:
                 num_empty_subgraphs += 1
@@ -2702,11 +2728,14 @@ class Physlr:
             "--exclude-vertices", action="store", dest="exclude_vertices", default="",
             help="list of vertices to exclude [None]")
         argparser.add_argument(
-            "--exclude-source", action="store", dest="exclude_source", type=int, default=1,
+            "--exclude-source", action="store", dest="exclude_source", type=int, default=0,
             help="exclude the barcode itself from the subgraph (0 or 1) [1]")
         argparser.add_argument(
             "-d", "--distance", action="store", dest="d", type=int, default=0,
             help="include vertices within d edges away [0]")
+        argparser.add_argument(
+            "--distance-max", action="store", dest="d_max", type=int, default=20,
+            help="maximum acceptable value for -d (--distance) argument to avoid slow runs [20]")
         argparser.add_argument(
             "-o", "--output", action="store", dest="output",
             help="the output file or directory")
