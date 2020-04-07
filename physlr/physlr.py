@@ -1020,9 +1020,9 @@ class Physlr:
                     to_mol = u + "_" + str(mol)
             if self.args.exclude_source == 0:
                 vertices_u.update(v for v in u_mol)
-            if self.args.d == 1:
-                vertices_u.update(v for v in g.neighbors(u_prime) for u_prime in u_mol)
-            if self.args.d > 1:
+            # if self.args.d == 1:
+            #     vertices_u.update(v for v in g.neighbors(u_prime) for u_prime in u_mol)
+            if self.args.d > 0:
                 for u_prime in u_mol:
                     vertices_u.update(
                         nx.bfs_tree(g, source=u_prime, depth_limit=self.args.d))
