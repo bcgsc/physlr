@@ -49,7 +49,7 @@ In this example, the linked reads and reference genome are called `linkedreads.f
 
 ```
 cd experiment
-bin/physlr-make physical-map lr=linkedreads ref=ref minimizer_overlap=stLFR
+bin/physlr-make physical-map lr=linkedreads ref=reference minimizer_overlap=stLFR
 ```
 
 ## Scaffolding a draft assembly with Physlr Physical Map
