@@ -1061,6 +1061,10 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 	$(zcat) $< | $(time) $(python) $(bin)/physlr paf-metrics -V$V -g$g - \
 		| sed 's/\/dev\/stdin/$</' >$@
 
+# Annotate a graph with a file of barcode to chrosomome mappings.
+%.ann_bxchr.gv: %.tsv %.bx_chr_mappings.tsv
+	$(python) $(bin)/physlr annotate-graph-bxchr --min-component-size=$(min_component_size) -Ogv -V$V $^ >$@
+
 # Annotate a backbone graph with a BED file of mappings.
 # Filter out small components.
 %.map.$(ref).n10.sort.best.ann.gv: %.tsv %.path %.map.$(ref).n10.sort.best.bed
