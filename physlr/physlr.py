@@ -2123,7 +2123,6 @@ class Physlr:
 
         g = self.read_graph(graph_filenames)
         Physlr.remove_small_components(g, self.args.min_component_size)
-        backbones = Physlr.read_paths(path_filenames)
         
         # Read barcode to chromosome data into a dictionary
         bxtochr = {}
