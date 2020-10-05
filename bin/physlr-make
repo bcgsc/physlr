@@ -1283,9 +1283,20 @@ $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
 %.gv.pdf: %.gv
 	neato -Gsize=100 -Goverlap=scale -Tpdf -o $@ $<
 
+# Layout and render an undirected subgraph to PNG using sfdp, with edges beneath vertices.
+%.gv.sfdp_edgesfirst.png: %.gv
+	sfdp -Gsize=100 -Goutputorder="edgesfirst" -Goverlap_scaling=200 -Tpdf -o $@ $<
+
 # Layout and render an undirected graph to PDF using sfdp.
 %.gv.sfdp.pdf: %.gv
 	sfdp -Gsize=100 -Goverlap_scaling=200 -Tpdf -o $@ $<
+# Layout and render an undirected graph to PNG using sfdp.
+%.gv.sfdp.png: %.gv
+	sfdp -Gsize=100 -Goverlap_scaling=200 -Tpdf -o $@ $<
+# Layout and render an undirected graph to SVG using sfdp.
+%.gv.sfdp.svg: %.gv
+	sfdp -Gsize=100 -Goverlap_scaling=200 -Tsvg -o $@ $<
+
 
 ################################################################################
 # RMarkdown reports
