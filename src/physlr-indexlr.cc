@@ -1,13 +1,9 @@
-// Convert linked-reads to minimizers using ntHash-2.0.0.
-// Usage:  physlr-indexlr -k K -w W [-r repeat_bf_path] [-s solid_bf_path] [-v] [-o FILE] FILE...
-// Output: Each line of output is a barcode followed by a list of minimzers.
-// Originally written for Physlr: (https://github.com/bcgsc/physlr)
-// Written by Vladimir Nikolic (schutzekatze) and Shaun Jackman (@sjackman)
-
-#include "btl_bloomfilter/BloomFilter.hpp"
-#include "indexlr-workers.h"
+#include "btllib/bloom_filter.hpp"
+#include "btllib/indexlr.hpp"
 
 #include <cassert>
+#include <condition_variable>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -15,133 +11,111 @@
 #include <getopt.h>
 #include <iostream>
 #include <limits>
+#include <memory>
+#include <mutex>
+#include <queue>
 #include <sstream>
 #include <string>
 #include <vector>
 
-// Read a FASTQ file and reduce each read to a set of minimizers
+const static std::string PROGNAME = "indexlr";
+const static std::string VERSION = "v1.2";
+const static size_t OUTPUT_PERIOD_SHORT = 512;
+const static size_t OUTPUT_PERIOD_LONG = 2;
+const static size_t INITIAL_OUTPUT_STREAM_SIZE = 100;
+const static size_t QUEUE_SIZE = 64;
+const static size_t MAX_THREADS = 5;
+
 static void
-minimizeReads(
-    const std::string& ipath,
-    const std::string& opath,
-    const size_t k,
-    const size_t w,
-    const size_t t,
-    const bool withRepeat,
-    const bool withSolid,
-    const bool withPositions,
-    const bool withStrands,
-    const bool verbose,
-    const BloomFilter& rBloomFilter,
-    const BloomFilter& sBloomFilter)
+print_error_msg(const std::string& msg)
 {
-	InputWorker inputWorker(ipath);
-	OutputWorker outputWorker(opath, inputWorker);
-
-	inputWorker.start();
-	outputWorker.start();
-
-	auto minimizeWorkers = std::vector<MinimizeWorker>(
-	    t,
-	    MinimizeWorker(
-	        k,
-	        w,
-	        withRepeat,
-	        withSolid,
-	        withPositions,
-	        withStrands,
-	        verbose,
-	        rBloomFilter,
-	        sBloomFilter,
-	        inputWorker,
-	        outputWorker));
-	for (auto& worker : minimizeWorkers) {
-		worker.start();
-	}
-	for (auto& worker : minimizeWorkers) {
-		worker.join();
-	}
-
-	inputWorker.join();
-	outputWorker.join();
+	std::cerr << PROGNAME << ' ' << VERSION << ": " << msg << std::endl;
 }
 
 static void
-printErrorMsg(const std::string& progname, const std::string& msg)
+print_usage()
 {
-	std::cerr << progname << ": " << msg << "\nTry 'physlr-indexlr --help' for more information.\n";
-}
-
-static void
-printUsage(const std::string& progname)
-{
-	std::cout << "Usage:  " << progname
-	          << "  -k K -w W [-r repeat_bf_path] [-s solid_bf_path] [-v] [-o FILE] FILE...\n\n"
-	             "  -k K        use K as k-mer size\n"
-	             "  -w W        use W as sliding-window size\n"
-	             "  -r repeat_bf_path  use a Bloom filter to filter out repetitive minimizers\n"
-	             "  -s solid_bf_path  use a Bloom filter to only select solid minimizers\n"
-	             "  --pos       include minimizer positions in the output\n"
-	             "  --strand    include minimizer strand in the output\n"
-	             "  -v          enable verbose output\n"
-	             "  -o FILE     write output to FILE, default is stdout\n"
-	             "  -t N        use N number of threads (default 1, max 5)\n"
-	             "  --help      display this help and exit\n"
-	             "  FILE        space separated list of FASTQ files\n";
+	std::cerr
+	    << "Usage: " << PROGNAME
+	    << " -k K -w W [-r repeat_bf_path] [-s solid_bf_path] [--id] [--bx] [--pos] [--seq] "
+	       "[-o FILE] FILE...\n\n"
+	       "  -k K        Use K as k-mer size.\n"
+	       "  -w W        Use W as sliding-window size.\n"
+	       "  --id        Include read ids in the output.\n"
+	       "  --bx        Include read barcodes in the output.\n"
+	       "  --pos       Include minimizer positions in the output (appended with : after "
+	       "minimizer value).\n"
+	       "  --strand    Include minimizer strands in the output (appended with : after minimizer "
+	       "value).\n"
+	       "  --seq       Include minimizer sequences in the output (appended with : after "
+	       "minimizer value).\n"
+	       "              If a combination of --pos, --strand, and --seq options are provided, "
+	       "they're appended in the --pos, --strand, --seq order after the minimizer value.\n"
+	       "  --long      Enable long mode which is more efficient for long sequences (e.g. long "
+	       "reads, contigs, reference).\n"
+	       "  -r repeat_bf_path  Use a Bloom filter to filter out repetitive minimizers.\n"
+	       "  -s solid_bf_path  Use a Bloom filter to only select solid minimizers.\n"
+	       "  -o FILE     Write output to FILE, default is stdout.\n"
+	       "  -t T        Use T number of threads (default 5, max 5) per input file.\n"
+	       "  -v          Show verbose output.\n"
+	       "  --help      Display this help and exit.\n"
+	       "  --version   Display version and exit.\n"
+	       "  FILE        Space separated list of FASTA/Q files."
+	    << std::endl;
 }
 
 int
 main(int argc, char* argv[])
 {
-	auto progname = "physlr-indexlr";
 	int c;
 	int optindex = 0;
-	static int help = 0;
-	unsigned k = 0;
-	unsigned w = 0;
+	int help = 0, version = 0;
 	bool verbose = false;
-	bool withRepeat = false;
-	bool withSolid = false;
-	BloomFilter repeatBF;
-	BloomFilter solidBF;
-	unsigned t = 1;
-	bool failed = false;
+	unsigned k = 0, w = 0, t = 5;
 	bool w_set = false;
 	bool k_set = false;
-	static int withPositions = 0;
-	static int withStrands = 0;
-	char* end = nullptr;
-	std::string outfile("/dev/stdout");
-	static const struct option longopts[] = { { "pos", no_argument, &withPositions, 1 },
-		                                      { "strand", no_argument, &withStrands, 1 },
+	int with_id = 0, with_bx = 0, with_pos = 0, with_strand = 0, with_seq = 0;
+	std::unique_ptr<btllib::KmerBloomFilter> repeat_bf, solid_bf;
+	bool with_repeat = false, with_solid = false;
+	int long_mode = 0;
+	std::string outfile("-");
+	bool failed = false;
+	static const struct option longopts[] = { { "id", no_argument, &with_id, 1 },
+		                                      { "bx", no_argument, &with_bx, 1 },
+		                                      { "pos", no_argument, &with_pos, 1 },
+		                                      { "strand", no_argument, &with_strand, 1 },
+		                                      { "seq", no_argument, &with_seq, 1 },
+		                                      { "long", no_argument, &long_mode, 1 },
 		                                      { "help", no_argument, &help, 1 },
+		                                      { "version", no_argument, &version, 1 },
 		                                      { nullptr, 0, nullptr, 0 } };
-	while ((c = getopt_long(argc, argv, "k:w:o:vt:r:s:", longopts, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, "k:w:o:t:vr:s:", longopts, &optindex)) != -1) {
 		switch (c) {
 		case 0:
 			break;
 		case 'k':
 			k_set = true;
-			k = strtoul(optarg, &end, 10);
+			k = std::stoul(optarg);
 			break;
 		case 'w':
 			w_set = true;
-			w = strtoul(optarg, &end, 10);
+			w = std::stoul(optarg);
 			break;
 		case 'o':
-			outfile.assign(optarg);
+			outfile = optarg;
+			break;
+		case 't':
+			t = std::stoul(optarg);
 			break;
 		case 'v':
 			verbose = true;
 			break;
-		case 't':
-			t = strtoul(optarg, &end, 10);
-			break;
 		case 'r': {
-			withRepeat = true;
+			with_repeat = true;
 			std::cerr << "Loading repeat Bloom filter from " << optarg << std::endl;
 			try {
-				repeatBF.loadFilter(optarg);
+				repeat_bf =
+				    std::unique_ptr<btllib::KmerBloomFilter>(new btllib::KmerBloomFilter(optarg));
 			} catch (const std::exception& e) {
 				std::cerr << e.what() << '\n';
 			}
@@ -149,10 +123,11 @@ main(int argc, char* argv[])
 			break;
 		}
 		case 's': {
-			withSolid = true;
+			with_solid = true;
 			std::cerr << "Loading solid Bloom filter from " << optarg << std::endl;
 			try {
-				solidBF.loadFilter(optarg);
+				solid_bf =
+				    std::unique_ptr<btllib::KmerBloomFilter>(new btllib::KmerBloomFilter(optarg));
 			} catch (const std::exception& e) {
 				std::cerr << e.what() << '\n';
 			}
@@ -160,65 +135,174 @@ main(int argc, char* argv[])
 			break;
 		}
 		default:
-			exit(EXIT_FAILURE);
+			std::exit(EXIT_FAILURE);
 		}
 	}
-	if (t > 5 && !(withSolid || withRepeat)) {
-		t = 5;
-		std::cerr
-		    << progname
-		    << ": Using more than 5 threads without Bloom filter does not scale, reverting to 5."
-		    << std::endl;
-	} else {
-		if (t > 48) {
-			std::cerr
-			    << progname
-			    << ": Using more than 48 threads with Bloom filter does not scale, reverting to 48."
-			    << std::endl;
-		}
+	if (t > MAX_THREADS) {
+		t = MAX_THREADS;
+		std::cerr << (PROGNAME + ' ' + VERSION + ": Using more than " +
+		              std::to_string(MAX_THREADS) + " threads does not scale, reverting to 5.\n")
+		          << std::flush;
 	}
 	std::vector<std::string> infiles(&argv[optind], &argv[argc]);
 	if (argc < 2) {
-		printUsage(progname);
-		exit(EXIT_FAILURE);
+		print_usage();
+		std::exit(EXIT_FAILURE);
 	}
 	if (help != 0) {
-		printUsage(progname);
-		exit(EXIT_SUCCESS);
-	} else if (!k_set) {
-		printErrorMsg(progname, "missing option -- 'k'");
-		failed = true;
-	} else if (!w_set) {
-		printErrorMsg(progname, "missing option -- 'w'");
+		print_usage();
+		std::exit(EXIT_SUCCESS);
+	} else if (version != 0) {
+		std::cerr << PROGNAME << ' ' << VERSION << std::endl;
+		std::exit(EXIT_SUCCESS);
+	}
+	if (!k_set) {
+		print_error_msg("missing option -- 'k'");
 		failed = true;
 	} else if (k == 0) {
-		printErrorMsg(progname, "option has incorrect argument -- 'k'");
+		print_error_msg("option has incorrect value -- 'k'");
+		failed = true;
+	}
+	if (!w_set) {
+		print_error_msg("missing option -- 'w'");
 		failed = true;
 	} else if (w == 0) {
-		printErrorMsg(progname, "option has incorrect argument -- 'w'");
+		print_error_msg("option has incorrect value -- 'w'");
 		failed = true;
-	} else if (infiles.empty()) {
-		printErrorMsg(progname, "missing file operand");
+	}
+	if (infiles.empty()) {
+		print_error_msg("missing file operand");
 		failed = true;
 	}
 	if (failed) {
-		exit(EXIT_FAILURE);
+		std::cerr << "Try '" << PROGNAME << " --help' for more information.\n";
+		std::exit(EXIT_FAILURE);
 	}
 
+	unsigned flags = 0;
+	if (with_id) {
+		flags |= btllib::Indexlr::Flag::ID;
+	}
+	if (with_bx) {
+		flags |= btllib::Indexlr::Flag::BX;
+	}
+	if (with_seq) {
+		flags |= btllib::Indexlr::Flag::SEQ;
+	}
+	if (long_mode) {
+		flags |= btllib::Indexlr::Flag::LONG_MODE;
+	}
+
+	btllib::Indexlr::Record record;
+	FILE* out;
+	if (outfile == "-") {
+		out = stdout;
+	} else {
+		out = fopen(outfile.c_str(), "w");
+	}
 	for (auto& infile : infiles) {
-		minimizeReads(
-		    infile == "-" ? "/dev/stdin" : infile,
-		    outfile,
-		    k,
-		    w,
-		    t,
-		    withRepeat,
-		    withSolid,
-		    withPositions,
-		    withStrands,
-		    verbose,
-		    repeatBF,
-		    solidBF);
+		std::unique_ptr<btllib::Indexlr> indexlr;
+		if (with_repeat && with_solid) {
+			flags |= btllib::Indexlr::Flag::FILTER_IN;
+			flags |= btllib::Indexlr::Flag::FILTER_OUT;
+			indexlr = std::unique_ptr<btllib::Indexlr>(new btllib::Indexlr(
+			    infile,
+			    k,
+			    w,
+			    flags,
+			    t,
+			    verbose,
+			    solid_bf->get_bloom_filter(),
+			    repeat_bf->get_bloom_filter()));
+		} else if (with_repeat) {
+			flags |= btllib::Indexlr::Flag::FILTER_OUT;
+			indexlr = std::unique_ptr<btllib::Indexlr>(new btllib::Indexlr(
+			    infile, k, w, flags, t, verbose, repeat_bf->get_bloom_filter()));
+		} else if (with_solid) {
+			flags |= btllib::Indexlr::Flag::FILTER_IN;
+			indexlr = std::unique_ptr<btllib::Indexlr>(
+			    new btllib::Indexlr(infile, k, w, flags, t, verbose, solid_bf->get_bloom_filter()));
+		} else {
+			indexlr = std::unique_ptr<btllib::Indexlr>(
+			    new btllib::Indexlr(infile, k, w, flags, t, verbose));
+		}
+		std::queue<std::string> output_queue;
+		std::mutex output_queue_mutex;
+		std::condition_variable queue_empty, queue_full;
+		size_t max_seen_output_size = INITIAL_OUTPUT_STREAM_SIZE;
+		const size_t output_period = long_mode ? OUTPUT_PERIOD_LONG : OUTPUT_PERIOD_SHORT;
+		std::unique_ptr<std::thread> info_compiler(new std::thread([&]() {
+			std::stringstream ss;
+			while ((record = indexlr->get_minimizers())) {
+				if (with_id || (!with_id && !with_bx)) {
+					ss << record.id << '\t';
+				}
+				if (with_bx) {
+					ss << record.barcode << '\t';
+				}
+				int j = 0;
+				for (const auto& min : record.minimizers) {
+					if (j > 0) {
+						ss << ' ';
+					}
+					ss << min.out_hash;
+					if (with_pos) {
+						ss << ':' << min.pos;
+					}
+					if (with_strand) {
+						ss << ':' << (min.forward ? '+' : '-');
+					}
+					if (with_seq) {
+						ss << ':' << min.seq;
+					}
+					j++;
+				}
+				ss << '\n';
+				if (record.num % output_period == output_period - 1) {
+					auto ss_str = ss.str();
+					max_seen_output_size = std::max(max_seen_output_size, ss_str.size());
+					std::unique_lock<std::mutex> lock(output_queue_mutex);
+					while (output_queue.size() == QUEUE_SIZE) {
+						queue_full.wait(lock);
+					}
+					output_queue.push(std::move(ss_str));
+					queue_empty.notify_one();
+					lock.unlock();
+					std::string newstring;
+					newstring.reserve(max_seen_output_size);
+					ss.str(std::move(newstring));
+				}
+			}
+			{
+				std::unique_lock<std::mutex> lock(output_queue_mutex);
+				output_queue.push(ss.str());
+				output_queue.push(std::string());
+				queue_empty.notify_one();
+			}
+		}));
+		std::unique_ptr<std::thread> output_worker(new std::thread([&]() {
+			std::string to_write;
+			for (;;) {
+				{
+					std::unique_lock<std::mutex> lock(output_queue_mutex);
+					while (output_queue.empty()) {
+						queue_empty.wait(lock);
+					}
+					to_write = std::move(output_queue.front());
+					output_queue.pop();
+					queue_full.notify_one();
+				}
+				if (to_write.empty()) {
+					break;
+				}
+				fwrite(to_write.c_str(), 1, to_write.size(), out);
+			}
+		}));
+		info_compiler->join();
+		output_worker->join();
+	}
+	if (out != stdout) {
+		fclose(out);
 	}
 
 	return 0;

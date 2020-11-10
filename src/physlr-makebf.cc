@@ -10,8 +10,7 @@
 #include <omp.h>
 #endif
 
-#include "btl_bloomfilter/BloomFilter.hpp"
-#include "btl_bloomfilter/vendor/ntHashIterator.hpp"
+#include "btllib/bloom_filter.hpp"
 
 static void
 printErrorMsg(const std::string& progname, const std::string& msg)
@@ -34,13 +33,12 @@ printUsage(const std::string& progname)
 }
 
 static void
-printBloomStats(BloomFilter& bloom, ostream& os)
+printBloomStats(btllib::KmerBloomFilter& bloom, std::ostream& os)
 {
 	os << "Bloom filter stats:"
-	   << "\n\t#counters               = " << bloom.getFilterSize()
-	   << "\n\t#size (B)               = " << bloom.sizeInBytes()
-	   << "\n\tpopcount                = " << bloom.getPop()
-	   << "\n\tFPR                     = " << setprecision(3) << 100.f * bloom.getFPR() << "%"
+	   << "\n\t#size (B)               = " << bloom.get_bytes()
+	   << "\n\tpopcount                = " << bloom.get_pop_cnt()
+	   << "\n\tFPR                     = " << std::setprecision(3) << 100.f * bloom.get_fpr() << "%"
 	   << "\n";
 }
 
@@ -68,7 +66,7 @@ main(int argc, char* argv[])
 		case 0:
 			break;
 		case 'b':
-			filterSize = strtoul(optarg, &end, 10) * 8;
+			filterSize = strtoul(optarg, &end, 10);
 			break;
 		case 'k':
 			k_set = true;
@@ -127,11 +125,11 @@ main(int argc, char* argv[])
 		}
 	}
 
-	BloomFilter bloomFilter(filterSize, hashNum, k);
+	btllib::KmerBloomFilter bloomFilter(filterSize, hashNum, k);
 	if (verbose) {
 		std::cerr << "Made Bloom filter with:\n"
 		          << "kmer size                 = " << k << "\n"
-		          << "Bloom filter size         = " << filterSize << "\n"
+		          << "Bloom filter size         = " << filterSize << "B\n"
 		          << std::endl;
 		std::cerr << "Inserting " << kmerVect.size() << " kmers into Bloom filter"
 		          << "Using " << t << " threads." << std::endl;
@@ -140,11 +138,7 @@ main(int argc, char* argv[])
 	uint64_t counter = 0;
 #pragma omp parallel for num_threads(t)
 	for (auto vectIt = kmerVect.begin(); vectIt < kmerVect.end(); ++vectIt) {
-		ntHashIterator itr(*vectIt, hashNum, k);
-		while (itr != ntHashIterator::end()) {
-			bloomFilter.insert(*itr);
-			++itr;
-		}
+		bloomFilter.insert(*vectIt);
 		if (verbose) {
 #pragma omp critical
 			{
@@ -157,5 +151,5 @@ main(int argc, char* argv[])
 	}
 
 	printBloomStats(bloomFilter, std::cerr);
-	bloomFilter.storeFilter(outfile);
+	bloomFilter.write(outfile);
 }

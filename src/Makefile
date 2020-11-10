@@ -1,4 +1,4 @@
-CXXFLAGS=-g -O3 -Wall -Werror -Wno-error=unknown-pragmas -std=c++11 -pthread -I./include -I./vendor -fopenmp
+CXXFLAGS=-g -O3 -Wall -Werror -Wno-error=unknown-pragmas -std=c++11 -pthread -I./btllib/include -I./vendor -fopenmp
 LDLIBS=-lz
 PREFIX=$(HOME)/.local
 
@@ -14,12 +14,12 @@ lint: clang-format clang-tidy
 
 # Check the C++ source code for errors with clang-tidy.
 clang-tidy:
-	clang-tidy -warnings-as-errors='*' include/*.h *.cc -- -std=c++11 -x c++ -I./include -I./vendor
+	clang-tidy -warnings-as-errors='*' *.cc -- -std=c++11 -x c++ -I./btllib/include -I./vendor
 
 # Check the C++ source code for white-space errors with clang-format.
 clang-format:
-	for i in *.cc include/*.h; do clang-format -style=file $$i >$$i.fixed; done
-	for i in *.cc include/*.h; do diff -su $$i $$i.fixed && rm -f $$i.fixed; done
+	for i in *.cc; do clang-format -style=file $$i >$$i.fixed; done
+	for i in *.cc; do diff -su $$i $$i.fixed && rm -f $$i.fixed; done
 	if ls *.fixed; then exit 1; fi
 
 # Fix white-space errors with clang-format.
@@ -35,7 +35,7 @@ check-physlr-index-pos-fasta: all
 	./physlr-indexlr -t16 -k100 -w5 --pos data/mt.fa | diff -q - data/mt.pos.physlr.tsv.good
 
 check-physlr-index-fastq: all
-	./physlr-indexlr -t16 -k100 -w5 data/tiny.fq | diff -q - data/tiny.physlr.tsv.good
+	./physlr-indexlr -t16 -k100 -w5 --bx data/tiny.fq | diff -q - data/tiny.physlr.tsv.good
 
 check-physlr-filter-barcodes: all
 	./physlr-filter-barcodes data/f1chr4-head50.tsv -o data/f1chr4-head50.n100-1000.tsv -n100 -N1000
@@ -50,14 +50,14 @@ check-physlr-filter-bxmx-second: all
 	./data/checkMx.sh f1.tiny.indexlr.n2-10.c2-x.physlr.tsv data/f1.tiny.indexlr.n2-10.c2-x.physlr.tsv.good
 
 check-physlr-index-stLFR: all
-	./physlr-indexlr -t16 -k8 -w1 data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.physlr.tsv.good
+	./physlr-indexlr -t16 -k8 -w1 --bx data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.physlr.tsv.good
 
 check-physlr-index-stLFR-10X: all
-	./physlr-indexlr -t16 -k8 -w1 data/stLFR.10X.combined.tiny.fq | diff -q - data/stLFR.10X.combined.tiny.physlr.tsv.good
+	./physlr-indexlr -t16 -k8 -w1 --bx data/stLFR.10X.combined.tiny.fq | diff -q - data/stLFR.10X.combined.tiny.physlr.tsv.good
 
 check-physlr-makebf: all
 	./physlr-makebf -t16 -k8 -b1000 -o tiny.bf data/tiny_k8.rep
-	./physlr-indexlr -t16 -k8 -w1 -r tiny.bf data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
+	./physlr-indexlr -t16 -k8 -w1 --bx -r tiny.bf data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
 
 check-physlr-overlap: all
 	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
