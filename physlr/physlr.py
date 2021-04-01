@@ -2127,7 +2127,7 @@ class Physlr:
         # Read barcode to chromosome data into a dictionary
         bxtochr = {}
         with open(map_filename) as mapfilename:
-            for line in mapfilename.readlines():
+            for line in mapfilename:
                 bx_chr = line.split()
                 bxtochr[bx_chr[0]] = bx_chr[1]
 
