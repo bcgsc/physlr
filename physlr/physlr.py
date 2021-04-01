@@ -2432,7 +2432,7 @@ class Physlr:
             if not path:
                 continue
 
-            all_unoriented = all([name[-1] == "." for name in path])
+            all_unoriented = all(([name[-1] == "." for name in path]))
             if all_unoriented:
                 continue
 
