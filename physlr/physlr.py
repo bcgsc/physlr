@@ -2186,7 +2186,7 @@ class Physlr:
                 orientation = "."
             scaffolds.append((tname, tstart, orientation, qname))
         scaffolds.sort()
-        print(int(timeit.default_timer() - t0), f"Ordered and oriented queries.", file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Ordered and oriented queries.", file=sys.stderr)
 
         num_scaffolds = 0
         num_contigs = 0
