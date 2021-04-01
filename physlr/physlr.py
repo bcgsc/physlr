@@ -1178,7 +1178,7 @@ class Physlr:
         for component in nx.connected_components(gmst):
             gcomponent = gmst.subgraph(component)
             branch_lengths = Physlr.measure_branch_length(gcomponent)
-            for u, v in branch_lengths:
+            for u, v in branch_lengths.items():
                 gmst[u][v]["l"] = min(branch_lengths[(u, v)], branch_lengths[(v, u)])
         print(int(timeit.default_timer() - t0), "Measured branches.", file=sys.stderr, flush=True)
 
