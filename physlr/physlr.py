@@ -2123,22 +2123,22 @@ class Physlr:
 
         g = self.read_graph(graph_filenames)
         Physlr.remove_small_components(g, self.args.min_component_size)
-        
+
         # Read barcode to chromosome data into a dictionary
         bxtochr = {}
-        with open(map_filename) as fp:
-            for line in fp.readlines():
+        with open(map_filename) as mapfilename:
+            for line in mapfilename.readlines():
                 bx_chr = line.split()
                 bxtochr[bx_chr[0]] = bx_chr[1]
-        
+
         # Map reference names to integers.
-        qnames = list({qname for qname in bxtochr.values()})
+        qnames = list(bxtochr.values())
         qnames.sort(key=lambda s: (
             not Physlr.chr_isdecimal(s),
             Physlr.chr_int(s) if Physlr.chr_isdecimal(s) else s))
         qnametoindex = {s: i for i, s in enumerate(qnames)}
         qnames = None
-        
+
         # Output the annotated graph in GraphViz format.
         print("strict graph {\nnode [style=filled width=1 height=1]\nedge [color=lightgrey]")
         for u, prop in g.nodes.items():
