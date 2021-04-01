@@ -2113,7 +2113,7 @@ class Physlr:
         """
         Annotate a graph with a file of barcode to chromosome mappings.
         The mapping file includes two values per line separated by tab: barcode and chromosome.
-        Usage: physlr physlr-annotate-graph-bxtochr GRAPH PATH MAPPINGS_FILE... >ANNOTATED-GRAPHVIZ
+        Usage: physlr physlr-annotate-graph-bxtochr GRAPH MAPPINGS_FILE... >ANNOTATED-GRAPHVIZ
         """
 
         if len(self.args.FILES) != 2:
