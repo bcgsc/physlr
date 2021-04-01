@@ -2128,7 +2128,7 @@ class Physlr:
         bxtochr = {}
         with open(map_filename) as mapfilename:
             for line in mapfilename:
-                bx_chr = line.split()
+                bx, chr = line.strip().split()
                 bxtochr[bx_chr[0]] = bx_chr[1]
 
         # Map reference names to integers.
