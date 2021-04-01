@@ -571,7 +571,7 @@ class Physlr:
             for subcomponent in nx.connected_components(gcomponents):
                 gsubcomponent = g.subgraph(subcomponent)
                 u, v, _ = Physlr.diameter_of_tree(gsubcomponent, weight="m")
-                path = nx.shortest_path(gsubcomponent, u, v, weight="m")
+                path = nx.shortest_path(gsubcomponent, u, v, weight="m") # pylint: disable=E1121, E1123
                 paths.append(path)
         paths.sort(key=len, reverse=True)
         print(
@@ -1178,7 +1178,7 @@ class Physlr:
         for component in nx.connected_components(gmst):
             gcomponent = gmst.subgraph(component)
             branch_lengths = Physlr.measure_branch_length(gcomponent)
-            for u, v in branch_lengths:
+            for u, v in branch_lengths.items():
                 gmst[u][v]["l"] = min(branch_lengths[(u, v)], branch_lengths[(v, u)])
         print(int(timeit.default_timer() - t0), "Measured branches.", file=sys.stderr, flush=True)
 
@@ -1266,7 +1266,7 @@ class Physlr:
         g = self.read_graph(self.args.FILES)
         Physlr.filter_edges(g, self.args.m)
         backbones = self.determine_backbones(g)
-        tiling = {u for path in backbones for u in nx.shortest_path(g, path[0], path[-1])}
+        tiling = {u for path in backbones for u in nx.shortest_path(g, path[0], path[-1])} # pylint: disable=E1121, E1123
         subgraph = g.subgraph(tiling)
         self.write_graph(subgraph, sys.stdout, self.args.graph_format)
 
@@ -2231,7 +2231,7 @@ class Physlr:
                 orientation = "."
             scaffolds.append((tname, tstart, orientation, qname))
         scaffolds.sort()
-        print(int(timeit.default_timer() - t0), f"Ordered and oriented queries.", file=sys.stderr)
+        print(int(timeit.default_timer() - t0), "Ordered and oriented queries.", file=sys.stderr)
 
         num_scaffolds = 0
         num_contigs = 0
@@ -2477,7 +2477,7 @@ class Physlr:
             if not path:
                 continue
 
-            all_unoriented = all([name[-1] == "." for name in path])
+            all_unoriented = all((name[-1] == "." for name in path))
             if all_unoriented:
                 continue
 
