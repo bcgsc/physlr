@@ -45,21 +45,21 @@ cd physlr/src && make install PREFIX=/opt/physlr
 ## Generating Physlr Physical Map with stLFR reads
 
 To construct a physical map, you need linked reads from 10X Genomics or stLFR. In addition, to visualize the correctness and contiguity of the physical map, you need a reference genome.
-In this example, the linked reads and reference genome are called `linkedreads.fq.gz` and `reference.fa`, respectively. The linked reads are from stLFR so we specify `minimizer_overlap=stLFR` to use the default value for stLFR reads.
+In this example, the linked reads and reference genome are called `linkedreads.fq.gz` and `reference.fa`, respectively. The linked reads are from stLFR so we specify `protocol=stlfr` to use the default value for stLFR reads.
 
 ```
 cd experiment
-bin/physlr-make physical-map lr=linkedreads ref=reference minimizer_overlap=stLFR
+bin/physlr-make physical-map lr=linkedreads ref=reference protocol=stlfr
 ```
 
 ## Scaffolding a draft assembly with Physlr Physical Map
 
 To scaffold a draft assembly, you need linked reads from 10X Genomics or stLFR, and an existing assembly. In addition, to calculate Quast summary metrics for the Physlr scaffolded assembly, you need a reference genome.
-In this example, the linked reads, draft assembly, and reference genome are called `linkedreads.fq.gz`, `draft.fa`, `reference.fa`, respectively. The linked reads are from 10X Genomics so we specify `minimizer_overlap=10X` to use the default value for 10X Genomics reads.
+In this example, the linked reads, draft assembly, and reference genome are called `linkedreads.fq.gz`, `draft.fa`, `reference.fa`, respectively. The linked reads are from 10X Genomics so we specify `protocol=10x` to use the default value for 10X Genomics reads.
 
 ```
 cd experiment
-bin/physlr-make scaffolds lr=linkedreads ref=reference draft=draft minimizer_overlap=10X
+bin/physlr-make scaffolds lr=linkedreads ref=reference draft=draft protocol=10x
 ```
 
 See the help page for further information.
