@@ -2109,6 +2109,51 @@ class Physlr:
             return None
         return int(x[3:]) if x.startswith("chr") else int(x)
 
+    def physlr_annotate_graph_bxtochr(self):
+        """
+        Annotate a graph with a file of barcode to chromosome mappings.
+        The mapping file includes two values per line separated by tab: barcode and chromosome.
+        Usage: physlr physlr-annotate-graph-bxtochr GRAPH MAPPINGS_FILE... >ANNOTATED-GRAPHVIZ
+        """
+
+        if len(self.args.FILES) != 2:
+            sys.exit("physlr annotate-graph-bxtochr: error: two file arguments are required")
+        graph_filenames = [self.args.FILES[0]]
+        map_filename = self.args.FILES[1]
+
+        g = self.read_graph(graph_filenames)
+        Physlr.remove_small_components(g, self.args.min_component_size)
+
+        # Read barcode to chromosome data into a dictionary
+        bxtochr = {}
+        with open(map_filename) as map_file_in:
+            for line in map_file_in:
+                bx, chrom = line.strip().split()
+                bxtochr[bx] = chrom
+
+        # Map reference names to integers.
+        qnames = list(bxtochr.values())
+        qnames.sort(key=lambda s: (
+            not Physlr.chr_isdecimal(s),
+            Physlr.chr_int(s) if Physlr.chr_isdecimal(s) else s))
+        qnametoindex = {s: i for i, s in enumerate(qnames)}
+        qnames = None
+
+        # Output the annotated graph in GraphViz format.
+        print("strict graph {\nnode [style=filled width=1 height=1]\nedge [color=lightgrey]")
+        for u, prop in g.nodes.items():
+            if u in bxtochr:
+                qname = bxtochr[u]
+                hue = round(qnametoindex[qname] / len(qnametoindex), 3)
+                print(f'"{u}" [label="{qname}" color="{hue},1,1"]')
+            else:
+                print(f'"{u}"')
+        for e, prop in g.edges.items():
+            u, v = sorted(e)
+            print(f'"{u}" -- "{v}" [label={prop["m"]}]')
+        print("}")
+        print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
+
     def physlr_annotate_graph(self):
         """
         Annotate a graph with a BED or PAF file of mappings.
