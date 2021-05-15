@@ -52,6 +52,12 @@ cd experiment
 bin/physlr-make physical-map lr=linkedreads ref=reference protocol=stlfr
 ```
 
+If you provide a reference genome, Physlr automatically maps the physical map to the input reference and outputs a PAF file. You can run the following command which uses the PAF file to calculate assembly-like quality metrics for the physical map.
+```
+bin/physlr-make linkedreads.physlr.physical-map.reference.n10.qpos.chain.metrics.tsv lr=linkedreads ref=reference
+```
+
+
 ## Scaffolding a draft assembly with Physlr Physical Map
 
 To scaffold a draft assembly, you need linked reads from 10X Genomics or stLFR, and an existing assembly. In addition, to calculate Quast summary metrics for the Physlr scaffolded assembly, you need a reference genome.
