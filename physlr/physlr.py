@@ -1390,7 +1390,8 @@ class Physlr:
                                 (bx2_mol, mxs2) = self.parse_minimizer_line(mx_info2)
                                 if bx1_mol != bx2_mol or bx1_mol != bx1:
                                     print("Should match: ", bx1_mol, bx2_mol, bx1, file=sys.stderr)
-                                    sys.exit("Error: Minimizer TSV order doesn't match reads fq file")
+                                    sys.exit(
+                                        "Error: Minimizer TSV order doesn't match reads fq file")
 
                                 (mol, inc_no_int_mx, inc_equal_mx) = self.assign_read_molecule(
                                     set.union(mxs1, mxs2), moltomxs, mol_counts, bx1)
