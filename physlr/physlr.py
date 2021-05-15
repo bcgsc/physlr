@@ -1032,9 +1032,8 @@ class Physlr:
             if subgraph.number_of_nodes() == 0:
                 num_empty_subgraphs += 1
             else:
-                fout = open(self.args.output+"/"+u+"."+self.args.graph_format, "w+")
-                self.write_graph(subgraph, fout, self.args.graph_format)
-                fout.close()
+                with open(self.args.output+"/"+u+"."+self.args.graph_format, "w+") as fout:
+                    self.write_graph(subgraph, fout, self.args.graph_format)
         print(int(timeit.default_timer() - t0),
               "Number of empty subgraphs (not written):", num_empty_subgraphs,
               file=sys.stderr)
@@ -1374,51 +1373,49 @@ class Physlr:
         bxtomxs_filename = self.args.FILES[1]
         num_pairs, num_valid_pairs, num_no_mx, num_equal_mx, num_no_int_mx = 0, 0, 0, 0, 0
 
-        bxtomxs_file = open(bxtomxs_filename, 'r')
+        with open(bxtomxs_filename, 'r') as bxtomxs_file:
+            read_count = 0
+            for readfile in self.args.FILES[2:]:
+                with open(readfile, 'r') as fin:
+                    for name, seq, bx, qual in read_fasta(fin):
+                        if read_count == 0:
+                            (name1, seq1, bx1, qual1) = (name, seq, bx, qual)
+                            read_count += 1
+                        else:
+                            num_pairs += 1
+                            mx_info1 = bxtomxs_file.readline().strip()
+                            mx_info2 = bxtomxs_file.readline().strip()
+                            if self.is_valid_pair(bx1, bx, name1, name) and bx in mol_counts:
+                                (bx1_mol, mxs1) = self.parse_minimizer_line(mx_info1)
+                                (bx2_mol, mxs2) = self.parse_minimizer_line(mx_info2)
+                                if bx1_mol != bx2_mol or bx1_mol != bx1:
+                                    print("Should match: ", bx1_mol, bx2_mol, bx1, file=sys.stderr)
+                                    sys.exit("Error: Minimizer TSV order doesn't match reads fq file")
 
-        read_count = 0
-        for readfile in self.args.FILES[2:]:
-            with open(readfile, 'r') as fin:
-                for name, seq, bx, qual in read_fasta(fin):
-                    if read_count == 0:
-                        (name1, seq1, bx1, qual1) = (name, seq, bx, qual)
-                        read_count += 1
-                    else:
-                        num_pairs += 1
-                        mx_info1 = bxtomxs_file.readline().strip()
-                        mx_info2 = bxtomxs_file.readline().strip()
-                        if self.is_valid_pair(bx1, bx, name1, name) and bx in mol_counts:
-                            (bx1_mol, mxs1) = self.parse_minimizer_line(mx_info1)
-                            (bx2_mol, mxs2) = self.parse_minimizer_line(mx_info2)
-                            if bx1_mol != bx2_mol or bx1_mol != bx1:
-                                print("Should match: ", bx1_mol, bx2_mol, bx1, file=sys.stderr)
-                                sys.exit("Error: Minimizer TSV order doesn't match reads fq file")
+                                (mol, inc_no_int_mx, inc_equal_mx) = self.assign_read_molecule(
+                                    set.union(mxs1, mxs2), moltomxs, mol_counts, bx1)
+                                bx_mol = bx1 + mol
+                                num_no_int_mx += inc_no_int_mx
+                                num_equal_mx += inc_equal_mx
+                                self.print_read(name1 + " BX:Z:" + bx_mol, seq1, qual1)
+                                self.print_read(name + " BX:Z:" + bx_mol, seq, qual)
+                                num_valid_pairs += 1
+                            elif self.is_valid_pair(bx1, bx, name1, name) and \
+                                    not self.args.molecules_bx_only:
+                                self.print_read(name1 + " BX:Z:" + bx1, seq1, qual1)
+                                self.print_read(name + " BX:Z:" + bx, seq, qual)
+                                num_no_mx += 1
+                            elif not self.args.molecules_bx_only:
+                                self.print_read(name1, seq1, qual1)
+                                self.print_read(name, seq, qual)
+                            read_count = 0
 
-                            (mol, inc_no_int_mx, inc_equal_mx) = self.assign_read_molecule(
-                                set.union(mxs1, mxs2), moltomxs, mol_counts, bx1)
-                            bx_mol = bx1 + mol
-                            num_no_int_mx += inc_no_int_mx
-                            num_equal_mx += inc_equal_mx
-                            self.print_read(name1 + " BX:Z:" + bx_mol, seq1, qual1)
-                            self.print_read(name + " BX:Z:" + bx_mol, seq, qual)
-                            num_valid_pairs += 1
-                        elif self.is_valid_pair(bx1, bx, name1, name) and \
-                                not self.args.molecules_bx_only:
-                            self.print_read(name1 + " BX:Z:" + bx1, seq1, qual1)
-                            self.print_read(name + " BX:Z:" + bx, seq, qual)
-                            num_no_mx += 1
-                        elif not self.args.molecules_bx_only:
-                            self.print_read(name1, seq1, qual1)
-                            self.print_read(name, seq, qual)
-                        read_count = 0
-
-        print("Saw", num_pairs, "read pairs, saw",
-              num_valid_pairs, "valid read pairs with associated barcodes.",
-              num_no_mx, "read pairs' barcodes had no split minimizers.",
-              num_no_int_mx, "read pairs' barcodes had no intersecting minimizers",
-              num_equal_mx, "read pairs had multiple molecule assignments",
-              file=sys.stderr)
-        bxtomxs_file.close()
+            print("Saw", num_pairs, "read pairs, saw",
+                num_valid_pairs, "valid read pairs with associated barcodes.",
+                num_no_mx, "read pairs' barcodes had no split minimizers.",
+                num_no_int_mx, "read pairs' barcodes had no intersecting minimizers",
+                num_equal_mx, "read pairs had multiple molecule assignments",
+                file=sys.stderr)
 
     @staticmethod
     def print_read(name, seq, qual):
