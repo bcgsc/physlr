@@ -52,7 +52,7 @@ cd experiment
 bin/physlr-make physical-map lr=linkedreads ref=reference protocol=stlfr
 ```
 
-If you provide a reference genome, Physlr automatically maps the physical map to the input reference and outputs a PAF file. You can run the following command which uses the PAF file to calculate assembly-like quality metrics for the physical map.
+If you provide a reference genome, Physlr maps the physical map to the input reference. In this case, Physlr automatically outputs a `*.map-quality.tsv` file reporting assembly-like quality metrics for the physical map, in addition to some visualizations. You can re-generate these files using the following command (in the presence of a `*.physical-map.path` file):
 ```
 bin/physlr-make map-quality lr=linkedreads ref=reference
 ```
