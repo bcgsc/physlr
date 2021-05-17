@@ -44,7 +44,7 @@ cd physlr/src && make install PREFIX=/opt/physlr
 
 ## Generating Physlr Physical Map with stLFR reads
 
-To construct a physical map, you need linked reads from 10X Genomics or stLFR. In addition, to visualize the correctness and contiguity of the physical map, you need a reference genome.
+To construct a physical map, you need linked reads from 10X Genomics or stLFR. In addition, to visualize the correctness and contiguity of the physical map, you need a reference genome (optional).
 In this example, the linked reads and reference genome are called `linkedreads.fq.gz` and `reference.fa`, respectively. The linked reads are from stLFR so we specify `protocol=stlfr` to use the default value for stLFR reads.
 
 ```
