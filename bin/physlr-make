@@ -121,6 +121,9 @@ $(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$
 $(lr).physlr.physical-map.$(ref).n10.paf.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.map-split.$(ref).n10.paf.gz
 	ln -sf $< $@
 
+$(lr).physlr.physical-map.$(ref).map-quality.tsv: $(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv
+	ln -sf $< $@
+
 $(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
 	ln -sf $< $@
 
@@ -160,7 +163,27 @@ else
 physical-map: \
 	$(lr).physlr.physical-map.path \
 	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf \
+	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv \
+	$(lr).physlr.physical-map.$(ref).map-quality.tsv \
+endif
+endif
+
+map-quality:
+
+ifndef lr
+map-quality: help
+	@echo ""
+	@echo "map-quality rule requires the lr parameter to be set"
+else
+ifndef ref
+map-quality: help
+	@echo ""
+	@echo "map-quality rule requires the ref parameter to be set"
+else
+map-quality: \
+	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf \
 	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv
+	$(lr).physlr.physical-map.$(ref).map-quality.tsv \
 endif
 endif
 
