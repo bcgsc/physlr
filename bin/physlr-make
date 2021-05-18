@@ -174,16 +174,15 @@ ifndef lr
 map-quality: help
 	@echo ""
 	@echo "map-quality rule requires the lr parameter to be set"
-else
-ifndef ref
+else ifndef ref
 map-quality: help
 	@echo ""
 	@echo "map-quality rule requires the ref parameter to be set"
 else
 map-quality: \
 	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf \
-	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv
-	$(lr).physlr.physical-map.$(ref).map-quality.tsv \
+	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv \
+	$(lr).physlr.physical-map.$(ref).map-quality.tsv
 endif
 endif
 
@@ -238,7 +237,7 @@ help:
 	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast."
 
 version:
-	@echo "physlr v0.2.0"
+	@echo "physlr 1.0.0"
 
 ################################################################################
 # Test m=1 prune_branches=1 prune_bridges=1
