@@ -164,7 +164,7 @@ physical-map: \
 	$(lr).physlr.physical-map.path \
 	$(lr).physlr.physical-map.$(ref).n10.paf.gz.pdf \
 	$(lr).physlr.physical-map.$(ref).n10.qpos.chain.metrics.tsv \
-	$(lr).physlr.physical-map.$(ref).map-quality.tsv \
+	$(lr).physlr.physical-map.$(ref).map-quality.tsv
 endif
 endif
 
