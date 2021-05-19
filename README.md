@@ -44,16 +44,25 @@ cd physlr/src && make install PREFIX=/opt/physlr
 
 ## Generating Physlr Physical Map with stLFR reads
 
-To construct a physical map, you need linked reads from 10X Genomics or stLFR. In addition, to visualize the correctness and contiguity of the physical map, you need a reference genome (optional).
+To construct a physical map _de novo_, you need linked reads (from 10X Genomics or MGI stLFR). You also have the option to provide a reference genome (with `ref`) for Physlr to evaluate the physical map.
 In this example, the linked reads and reference genome are called `linkedreads.fq.gz` and `reference.fa`, respectively. The linked reads are from stLFR so we specify `protocol=stlfr` to use the default value for stLFR reads.
 
 ```
 cd experiment
-bin/physlr-make physical-map lr=linkedreads ref=reference protocol=stlfr
+bin/physlr-make physical-map lr=linkedreads protocol=stlfr                # Constructs the physical map
+```
+or
+```
+cd experiment
+bin/physlr-make physical-map lr=linkedreads ref=reference protocol=stlfr  # Constructs the physical map and reference-based evaluations for it
 ```
 
-If you provide a reference genome (with `ref`), Physlr maps the physical map to the input reference. In this case, Physlr automatically outputs a `*.map-quality.tsv` file reporting assembly-like quality metrics for the physical map, in addition to some visualizations. You can re-generate these files using the following command (in the presence of a `linkedreads.physlr.physical-map.path` file):
+If you provide a reference genome, Physlr first constructs a physical map and then maps it to the input reference. In this case, Physlr automatically outputs a `*.map-quality.tsv` file reporting assembly-like quality metrics for the physical map. In addition, Physlr visualizes the correctness and contiguity of the physical map.
+
+You can also independently run the evaluation step:
 ```
+cd experiment
+bin/physlr-make physical-map lr=linkedreads protocol=stlfr
 bin/physlr-make map-quality lr=linkedreads ref=reference
 ```
 
