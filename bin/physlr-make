@@ -174,7 +174,8 @@ ifndef lr
 map-quality: help
 	@echo ""
 	@echo "map-quality rule requires the lr parameter to be set"
-else ifndef ref
+else
+ifndef ref
 map-quality: help
 	@echo ""
 	@echo "map-quality rule requires the ref parameter to be set"
