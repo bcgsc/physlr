@@ -52,7 +52,7 @@ In this example, the linked reads dataset is called `linkedreads.fq.gz`. The lin
 cd experiment
 bin/physlr-make physical-map lr=linkedreads protocol=stlfr                # Constructs the physical map
 ```
-You also have the option to provide a reference genome (with `ref`) for Physlr to evaluate the physical map. Assuming the reference is called `reference.fa` you can run the following command for the previous example:
+You also have the option to provide a reference genome (with `ref`) for Physlr to evaluate the physical map. Assuming the reference is called `reference.fa`, you can run the following command for the previous example:
 ```
 cd experiment
 bin/physlr-make physical-map lr=linkedreads ref=reference protocol=stlfr  # Constructs the physical map and reference-based evaluations for it
