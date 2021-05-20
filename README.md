@@ -49,7 +49,7 @@ To construct a physical map _de novo_, you need linked reads (from 10X Genomics 
 In this example, the linked reads dataset is called `linkedreads.fq.gz`. The linked reads are from stLFR so we specify `protocol=stlfr` to use the default value for stLFR reads.
 
 ```
-cd experiment
+cd experiment # Change to working directory 
 bin/physlr-make physical-map lr=linkedreads protocol=stlfr                # Constructs the physical map
 ```
 You also have the option to provide a reference genome (with `ref`) for Physlr to evaluate the physical map. Assuming the reference is called `reference.fa`, you can run the following command for the previous example:
