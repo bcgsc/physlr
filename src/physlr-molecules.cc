@@ -14,6 +14,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/graph/adjacency_list.hpp>
