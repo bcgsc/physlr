@@ -1,6 +1,9 @@
-# Physlr: Construct a Physical Map from Linked Reads
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/bcgsc/physlr)
+![Conda](https://img.shields.io/conda/dn/bioconda/physlr?label=Conda)
 
-Physlr constructs a *de novo* physical map using linked reads from 10X Genomics or stLFR. This physical map can then be used to scaffold an existing assembly to yield chromosomal level contiguity.
+# Physlr: Next-generation Physical Maps using Linked Reads
+
+Physlr constructs a *de novo* physical map using linked reads from 10X Genomics or MGI stLFR. This physical map can then be used to scaffold an existing assembly to yield chromosome-level contiguity.
 
 # Dependencies
 
