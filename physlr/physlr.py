@@ -2555,9 +2555,8 @@ class Physlr:
 
         used_seqs = {name[0:-1] for path in paths for name in path if name[-1] != "."}
 
-        for name in seqs:
+        for name, seq in seqs.items():
             if name not in used_seqs:
-                seq = seqs[name]
                 if len(seq) < self.args.min_length:
                     continue
                 num_scaffolds += 1
