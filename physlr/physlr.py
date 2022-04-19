@@ -95,7 +95,7 @@ class Physlr:
         paf = []
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
-            with open(filename) as fin:
+            with open(filename, encoding="utf8") as fin:
                 if Physlr.args.verbose >= 2:
                     progressbar = progress_bar_for_file(fin)
                 for line in fin:
@@ -122,7 +122,7 @@ class Physlr:
         seqs = {}
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
-            with open(filename) as fin:
+            with open(filename, encoding="utf8") as fin:
                 for name, seq, _, _ in read_fasta(fin):
                     seqs[name] = seq
             print(
@@ -136,7 +136,7 @@ class Physlr:
         paths = []
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
-            with open(filename) as fin:
+            with open(filename, encoding="utf8") as fin:
                 if Physlr.args.verbose >= 2:
                     progressbar = progress_bar_for_file(fin)
                 for line in fin:
@@ -179,7 +179,7 @@ class Physlr:
     @staticmethod
     def read_tsv(g, filename):
         "Read a graph in TSV format."
-        with open(filename) as fin:
+        with open(filename, encoding="utf8") as fin:
             if Physlr.args.verbose >= 2:
                 progressbar = progress_bar_for_file(fin)
             line = fin.readline()
@@ -279,7 +279,7 @@ class Physlr:
         read_gv = False
         g = nx.Graph()
         for filename in filenames:
-            with open(filename) as fin:
+            with open(filename, encoding="utf8") as fin:
                 c = fin.read(1)
                 if c == "s":
                     g = Physlr.read_graphviz(g, filename)
@@ -368,7 +368,7 @@ class Physlr:
         bxtomxs = {}
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
-            with open(filename) as fin:
+            with open(filename, encoding="utf8") as fin:
                 if Physlr.args.verbose >= 2:
                     progressbar = progress_bar_for_file(fin)
                 for line in fin:
@@ -392,7 +392,7 @@ class Physlr:
         bxtomxs = {}
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
-            with open(filename) as fin:
+            with open(filename, encoding="utf8") as fin:
                 progressbar = progress_bar_for_file(fin)
                 for line in fin:
                     progressbar.update(len(line))
@@ -414,7 +414,7 @@ class Physlr:
         nametomxs = {}
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
-            with open(filename) as fin:
+            with open(filename, encoding="utf8") as fin:
                 progressbar = progress_bar_for_file(fin)
                 for line in fin:
                     progressbar.update(len(line))
@@ -586,9 +586,10 @@ class Physlr:
         print(
             int(timeit.default_timer() - t0),
             "Identifying poorly supported barcodes.", file=sys.stderr, flush=True)
-        fout = open(Physlr.args.output, "w") if Physlr.args.output else None
-        if fout:
-            print("Tname", "Pos", "U", "V", "W", "Overlap", "Depth", "Support", sep="\t", file=fout)
+        if Physlr.args.output:
+            with open(Physlr.args.output, "w", encoding="utf8") as fout:
+                if fout:
+                    print("Tname", "Pos", "U", "V", "W", "Overlap", "Depth", "Support", sep="\t", file=fout)
         chimera = []
         for tname, backbone in enumerate(backbones):
             # Skip small components. Removing poorly supported barcodes can take many iterations.
@@ -1032,7 +1033,7 @@ class Physlr:
             if subgraph.number_of_nodes() == 0:
                 num_empty_subgraphs += 1
             else:
-                with open(self.args.output+"/"+u+"."+self.args.graph_format, "w+") as fout:
+                with open(self.args.output+"/"+u+"."+self.args.graph_format, "w+", encoding="utf8") as fout:
                     self.write_graph(subgraph, fout, self.args.graph_format)
         print(int(timeit.default_timer() - t0),
               "Number of empty subgraphs (not written):", num_empty_subgraphs,
@@ -1100,7 +1101,7 @@ class Physlr:
 
         at_edges = False
         print(int(timeit.default_timer() - t0), "Processing Nodes", file=sys.stderr)
-        with open(self.args.FILES[0], "r") as overlap_input:
+        with open(self.args.FILES[0], "r", encoding="utf8") as overlap_input:
             for line in overlap_input:
                 if at_edges and self.args.minimizer_overlap != 0:
                     columns = line.rstrip().split("\t")
@@ -1124,7 +1125,7 @@ class Physlr:
         print(int(timeit.default_timer() - t0), "Filtering Edges", file=sys.stderr)
         print(int(timeit.default_timer() - t0), "Lower Threshold", lower_threshold, file=sys.stderr)
         at_edges = False
-        with open(self.args.FILES[0], "r") as overlap_input:
+        with open(self.args.FILES[0], "r", encoding="utf8") as overlap_input:
             for line in overlap_input:
                 if at_edges:
                     columns = line.rstrip().split("\t")
@@ -1358,10 +1359,10 @@ class Physlr:
         for mol in moltomxs:
             if not moltomxs[mol]:
                 empty_ct += 1
-                print("%s\t%s" % (mol, ""), file=sys.stdout)
+                print(f"{mol}\t{""}", file=sys.stdout)
                 print("Warning:", mol, "has no associated minimizers", file=sys.stderr)
             else:
-                print("%s\t%s" % (mol, " ".join(map(str, moltomxs[mol]))), file=sys.stdout)
+                print(f"{mol}\t{" ".join(map(str, moltomxs[mol]))}", file=sys.stdout)
 
     def physlr_split_reads_molecules(self):
         "Given the molecule -> minimizers table and the reads, partition reads into molecules"
@@ -1373,10 +1374,10 @@ class Physlr:
         bxtomxs_filename = self.args.FILES[1]
         num_pairs, num_valid_pairs, num_no_mx, num_equal_mx, num_no_int_mx = 0, 0, 0, 0, 0
 
-        with open(bxtomxs_filename, 'r') as bxtomxs_file:
+        with open(bxtomxs_filename, 'r', encoding="utf8") as bxtomxs_file:
             read_count = 0
             for readfile in self.args.FILES[2:]:
-                with open(readfile, 'r') as fin:
+                with open(readfile, 'r', encoding="utf8") as fin:
                     for name, seq, bx, qual in read_fasta(fin):
                         if read_count == 0:
                             (name1, seq1, bx1, qual1) = (name, seq, bx, qual)
@@ -1703,7 +1704,7 @@ class Physlr:
         junctions = []
         if len(self.args.FILES) > 1:
             gin = self.read_graph([self.args.FILES[0]])
-            with open(self.args.FILES[1]) as fin:
+            with open(self.args.FILES[1], encoding="utf8") as fin:
                 for line in fin:
                     junctions.append(line.split()[0])
             print(
@@ -1804,7 +1805,7 @@ class Physlr:
         nodes_of_interest = []
         if len(self.args.FILES) > 1:
             gin = self.read_graph([self.args.FILES[0]])
-            with open(self.args.FILES[1]) as fin:
+            with open(self.args.FILES[1], encoding="utf8") as fin:
                 for line in fin:
                     nodes_of_interest.append(line.strip().split()[0])
             print(
@@ -2124,7 +2125,7 @@ class Physlr:
 
         # Read barcode to chromosome data into a dictionary
         bxtochr = {}
-        with open(map_filename) as map_file_in:
+        with open(map_filename, encoding="utf8") as map_file_in:
             for line in map_file_in:
                 bx, chrom = line.strip().split()
                 bxtochr[bx] = chrom
@@ -2257,7 +2258,7 @@ class Physlr:
         Read ARCS pair tsv. Return a dictionary of pairs to orientation evidence.
         """
         pairs = {}
-        with open(filename, "r") as arks_pair_file:
+        with open(filename, "r", encoding="utf8") as arks_pair_file:
             for line in arks_pair_file:
                 columns = line.rstrip().split("\t")
                 (u, v, hh, ht, th, tt) = [int(column) if idx > 1 else column
@@ -2279,7 +2280,7 @@ class Physlr:
                   file=sys.stderr)
             sys.exit(1)
         idx = dist_type_to_idx[dist_type]
-        with open(filename, "r") as dist_est_file:
+        with open(filename, "r", encoding="utf8") as dist_est_file:
             for line in dist_est_file:
                 columns = line.rstrip().split("\t")
                 if columns[0] == "contig1":
@@ -2692,8 +2693,11 @@ class Physlr:
     def physlr_find_ntcard_mode(self):
         """Find the first mode after minimum in ntCard histogram output."""
         # Assumption: There is no negative slope to the right of the first local minimum
-        freq_count = [int(line.rstrip().split("\t")[2]) for line in open(self.args.FILES[0])
-                      if line[0] != "k"]
+        freq_count = []
+        with open(self.args.FILES[0], encoding="utf8") as fin:
+            for line in fin:
+                if line[0] != "k":
+                    freq_count.append(int(line.rstrip().split("\t")[2]))
         min_val = freq_count[0]
         for idx, freq in enumerate(freq_count):
             if freq > min_val:
