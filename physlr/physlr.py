@@ -1359,10 +1359,10 @@ class Physlr:
         for mol in moltomxs:
             if not moltomxs[mol]:
                 empty_ct += 1
-                print(f"{mol}\t{""}", file=sys.stdout)
+                print(f'{mol}\t{""}', file=sys.stdout)
                 print("Warning:", mol, "has no associated minimizers", file=sys.stderr)
             else:
-                print(f"{mol}\t{" ".join(map(str, moltomxs[mol]))}", file=sys.stdout)
+                print(f'{mol}\t{" ".join(map(str, moltomxs[mol]))}', file=sys.stdout)
 
     def physlr_split_reads_molecules(self):
         "Given the molecule -> minimizers table and the reads, partition reads into molecules"
