@@ -62,7 +62,7 @@ class Physlr:
         bed = []
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
-            with open(filename) as fin:
+            with open(filename, encoding="utf8") as fin:
                 if Physlr.args.verbose >= 2:
                     progressbar = progress_bar_for_file(fin)
                 for line in fin:
