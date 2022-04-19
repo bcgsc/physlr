@@ -1,4 +1,4 @@
-# Physlr: Construct a Physical Map from Linked Reads
+# Physlr: Next-generation Physical Maps using Linked Reads
 
 Physlr constructs a *de novo* physical map using linked reads from 10X Genomics or MGI stLFR. This physical map can then be used to scaffold an existing assembly to yield chromosome-level contiguity.
 
