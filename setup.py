@@ -5,16 +5,16 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="physlr",
-    version="0.1.0",
+    version="1.0.1",
     author="Shaun Jackman",
     author_email="sjackman@gmail.com",
-    description="Physical Mapping of Linked Reads",
+    description="Next-generation Physical Maps using Linked Reads",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/bcgsc/physlr",
     license="GPLv3",
     python_requires=">=3",
-    install_requires=["networkx", "numpy", "pygraphviz", "python-louvain", "scipy", "sklearn", "tqdm" ],
+    install_requires=["networkx", "numpy", "graphviz", "pygraphviz", "python-louvain", "scipy", "sklearn", "tqdm" ],
     packages=["physlr"],
     scripts=["bin/physlr"],
     classifiers=[
