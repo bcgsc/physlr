@@ -589,7 +589,8 @@ class Physlr:
         if Physlr.args.output:
             with open(Physlr.args.output, "w", encoding="utf8") as fout:
                 if fout:
-                    print("Tname", "Pos", "U", "V", "W", "Overlap", "Depth", "Support", sep="\t", file=fout)
+                    print("Tname", "Pos", "U", "V", "W", "Overlap", "Depth", "Support",
+                          sep="\t", file=fout)
         chimera = []
         for tname, backbone in enumerate(backbones):
             # Skip small components. Removing poorly supported barcodes can take many iterations.
@@ -1033,7 +1034,8 @@ class Physlr:
             if subgraph.number_of_nodes() == 0:
                 num_empty_subgraphs += 1
             else:
-                with open(self.args.output+"/"+u+"."+self.args.graph_format, "w+", encoding="utf8") as fout:
+                with open(self.args.output+"/"+u+"."+self.args.graph_format, "w+",
+                          encoding="utf8") as fout:
                     self.write_graph(subgraph, fout, self.args.graph_format)
         print(int(timeit.default_timer() - t0),
               "Number of empty subgraphs (not written):", num_empty_subgraphs,
