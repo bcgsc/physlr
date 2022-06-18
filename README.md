@@ -97,7 +97,7 @@ See the help page for further information.
 * `draft.physlr.quast.tsv`: Quast metrics comparing the Physlr scaffolded assembly against the reference.
 
 ### Citing Physlr
-If you use ntJoin in your research, please cite:
+If you use Physlr in your research, please cite:
 
 Afshinfard A, Jackman SD, Wong J, Coombe L, Chu J, Nikolic V, Dilek G, Malkoç Y, Warren RL, Birol I. Physlr: Next-Generation Physical Maps. DNA. 2022 Jun 10;2(2):116-30. doi: https://doi.org/10.3390/dna2020009
 
