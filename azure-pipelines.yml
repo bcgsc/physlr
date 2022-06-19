@@ -11,11 +11,15 @@ jobs:
       architecture: x64
   - script: |
       curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-      sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
+      sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-11 main"
       sudo apt-get update
-      sudo apt-get install -y --no-install-recommends clang-format-7 clang-tidy-7
-      sudo ln -sf clang-format-7 /usr/bin/clang-format
-      sudo ln -sf clang-tidy-7 /usr/bin/clang-tidy
+      sudo apt-get install -y --no-install-recommends clang-format clang-tidy
+      # curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+      # sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
+      # sudo apt-get update
+      # sudo apt-get install -y --no-install-recommends clang-format-7 clang-tidy-7
+      # sudo ln -s clang-format-7 /usr/bin/clang-format
+      # sudo ln -s clang-tidy-7 /usr/bin/clang-tidy
     displayName: Install clang-format and clang-tidy
   - script: sudo apt-get install -qq libboost-dev
     displayName: Install boost
