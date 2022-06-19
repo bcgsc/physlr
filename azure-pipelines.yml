@@ -10,20 +10,10 @@ jobs:
       versionSpec: "3.7"
       architecture: x64
   - script: |
-      # curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-      # sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-11 main"
-      # sudo apt-get update
-      # sudo apt-get install -y --no-install-recommends clang-format clang-tidy
       curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
       sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
       sudo apt-get update
       sudo apt-get install -y --no-install-recommends clang-format-7 clang-tidy-7      
-      # sudo ln -sf clang-format-7 /bin/sh/clang-format
-      # sudo ln -sf clang-tidy-7 /bin/sh/clang-tidy
-      # curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-      # sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
-      # sudo apt-get update
-      # sudo apt-get install -y --no-install-recommends clang-format-7 clang-tidy-7
       sudo ln -sf clang-format-7 /usr/bin/clang-format
       sudo ln -sf clang-tidy-7 /usr/bin/clang-tidy
     displayName: Install clang-format and clang-tidy
