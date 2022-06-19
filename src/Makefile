@@ -60,6 +60,7 @@ check-physlr-makebf: all
 	./physlr-indexlr -t16 -k8 -w1 -r tiny.bf data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
 
 check-physlr-overlap: all
+	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort
 	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
 	./physlr-overlap -t4 -m2 data/tiny.overlap.input.tsv | sort | diff -q - data/tiny.physlr.overlap.n2.sorted.tsv
 
