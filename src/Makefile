@@ -62,8 +62,10 @@ check-physlr-makebf: all
 check-physlr-overlap: all
 	cat data/tiny.physlr.overlap.n1.sorted.tsv
 	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort 
+	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort --ignore-case
 	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | LC_COLLATE=C sort
 	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | LC_ALL=C sort
+	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | LC_COLLATE="en_US.UTF-8" sort
 	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | LC_COLLATE=C sort | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
 	./physlr-overlap -t4 -m2 data/tiny.overlap.input.tsv | LC_COLLATE=C sort | diff -q - data/tiny.physlr.overlap.n2.sorted.tsv
 
