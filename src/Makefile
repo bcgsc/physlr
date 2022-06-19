@@ -60,10 +60,12 @@ check-physlr-makebf: all
 	./physlr-indexlr -t16 -k8 -w1 -r tiny.bf data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
 
 check-physlr-overlap: all
+	cat data/tiny.physlr.overlap.n1.sorted.tsv
 	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort 
-	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort LC_COLLATE=C
-	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort LC_COLLATE=C | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
-	./physlr-overlap -t4 -m2 data/tiny.overlap.input.tsv | sort LC_COLLATE=C | diff -q - data/tiny.physlr.overlap.n2.sorted.tsv
+	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | LC_COLLATE=C sort
+	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | LC_ALL=C sort
+	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | LC_COLLATE=C sort | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
+	./physlr-overlap -t4 -m2 data/tiny.overlap.input.tsv | LC_COLLATE=C sort | diff -q - data/tiny.physlr.overlap.n2.sorted.tsv
 
 check-physlr-molecules: all
 	./physlr-molecules -s bc data/tiny.mol.input.tsv | diff -q - data/tiny.mol.tsv.good
