@@ -60,14 +60,14 @@ check-physlr-makebf: all
 	./physlr-indexlr -t16 -k8 -w1 -r tiny.bf data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
 
 check-physlr-overlap: all
-	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
-	./physlr-overlap -t4 -m2 data/tiny.overlap.input.tsv | sort | diff -q - data/tiny.physlr.overlap.n2.sorted.tsv
+	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort --ignore-case | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
+	./physlr-overlap -t4 -m2 data/tiny.overlap.input.tsv | sort --ignore-case | diff -q - data/tiny.physlr.overlap.n2.sorted.tsv
 
 check-physlr-molecules: all
 	./physlr-molecules -s bc data/tiny.mol.input.tsv | diff -q - data/tiny.mol.tsv.good
 
 check-physlr-split-minimizers: all
-	./physlr-split-minimizers -t4 data/tiny.split-minimizers.ext.mol.tsv data/tiny.split-minimizers.physlr.tsv | sort |diff -q - data/tiny.split-minimizers.ext.mol.split.tsv.good
+	./physlr-split-minimizers -t4 data/tiny.split-minimizers.ext.mol.tsv data/tiny.split-minimizers.physlr.tsv | sort --ignore-case |diff -q - data/tiny.split-minimizers.ext.mol.split.tsv.good
 
 install: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-molecules physlr-split-minimizers
 	install -d $(DESTDIR)$(PREFIX)/bin

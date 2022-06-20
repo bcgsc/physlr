@@ -1,6 +1,9 @@
-# Physlr: Construct a Physical Map from Linked Reads
+[![Published in DNA](https://img.shields.io/badge/Published%20in-DNA-blue.svg)](https://www.mdpi.com/2673-8856/2/2/9)
+[![Release](https://img.shields.io/github/release/bcgsc/physlr.svg)](https://github.com/bcgsc/physlr/releases)
 
-Physlr constructs a *de novo* physical map using linked reads from 10X Genomics or stLFR. This physical map can then be used to scaffold an existing assembly to yield chromosomal level contiguity.
+# Physlr: Next-generation Physical Maps
+
+Physlr constructs a *de novo* physical map using linked reads from 10X Genomics or MGI stLFR. This physical map can then be used to scaffold an existing assembly to yield chromosome-level contiguity.
 
 # Dependencies
 
@@ -92,6 +95,14 @@ See the help page for further information.
 * `lr.physlr.physical-map.ref.n10.paf.gz.*.pdf`: Various graphs showing the contiguity and correctness of the backbones with respect to the reference.
 * `draft.physlr.fa`: Physlr scaffolded assembly using the physical map.
 * `draft.physlr.quast.tsv`: Quast metrics comparing the Physlr scaffolded assembly against the reference.
+
+# Citing Physlr
+
+If you use Physlr in your research, please cite:
+
+Afshinfard A, Jackman SD, Wong J, Coombe L, Chu J, Nikolic V, Dilek G, Malkoç Y, Warren RL, Birol I. Physlr: Next-Generation Physical Maps. DNA. 2022 Jun 10;2(2):116-30. doi: https://doi.org/10.3390/dna2020009
+
+[![link](https://img.shields.io/badge/Physlr-manuscript-brightgreen)](https://doi.org/10.3390/dna2020009)
 
 # Acknowledgements
 

@@ -5,8 +5,8 @@ max-locals=50
 max-module-lines=5000
 max-public-methods=150
 [MASTER]
-ignore=mkt.py
+ignore=mkt.py, setup.py, physlr.py
 [TYPECHECK]
 ignored-modules=numpy.linalg
 [MESSAGES CONTROL]
-disable=C0415
+disable=C0415, W1514, C0209, C0206
