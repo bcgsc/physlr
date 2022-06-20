@@ -7,7 +7,7 @@ setuptools.setup(
     name="physlr",
     version="1.0.0",
     author="Amirhossein Afshinfard",
-    author_email="aafshinfard@gmail.com",
+    author_email="aafshinfard@bcgsc.ca",
     description="Next-generation Physical Maps using Linked Reads",
     long_description=long_description,
     long_description_content_type="text/markdown",
