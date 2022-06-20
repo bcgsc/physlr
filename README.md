@@ -1,6 +1,8 @@
 [![Published in DNA](https://img.shields.io/badge/Published%20in-DNA-blue.svg)](https://www.mdpi.com/2673-8856/2/2/9)
 [![Release](https://img.shields.io/github/release/bcgsc/physlr.svg)](https://github.com/bcgsc/physlr/releases)
 
+![Logo](https://github.com/bcgsc/physlr/blob/logo/physlr-logo-wide.png)
+
 # Physlr: Next-generation Physical Maps
 
 Physlr constructs a *de novo* physical map using linked reads from 10X Genomics or MGI stLFR. This physical map can then be used to scaffold an existing assembly to yield chromosome-level contiguity.
