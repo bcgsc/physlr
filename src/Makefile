@@ -4,10 +4,10 @@ PREFIX=$(HOME)/.local
 
 .PHONY: all clean check install lint clang-format clang-tidy fix check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf check-physlr-overlap check-physlr-split-minimizers
 
-all: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-molecules physlr-split-minimizers
+all: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-split-minimizers #physlr-molecules
 
 clean:
-	rm -f physlr-indexlr physlr-filter-barcodes physlr-filter-bxmx physlr-overlap physlr-makebf physlr-molecules physlr-split-minimizers
+	rm -f physlr-indexlr physlr-filter-barcodes physlr-filter-bxmx physlr-overlap physlr-makebf physlr-split-minimizers #physlr-molecules
 
 # Check the C++ source code for errors.
 lint: clang-format clang-tidy
@@ -26,7 +26,7 @@ clang-format:
 fix:
 	for i in *.cc; do clang-format -i -style=file $$i; done
 
-check: check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf check-physlr-overlap check-physlr-molecules
+check: check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf check-physlr-overlap #check-physlr-molecules
 
 check-physlr-index-fasta: all
 	./physlr-indexlr -t16 -k100 -w5 data/mt.fa | diff -q - data/mt.physlr.tsv.good
@@ -63,12 +63,12 @@ check-physlr-overlap: all
 	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort --ignore-case | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
 	./physlr-overlap -t4 -m2 data/tiny.overlap.input.tsv | sort --ignore-case | diff -q - data/tiny.physlr.overlap.n2.sorted.tsv
 
-check-physlr-molecules: all
-	./physlr-molecules -s bc data/tiny.mol.input.tsv | diff -q - data/tiny.mol.tsv.good
+#check-physlr-molecules: all
+#	./physlr-molecules -s bc data/tiny.mol.input.tsv | diff -q - data/tiny.mol.tsv.good
 
 check-physlr-split-minimizers: all
 	./physlr-split-minimizers -t4 data/tiny.split-minimizers.ext.mol.tsv data/tiny.split-minimizers.physlr.tsv | sort --ignore-case |diff -q - data/tiny.split-minimizers.ext.mol.split.tsv.good
 
-install: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-molecules physlr-split-minimizers
+install: physlr-indexlr physlr-filter-barcodes physlr-overlap physlr-filter-bxmx physlr-makebf physlr-split-minimizers #physlr-molecules
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install $^ $(DESTDIR)$(PREFIX)/bin
