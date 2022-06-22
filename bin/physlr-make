@@ -238,7 +238,7 @@ help:
 	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast."
 
 version:
-	@echo "physlr 1.0.1"
+	@echo "physlr 1.0.2"
 
 ################################################################################
 # Test m=1 prune_branches=1 prune_bridges=1
