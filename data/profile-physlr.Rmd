@@ -235,7 +235,7 @@ if (dim(df)[1] == 0) {
     labs(
       title = "Physlr - time Gantt chart",
       subtitle = paste("path:", ldir),
-      caption = "physlr version: 1.0.1"
+      caption = "physlr version: 1.0.2"
     ) +
     theme(
       plot.title = element_text(color = "black", face = "bold"),
@@ -271,7 +271,7 @@ if (dim(df)[1] == 0) {
     labs(
       title = "Physlr - memory usage",
       subtitle = paste("path:", ldir),
-      caption = "physlr version: 1.0.1"
+      caption = "physlr version: 1.0.2"
     ) +
     theme(
       plot.title = element_text(color = "black", face = "bold"),

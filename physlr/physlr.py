@@ -2799,7 +2799,7 @@ class Physlr:
             "-V", "--verbose", action="store", dest="verbose", type=int, default="2",
             help="the level of verbosity: 0:silent, 1:periodic, 2:progress, 3:verbose [2]")
         argparser.add_argument(
-            "--version", action="version", version="physlr 1.0.1")
+            "--version", action="version", version="physlr 1.0.2")
         argparser.add_argument(
             "command",
             help="A command")

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="physlr",
-    version="1.0.1",
+    version="1.0.2",
     author="Amirhossein Afshinfard",
     author_email="aafshinfard@bcgsc.ca",
     description="Next-generation Physical Maps using Linked Reads",
