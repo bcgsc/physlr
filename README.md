@@ -9,6 +9,8 @@
 
 Physlr constructs a *de novo* physical map using linked reads from 10X Genomics or MGI stLFR. This physical map can then be used to scaffold an existing assembly to yield chromosome-level contiguity.
 
+![a](https://github.com/bcgsc/physlr/blob/improve-readme/physlr-stages.png?raw=true)
+
 # Dependencies
 
 * [ntCard](https://github.com/bcgsc/ntCard)
@@ -32,7 +34,7 @@ Additionally, we recommend using pypy3 over regular python3 for speed.
 
 # Install Physlr
 ## Install Physlr using Conda (recommended)
-We recommend installating Physlr via [Conda](https://docs.conda.io/en/latest/) package manager (Linux, MacOS):
+We recommend installing Physlr via [Conda](https://docs.conda.io/en/latest/) package manager (Linux, MacOS):
 
 ```
 conda install -c bioconda physlr
