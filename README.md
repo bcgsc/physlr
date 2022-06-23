@@ -26,8 +26,6 @@ Contents
    * [Generate a physical map](#generate-a-physical-map)
    * [Scaffold an assembly](#scaffold-an-assembly)
    * [Output files](#output-files)
-[comment]: <> (* [Examples](#examples))
-[comment]: <> (* [Assembly Parameters](#assembly-parameters))
 * [Citation](#citation)
 * [Support](#support)
 * [Acknowledgements](#acknowledgements)
