@@ -1,5 +1,7 @@
 [![Published in DNA](https://img.shields.io/badge/Published%20in-DNA-blue.svg)](https://www.mdpi.com/2673-8856/2/2/9)
 [![Release](https://img.shields.io/github/release/bcgsc/physlr.svg)](https://github.com/bcgsc/physlr/releases)
+[![Conda](https://img.shields.io/conda/dn/bioconda/physlr?label=Conda)](https://anaconda.org/bioconda/physlr)
+[![Downloads](https://img.shields.io/github/downloads/bcgsc/physlr/total?logo=github)](https://github.com/bcgsc/physlr/releases/download/1.0.2/physlr-1.0.2.tar.gz)
 
 ![Logo](https://github.com/bcgsc/physlr/blob/logo/physlr-logo-wide.png)
 
@@ -28,8 +30,15 @@ Additionally, we recommend using pypy3 over regular python3 for speed.
 - [pigz](https://zlib.net/pigz/) for parallel gzip
 - [zsh](https://sourceforge.net/projects/zsh/) for reporting time and memory usage
 
+# Install Physlr
+## Install Physlr using Conda (recommended)
+We recommend installating Physlr via [Conda](https://docs.conda.io/en/latest/) package manager (Linux, MacOS):
 
-# Compiling Physlr from source
+```
+conda install -c bioconda physlr
+```
+
+## Compile Physlr from source
 
 ```
 pip3 install --user git+https://github.com/bcgsc/physlr
