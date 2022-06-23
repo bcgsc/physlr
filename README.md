@@ -5,13 +5,67 @@
 
 ![Logo](https://github.com/bcgsc/physlr/blob/logo/physlr-logo-wide.png)
 
-# Physlr: Next-generation Physical Maps
+Physlr: Next-generation Physical Maps
+================================================================================
 
-Physlr constructs a *de novo* physical map using linked reads from 10X Genomics or MGI stLFR. This physical map can then be used to scaffold an existing assembly to yield chromosome-level contiguity.
+Physlr `physical-map` constructs a *de novo* physical map using linked reads from 10X Genomics or MGI stLFR. This physical map can then be used for various genomics analyses, including scaffolding. Physlr `scaffolds` uses the physcial map generated in the first stage to scaffold an existing genome assembly to yield chromosome-level contiguity.
 
-![a](https://github.com/bcgsc/physlr/blob/improve-readme/physlr-stages.png?raw=true)
+<p align="center">
+  <img src="physlr-stages.png" width="300" title="Physlr stages">
+</p>
 
-# Dependencies
+Contents
+================================================================================
+* [Installation](#installation)
+	* [Install Physlr using Conda](#install-physlr-using-conda-recommended)
+	* [Compile Physlr from source](#compile-physlr-from-source)
+	   * [Dependencies](#dependencies)
+	   * [Optional dependencies](#optional-dependencies)
+	   * [compiling](#compiling)
+* [Running Physlr](#running-physlr)
+   * [Generate a physical map](#generate-a-physical-map)
+   * [Scaffold an assembly](#scaffold-an-assembly)
+   * [Output files](#output-files)
+[comment]: <> (* [Examples](#examples))
+[comment]: <> (* [Assembly Parameters](#assembly-parameters))
+* [Citation](#citation)
+* [Support](#support)
+* [Acknowledgements](#acknowledgements)
+
+
+Installation
+================================================================================
+We recommend installing Physlr via [Conda](https://docs.conda.io/en/latest/) package manager (Linux, MacOS), which will handle compilation and dependencies automatically.
+
+## Install Physlr using Conda
+```
+conda install -c bioconda physlr
+physlr help
+```
+
+## Compile Physlr from source
+### Compiling
+
+Compile Physlr using the following commands:
+```
+pip3 install --user git+https://github.com/bcgsc/physlr
+git clone https://github.com/bcgsc/physlr
+cd physlr/src && make install
+```
+
+or, to install Physlr in a specified directory:
+
+```
+pip3 install --user git+https://github.com/bcgsc/physlr
+git clone https://github.com/bcgsc/physlr
+cd physlr/src && make install PREFIX=/opt/physlr
+```
+after compiling, Physlr commands will be avilable through:
+```
+bin/physlr-make
+bin/physlr-make help
+```
+### Dependencies
 
 * [ntCard](https://github.com/bcgsc/ntCard)
 * [ntHits](https://github.com/bcgsc/ntHits)
@@ -26,52 +80,28 @@ Physlr constructs a *de novo* physical map using linked reads from 10X Genomics 
 
 Additionally, we recommend using pypy3 over regular python3 for speed.
 
-
-## Optional dependencies
+### Optional dependencies
 
 - [pigz](https://zlib.net/pigz/) for parallel gzip
 - [zsh](https://sourceforge.net/projects/zsh/) for reporting time and memory usage
 
-# Install Physlr
-## Install Physlr using Conda (recommended)
-We recommend installing Physlr via [Conda](https://docs.conda.io/en/latest/) package manager (Linux, MacOS):
 
-```
-conda install -c bioconda physlr
-```
+Running Physlr
+================================================================================
 
-## Compile Physlr from source
-
-```
-pip3 install --user git+https://github.com/bcgsc/physlr
-git clone https://github.com/bcgsc/physlr
-cd physlr/src && make install
-```
-
-To install Physlr in a specified directory:
-
-```
-pip3 install --user git+https://github.com/bcgsc/physlr
-git clone https://github.com/bcgsc/physlr
-cd physlr/src && make install PREFIX=/opt/physlr
-```
-
-# Running Physlr
-
-## Generating Physlr Physical Map with stLFR reads
-
+## Generate a physical map
 To construct a physical map _de novo_, you need linked reads (from 10X Genomics or MGI stLFR). 
 
 In this example, the linked reads dataset is called `linkedreads.fq.gz`. The linked reads are from stLFR so we specify `protocol=stlfr` to use the default value for stLFR reads.
 
 ```
 cd experiment # Change to working directory 
-bin/physlr-make physical-map lr=linkedreads protocol=stlfr                # Constructs the physical map
+physlr physical-map lr=linkedreads protocol=stlfr                # Constructs the physical map
 ```
 You also have the option to provide a reference genome (with `ref`) for Physlr to evaluate the physical map. Assuming the reference is called `reference.fa`, you can run the following command for the previous example:
 ```
 cd experiment
-bin/physlr-make physical-map lr=linkedreads ref=reference protocol=stlfr  # Constructs the physical map and reference-based evaluations for it
+physlr physical-map lr=linkedreads ref=reference protocol=stlfr  # Constructs the physical map and reference-based evaluations for it
 ```
 
 If you provide a reference genome, Physlr first constructs a physical map and then maps it to the input reference. In this case, Physlr automatically outputs a `*.map-quality.tsv` file reporting assembly-like quality metrics for the physical map. In addition, Physlr visualizes the correctness and contiguity of the physical map.
@@ -79,13 +109,11 @@ If you provide a reference genome, Physlr first constructs a physical map and th
 You can also independently run the physical map construction and evaluation steps:
 ```
 cd experiment
-bin/physlr-make physical-map lr=linkedreads protocol=stlfr
-bin/physlr-make map-quality lr=linkedreads ref=reference
+physlr physical-map lr=linkedreads protocol=stlfr
+physlr map-quality lr=linkedreads ref=reference
 ```
 
-
-## Scaffolding a draft assembly with Physlr Physical Map
-
+## Scaffold an assembly
 To scaffold a draft assembly, you need linked reads from 10X Genomics or stLFR, and an existing assembly. 
 In this example, the linked reads and draft assembly are called `linkedreads.fq.gz` and `draft.fa`, respectively. The linked reads are from 10X Genomics so we specify `protocol=10x` to use the default value for 10X Genomics reads.
 
@@ -102,14 +130,15 @@ bin/physlr-make scaffolds lr=linkedreads ref=reference draft=draft protocol=10x
 See the help page for further information.
 `bin/physlr-make help`
 
-# Output files
+## Output files
 
 * `lr.physlr.physical-map.path`: Paths of barcodes (backbones).
 * `lr.physlr.physical-map.ref.n10.paf.gz.*.pdf`: Various graphs showing the contiguity and correctness of the backbones with respect to the reference.
 * `draft.physlr.fa`: Physlr scaffolded assembly using the physical map.
 * `draft.physlr.quast.tsv`: Quast metrics comparing the Physlr scaffolded assembly against the reference.
 
-# Citing Physlr
+Citation
+================================================================================
 
 If you use Physlr in your research, please cite:
 
@@ -117,7 +146,15 @@ Afshinfard A, Jackman SD, Wong J, Coombe L, Chu J, Nikolic V, Dilek G, Malkoç Y
 
 [![link](https://img.shields.io/badge/Physlr-manuscript-brightgreen)](https://doi.org/10.3390/dna2020009)
 
-# Acknowledgements
+Support
+================================================================================
+
+[Create a new issue on GitHub.](https://github.com/bcgsc/physlr/issues)
+
+[Ask a question on Biostars.](https://www.biostars.org/tag/physlr/)
+
+Acknowledgements
+================================================================================
 
 This projects uses:
 * [btl_bloomfilter](https://github.com/bcgsc/btl_bloomfilter) BTL C/C++ Common bloom filters for bioinformatics projects implemented by Justin Chu
