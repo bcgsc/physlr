@@ -10,6 +10,8 @@ jobs:
       - uses: actions/stale@v4
         with:
           stale-issue-message: 'This issue has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs. Thank you for your interest in Physlr!'
+          stale-pr-message: 'This PR has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs. Thank you for your interest in Physlr!'
           days-before-stale: 30
           days-before-close: 5
           remove-stale-when-updated: true
+          exempt-assignees: aafshinfard,lcoombe,sjackman,jowong4
