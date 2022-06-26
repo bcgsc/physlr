@@ -151,7 +151,7 @@ Support
 
 [Create a new issue on GitHub.](https://github.com/bcgsc/physlr/issues)
 
-[Ask a question on Biostars.](https://www.biostars.org/tag/physlr/)
+[![GitHub issues](https://img.shields.io/github/issues/bcgsc/physlr.svg)](https://gitHub.com/bcgsc/physlr/)
 
 Acknowledgements
 ================================================================================
