@@ -3,7 +3,9 @@
 [![Conda](https://img.shields.io/conda/dn/bioconda/physlr?label=Conda)](https://anaconda.org/bioconda/physlr)
 [![Downloads](https://img.shields.io/github/downloads/bcgsc/physlr/total?logo=github)](https://github.com/bcgsc/physlr/releases/download/v1.0.2/physlr-1.0.2.tar.gz)
 
-![Logo](https://github.com/bcgsc/physlr/blob/logo/physlr-logo-wide.png)
+<p align="center">
+  <img src="physlr-logo-transparent.png" width="600" title="Physlr stages">
+</p>
 
 Physlr: Next-generation Physical Maps
 ================================================================================
@@ -11,17 +13,17 @@ Physlr: Next-generation Physical Maps
 Physlr `physical-map` constructs a *de novo* physical map using linked reads from 10X Genomics or MGI stLFR. This physical map can then be used for various genomics analyses, including scaffolding. Physlr `scaffolds` uses the physcial map generated in the first stage to scaffold an existing genome assembly to yield chromosome-level contiguity.
 
 <p align="center">
-  <img src="physlr-stages.png" width="300" title="Physlr stages">
+  <img src="physlr-stages.png" width="250" title="Physlr stages">
 </p>
 
 Contents
 ================================================================================
 * [Installation](#installation)
-	* [Install Physlr using Conda](#install-physlr-using-conda-recommended)
+	* [Install Physlr using Conda](#install-physlr-using-conda)
 	* [Compile Physlr from source](#compile-physlr-from-source)
+	   * [Compiling](#compiling)
 	   * [Dependencies](#dependencies)
 	   * [Optional dependencies](#optional-dependencies)
-	   * [compiling](#compiling)
 * [Running Physlr](#running-physlr)
    * [Generate a physical map](#generate-a-physical-map)
    * [Scaffold an assembly](#scaffold-an-assembly)
@@ -36,6 +38,7 @@ Installation
 We recommend installing Physlr via [Conda](https://docs.conda.io/en/latest/) package manager (Linux, MacOS), which will handle compilation and dependencies automatically.
 
 ## Install Physlr using Conda
+In an active `conda` environment:
 ```
 conda install -c bioconda physlr
 physlr help
@@ -75,14 +78,13 @@ bin/physlr-make help
     * [scipy](https://www.scipy.org/)
     * [sklearn](https://scikit-learn.org/stable/)
     * [tqdm](https://tqdm.github.io/)
-
+	
 Additionally, we recommend using pypy3 over regular python3 for speed.
 
 ### Optional dependencies
 
 - [pigz](https://zlib.net/pigz/) for parallel gzip
 - [zsh](https://sourceforge.net/projects/zsh/) for reporting time and memory usage
-
 
 Running Physlr
 ================================================================================
