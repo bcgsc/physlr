@@ -2694,6 +2694,7 @@ class Physlr:
         # Assumption: There is no negative slope to the right of the first local minimum
         freq_count = [int(line.rstrip().split("\t")[2]) for line in open(self.args.FILES[0])
                       if line[0] != "k"]
+        min_idx = 0
         min_val = freq_count[0]
         for idx, freq in enumerate(freq_count):
             if freq > min_val:
