@@ -79,7 +79,15 @@ bin/physlr-make help
     * [sklearn](https://scikit-learn.org/stable/)
     * [tqdm](https://tqdm.github.io/)
 	
-Additionally, we recommend using pypy3 over regular python3 for speed.
+Additionally, we recommend using `pypy3` over regular python3 for speed. 
+pypy v3 or `pypy3` is the default python exectubale for Physlr. To switch to other executables set the `python_executable` argument:
+```
+physlr [OPTION]... python_executable=python3
+```
+If you install our tool via `conda`, pypy3 is included as a dependency. Otherwise, you can install pypy3 using conda:
+```
+conda install -c conda-forge pypy3.7 # for python3.7
+```
 
 ### Optional dependencies
 
