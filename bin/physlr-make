@@ -212,6 +212,7 @@ help:
 	@echo " 			2: progress bar."
 	@echo " 			3: verbose messages."
 	@echo "	m 	% of edges to remove in the overlap graph [90]. Available options are [0-100]."
+	@echo "	python_executable	Path to the Python executable [pypy3]."
 	@echo "	protocol		Available options are stlfr and 10x. Specify the protocol option to use the default m value for the respective linked read protocol."
 	@echo "					stlfr: m=85."
 	@echo "					10x: m=92.5."
