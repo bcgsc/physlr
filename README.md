@@ -43,11 +43,10 @@ In an active `conda` environment:
 conda install -c bioconda physlr
 physlr help
 ```
-Physlr includes scripts to generate reports (included in the pipeline by default), you can install dependencies for these optional features using conda:
+Physlr can generate complmentary reports (included in the pipeline by default), you can install dependencies for these optional features using conda:
 ```
-what what	r-rmarkdown
-what what    	r-ggplot2
-
+conda install -c r r-rmarkdown
+conda install -c conda-forge r-ggplot2
 ```
 
 ## Compile Physlr from source
