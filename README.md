@@ -35,7 +35,7 @@ Contents
 
 Installation
 ================================================================================
-We recommend installing Physlr via [Conda](https://docs.conda.io/en/latest/) package manager (Linux, MacOS), which will handle compilation and dependencies automatically.
+You can install Physlr either via Conda or by compiling from source. We recommend installing Physlr via [Conda](https://docs.conda.io/en/latest/) package manager (Linux, MacOS), which will handle compilation and dependencies automatically.
 
 ## Install Physlr using Conda
 In an active `conda` environment:
