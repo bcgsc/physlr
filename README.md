@@ -66,7 +66,7 @@ pip3 install --user git+https://github.com/bcgsc/physlr
 git clone https://github.com/bcgsc/physlr
 cd physlr/src && make install PREFIX=/opt/physlr
 ```
-after compiling, Physlr commands will be avilable through:
+after compiling, Physlr commands will be available through:
 ```
 bin/physlr-make
 bin/physlr-make help
