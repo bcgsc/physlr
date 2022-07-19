@@ -10,7 +10,7 @@
 Physlr: Next-generation Physical Maps
 ================================================================================
 
-Physlr `physical-map` constructs a *de novo* physical map using linked reads from 10X Genomics or MGI stLFR. This physical map can then be used for various genomics analyses, including scaffolding. Physlr `scaffolds` uses the physcial map generated in the first stage to scaffold an existing genome assembly to yield chromosome-level contiguity.
+Physlr `physical-map` constructs a *de novo* physical map using linked reads from 10X Genomics or MGI stLFR. This physical map can then be used for various genomics analyses, including scaffolding. Physlr `scaffolds` uses the physical map generated in the first stage to scaffold an existing genome assembly to yield chromosome-level contiguity.
 
 <p align="center">
   <img src="physlr-stages.png" width="250" title="Physlr stages">
