@@ -1,7 +1,7 @@
 [![Published in DNA](https://img.shields.io/badge/Published%20in-DNA-blue.svg)](https://www.mdpi.com/2673-8856/2/2/9)
 [![Release](https://img.shields.io/github/release/bcgsc/physlr.svg)](https://github.com/bcgsc/physlr/releases)
 [![Conda](https://img.shields.io/conda/dn/bioconda/physlr?label=Conda%20downloads)](https://anaconda.org/bioconda/physlr)
-[![Downloads](https://img.shields.io/github/downloads/bcgsc/physlr/total?logo=github)](https://github.com/bcgsc/physlr/releases/download/v1.0.2/physlr-1.0.2.tar.gz)
+[![Downloads](https://img.shields.io/github/downloads/bcgsc/physlr/total?logo=github)](https://github.com/bcgsc/physlr/releases/download/v1.0.4/physlr-1.0.4.tar.gz)
 
 <p align="center">
   <img src="physlr-logo-transparent.png" width="600" title="Physlr stages">
