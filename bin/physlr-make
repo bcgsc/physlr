@@ -189,7 +189,7 @@ endif
 
 # Help
 help:
-	@echo "Usage: ./physlr-make [COMMAND] [OPTION=VALUE]..."
+	@echo "Usage: physlr [COMMAND] [OPTION=VALUE]..."
 	@echo "    Commands:"
 	@echo ""
 	@echo "	physical-map		run physlr and generate a physical map with linked reads (10X or stLFR)."
@@ -212,6 +212,7 @@ help:
 	@echo " 			2: progress bar."
 	@echo " 			3: verbose messages."
 	@echo "	m 	% of edges to remove in the overlap graph [90]. Available options are [0-100]."
+	@echo "	python_executable	Path to the Python executable [pypy3]."
 	@echo "	protocol		Available options are stlfr and 10x. Specify the protocol option to use the default m value for the respective linked read protocol."
 	@echo "					stlfr: m=85."
 	@echo "					10x: m=92.5."
@@ -235,10 +236,10 @@ help:
 	@echo "	./physlr-make physical-map lr=myreads m=86"
 	@echo "Example: To scaffold a draft assembly using physlr with 10X reads myreads.fq.gz and draft.fa, run:"
 	@echo "	./physlr-make scaffolds lr=myreads protocol=10x draft=draft"
-	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard, ntHits, and Quast."
+	@echo "To ensure that the pipeline runs correctly, make sure that the following tools are in your PATH: ntCard (ntcard), ntHits (nthits), and QUAST (quast)."
 
 version:
-	@echo "physlr 1.0.2"
+	@echo "physlr 1.0.4"
 
 ################################################################################
 # Test m=1 prune_branches=1 prune_bridges=1
