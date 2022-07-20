@@ -48,7 +48,7 @@ Physlr can generate complmentary reports (included in the pipeline by default) -
 conda install -c r r-rmarkdown
 conda install -c conda-forge r-ggplot2
 ```
-Additionally, we recommend using `pypy3` over regular python3 for speed. 
+We recommend using `pypy3` over regular python3 for speed. 
 pypy v3 or `pypy3` is the default python executable for Physlr. To switch to other executables set the `python_executable` argument:
 ```
 physlr [OPTION]... python_executable=python3
