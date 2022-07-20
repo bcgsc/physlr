@@ -55,7 +55,7 @@ physlr [OPTION]... python_executable=python3
 ```
 You can install pypy3 using conda:
 ```
-conda install -c conda-forge pypy3.8 # Change 3.8 to your conda envs python version (3.6 to 3.9 are supported)
+conda install -c conda-forge pypy3.8 # Change specified version based on your conda environment's python version (3.6 to 3.9 are supported)
 ```
 
 
