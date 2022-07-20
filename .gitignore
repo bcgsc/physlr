@@ -5,3 +5,4 @@ src/physlr-overlap
 src/physlr-filter-bxmx
 src/physlr-makebf
 src/physlr-split-minimizers
+src/physlr-bx-long
