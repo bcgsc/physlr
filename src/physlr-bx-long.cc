@@ -54,16 +54,12 @@ main(int argc, char* argv[])
 	int c;
 	int optindex = 0;
 	static int help = 0, version = 0;
-	bool auto_span = false, auto_dist = false;
 	size_t t = 6, m = 2000;
-	bool g_set = false;
-	bool l_set = false;
 	
 	std::vector<size_t> read_lengths;
-	size_t total_bases = 0;
-	static int with_fasta = 0, with_bx_multiplicity = 0, with_bx_multiplicity_only = 0;
-	std::string configFile("tigmint-long.params.tsv");
-	std::string bxMultiplicityFile("barcode_multiplicity.tsv");
+	static int with_fasta = 0;
+	//std::string configFile("tigmint-long.params.tsv");
+	//std::string bxMultiplicityFile("barcode_multiplicity.tsv");
 	bool failed = false;
 	static const struct option longopts[] = {
 		{ "fasta", no_argument, &with_fasta, 1 },
@@ -126,7 +122,6 @@ main(int argc, char* argv[])
 		btllib::SeqReader reader(infile, flags, t);
 		btllib::SeqReader::Record record;
 		while ((record = reader.read())) {
-			size_t step = l * 2;
 			std::string& seq = record.seq;
 			size_t seq_size = seq.size();
 			std::string& qual = record.qual;
