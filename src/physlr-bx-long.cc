@@ -125,11 +125,14 @@ main(int argc, char* argv[])
 			std::string& seq = record.seq;
 			size_t seq_size = seq.size();
 			std::string& qual = record.qual;
-      size_t qual_size = qual.size();
-
-      std::cout << header_symbol << record.id << " BX:Z:" << record.num + 1 << '\n';
-      std::cout << seq << '\n';
-      if (!with_fasta) {
+			size_t qual_size = qual.size();
+			
+			if (seq_size < m) {
+				continue;
+			}
+			std::cout << header_symbol << record.id << " BX:Z:" << record.num + 1 << '\n';
+			std::cout << seq << '\n';
+			if (!with_fasta) {
 						std::cout << "+\n";
 						if (qual_size == 0) {
 							std::cout << std::string(seq_size, '#') << '\n';
