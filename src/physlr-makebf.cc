@@ -1,3 +1,6 @@
+#include "btllib/bloom_filter.hpp"
+// #include "btllib/nthash.hpp"
+
 #include <fstream>
 #include <getopt.h>
 #include <iomanip>
@@ -10,8 +13,8 @@
 #include <omp.h>
 #endif
 
-#include "btl_bloomfilter/BloomFilter.hpp"
-#include "btl_bloomfilter/vendor/ntHashIterator.hpp"
+// old code: #include "btl_bloomfilter/BloomFilter.hpp"
+// old code: #include "btl_bloomfilter/vendor/ntHashIterator.hpp"
 
 static void
 printErrorMsg(const std::string& progname, const std::string& msg)
@@ -34,14 +37,19 @@ printUsage(const std::string& progname)
 }
 
 static void
-printBloomStats(BloomFilter& bloom, ostream& os)
+printBloomStats(btllib::KmerBloomFilter& bloom, std::ostream& os)
+// old code: printBloomStats(BloomFilter& bloom, ostream& os)
 {
-	os << "Bloom filter stats:"
-	   << "\n\t#counters               = " << bloom.getFilterSize()
-	   << "\n\t#size (B)               = " << bloom.sizeInBytes()
-	   << "\n\tpopcount                = " << bloom.getPop()
-	   << "\n\tFPR                     = " << setprecision(3) << 100.f * bloom.getFPR() << "%"
-	   << "\n";
+	os << "Bloom filter stats:";
+	// os << "Bloom filter stats:"
+	//    // old code: << "\n\t#counters               = " << bloom.getFilterSize()
+	//    << "\n\t#size (B)               = " << bloom.get_bytes()
+	//    // old code: << "\n\t#size (B)               = " << bloom.sizeInBytes()
+	//    << "\n\tpopcount                = " << bloom.get_pop_cnt()
+	//    // old code: << "\n\tpopcount                = " << bloom.getPop()
+	//    << "\n\tFPR                     = " << std::setprecision(3) << 100.f * bloom.get_fpr() << "%"
+	//    // old code: << "\n\tFPR                     = " << setprecision(3) << 100.f * bloom.getFPR() << "%"
+	//    << "\n";
 }
 
 int
@@ -127,7 +135,10 @@ main(int argc, char* argv[])
 		}
 	}
 
-	BloomFilter bloomFilter(filterSize, hashNum, k);
+	// Initialize bloom filter
+	btllib::KmerBloomFilter bloomFilter(filterSize, hashNum, k);
+	// old code: BloomFilter bloomFilter(filterSize, hashNum, k);
+
 	if (verbose) {
 		std::cerr << "Made Bloom filter with:\n"
 		          << "kmer size                 = " << k << "\n"
@@ -140,11 +151,16 @@ main(int argc, char* argv[])
 	uint64_t counter = 0;
 #pragma omp parallel for num_threads(t)
 	for (auto vectIt = kmerVect.begin(); vectIt < kmerVect.end(); ++vectIt) {
-		ntHashIterator itr(*vectIt, hashNum, k);
-		while (itr != ntHashIterator::end()) {
-			bloomFilter.insert(*itr);
-			++itr;
+		
+		btllib::NtHash nt(*vectIt, hashNum, k);
+		while (nt.roll()) {
+			bloomFilter.insert(nt.hashes());
 		}
+		// ntHashIterator itr(*vectIt, hashNum, k);
+		// while (itr != ntHashIterator::end()) {
+		// 	bloomFilter.insert(*itr);
+		// 	++itr;
+		// }
 		if (verbose) {
 #pragma omp critical
 			{
@@ -157,5 +173,6 @@ main(int argc, char* argv[])
 	}
 
 	printBloomStats(bloomFilter, std::cerr);
-	bloomFilter.storeFilter(outfile);
+	// old code: bloomFilter.storeFilter(outfile);
+	bloomFilter.save(outfile);
 }
