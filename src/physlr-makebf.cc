@@ -137,7 +137,7 @@ main(int argc, char* argv[])
 
 	// Initialize bloom filter
 	//btllib::KmerBloomFilter bloomFilter(filterSize, hashNum, k);
-	btllib::BloomFilter bloomFilter(filterSize, hashNum, k);
+	btllib::BloomFilter bloomFilter(filterSize/8, hashNum, k);
 	// old code: BloomFilter bloomFilter(filterSize, hashNum, k);
 
 	if (verbose) {
