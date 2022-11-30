@@ -48,6 +48,16 @@ Physlr can generate complmentary reports (included in the pipeline by default) -
 conda install -c r r-rmarkdown
 conda install -c conda-forge r-ggplot2
 ```
+We recommend using `pypy3` over regular python3 for speed. 
+pypy v3 or `pypy3` is the default python executable for Physlr. To switch to other executables set the `python_executable` argument:
+```
+physlr [OPTION]... python_executable=python3
+```
+You can install pypy3 using conda:
+```
+conda install -c conda-forge pypy3.8 # Change specified version based on your conda environment's python version (3.6 to 3.9 are supported)
+```
+
 
 ## Compile Physlr from source
 ### Compiling
@@ -82,17 +92,7 @@ bin/physlr-make help
     * [numpy](https://numpy.org/)
     * [scipy](https://www.scipy.org/)
     * [sklearn](https://scikit-learn.org/stable/)
-    * [tqdm](https://tqdm.github.io/)
-	
-Additionally, we recommend using `pypy3` over regular python3 for speed. 
-pypy v3 or `pypy3` is the default python executable for Physlr. To switch to other executables set the `python_executable` argument:
-```
-physlr [OPTION]... python_executable=python3
-```
-If you install our tool via `conda`, pypy3 is included as a dependency. Otherwise, you can install pypy3 using conda:
-```
-conda install -c conda-forge pypy3.7 # for python3.7
-```
+    * [tqdm](https://tqdm.github.io/)	
 
 ### Optional dependencies
 
