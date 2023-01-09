@@ -1,9 +1,12 @@
-all: physlr-makebf
+all: physlr-makebf physlr-filter-barcodes
 
-CXXFLAGS+=-O3 -Wall -Werror -Wno-unknown-pragmas -std=c++11 -pthread -fopenmp # See if you can exclude fopenmp
+CXXFLAGS+=-g -O3 -Wall -Werror -Wno-unknown-pragmas -std=c++11 -pthread -I./include -I./vendor -fopenmp # See if you can exclude fopenmp
 LDFLAGS+=-l btllib
 
 physlr-makebf: physlr-makebf.cpp
+	$(CXX) -o $@ $< $(CXXFLAGS) $(LDFLAGS)
+
+physlr-filter-barcodes: physlr-filter-barcodes.cpp
 	$(CXX) -o $@ $< $(CXXFLAGS) $(LDFLAGS)
 
 # Check the C++ source code for errors.
