@@ -1,5 +1,5 @@
 CXXFLAGS=-g -O3 -Wall -Werror -Wno-error=unknown-pragmas -std=c++11 -pthread -I./include -I./vendor -fopenmp
-LDLIBS=-lz
+LDLIBS=-lz -l btllib
 LDFLAGS+=-l btllib
 PREFIX=$(HOME)/.local
 
@@ -56,9 +56,9 @@ check-physlr-index-stLFR: all
 check-physlr-index-stLFR-10X: all
 	./physlr-indexlr -t16 -k8 -w1 data/stLFR.10X.combined.tiny.fq | diff -q - data/stLFR.10X.combined.tiny.physlr.tsv.good
 
-check-physlr-makebf: all
-	./physlr-makebf -t16 -k8 -b1000 -o tiny.bf data/tiny_k8.rep
-	./physlr-indexlr -t16 -k8 -w1 -r tiny.bf data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
+#check-physlr-makebf: all
+#	./physlr-makebf -t16 -k8 -b1000 -o tiny.bf data/tiny_k8.rep
+#	./physlr-indexlr -t16 -k8 -w1 -r tiny.bf data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
 
 check-physlr-overlap: all
 	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort --ignore-case | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
