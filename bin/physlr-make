@@ -870,14 +870,12 @@ $(ref)/$(ref).fa: $(ref).fa
 %.fa.gap.bed: %.fa
 	$(python) $(bin)/physlr fasta-gaps $< >$@
 
-# Index a FASTA file.
+# Index a FASTA file. # $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(lr).k$k.bf --pos -o $@ $<
 %.k$k-w$w.physlr.tsv: %.fa $(lr).k$k.bf
-	# $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(lr).k$k.bf --pos -o $@ $<
 	indexlr -t$t -k$k -w$w -r $(lr).k$k.bf --pos -o $@ $<
 
-# Index a compressed FASTQ file of linked reads.
+# Index a compressed FASTQ file of linked reads. # $(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(lr).k$k.bf - | $(gzip) >$@
 %.k$k-w$w.physlr.tsv.gz: %.fq.gz %.k$k.bf
-	# $(zcat) $< | $(time) $(physlr_path)/src/physlr-indexlr -t$t -k$k -w$w -r $(lr).k$k.bf - | $(gzip) >$@
 	$(zcat) $< | $(time) indexlr -t$t -k$k -w$w -r $(lr).k$k.bf - | $(gzip) >$@
 
 # Identify the overlapping minimizers of each pair of barcodes.
