@@ -28,15 +28,6 @@ fix:
 
 check: check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf check-physlr-overlap # check-physlr-molecules
 
-#check-physlr-index-fasta: all
-#	./physlr-indexlr -t16 -k100 -w5 data/mt.fa | diff -q - data/mt.physlr.tsv.good
-
-#check-physlr-index-pos-fasta: all
-#	./physlr-indexlr -t16 -k100 -w5 --pos data/mt.fa | diff -q - data/mt.pos.physlr.tsv.good
-
-#check-physlr-index-fastq: all
-#	./physlr-indexlr -t16 -k100 -w5 data/tiny.fq | diff -q - data/tiny.physlr.tsv.good
-
 check-physlr-filter-barcodes: all
 	./physlr-filter-barcodes data/f1chr4-head50.tsv -o data/f1chr4-head50.n100-1000.tsv -n100 -N1000
 	./data/checkMx.sh data/f1chr4-head50.n100-1000.good.tsv data/f1chr4-head50.n100-1000.tsv
@@ -50,14 +41,14 @@ check-physlr-filter-bxmx-second: all
 	./data/checkMx.sh f1.tiny.indexlr.n2-10.c2-x.physlr.tsv data/f1.tiny.indexlr.n2-10.c2-x.physlr.tsv.good
 
 #check-physlr-index-stLFR: all
-#	./physlr-indexlr -t16 -k8 -w1 data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.physlr.tsv.good
+#	indexlr --bx -t16 -k8 -w1 data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.physlr.tsv.good
 
 #check-physlr-index-stLFR-10X: all
-#	./physlr-indexlr -t16 -k8 -w1 data/stLFR.10X.combined.tiny.fq | diff -q - data/stLFR.10X.combined.tiny.physlr.tsv.good
+#	indexlr --bx -t16 -k8 -w1 data/stLFR.10X.combined.tiny.fq | diff -q - data/stLFR.10X.combined.tiny.physlr.tsv.good
 
 check-physlr-makebf: all
 	./physlr-makebf -t16 -k8 -b1000 -o tiny.bf data/tiny_k8.rep
-	indexlr -t16 -k8 -w1 -r tiny.bf data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
+	indexlr --bx -t16 -k8 -w1 -r tiny.bf data/stLFR.tiny.fq | diff -q - data/stLFR.tiny.filtered.physlr.tsv.good
 
 check-physlr-overlap: all
 	./physlr-overlap -t4 -m1 data/tiny.overlap.input.tsv | sort --ignore-case | diff -q - data/tiny.physlr.overlap.n1.sorted.tsv
