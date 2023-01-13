@@ -85,6 +85,7 @@ bin/physlr-make help
 
 * [ntCard](https://github.com/bcgsc/ntCard)
 * [ntHits](https://github.com/bcgsc/ntHits)
+* [btllib](https://github.com/bcgsc/btllib)
 * GCC 5 or newer with [OpenMP](https://www.openmp.org) and [boost](https://www.boost.org)
 * Python 3.5 or newer and the following packages
     * [community](https://python-louvain.readthedocs.io/en/latest/api.html)
