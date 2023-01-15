@@ -46,6 +46,7 @@ physlr help
 Physlr can generate complmentary reports (included in the pipeline by default) - you can install dependencies for these optional features using conda:
 ```
 conda install -c r r-rmarkdown
+conda install -c r r-essentials
 conda install -c conda-forge r-ggplot2
 ```
 We recommend using `pypy3` over regular python3 for speed. 
