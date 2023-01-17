@@ -31,7 +31,9 @@ jobs:
       source activate physlr
       conda install --yes -c conda-forge -c bioconda --file requirements.txt
     displayName: Install dependencies
-  - script: make -C src all
+  - script: |
+      source activate physlr
+      make -C src all
     displayName: Compile C++ executables
   - script: make -C src lint
     displayName: Run clang-format and clang-tidy
