@@ -128,7 +128,7 @@ main(int argc, char* argv[])
 	}
 
 	// Initialize bloom filter
-	btllib::KmerBloomFilter bloomFilter(filterSize/8, hashNum, k);
+	btllib::KmerBloomFilter bloomFilter(filterSize / 8, hashNum, k);
 
 	if (verbose) {
 		std::cerr << "Made Bloom filter with:\n"
@@ -142,7 +142,6 @@ main(int argc, char* argv[])
 	uint64_t counter = 0;
 #pragma omp parallel for num_threads(t)
 	for (auto vectIt = kmerVect.begin(); vectIt < kmerVect.end(); ++vectIt) {
-		
 		btllib::NtHash nt(*vectIt, hashNum, k);
 		while (nt.roll()) {
 			bloomFilter.insert(nt.hashes());
