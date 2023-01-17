@@ -33,6 +33,7 @@ jobs:
     displayName: Install dependencies
   - script: |
       source activate physlr
+      conda install --yes -c conda-forge -c bioconda --file requirements.txt
       make -C src all
     displayName: Compile C++ executables
   - script: make -C src lint
