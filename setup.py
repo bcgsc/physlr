@@ -14,7 +14,7 @@ setuptools.setup(
     url="https://github.com/bcgsc/physlr",
     license="GPLv3",
     python_requires=">=3",
-    install_requires=["networkx", "numpy", "python-louvain", "scipy", "scikit-learn", "sklearn", "tqdm" ],
+    install_requires=["networkx", "numpy", "python-louvain", "scipy", "scikit-learn", "tqdm" ],
     packages=["physlr"],
     scripts=["bin/physlr"],
     classifiers=[
