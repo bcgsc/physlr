@@ -34,6 +34,8 @@ jobs:
   - script: |
       source activate physlr
       conda install --yes -c conda-forge -c bioconda --file requirements.txt
+      export CPPFLAGS="-isystem $CONDA_PREFIX/include $CPPFLAGS"
+      export LDFLAGS="-L$CONDA_PREFIX//lib -lbtllib $LDFLAGS"
       make -C src all
     displayName: Compile C++ executables
   - script: make -C src lint
