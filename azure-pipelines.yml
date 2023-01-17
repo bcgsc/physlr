@@ -39,9 +39,8 @@ jobs:
     displayName: Compile C++ executables
   - script: |
       source activate physlr
-      export CPPFLAGS="-isystem $CONDA_PREFIX/include/ $CPPFLAGS"
-      export LDFLAGS="-L$CONDA_PREFIX//lib -lbtllib $LDFLAGS"
-      make -C src lint -- -I$CONDA_PREFIX/include/
+      conda install --yes -c bioconda -c conda-forge clang clang-tools
+      make -C src lint
     displayName: Run clang-format and clang-tidy
   - script: make -C src check
     displayName: Test C++ executables
