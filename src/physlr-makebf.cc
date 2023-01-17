@@ -1,5 +1,4 @@
 #include "btllib/bloom_filter.hpp"
-// #include "btllib/nthash.hpp"
 
 #include <fstream>
 #include <getopt.h>
