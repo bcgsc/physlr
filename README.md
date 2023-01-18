@@ -24,6 +24,7 @@ Contents
 	   * [Compiling](#compiling)
 	   * [Dependencies](#dependencies)
 	   * [Optional dependencies](#optional-dependencies)
+	   * [Developers dependencies](#developers-dependencies)
 * [Running Physlr](#running-physlr)
    * [Generate a physical map](#generate-a-physical-map)
    * [Scaffold an assembly](#scaffold-an-assembly)
@@ -92,13 +93,17 @@ bin/physlr-make help
     * [networkx](https://networkx.github.io/)
     * [numpy](https://numpy.org/)
     * [scipy](https://www.scipy.org/)
-    * [sklearn](https://scikit-learn.org/stable/)
+    * [sklearn/scikit-learn](https://scikit-learn.org/stable/)
     * [tqdm](https://tqdm.github.io/)	
 
 ### Optional dependencies
 
 - [pigz](https://zlib.net/pigz/) for parallel gzip
 - [zsh](https://sourceforge.net/projects/zsh/) for reporting time and memory usage
+
+### Developers dependencies
+There are additional functions in Physlr (especially the python version) for developers to generate more granular reports. The dependencies of these functions are listed below:
+- [pygraphviz](https://anaconda.org/conda-forge/pygraphviz) for graph visualization purposes
 
 Running Physlr
 ================================================================================
