@@ -15,6 +15,10 @@ jobs:
     displayName: Create Anaconda environment
   - script: |
       source activate physlr
+      conda install --yes -c conda-forge -c bioconda --file requirements.txt
+    displayName: Install dependencies
+  - script: |
+      source activate physlr
       conda install --yes -c bioconda -c conda-forge clang clang-tools
     displayName: Conda Install clang-format and clang-tidy
   - script: sudo apt-get install -qq libboost-dev
@@ -23,10 +27,6 @@ jobs:
     displayName: Install Python packages
   - script: make lint
     displayName: Run pylint
-  - script: |
-      source activate physlr
-      conda install --yes -c conda-forge -c bioconda --file requirements.txt
-    displayName: Install dependencies
   - script: |
       source activate physlr
       export CPPFLAGS="-isystem $CONDA_PREFIX/include/ $CPPFLAGS"
