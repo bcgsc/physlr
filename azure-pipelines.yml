@@ -19,7 +19,7 @@ jobs:
     displayName: Install dependencies
   - script: |
       source activate physlr
-      conda install --yes -c bioconda -c conda-forge clang clang-tools
+      conda install --yes -c bioconda -c conda-forge clang-tools
     displayName: Conda Install clang-format and clang-tidy
   - script: sudo apt-get install -qq libboost-dev
     displayName: Install boost
