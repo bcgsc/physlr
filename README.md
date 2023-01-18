@@ -102,7 +102,7 @@ bin/physlr-make help
 - [zsh](https://sourceforge.net/projects/zsh/) for reporting time and memory usage
 
 ### Developers dependencies
-There are additional funcitons in Physlr (specially the python version) for developers to generate granulated reports. These functions may have dependencies some of them listed below:
+There are additional functions in Physlr (especially the python version) for developers to generate more granular reports. The dependencies of these functions are listed below:
 - [pygraphviz](https://anaconda.org/conda-forge/pygraphviz) for graph visualization purposes
 
 Running Physlr
