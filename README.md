@@ -93,7 +93,7 @@ bin/physlr-make help
     * [networkx](https://networkx.github.io/)
     * [numpy](https://numpy.org/)
     * [scipy](https://www.scipy.org/)
-    * [sklearn/sickit-learn](https://scikit-learn.org/stable/)
+    * [sklearn/scikit-learn](https://scikit-learn.org/stable/)
     * [tqdm](https://tqdm.github.io/)	
 
 ### Optional dependencies
