@@ -4,3 +4,4 @@ llvm
 coreutils
 btllib
 boost
+libgomp
