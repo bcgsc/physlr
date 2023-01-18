@@ -2,6 +2,7 @@ libcxx
 compilers
 llvm
 coreutils
+binutils
 btllib
 boost
 libgomp
