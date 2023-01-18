@@ -1,5 +1,5 @@
-CXXFLAGS=-g -O3 -Wall -Werror -Wno-error=unknown-pragmas -std=c++11 -pthread -I./include -I./vendor -fopenmp
-LDLIBS=-lz -l btllib
+CXXFLAGS+=-g -O3 -Wall -Werror -Wno-error=unknown-pragmas -std=c++11 -pthread -I./include -I./vendor -fopenmp
+LDLIBS+=-lz -l btllib
 PREFIX=$(HOME)/.local
 
 .PHONY: all clean check install lint clang-format clang-tidy fix check-physlr-index-fasta check-physlr-index-pos-fasta check-physlr-index-fastq check-physlr-filter-barcodes check-physlr-filter-bxmx-first check-physlr-filter-bxmx-second check-physlr-index-stLFR check-physlr-index-stLFR-10X check-physlr-makebf check-physlr-overlap check-physlr-split-minimizers
@@ -14,7 +14,7 @@ lint: clang-format clang-tidy
 
 # Check the C++ source code for errors with clang-tidy.
 clang-tidy:
-	clang-tidy -warnings-as-errors='*' *.cc -- -std=c++11 -x c++ -I./include -I./vendor
+	clang-tidy -warnings-as-errors='*' *.cc -- -std=c++11 -x c++ -Iinclude -Ibtllib/include $(CXXFLAGS)
 
 # Check the C++ source code for white-space errors with clang-format.
 clang-format:
