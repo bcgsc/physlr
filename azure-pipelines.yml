@@ -3,7 +3,7 @@
 jobs:
 - job: Test
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-latest'
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -19,7 +19,7 @@ jobs:
     displayName: Install dependencies
   - script: |
       source activate physlr
-      conda install --yes -c bioconda -c conda-forge clang-tools
+      conda install --yes -c bioconda -c conda-forge clang clang-tools
     displayName: Conda Install clang-format and clang-tidy
   - script: sudo apt-get install -qq libboost-dev
     displayName: Install boost
