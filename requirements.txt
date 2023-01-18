@@ -1,4 +1,7 @@
+libcxx
 compilers
+llvm
+coreutils
 btllib
 boost
 libgomp
