@@ -14,8 +14,8 @@ jobs:
   - script: conda create --yes --quiet --name physlr
     displayName: Create Anaconda environment
   - script: |
-    source activate physlr
-    conda install --yes -c bioconda -c conda-forge clang clang-tools
+      source activate physlr
+      conda install --yes -c bioconda -c conda-forge clang clang-tools
     displayName: Conda Install clang-format and clang-tidy
   - script: sudo apt-get install -qq libboost-dev
     displayName: Install boost
