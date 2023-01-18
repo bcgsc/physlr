@@ -9,24 +9,20 @@ jobs:
     inputs:
       versionSpec: "3.7"
       architecture: x64
+  - script: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: conda create --yes --quiet --name physlr
+    displayName: Create Anaconda environment
   - script: |
-      curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-      sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
-      sudo apt-get update
-      sudo apt-get install -y --no-install-recommends clang-format-7 clang-tidy-7      
-      sudo ln -sf clang-format-7 /usr/bin/clang-format
-      sudo ln -sf clang-tidy-7 /usr/bin/clang-tidy
-    displayName: Install clang-format and clang-tidy
+    source activate physlr
+    conda install --yes -c bioconda -c conda-forge clang clang-tools
+    displayName: Conda Install clang-format and clang-tidy
   - script: sudo apt-get install -qq libboost-dev
     displayName: Install boost
   - script: pip3 install pylint .
     displayName: Install Python packages
   - script: make lint
     displayName: Run pylint
-  - script: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH
-  - script: conda create --yes --quiet --name physlr
-    displayName: Create Anaconda environment
   - script: |
       source activate physlr
       conda install --yes -c conda-forge -c bioconda --file requirements.txt
@@ -39,7 +35,6 @@ jobs:
     displayName: Compile C++ executables
   - script: |
       source activate physlr
-      conda install --yes -c bioconda -c conda-forge clang clang-tools
       make -C src lint
     displayName: Run clang-format and clang-tidy
   - script: make -C src check
