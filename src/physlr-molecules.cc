@@ -480,7 +480,6 @@ componentsToNewGraph(
 	std::cerr << "Generated new graph ";
 #if _OPENMP
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-	sTime = omp_get_wtime();
 #endif
 
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
@@ -721,7 +720,7 @@ community_detection_cosine_similarity_core(
 	// 2- Determine the threshold:
 	// not implemented yet; uses a predefined universal threshold.
 
-	threshold = threshold;
+	// threshold = threshold;
 
 	// 3- Filter out edges:
 
