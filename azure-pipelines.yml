@@ -37,7 +37,9 @@ jobs:
       source activate physlr
       make -C src lint
     displayName: Run clang-format and clang-tidy
-  - script: make -C src check
+  - script: |
+      source activate physlr
+      make -C src check
     displayName: Test C++ executables
   - script: make -C data test python_executable=python m=1 prune_branches=1 prune_bridges=1
     displayName: Test Python modules
