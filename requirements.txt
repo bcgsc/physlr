@@ -1,5 +1,5 @@
 compilers
-coreutils
+//coreutils
 btllib
 boost
-libgomp
+//libgomp
