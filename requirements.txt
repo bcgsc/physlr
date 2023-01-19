@@ -1,5 +1,3 @@
 compilers
-//coreutils
 btllib
 boost
-//libgomp
