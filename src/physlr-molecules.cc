@@ -720,7 +720,6 @@ community_detection_cosine_similarity_core(
 	// 2- Determine the threshold:
 	// not implemented yet; uses a predefined universal threshold.
 
-	// threshold = threshold;
 
 	// 3- Filter out edges:
 
