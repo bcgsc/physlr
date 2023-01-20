@@ -719,8 +719,7 @@ community_detection_cosine_similarity_core(
 
 	// 2- Determine the threshold:
 	// not implemented yet; uses a predefined universal threshold.
-
-
+	
 	// 3- Filter out edges:
 
 	for (uint64_t i = 0; i < adjacencyMatrix.size(); i++) {
