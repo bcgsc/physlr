@@ -29,8 +29,6 @@ jobs:
     displayName: Run pylint
   - script: |
       source activate physlr
-      export CPPFLAGS="-isystem $CONDA_PREFIX/include/ $CPPFLAGS"
-      export LDFLAGS="-L$CONDA_PREFIX//lib -lbtllib $LDFLAGS"
       make -C src all
     displayName: Compile C++ executables
   - script: |
