@@ -30,7 +30,8 @@ struct HashData
 	  , hash2(hash2)
 	  , pos(pos)
 	  , strand(strand)
-	{}
+	{
+	}
 	uint64_t hash1, hash2;
 	size_t pos;
 	char strand;

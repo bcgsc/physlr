@@ -175,7 +175,6 @@ readTSV(graph_t& g, const std::string& infile, bool verbose)
 	}
 #if _OPENMP
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-	sTime = omp_get_wtime();
 #endif
 	std::cerr << "Memory usage: " << double(memory_usage()) / double(1048576) << "GB" << std::endl;
 }
@@ -404,6 +403,5 @@ main(int argc, char* argv[])
 	std::cerr << "Finished splitting minimizers" << std::endl;
 #if _OPENMP
 	std::cerr << "in sec: " << omp_get_wtime() - sTime << std::endl;
-	sTime = omp_get_wtime();
 #endif
 }

@@ -52,7 +52,8 @@ class InputWorker
   public:
 	explicit InputWorker(std::string ipath)
 	  : ipath(std::move(ipath))
-	{}
+	{
+	}
 
 	void start() { t = std::thread(doWork, this); }
 
@@ -100,7 +101,8 @@ class MinimizeWorker
 	  , solidBF(solidBF)
 	  , inputWorker(inputWorker)
 	  , outputWorker(outputWorker)
-	{}
+	{
+	}
 
 	MinimizeWorker(const MinimizeWorker& worker)
 	  : k(worker.k)
@@ -114,7 +116,8 @@ class MinimizeWorker
 	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
-	{}
+	{
+	}
 
 	MinimizeWorker(MinimizeWorker&& worker) noexcept
 	  : k(worker.k)
@@ -128,7 +131,8 @@ class MinimizeWorker
 	  , solidBF(worker.solidBF)
 	  , inputWorker(worker.inputWorker)
 	  , outputWorker(worker.outputWorker)
-	{}
+	{
+	}
 
 	MinimizeWorker& operator=(const MinimizeWorker& worker) = delete;
 	MinimizeWorker& operator=(MinimizeWorker&& worker) = delete;
