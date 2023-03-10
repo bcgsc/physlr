@@ -363,8 +363,8 @@ class Physlr:
             "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
 
     @staticmethod
-    def read_minimizers(filenames):
-        "Read minimizers in TSV format. Returns unordered set."
+    def read_minimizers(filenames, long=False):
+        "Read minimizers in TSV format. Returns ordered set."
         bxtomxs = {}
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
@@ -379,8 +379,15 @@ class Physlr:
                         continue
                     bx = fields[0]
                     if bx not in bxtomxs:
-                        bxtomxs[bx] = set()
-                    bxtomxs[bx].update(int(mx.split(":", 1)[0]) for mx in fields[1].split())
+                        if long:
+                            bxtomxs[bx] = list()
+                        else:
+                            bxtomxs[bx] = set()
+                    if long:
+                        # bxtomxs[bx] = [int(mx.split(":", 1)[0]) for mx in fields[1].split()]
+                        bxtomxs[bx].extend(int(mx.split(":", 1)[0]) for mx in fields[1].split())
+                    else:
+                        bxtomxs[bx].update(int(mx.split(":", 1)[0]) for mx in fields[1].split())
                 if Physlr.args.verbose >= 2:
                     progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
@@ -1092,6 +1099,77 @@ class Physlr:
         for mx in singletons:
             del mx_counts[mx]
         return mx_counts
+    
+    def physlr_refine_overlap(self):
+        "Refine Physlr overlap graph based on common minimizers' properties."
+
+        bxtomxs = self.read_minimizers([self.args.FILES[0]], self.args.long)
+        print(int(timeit.default_timer() - t0), "Read minimizers", file=sys.stderr)
+        g = self.read_graph([self.args.FILES[1]])
+        print(int(timeit.default_timer() - t0), "Read overlap graph", file=sys.stderr)
+        if self.args.extra_output:
+            # open a file called weights-diff.txt
+            extra_o = open("weights-diff.txt", "w+")
+
+        print(int(timeit.default_timer() - t0), "Refining overlap graph", file=sys.stderr)
+
+        for u, v, w in progress(g.edges(data="m")):
+            bxtomxs_u = bxtomxs[u]
+            bxtomxs_v = bxtomxs[v]
+            # largest subset of shared minimizers with similar order
+            common_order = self.find_largest_ordered_subset(bxtomxs_u, bxtomxs_v)
+            if self.args.normalize:
+                u_common_len = abs(bxtomxs_u.index(common_order[-1]) - bxtomxs_u.index(common_order[0])) + 1
+                v_common_len = abs(bxtomxs_v.index(common_order[-1]) - bxtomxs_v.index(common_order[0])) + 1
+                if self.args.extra_output: # analysis
+                    print(u, v, g[u][v]["m"], len(common_order),
+                          u_common_len, len(bxtomxs_u),
+                          v_common_len, len(bxtomxs_v),
+                          file=extra_o)
+                # change edge weight to: len(common_order) / min(u_common_len, v_common_len)
+                g[u][v]["m"] = len(common_order) # / min(u_common_len, v_common_len)
+            else:
+                if self.args.extra_output: # analysis
+                    print(u, v, w, len(common_order), file=extra_o)
+                g[u][v]["m"] = len(common_order)
+
+        if self.args.extra_output:
+            extra_o.close()
+
+        # write the overlap graph
+        self.write_graph(g, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote refined overlap graph", file=sys.stderr)
+        
+    def find_largest_ordered_subset(self, mxs_u, mxs_v, recursive=True):
+        "Find the largest subset of minimizers that are in the same order in both mxs_u and mxs_v."
+
+        dp = [[0 for _ in range(len(mxs_v) + 1)] for _ in range(len(mxs_u) + 1)]
+        for i in range(1, len(mxs_u) + 1):
+            for j in range(1, len(mxs_v) + 1):
+                if mxs_u[i - 1] == mxs_v[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1] + 1
+                else:
+                    dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+
+        # trace back
+        common = list()
+        i, j = len(mxs_u), len(mxs_v)
+        while i > 0 and j > 0:
+            if dp[i][j] == dp[i - 1][j]:
+                i -= 1
+            elif dp[i][j] == dp[i][j - 1]:
+                j -= 1
+            else:
+                common.append(mxs_u[i - 1])
+                i -= 1
+                j -= 1
+
+        # check again by reversing one of the sets
+        if recursive:
+            common2 = self.find_largest_ordered_subset(mxs_u, mxs_v[::-1], False)
+            if len(common2) > len(common):
+                common = common2
+        return common
 
     def physlr_filter_overlap(self):
         "Read a Physlr overlap graph and filter edges."
@@ -2832,6 +2910,18 @@ class Physlr:
         argparser.add_argument(
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
+        argparser.add_argument(
+            "--bx", action="store_true", dest="bx", default=True,
+            help="Set this flag if using linked reads (partially-oredered minimizers).")
+        argparser.add_argument(
+            "--long", action="store_true", dest="long", default=False,
+            help="Set this flag if using long reads (oredered minimizers).")
+        argparser.add_argument(
+            "--normalize-edges", action="store_true", dest="normalize", default=False,
+            help="Normalize edge weight bsaed on size of overlap.")
+        argparser.add_argument(
+            "--extra-output", action="store_true", dest="extra_output", default=False,
+            help="Generate an extra output for specific log files.")
         argparser.add_argument(
             "--arcs-pair", action="store", dest="arcs_pair", type=str, default="",
             help="ARCS scaffold pairing file.")

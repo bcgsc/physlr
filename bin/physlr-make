@@ -43,11 +43,11 @@ python_executable=pypy3
 python=env PYTHONPATH=$(physlr_path) $(python_executable)
 
 # Indexlr sequencing technology
-indexlr_seq_tech := --bx
+seq_tech := --bx
 ifdef protocol
 
 ifneq ($(filter $(protocol),ont pacbio long),)
-	indexlr_seq_tech := --long
+	seq_tech := --long
 endif
 
 ifeq ($(filter $(protocol),ont pacbio long 10x stlfr),)
@@ -56,9 +56,9 @@ endif
 endif
 
 # Indexlr inputs
-indexlr_read_params := $(indexlr_seq_tech)
+indexlr_read_params := $(seq_tech)
 ifdef indexlr_opts
-indexlr_read_params := $(indexlr_seq_tech) $(indexlr_opts)
+indexlr_read_params := $(seq_tech) $(indexlr_opts)
 endif
 
 # Name of the dataset.
@@ -958,6 +958,14 @@ endif
 # Determine overlaps and output the graph in TSV.
 %.physlr.overlap.tsv: %.physlr.tsv
 	$(time) $(physlr_path)/src/physlr-overlap -t$t -m10 $< >$@
+
+# Refine the edge weights of the overlap graph.
+%.physlr.overlap-refined.tsv: %.physlr.tsv %.physlr.overlap.tsv
+	$(time) $(python) $(bin)/physlr refine-overlap $(seq_tech) --normalize-edges --extra-output -t$t $^ >$@
+
+# Refine the edge weights of the overlap graph.
+%.physlr.m$m.overlap-refined.tsv: %.physlr.tsv %.physlr.overlap.m$m.tsv
+	$(time) $(python) $(bin)/physlr refine-overlap $(seq_tech) --normalize-edges --extra-output -t$t $^ >$@
 
 # Determine the degree of each vertex.
 %.deg.tsv: %.tsv
