@@ -1,6 +1,8 @@
 #!/usr/bin/make -f
 # Pipeline for the Physlr program
 # Written by Shaun Jackman, Johnathan Wong, Amirhossein Afshinfard, Lauren Coombe, and Vladimir Nikolic
+#
+# note: in the context of long reads, barcode means read / sequencing molecule in this code. In case of long reads, we use the read's id as it's barcode id.
 
 # Size of a k-mer.
 k=40
@@ -39,6 +41,30 @@ python_executable=pypy3
 
 # Python interpreter.
 python=env PYTHONPATH=$(physlr_path) $(python_executable)
+
+# Indexlr sequencing technology
+seq_tech := --bx
+ifdef protocol
+
+ifneq ($(filter $(protocol),ont pacbio long),)
+	seq_tech := --long
+endif
+
+ifeq ($(filter $(protocol),ont pacbio long 10x stlfr),)
+$(error Invalid protocol value: $(protocol))
+endif
+endif
+
+# Indexlr inputs
+indexlr_read_params := $(seq_tech)
+ifdef indexlr_opts
+indexlr_read_params := $(seq_tech) $(indexlr_opts)
+endif
+
+indexlr_fa_params := ""
+ifeq ($(seq_tech),--long)
+indexlr_fa_params := --long
+endif
 
 # Name of the dataset.
 ifneq ($(filter z11%, $(ref)),)
@@ -219,11 +245,11 @@ help:
 	@echo "					Default values for stlfr and 10x were obtained by finding a value that worked well across multiple data sets."
 	@echo "					Increasing this parameter would generate more conservative results."
 	@echo "					NOTE: protocol option overrides 'm'."
-	@echo "	min_component_size		minimum number of barcodes in a backbone [50]."
-	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode [10]."
-	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode [5000]."
+	@echo "	min_component_size		minimum number of molecules in a backbone [50]."
+	@echo "	minimum_barcode_multiplicity	minimum number of minimizers per barcode (or long read) [10]."
+	@echo "	maximum_barcode_multiplicity	maximum number of minimizers per barcode (or long read) [5000]."
 	@echo "	mol_strategy			molecule separation strategy [distributed+sqcosbin]. Available options are bc, bc+k3, distributed, distributed+sqcosbin."
-	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity."
+	@echo "					bc (biconnected componenets) is the least conservative and is only suitable for datasets with low barcode multiplicity / read chimerism."
 	@echo "					bc+k3 (biconnected componenets + k-3 cliques) is more conservative than bc and requires more time."
 	@echo "					distributed is a modified version of bc+k3 that is faster than bc+k3 but may be more (or even less) conservative."
 	@echo "					distributed+sqcosbin mixes distributed with a modified version of sqcos (cosine similarity of squared adjacency matrix) which makes it more conservative."
@@ -872,11 +898,11 @@ $(ref)/$(ref).fa: $(ref).fa
 
 # Index a FASTA file.
 %.k$k-w$w.physlr.tsv: %.fa $(lr).k$k.bf
-	indexlr -t$t -k$k -w$w -r $(lr).k$k.bf --pos -o $@ $<
+	indexlr $(indexlr_fa_params) -t$t -k$k -w$w -r $(lr).k$k.bf --pos -o $@ $<
 
 # Index a compressed FASTQ file of linked reads.
 %.k$k-w$w.physlr.tsv.gz: %.fq.gz %.k$k.bf
-	$(zcat) $< | $(time) indexlr --bx -t$t -k$k -w$w -r $(lr).k$k.bf - | $(gzip) >$@
+	$(zcat) $< | $(time) indexlr $(indexlr_read_params) -t$t -k$k -w$w -r $(lr).k$k.bf - | $(gzip) >$@
 
 # Identify the overlapping minimizers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv

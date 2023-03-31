@@ -28,7 +28,7 @@ def unhash_int(key, mask=0xffffffffffffffff):
     assert 0 <= key < 0x10000000000000000
 
     # Invert key = key + (key << 31)
-    tmp = (key - (key << 31))
+    tmp = key - (key << 31)
     key = (key - (tmp << 31)) & mask
 
     # Invert key = key ^ (key >> 28)
