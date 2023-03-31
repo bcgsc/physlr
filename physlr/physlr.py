@@ -363,7 +363,7 @@ class Physlr:
             "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
 
     @staticmethod
-    def read_minimizers(filenames):
+    def read_minimizers(filenames, long=False):
         "Read minimizers in TSV format. Returns unordered set."
         bxtomxs = {}
         for filename in filenames:
@@ -2832,6 +2832,12 @@ class Physlr:
         argparser.add_argument(
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
+        argparser.add_argument(
+            "--bx", action="store_true", dest="bx", default=True,
+            help="Set this flag if using linked reads (partially-oredered minimizers).")
+        argparser.add_argument(
+            "--long", action="store_true", dest="long", default=False,
+            help="Set this flag if using long reads (oredered minimizers).")
         argparser.add_argument(
             "--arcs-pair", action="store", dest="arcs_pair", type=str, default="",
             help="ARCS scaffold pairing file.")
