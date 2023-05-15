@@ -744,7 +744,7 @@ class Physlr:
         return len(bridges)
 
     @staticmethod
-    def remove_bridges(g, bridge_length):
+    def remove_bridges(g, bridge_length, bridge_max_iter):
         """Remove bridges iteratively until none remain."""
         iterations = 0
         total_nbridges = 0
@@ -754,6 +754,12 @@ class Physlr:
                 break
             iterations += 1
             total_nbridges += nbridges
+            if iterations >= bridge_max_iter:
+                print(
+                    int(timeit.default_timer() - t0),
+                    "Max iterations (", bridge_max_iter,") for bridge pruning reached.",
+                    file=sys.stderr, flush=True)
+                break
         print(
             int(timeit.default_timer() - t0),
             "Removed", total_nbridges, "bridges in", iterations, "iterations.",
@@ -764,7 +770,7 @@ class Physlr:
         "Determine the backbones of the graph."
         g = g.copy()
         if Physlr.args.prune_bridges > 0:
-            Physlr.remove_bridges(g, Physlr.args.prune_bridges)
+            Physlr.remove_bridges(g, Physlr.args.prune_bridges, Physlr.args.bridge_max_iter)
         backbones = []
         gmst = Physlr.determine_pruned_mst(g)
         while not nx.is_empty(gmst):
@@ -2813,6 +2819,9 @@ class Physlr:
         argparser.add_argument(
             "--prune-bridges", action="store", dest="prune_bridges", type=int, default=0,
             help="size of the bridges to be pruned [0]. set to 0 to skip bridge prunning.")
+        argparser.add_argument(
+            "--bridges-max-iter", action="store", dest="bridge_max_iter", type=int, default=30,
+            help="Maximum number of iterations for bridge pruning [40].")
         argparser.add_argument(
             "--prune-junctions", action="store", dest="prune_junctions", type=int, default=0,
             help="split a backbone path when the alternative branch is longer than"
