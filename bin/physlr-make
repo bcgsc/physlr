@@ -42,18 +42,31 @@ python_executable=pypy3
 # Python interpreter.
 python=env PYTHONPATH=$(physlr_path) $(python_executable)
 
-# Indexlr sequencing technology
+# Sequencing technology
 seq_tech := --bx
 ifdef protocol
 
 ifneq ($(filter $(protocol),ont pacbio long),)
 	seq_tech := --long
+	arks := --arks-long
 endif
 
 ifeq ($(filter $(protocol),ont pacbio long 10x stlfr),)
 $(error Invalid protocol value: $(protocol))
 endif
 endif
+
+# arks setup
+arks := --arks
+ifeq ($(seq_tech),--long)
+	arks := --arks-long
+endif
+
+arks_params := -c 4 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t $t -d 0 --gap 100
+ifeq ($(arks),--arks-long)
+arks_params := -c 4 -m 8-10000 -r 0.05 -e 30000 -z 500 -j 0.05 -k 30 -s 70 -l 4 -a 0.3 -t $t -d 0 --gap 100
+endif
+
 
 # Indexlr inputs
 indexlr_read_params := $(seq_tech)
@@ -1262,8 +1275,8 @@ else
 endif
 
 $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
-	$(time) arcs --arks -v -f $< \
-	-c 5 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t $t -d 0 --gap 100 \
+	$(time) arcs $(arks) -v -f $< \
+	$(arks_params) \
 	-b $(draft) $(lr).fq.gz \
 	-P -D --dist_tsv=$(draft)_dist.tsv
 
