@@ -13,9 +13,10 @@ import re
 import statistics
 import sys
 import timeit
+import time
+import threading
+from queue import Queue
 from collections import Counter
-
-
 import networkx as nx
 import tqdm
 
@@ -1103,6 +1104,10 @@ class Physlr:
     def physlr_refine_overlap(self):
         "Refine Physlr overlap graph based on common minimizers' properties."
 
+        global recursive_called
+        recursive_called = 0
+        global regular_called
+        regular_called = 0
         bxtomxs = self.read_minimizers([self.args.FILES[0]], self.args.long)
         print(int(timeit.default_timer() - t0), "Read minimizers", file=sys.stderr)
         g = self.read_graph([self.args.FILES[1]])
@@ -1116,22 +1121,52 @@ class Physlr:
         for u, v, w in progress(g.edges(data="m")):
             bxtomxs_u = bxtomxs[u]
             bxtomxs_v = bxtomxs[v]
+            
+            bxtomxs_u_set = set(bxtomxs_u)
+            bxtomxs_v_set = set(bxtomxs_v)
+            
+            # start: only common.
+            # common = bxtomxs_u_set & bxtomxs_v_set
+            # g[u][v]["m"] = len(common)
+            # end: only common.
+
+            # start: list-set-reduced 
+
+            bxtomxs_u = [x for x in bxtomxs_u if x in bxtomxs_v_set]
+            bxtomxs_v = [x for x in bxtomxs_v if x in bxtomxs_u_set]
+
             # largest subset of shared minimizers with similar order
-            common_order = self.find_largest_ordered_subset(bxtomxs_u, bxtomxs_v)
-            if self.args.normalize:
-                u_common_len = abs(bxtomxs_u.index(common_order[-1]) - bxtomxs_u.index(common_order[0])) + 1
-                v_common_len = abs(bxtomxs_v.index(common_order[-1]) - bxtomxs_v.index(common_order[0])) + 1
-                if self.args.extra_output: # analysis
-                    print(u, v, g[u][v]["m"], len(common_order),
-                          u_common_len, len(bxtomxs_u),
-                          v_common_len, len(bxtomxs_v),
-                          file=extra_o)
-                # change edge weight to: len(common_order) / min(u_common_len, v_common_len)
-                g[u][v]["m"] = len(common_order) # / min(u_common_len, v_common_len)
-            else:
-                if self.args.extra_output: # analysis
-                    print(u, v, w, len(common_order), file=extra_o)
-                g[u][v]["m"] = len(common_order)
+            common_ordered = self.find_largest_ordered_subset(bxtomxs_u, bxtomxs_v, len(bxtomxs_v))
+
+            if self.args.extra_output: # analysis
+                print(u, v, g[u][v]["m"], len(common_ordered), len(bxtomxs_u_set), len(bxtomxs_v_set), file=extra_o)
+                
+            g[u][v]["m"] = len(common_ordered)
+            # end: list-set-reduced 
+
+
+
+            # common_order = self.find_largest_ordered_subset(bxtomxs_u, bxtomxs_v)
+            # if self.args.normalize:
+            #     u_common_len = abs(bxtomxs_u.index(common_order[-1]) - bxtomxs_u.index(common_order[0])) + 1
+            #     v_common_len = abs(bxtomxs_v.index(common_order[-1]) - bxtomxs_v.index(common_order[0])) + 1
+            #     if self.args.extra_output: # analysis
+            #         print(u, v, g[u][v]["m"], len(common_order),
+            #               u_common_len, len(bxtomxs_u),
+            #               v_common_len, len(bxtomxs_v),
+            #               file=extra_o)
+            #     # change edge weight to: len(common_order) / min(u_common_len, v_common_len)
+            #     g[u][v]["m"] = len(common_order) # / min(u_common_len, v_common_len)
+            # else:
+            #     if self.args.extra_output: # analysis
+            #         print(u, v, w, len(common_order), file=extra_o)
+            #     g[u][v]["m"] = len(common_order)
+
+        # print global variables regular_called and recursive_called
+        print("regular_called:", regular_called, file=sys.stderr)
+        print("recursive_called:", recursive_called, file=sys.stderr)
+
+            
 
         if self.args.extra_output:
             extra_o.close()
@@ -1139,9 +1174,215 @@ class Physlr:
         # write the overlap graph
         self.write_graph(g, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote refined overlap graph", file=sys.stderr)
+
+    def physlr_refine_overlaps(self):
+        "Refine Physlr overlap graph based on common minimizers' properties."
+
+        # temporary global variables
+        global recursive_called
+        recursive_called = 0
+        global regular_called
+        regular_called = 0
         
-    def find_largest_ordered_subset(self, mxs_u, mxs_v, recursive=True):
+        bxtomxs = self.read_minimizers([self.args.FILES[0]], self.args.long)
+        print(int(timeit.default_timer() - t0), "Read minimizers", file=sys.stderr)
+        
+        g = self.read_graph([self.args.FILES[1]])
+        print(int(timeit.default_timer() - t0), "Read overlap graph", file=sys.stderr)
+
+        print(int(timeit.default_timer() - t0), "Refining overlap graph", file=sys.stderr)
+        for u, v, w in progress(g.edges(data="m")):
+            bxtomxs_u = bxtomxs[u]
+            bxtomxs_v = bxtomxs[v]
+            new_weight = g[u][v]["m"]
+            # Opt 1: only consider common minimizers (no order)
+            if self.args.refine_edges == 1:
+                new_weight = self.physlr_shared_mx_count(bxtomxs_u, bxtomxs_v)
+            elif self.args.refine_edges == 2:
+                if not self.args.long:
+                    print("Error: --refine-edges=2 only works for long reads (--long not specified)", file=sys.stderr)
+                    exit(1)
+                new_weight = self.physlr_shared_ordered_mxs(bxtomxs_u,
+                                                            bxtomxs_v,
+                                                            g[u][v]["m"],
+                                                            self.args.normalize)    
+            g[u][v]["m"] = new_weight
+        
+        # print global variables regular_called and recursive_called
+        print("regular_called:", regular_called, file=sys.stderr)
+        print("recursive_called:", recursive_called, file=sys.stderr)
+
+        if self.args.extra_output:
+            extra_o.close()
+
+        # write the overlap graph
+        self.write_graph(g, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote refined overlap graph", file=sys.stderr)
+
+
+    def physlr_refine_overlaps_mt(self):
+        "Refine Physlr overlap graph based on common minimizers' properties."
+
+        chunk_size = 1000
+
+        # temporary global variables
+        global recursive_called
+        recursive_called = 0
+        global regular_called
+        regular_called = 0
+
+        # read minimizers
+        bxtomxs = self.read_minimizers([self.args.FILES[0]], self.args.long)
+        print(int(timeit.default_timer() - t0), "Read minimizers", file=sys.stderr)
+
+        # read overlap graph
+        g = self.read_graph([self.args.FILES[1]])
+        print(int(timeit.default_timer() - t0), "Read overlap graph", file=sys.stderr)
+
+        print(int(timeit.default_timer() - t0), "Refining overlap graph", file=sys.stderr)
+
+        # create a queue with all edges to be processed
+        print(int(timeit.default_timer() - t0), "Adding edges to the queue", file=sys.stderr)
+        edges_queue = Queue()
+        for u, v, w in progress(g.edges(data="m")):
+            edges_queue.put((u, v, w))
+        print(int(timeit.default_timer() - t0), "Added edges to the queue", file=sys.stderr)
+        # create worker threads to process the edges
+        def progress_thread(queue):
+            queue_size = queue.qsize()
+            print(f"Queue size at start: {queue_size}", end="", file=sys.stderr)
+            while queue.qsize() > 0:
+                queue_size = queue.qsize()
+                print(f"\rQueue size: {queue_size}", end="", file=sys.stderr)
+                time.sleep(1)
+            print(f"Queue size: {queue_size}", end="", file=sys.stderr)
+        
+        if self.args.threads > 1:
+            print(int(timeit.default_timer() - t0), "Starting timer thread", file=sys.stderr)
+            progress_thread = threading.Thread(target=progress_thread, args=(edges_queue,))
+            progress_thread.start()
+        else:
+            print(int(timeit.default_timer() - t0), "1 thread only?", file=sys.stderr)
+
+        def worker():
+            while True:
+                # get the next chunk of edges to process
+                chunk = []
+                for _ in range(chunk_size):
+                    try:
+                        edge = edges_queue.get(block=False)
+                        chunk.append(edge)
+                    except:
+                        break
+                if len(chunk) == 0:
+                    break
+
+                # process the chunk of edges
+                for u, v, w in chunk:
+                    bxtomxs_u = bxtomxs[u]
+                    bxtomxs_v = bxtomxs[v]
+                    new_weight = w
+                    # Opt 1: only consider common minimizers (no order)
+                    if self.args.refine_edges == 1:
+                        new_weight = self.physlr_shared_mx_count(bxtomxs_u, bxtomxs_v)
+                    elif self.args.refine_edges == 2:
+                        if not self.args.long:
+                            print("Error: --refine-edges=2 only works for long reads (--long not specified)", file=sys.stderr)
+                            exit(1)
+                        new_weight = self.physlr_shared_ordered_mxs(bxtomxs_u,
+                                                                    bxtomxs_v,
+                                                                    w,
+                                                                    self.args.normalize)
+                    g[u][v]["m"] = new_weight
+
+        # start the worker threads
+        if self.args.threads > 1:
+            num_threads = min(self.args.threads - 1, g.number_of_edges() // chunk_size)
+            print(f"Starting {num_threads} threads on refining edges in the overlap graph")
+            threads = [threading.Thread(target=worker) for _ in range(num_threads)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            progress_thread.join()
+        else:
+            print("Refining edges in the overlap graph in a single thread")
+            worker()
+        # print global variables regular_called and recursive_called
+        print("regular_called:", regular_called, file=sys.stderr)
+        print("recursive_called:", recursive_called, file=sys.stderr)
+
+        # if self.args.extra_output:
+        #     extra_o.close()
+
+        # write the overlap graph
+        self.write_graph(g, sys.stdout, self.args.graph_format)
+        print(int(timeit.default_timer() - t0), "Wrote refined overlap graph", file=sys.stderr)
+
+    @staticmethod
+    def physlr_shared_mxs_count(bxtomxs_u, bxtomxs_v):
+        bxtomxs_u_set = set(bxtomxs_u)
+        common = [x for x in bxtomxs_v if x in bxtomxs_u_set]
+        return len(common)
+    
+    def physlr_shared_ordered_mxs(self, bxtomxs_u, bxtomxs_v, orig_weight, normalize=False, extra_o=None):
+        bxtomxs_u_set = set(bxtomxs_u)
+        bxtomxs_v_shared = [x for x in bxtomxs_v if x in bxtomxs_u_set]
+        bxtomxs_v_shared_set = set(bxtomxs_v_shared)
+        bxtomxs_u_shared = [x for x in bxtomxs_u if x in bxtomxs_v_shared_set]
+
+        # largest subset of shared minimizers with similar order
+        common_ordered = self.find_largest_ordered_subset(bxtomxs_u_shared,
+                                                          bxtomxs_v_shared,
+                                                          len(bxtomxs_v_shared))
+
+        # if extra_o: # analysis
+        #     print(orig_weight,
+        #           len(common_ordered),
+        #           len(bxtomxs_u_shared),
+        #           " of ",
+        #           len(bxtomxs_u),
+        #           len(bxtomxs_v_shared),
+        #           " of ",
+        #           len(bxtomxs_v),
+        #           sep="\t",
+        #           file = extra_o)
+        new_weight = len(common_ordered)
+        if normalize:
+            new_weight = new_weight / min(len(bxtomxs_u_shared), len(bxtomxs_v_shared))
+        return new_weight
+
+    @staticmethod    
+    def refine_edge(u, v, w):
+        global recursive_called
+        recursive_called = 0
+        global regular_called
+        regular_called = 0
+        bxtomxs_u = bxtomxs[u]
+        bxtomxs_v = bxtomxs[v]
+
+        bxtomxs_u_set = set(bxtomxs_u)
+        bxtomxs_v_set = set(bxtomxs_v)
+
+        # start: list-set-reduced 
+
+        bxtomxs_u = [x for x in bxtomxs_u if x in bxtomxs_v_set]
+        bxtomxs_v = [x for x in bxtomxs_v if x in bxtomxs_u_set]
+
+        # largest subset of shared minimizers with similar order
+        common_ordered = self.find_largest_ordered_subset(bxtomxs_u, bxtomxs_v, len(bxtomxs_v))
+
+        if self.args.extra_output: # analysis
+            print(u, v, g[u][v]["m"], len(common_ordered), len(bxtomxs_u_set), len(bxtomxs_v_set), file=extra_o)
+
+        g[u][v]["m"] = len(common_ordered)
+        # end: list-set-reduced
+        
+    def find_largest_ordered_subset(self, mxs_u, mxs_v, len_common, recursive=True):
         "Find the largest subset of minimizers that are in the same order in both mxs_u and mxs_v."
+
+        global regular_called
+        global recursive_called
 
         dp = [[0 for _ in range(len(mxs_v) + 1)] for _ in range(len(mxs_u) + 1)]
         for i in range(1, len(mxs_u) + 1):
@@ -1152,7 +1393,7 @@ class Physlr:
                     dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
 
         # trace back
-        common = list()
+        common_ordered = list()
         i, j = len(mxs_u), len(mxs_v)
         while i > 0 and j > 0:
             if dp[i][j] == dp[i - 1][j]:
@@ -1160,16 +1401,19 @@ class Physlr:
             elif dp[i][j] == dp[i][j - 1]:
                 j -= 1
             else:
-                common.append(mxs_u[i - 1])
+                common_ordered.append(mxs_u[i - 1])
                 i -= 1
                 j -= 1
+        if recursive:
+            regular_called += 1
 
         # check again by reversing one of the sets
-        if recursive:
-            common2 = self.find_largest_ordered_subset(mxs_u, mxs_v[::-1], False)
-            if len(common2) > len(common):
-                common = common2
-        return common
+        if recursive and len(common_ordered) < len_common/2:
+            recursive_called += 1
+            common2_ordered = self.find_largest_ordered_subset(mxs_u, mxs_v[::-1], len_common, False)
+            if len(common2_ordered) > len(common_ordered):
+                common_ordered = common2_ordered
+        return common_ordered
 
     def physlr_filter_overlap(self):
         "Read a Physlr overlap graph and filter edges."
@@ -2910,6 +3154,11 @@ class Physlr:
         argparser.add_argument(
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
+        argparser.add_argument(
+            "--refine-edges", action="store", dest="refine_edges", type=int, default=0,
+            help="Only works in --long mode. "\
+            "0: no refinement, 1: shared minimizers (expect no changes), "\
+            "2: shared oredered minimizers (--long) [0].")
         argparser.add_argument(
             "--bx", action="store_true", dest="bx", default=True,
             help="Set this flag if using linked reads (partially-oredered minimizers).")
