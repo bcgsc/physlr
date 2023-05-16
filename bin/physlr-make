@@ -44,10 +44,12 @@ python=env PYTHONPATH=$(physlr_path) $(python_executable)
 
 # Indexlr sequencing technology
 seq_tech := --bx
+arks := --arks
 ifdef protocol
 
 ifneq ($(filter $(protocol),ont pacbio long),)
 	seq_tech := --long
+	arks := --arks-long 
 endif
 
 ifeq ($(filter $(protocol),ont pacbio long 10x stlfr),)
@@ -1265,7 +1267,7 @@ else
 endif
 
 $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
-	$(time) arcs --arks -v -f $< \
+	$(time) arcs $(arks) -v -f $< \
 	-c 5 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t $t -d 0 --gap 100 \
 	-b $(draft) $(lr).fq.gz \
 	-P -D --dist_tsv=$(draft)_dist.tsv
