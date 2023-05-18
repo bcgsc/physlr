@@ -1285,7 +1285,7 @@ $(draft)_pair.tsv: $(draft).fa $(lr)$(cut250).fq.gz
 
 # Produce psuedo linked reads from long reads, using arcs-make
 $(lr).cut250.fq.gz: $(lr).fq.gz
-	$(time) arcs-make arks-long $@ draft=$(draft) reads=$(lr) cut=250 t=$t
+	$(time) arcs-make $@ draft=$(draft) reads=$(lr) cut=250 t=$t
 # arcs-make arks-long reads.63X.rle.cut250.fq.gz draft=chm13v2.0_noY_noM.rle reads=reads.63X.rle cut=250 t=16
 
 
