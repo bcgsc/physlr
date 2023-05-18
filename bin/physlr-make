@@ -62,9 +62,9 @@ arks := --arks
 # 	arks := --arks-long
 # endif
 
-arks_params := -c 4 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t $t -d 0 --gap 100
+arks_params := -c 5 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t $t -d 0 --gap 100
 ifeq ($(seq_tech),--long)
-arks_params := -c 4 -m 8-10000 -r 0.05 -e 30000 -z 500 -j 0.05 -k 30 -s 70 -l 4 -a 0.3 -t $t -d 0 --gap 100
+arks_params := -c 4 -m 8-10000 -r 0.05 -e 30000 -z 500 -j 0.05 -k 30 -s 70 -t $t -d 0 --gap 100
 # cut250 := .cut250
 endif
 
