@@ -58,7 +58,7 @@ endif
 
 # arks setup
 arks := --arks
-cut250 := ""
+cut250 :=
 ifeq ($(seq_tech),--long)
 	arks := --arks-long
 endif
