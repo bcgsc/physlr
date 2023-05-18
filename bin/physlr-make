@@ -58,6 +58,7 @@ endif
 
 # arks setup
 arks := --arks
+cut250 := ""
 ifeq ($(seq_tech),--long)
 	arks := --arks-long
 endif
@@ -65,6 +66,7 @@ endif
 arks_params := -c 4 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t $t -d 0 --gap 100
 ifeq ($(arks),--arks-long)
 arks_params := -c 4 -m 8-10000 -r 0.05 -e 30000 -z 500 -j 0.05 -k 30 -s 70 -l 4 -a 0.3 -t $t -d 0 --gap 100
+cut250 := ".cut250"
 endif
 
 
@@ -1274,11 +1276,17 @@ else
 	-V$V $(draft).fa $< >$@
 endif
 
-$(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
+# Produce pair.tsv file using arcs
+$(draft)_pair.tsv: $(draft).fa $(lr)$(cut250).fq.gz
 	$(time) arcs $(arks) -v -f $< \
 	$(arks_params) \
-	-b $(draft) $(lr).fq.gz \
+	-b $(draft) $(lr)$(cut250).fq.gz \
 	-P -D --dist_tsv=$(draft)_dist.tsv
+
+# Produce psuedo linked reads from long reads, using arcs-make
+$(lr).cut250.fq.gz: $(lr).fq.gz
+	$(time) $(python) arcs-make arks-long $@ draft=$(draft).fa reads=$< cut=250 t=$t
+# arcs-make arks-long reads.63X.rle.cut250.fq.gz draft=chm13v2.0_noY_noM.rle reads=reads.63X.rle cut=250 t=16
 
 
 # Convert a PAF file to a BED file.
