@@ -1276,12 +1276,26 @@ else
 endif
 
 # Produce pair.tsv file using arcs
+# ifeq ($(seq_tech),--long)
+# $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
+# 	$(time) arcs $(arks) -v -f $< \
+# 	$(arks_params) \
+# 	-b $(draft) \
+# 	$$(long-to-linked-pe -l 250 -t $t -m 2000 $(lr).fq.gz) \
+# 	-P -D --dist_tsv=$(draft)_dist.tsv
+# else
+# $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
+# 	$(time) arcs $(arks) -v -f $< \
+# 	$(arks_params) \
+# 	-b $(draft) $(lr).fq.gz \
+# 	-P -D --dist_tsv=$(draft)_dist.tsv
+# endif
 ifeq ($(seq_tech),--long)
 $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
-	$(time) arcs $(arks) -v -f $< \
+	$(time) long-to-linked-pe -l 250 -t $t -m 2000 $(lr).fq.gz | \
+	arcs $(arks) -v -f $< \
 	$(arks_params) \
-	-b $(draft) \
-	$$(long-to-linked-pe -l 250 -t $t -m 2000 $(lr).fq.gz) \
+	-b $(draft) /dev/stdin \
 	-P -D --dist_tsv=$(draft)_dist.tsv
 else
 $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
@@ -1290,6 +1304,7 @@ $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
 	-b $(draft) $(lr).fq.gz \
 	-P -D --dist_tsv=$(draft)_dist.tsv
 endif
+
 
 # Produce pair.tsv file using arcs
 # $(draft)_pair.tsv: $(draft).fa $(lr)$(cut250).fq.gz
