@@ -109,6 +109,7 @@ min_component_size=50
 
 # Minimum size of 3rd largest branch of a node to be considered a junction
 prune_junctions = 200
+bridges_max_iter = 50
 
 # Level of verbosity
 # 0: silent
@@ -1011,7 +1012,7 @@ endif
 
 # Determine the backbone graph from the overlap TSV.
 %.backbone.tsv: %.tsv
-	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=$(prune_branches) --prune-bridges=10 --prune-junctions=$(prune_junctions) -s0 -V$V $< >$@
+	$(time) $(python) $(bin)/physlr backbone-graph --prune-branches=$(prune_branches) --prune-bridges=10 --prune-junctions=$(prune_junctions) --bridges-max-iter=$(bridges_max_iter) -s0 -V$V $< >$@
 
 # Determine the corrected backbone graph from the overlap TSV.
 min_path_size=200

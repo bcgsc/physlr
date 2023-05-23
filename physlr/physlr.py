@@ -2820,7 +2820,7 @@ class Physlr:
             "--prune-bridges", action="store", dest="prune_bridges", type=int, default=0,
             help="size of the bridges to be pruned [0]. set to 0 to skip bridge prunning.")
         argparser.add_argument(
-            "--bridges-max-iter", action="store", dest="bridge_max_iter", type=int, default=30,
+            "--bridges-max-iter", action="store", dest="bridge_max_iter", type=int, default=50,
             help="Maximum number of iterations for bridge pruning [40].")
         argparser.add_argument(
             "--prune-junctions", action="store", dest="prune_junctions", type=int, default=0,
