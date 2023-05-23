@@ -1291,9 +1291,11 @@ endif
 # 	-P -D --dist_tsv=$(draft)_dist.tsv
 # endif
 
+# Produce psuedo linked reads from long reads, using arcs-make
 $(lr).cut250.fq.gz: $(lr).fq.gz
 	$(time) long-to-linked-pe -l 250 -t $t -m 2000 $< >$@
 
+# Produce pair.tsv file using arcs
 ifeq ($(seq_tech),--long)
 $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
 	$(time) arcs $(arks) -v -f $< \
