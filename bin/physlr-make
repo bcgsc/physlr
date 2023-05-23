@@ -1290,12 +1290,15 @@ endif
 # 	-b $(draft) $(lr).fq.gz \
 # 	-P -D --dist_tsv=$(draft)_dist.tsv
 # endif
+
+$(lr).cut250.fq.gz: $(lr).fq.gz
+	$(time) long-to-linked-pe -l 250 -t $t -m 2000 $< >$@
+
 ifeq ($(seq_tech),--long)
 $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
-	$(time) long-to-linked-pe -l 250 -t $t -m 2000 $(lr).fq.gz | \
-	arcs $(arks) -v -f $< \
+	$(time) arcs $(arks) -v -f $< \
 	$(arks_params) \
-	-b $(draft) /dev/stdin \
+	-b $(draft) $(lr).cut250.fq.gz \
 	-P -D --dist_tsv=$(draft)_dist.tsv
 else
 $(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
