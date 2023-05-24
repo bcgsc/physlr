@@ -1297,7 +1297,7 @@ $(lr).cut250.fq.gz: $(lr).fq.gz
 
 # Produce pair.tsv file using arcs
 ifeq ($(seq_tech),--long)
-$(draft)_pair.tsv: $(draft).fa $(lr).fq.gz
+$(draft)_pair.tsv: $(draft).fa $(lr).cut250.fq.gz
 	$(time) arcs $(arks) -v -f $< \
 	$(arks_params) \
 	-b $(draft) $(lr).cut250.fq.gz \
