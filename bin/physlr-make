@@ -1345,12 +1345,11 @@ ifeq ($(strip $(quast_env)),)
 		quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 80 -R $(name)/$(ref).fa -o $*.$(ref).quast $<
 		cp $*.$(ref).quast/transposed_report.tsv $@
 else	
-	conda activate $(quast_env)
 	%.$(name).quast.tsv: %.fa $(name)/$(ref).fa	
+		conda activate $(quast_env)
 		quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 80 -R $(name)/$(ref).fa -o $*.$(ref).quast $<
 		cp $*.$(ref).quast/transposed_report.tsv $@
-
-	conda deactivate
+		conda deactivate
 endif
 
 
