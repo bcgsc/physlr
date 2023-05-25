@@ -185,7 +185,7 @@ scaffolds: \
 else
 scaffolds: \
 	physical-map \
-	$(draft).physlr.quast.tsv
+	$(draft).physlr.$(name).quast.tsv
 endif
 endif
 
