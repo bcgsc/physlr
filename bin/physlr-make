@@ -43,7 +43,7 @@ python_executable=pypy3
 python=env PYTHONPATH=$(physlr_path) $(python_executable)
 
 # quast environment
-quast_env := none
+quast_env :=
 
 # Sequencing technology
 seq_tech := --bx
