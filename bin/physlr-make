@@ -42,6 +42,9 @@ python_executable=pypy3
 # Python interpreter.
 python=env PYTHONPATH=$(physlr_path) $(python_executable)
 
+# quast environment
+quast_env := 
+
 # Sequencing technology
 seq_tech := --bx
 ifdef protocol
@@ -57,15 +60,12 @@ endif
 
 # arks setup
 arks := --arks
-# cut250 :=
-# ifeq ($(seq_tech),--long) (using seq_tech now)
-# 	arks := --arks-long
-# endif
+
 
 arks_params := -c 5 -m 50-6000 -r 0.05 -e 30000 -z 500 -j 0.55 -k 30 -t $t -d 0 --gap 100
 ifeq ($(seq_tech),--long)
 arks_params := -c 4 -m 8-10000 -r 0.05 -e 30000 -z 500 -j 0.05 -k 20 -t $t -d 0 --gap 100
-# cut250 := .cut250
+
 endif
 
 # Indexlr inputs
@@ -74,7 +74,7 @@ ifdef indexlr_opts
 indexlr_read_params := $(seq_tech) $(indexlr_opts)
 endif
 
-indexlr_fa_params := ""
+indexlr_fa_params := 
 ifeq ($(seq_tech),--long)
 indexlr_fa_params := --long
 endif
@@ -1339,10 +1339,13 @@ endif
 # QUAST
 
 # Calculate assembly contiguity and correctness metrics using QUAST.
-%.quast.tsv: %.fa $(name)/$(ref).fa
-	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 95 -R $(name)/$(ref).fa -o $*.quast $<
-	cp $*.quast/transposed_report.tsv $@
-
+%.$(name).quast.tsv: %.fa $(name)/$(ref).fa
+	ifneq ($(origin quast_env), undefined)
+		conda activate quast_env
+	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 80 -R $(name)/$(ref).fa -o $*.$(ref).quast $<
+	cp $*.$(ref).quast/transposed_report.tsv $@
+	ifneq ($(origin quast_env), undefined)
+		conda deactivate
 # Aggregate QUAST metrics.
 %.quast.tsv: \
 		%.supernova.scaftigs.quast.tsv \
