@@ -1341,7 +1341,7 @@ endif
 # Calculate assembly contiguity and correctness metrics using QUAST.
 %.$(name).quast.tsv: %.fa $(name)/$(ref).fa
 	ifneq ($(origin quast_env), undefined)
-		conda activate quast_env
+		conda activate $(quast_env)
 	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 80 -R $(name)/$(ref).fa -o $*.$(ref).quast $<
 	cp $*.$(ref).quast/transposed_report.tsv $@
 	ifneq ($(origin quast_env), undefined)
