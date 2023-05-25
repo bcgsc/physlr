@@ -1341,15 +1341,15 @@ endif
 # Calculate assembly contiguity and correctness metrics using QUAST.
 
 ifeq ($(strip $(quast_env)),)
-	%.$(name).quast.tsv: %.fa $(name)/$(ref).fa	
-		quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 80 -R $(name)/$(ref).fa -o $*.$(ref).quast $<
-		cp $*.$(ref).quast/transposed_report.tsv $@
+%.$(name).quast.tsv: %.fa $(name)/$(ref).fa	
+	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 80 -R $(name)/$(ref).fa -o $*.$(ref).quast $<
+	cp $*.$(ref).quast/transposed_report.tsv $@
 else	
-	%.$(name).quast.tsv: %.fa $(name)/$(ref).fa	
-		conda activate $(quast_env)
-		quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 80 -R $(name)/$(ref).fa -o $*.$(ref).quast $<
-		cp $*.$(ref).quast/transposed_report.tsv $@
-		conda deactivate
+%.$(name).quast.tsv: %.fa $(name)/$(ref).fa	
+	conda activate $(quast_env)
+	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 80 -R $(name)/$(ref).fa -o $*.$(ref).quast $<
+	cp $*.$(ref).quast/transposed_report.tsv $@
+	conda deactivate
 endif
 
 
