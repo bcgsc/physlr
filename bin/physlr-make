@@ -1343,6 +1343,8 @@ endif
 ifeq ($(strip $(quast_env)),)
 %.$(name).quast.tsv: %.fa $(name)/$(ref).fa	
 	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 80 --split-scaffolds -R $(name)/$(ref).fa -o $*.$(ref).quast $<
+	quast --version > $*.$(ref).quast/quast.version
+	minimap2 --version > $*.$(ref).quast/minimap2.version
 	cat $*.$(ref).quast/transposed_report.tsv | \
 	mlr --tsv cut -o -f \
 	Assembly,NG50,NGA50,"# misassemblies","# local misassemblies","Genome fraction (%)","Duplication ratio","Total length","Unaligned length","# unaligned contigs"| \
@@ -1351,6 +1353,8 @@ else
 %.$(name).quast.tsv: %.fa $(name)/$(ref).fa	
 	conda activate $(quast_env)
 	quast-lg -t$t -es --fast --large --scaffold-gap-max-size 100000 --min-identity 80 --split-scaffolds -R $(name)/$(ref).fa -o $*.$(ref).quast $<
+	quast --version > $*.$(ref).quast/quast.version
+	minimap2 --version > $*.$(ref).quast/minimap2.version
 	mlr --tsv cut -o -f \
 	Assembly,NG50,NGA50,"# misassemblies","# local misassemblies","Genome fraction (%)","Duplication ratio","Total length","Unaligned length","# unaligned contigs"| \
 	sed 's/\t/|/g' | sed 's/^/|/g' | sed -E ':a;s/([0-9]+)([0-9]{3}\>)/\1,\2/g;ta' > $@
