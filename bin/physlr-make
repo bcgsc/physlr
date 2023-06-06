@@ -13,6 +13,9 @@ w=32
 # Number of threads.
 t=16
 
+# Threshold for mapping score
+n=10
+
 # Maximum number of threads for molecule separation (python version).
 max_t_py_molsep=4
 ifneq ($(shell test $(t) -gt $(max_t_py_molsep); echo $$?),0)
@@ -1049,72 +1052,72 @@ min_path_size=200
 	$(python) $(bin)/physlr tiling-graph -V$V $< >$@
 
 # Map the barcodes to the backbone graph and output BED.
-%.backbone.map.$(lr).n100-2000.n10.bed: %.backbone.path $(lr).n100-2000.physlr.tsv
-	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ $(lr).n100-2000.physlr.tsv >$@
+%.backbone.map.$(lr).n100-2000.n$n.bed: %.backbone.path $(lr).n100-2000.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n$n $^ $(lr).n100-2000.physlr.tsv >$@
 
 # Map the draft assembly to the backbone graph and output BED.
-%.backbone.map.$(draft).n10.bed: %.backbone.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+%.backbone.map.$(draft).n$n.bed: %.backbone.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n$n $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED.
-%.backbone.map-split.$(draft).n10.bed: %.backbone.path %.split.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map --mx-type split --map-pos 10 -V$V -n10 $^ >$@
+%.backbone.map-split.$(draft).n$n.bed: %.backbone.path %.split.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map --mx-type split --map-pos 10 -V$V -n$n $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED.
-%.overlap.m$m.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+%.overlap.m$m.mol.backbone.map.$(draft).n$n.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n$n $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED (K3-cliques).
-%.overlap.m$m.k3.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+%.overlap.m$m.k3.mol.backbone.map.$(draft).n$n.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n$n $^ >$@
 
 # Map the draft assembly to the backbone graph and output BED (K3-cliques and sqcosbin).
-%.overlap.m$m.ext.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.ext.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+%.overlap.m$m.ext.mol.backbone.map.$(draft).n$n.bed: %.overlap.m$m.ext.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n$n $^ >$@
 
 # Map the draft assembly to the Louvain backbone graph and output BED.
-%.overlap.m$m.louvain.mol.backbone.map.$(draft).n10.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+%.overlap.m$m.louvain.mol.backbone.map.$(draft).n$n.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n$n $^ >$@
 
 # Map the reference assembly to the backbone graph and output BED.
-%.overlap.m$m.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+%.overlap.m$m.mol.backbone.map.$(ref).n$n.bed: %.overlap.m$m.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n$n $^ >$@
 
 # Map the reference assembly to the backbone graph and output BED (K3-cliques).
-%.overlap.m$m.k3.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+%.overlap.m$m.k3.mol.backbone.map.$(ref).n$n.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n$n $^ >$@
 
 # Map the reference assembly to the backbone graph and output BED (K3-cliques and sqcosbin).
-%.overlap.m$m.ext.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.ext.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+%.overlap.m$m.ext.mol.backbone.map.$(ref).n$n.bed: %.overlap.m$m.ext.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n$n $^ >$@
 
 # Map the reference assembly to the Louvain backbone graph and output BED.
-%.overlap.m$m.louvain.mol.backbone.map.$(ref).n10.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map -V$V -n10 $^ >$@
+%.overlap.m$m.louvain.mol.backbone.map.$(ref).n$n.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map -V$V -n$n $^ >$@
 
 # Map the draft assembly to the backbone graph using physlr map-mkt and output BED.
-%.overlap.m$m.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
+%.overlap.m$m.mol.backbone.map-mkt.$(draft).n$n.bed: %.overlap.m$m.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-mkt -V$V -n$n $^ >$@
 
 # Map the draft assembly to the k3-cliques backbone graph using physlr map-mkt and output BED.
-%.overlap.m$m.k3.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
+%.overlap.m$m.k3.mol.backbone.map-mkt.$(draft).n$n.bed: %.overlap.m$m.k3.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-mkt -V$V -n$n $^ >$@
 
 # Map the draft assembly to the `K3-cliques and sqcosbin` backbone graph using physlr map-mkt and output BED.
-%.overlap.m$m.ext.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.ext.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
+%.overlap.m$m.ext.mol.backbone.map-mkt.$(draft).n$n.bed: %.overlap.m$m.ext.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-mkt -V$V -n$n $^ >$@
 
 # Map the draft assembly to the Louvain backbone graph using physlr map-mkt and output BED.
-%.overlap.m$m.louvain.mol.backbone.map-mkt.$(draft).n10.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-mkt -V$V -n10 $^ >$@
+%.overlap.m$m.louvain.mol.backbone.map-mkt.$(draft).n$n.bed: %.overlap.m$m.louvain.mol.backbone.path %.tsv $(draft).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-mkt -V$V -n$n $^ >$@
 
 # Map the reference to the backbone graph and output PAF.
-%.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf -V$V -n10 $^ | $(gzip) >$@
+%.map.$(ref).n$n.paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-paf -V$V -n$n $^ | $(gzip) >$@
 
 # Map the reference to the backbone graph with split minimizers and output PAF.
-%.backbone.map-split.$(ref).n10.paf.gz: %.backbone.path %.split.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
-	$(time) $(python) $(bin)/physlr map-paf --mx-type split -V$V -n10 $^ | $(gzip) >$@
+%.backbone.map-split.$(ref).n$n.paf.gz: %.backbone.path %.split.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+	$(time) $(python) $(bin)/physlr map-paf --mx-type split -V$V -n$n $^ | $(gzip) >$@
 
 # Lift over query coordinates of a PAF file from minimzer index to nucleotide coordinate.
 %.qpos.paf.gz: $(name)/$(ref).k$k-w$w.physlr.tsv %.paf.gz
