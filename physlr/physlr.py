@@ -13,8 +13,11 @@ import re
 import statistics
 import sys
 import timeit
+import numpy as np
 from collections import Counter
 
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import RANSACRegressor
 
 import networkx as nx
 import tqdm
@@ -43,6 +46,40 @@ def progress(iterator):
     return tqdm.tqdm(
         iterator, mininterval=1, smoothing=0.1,
         bar_format="{percentage:4.1f}% {elapsed} ETA {remaining} {bar}")
+
+class OrderedSet:
+    def __init__(self):
+        self.elements = []
+        self.set = set()
+
+    def add(self, element):
+        if element not in self.set:
+            self.elements.append(element)
+            self.set.add(element)
+
+    def extend(self, iterable):
+        for element in iterable:
+            self.add(element)
+
+    def append(self, element):
+        self.add(element)
+
+    def remove(self, element):
+        if element in self.set:
+            self.elements.remove(element)
+            self.set.remove(element)
+
+    def get_set(self):
+        return self.set
+
+    def get_list(self):
+        return self.elements
+    
+    def __len__(self):
+        return len(self.elements)
+
+    def __iter__(self):
+        return iter(self.elements)
 
 class Physlr:
     """
@@ -363,9 +400,10 @@ class Physlr:
             "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
 
     @staticmethod
-    def read_minimizers(filenames, long=False):
-        "Read minimizers in TSV format. Returns unordered set."
+    def read_minimizers(filenames, long=False, ordered=False):
+        "Read minimizers in TSV format. Returns unordered set or ordered list."
         bxtomxs = {}
+        
         for filename in filenames:
             print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
             with open(filename) as fin:
@@ -378,9 +416,14 @@ class Physlr:
                     if len(fields) < 2:
                         continue
                     bx = fields[0]
-                    if bx not in bxtomxs:
-                        bxtomxs[bx] = set()
-                    bxtomxs[bx].update(int(mx.split(":", 1)[0]) for mx in fields[1].split())
+                    if not ordered:
+                        if bx not in bxtomxs:
+                            bxtomxs[bx] = set()
+                        bxtomxs[bx].update(int(mx.split(":", 1)[0]) for mx in fields[1].split())
+                    else:
+                        if bx not in bxtomxs:
+                            bxtomxs[bx] = OrderedSet()
+                        bxtomxs[bx].extend(int(mx.split(":", 1)[0]) for mx in fields[1].split())
                 if Physlr.args.verbose >= 2:
                     progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
@@ -1865,7 +1908,108 @@ class Physlr:
         if z is not None:
             return "+" if y < z else "-" if y > z else "."
         return "."
+    
+    @staticmethod
+    def order_indices(list1, list2):
+        "Return the order of elements of list2 in list1 assuming that list1 is a perturbation of list2"
+        dict1 = dict()
+        for index, element in enumerate(list1):
+            dict1[element] = index
+        return [dict1[element] for element in list2]
+    
+    @staticmethod
+    def orient_eval_order(indices_ordered, technique = 1, lr_model = "linear"):
+        """
+        Given a perturbation of 1:n, determine the orientation and evaluate the orderness of indices
+        using various techniques such as entropy, linear regression, etc.
+        """
 
+        # Technique 1: Relative Entropy
+        if technique == 1:
+            # diff of consecutive elements; orientation: consistent with most zeros
+            len_diff = len(indices_ordered) - 1
+            diff1 = [abs(y-x-1) for x, y in zip(indices_ordered, indices_ordered[1:])]
+            diff2 = [abs(x-y-1) for x, y in zip(indices_ordered, indices_ordered[1:])]  
+            diff1_zeros = diff1.count(0)
+            diff2_zeros = diff2.count(0)
+            if diff1_zeros > diff2_zeros:
+                diff = diff1
+                orientation = "+"
+            else: 
+                diff = diff2
+                orientation = "-"
+            if max(diff1_zeros, diff2_zeros) < len_diff/2:
+                orientation = "."
+            unique_counts = Counter(diff)
+            # calculate entropy on unique_counts
+            entropy = -1 * sum([count/len_diff * math.log2(count/len_diff)
+                                for num, count in unique_counts.items()])
+            normalized_entropy = entropy/math.log2(len_diff)
+            # print("|>>", entropy, orientation, max(diff1_zeros, diff2_zeros), len_diff, file=sys.stderr, sep=" ")
+            # print("|>>>", indices_ordered, file=sys.stderr, sep=" ")
+            return normalized_entropy, orientation
+        
+        # Technique 2: Mean squared error (MSE)
+        if technique == 2:
+            len_list = len(indices_ordered)
+            mse_reg = sum([((element-(index))**2)/2
+                           for index, element in enumerate(indices_ordered)])/len_list
+            mse_rev = sum([((element-(len_list-index-1))**2)/2
+                           for index, element in enumerate(indices_ordered)])/len_list
+            if mse_reg < mse_rev:
+                orientation = "+"
+                mse = mse_reg
+            else:
+                orientation = "-"
+                mse = mse_rev
+            return mse, orientation
+        
+        # Technique 3.1: Linear regression (Ransac available too, 15% outlier allowed)
+        # fit a linear regression model to the x, y for x, y in enumerate(indices_ordered)
+        # input = [[index, element] for index, element in enumerate(indices_ordered)]
+        # fir a linear regression model to input
+        if technique == 3:
+            if lr_model == "linear":
+                model = LinearRegression()
+            elif lr_model == "ransac":
+                model = RANSACRegressor(base_estimator=LinearRegression(), min_samples=0.85)
+            indices = list(range(len(indices_ordered)))
+            input = [[i] for i in indices]
+            model.fit(input, indices_ordered)
+            y_pred = model.predict(input)
+            loss_r2 = 1 - model.score(input, indices_ordered)
+            #loss_mse = ((indices_ordered - y_pred) ** 2).mean() / len(indices_ordered)
+            #epsilon = 1e-10
+            #y = np.array([ y + epsilon for y in indices_ordered])
+            #loss_mape = np.mean(np.abs((y - y_pred) / (y))) * 100
+
+            if lr_model == "linear":
+                coef = model.coef_
+            elif lr_model == "ransac":
+                coef = model.estimator_.coef_
+
+            if coef > 0.8 and coef < 1.2:
+                orientation = "+"
+            elif coef < -0.8 and coef > -1.2:
+                orientation = "-"
+            else:
+                orientation = "."
+            return loss_r2, orientation
+        
+        # technique 3.2: Segmental/piecewise linear regression
+        # technique 4: Spearman's rho
+        # technique 5: Inversion distance
+        # technique 6: Kendall's tau
+        # technique 7: Longest increasing subsequence
+        # technique 8: Longest monotonic subsequence
+        # technique 9: Longest alternating subsequence
+
+    @staticmethod
+    def longest_increasing_subsequence(list):
+        "Return the longest increasing subsequence of a list"
+        "The list is a perturbation if 0 to n-1 where n is the length of the list"
+        
+        
     def map_indexing(self):
         "Load data structures and indexes required for mapping."
         if len(self.args.FILES) < 3:
@@ -1875,7 +2019,7 @@ class Physlr:
         query_filenames = self.args.FILES[2:]
 
         # Index the positions of the minimizers in the backbone.
-        moltomxs = Physlr.read_minimizers(target_filenames)
+        moltomxs = Physlr.read_minimizers(target_filenames, self.args.ordered)
         query_mxs = moltomxs if target_filenames == query_filenames else \
             Physlr.read_minimizers_list(query_filenames)
 
@@ -1885,7 +2029,7 @@ class Physlr:
                      if len(backbone) >= self.args.min_component_size]
         mxtopos = Physlr.index_minimizers_in_backbones(backbones, moltomxs)
 
-        return query_mxs, mxtopos, backbones
+        return query_mxs, mxtopos, backbones, moltomxs
 
     def physlr_map_mkt(self):
         """
@@ -1895,7 +2039,7 @@ class Physlr:
         import physlr.mkt
         import numpy
 
-        query_mxs, mxtopos, _backbones = self.map_indexing()
+        query_mxs, mxtopos, _backbones, _moltomxs  = self.map_indexing()
 
         # Map the query sequences to the physical map.
         num_mapped = 0
@@ -1962,7 +2106,7 @@ class Physlr:
             "Mapped", num_mapped, "sequences of", len(query_mxs),
             f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
 
-    def physlr_map(self):
+    def physlr_map_chap(self):
         """
         Map sequences to a physical map.
         Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
@@ -1977,8 +2121,8 @@ class Physlr:
             print("See physlr --help for more information", file=sys.stderr)
             sys.exit(1)
 
-        query_mxs, mxtopos, _backbones = self.map_indexing()
-
+        query_mxs, mxtopos, _backbones, moltomxs = self.map_indexing()
+        
         # Map the query sequences to the physical map.
         num_mapped = 0
         for qid, mxs in progress(query_mxs.items()):
@@ -1997,6 +2141,96 @@ class Physlr:
             for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
                     mapped = True
+                    
+                    # retrieve minimizers of the target position
+                    tidpos_mxs = moltomxs.get((tid, tpos), ())
+                    shared_mxs = set(mxs).intersection(tidpos_mxs)
+                    
+                    
+                    if self.args.map_pos == 1:
+                        orientation = Physlr.determine_orientation(
+                            tidpos_to_qpos.get((tid, tpos - 1), None),
+                            tidpos_to_qpos.get((tid, tpos + 0), None),
+                            tidpos_to_qpos.get((tid, tpos + 1), None))
+                    else:
+                        before = [tidpos_to_qpos.get((tid, tpos - i), None)
+                                  for i in range(self.args.map_pos)
+                                  if tidpos_to_qpos.get((tid, tpos - i), None) is not None]
+                        before_median = statistics.median_low(before)
+                        after = [tidpos_to_qpos.get((tid, tpos + i), None)
+                                 for i in range(self.args.map_pos)
+                                 if tidpos_to_qpos.get((tid, tpos + i), None) is not None]
+                        after_median = statistics.median_high(after)
+                        orientation = Physlr.determine_orientation(
+                            before_median,
+                            tidpos_to_qpos.get((tid, tpos + 0), None),
+                            after_median)
+                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
+            if mapped:
+                num_mapped += 1
+        print(
+            int(timeit.default_timer() - t0),
+            "Mapped", num_mapped, "sequences of", len(query_mxs),
+            f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
+    
+    def physlr_map(self):
+        """
+        Map sequences to a physical map.
+        Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
+        """
+        if self.args.map_pos < 0:
+            print("--map-pos cannot be negative", file=sys.stderr)
+            print("See physlr --help for more information", file=sys.stderr)
+            sys.exit(1)
+
+        if self.args.mx_type not in ["unsplit", "split"]:
+            print("Invalid --mx-type argument", file=sys.stderr)
+            print("See physlr --help for more information", file=sys.stderr)
+            sys.exit(1)
+
+        query_mxs, mxtopos, _backbones, moltomxs = self.map_indexing()
+
+        # Map the query sequences to the physical map.
+        num_mapped = 0
+        for qid, query_mxs in progress(query_mxs.items()):
+            # Map each target position to a query position.
+            tidpos_to_qpos = {}
+            for qpos, mx in enumerate(query_mxs):
+                for tidpos in mxtopos.get(mx, ()):
+                    tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
+            for tidpos, qpos in tidpos_to_qpos.items():
+                tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
+
+            # Count the number of minimizers mapped to each target position.
+            tidpos_to_n = Counter(pos for mx in query_mxs for pos in mxtopos.get(mx, ()))
+            tidpos_to_bs = dict()
+            
+            mapped = False
+            for (tid, tpos), score in tidpos_to_n.items():
+                if score >= self.args.n:
+                    mapped = True
+                    
+                    # we are considering mapping of qid to (tid, tpos) and they're minimnizers are available in mxs and moltomxs[(tid, tpos)] respectively
+                    # now we need to find the shared minimizers between mxs and moltomxs[(tid, tpos)] that are in the same order
+                    query_mxs_len = len(query_mxs)
+                    tidpos_mxs = moltomxs.get((tid, tpos), ())
+                    tidpos_mxs_len = len(tidpos_mxs)
+                    if self.args.ordered:
+                        shared_mxs = set(query_mxs).intersection(tidpos_mxs.get_set())
+                        # shared_mxs = set(mxs).intersection(set(tidpos_mxs))
+                        tidpos_mxs_shared = [mx for mx in tidpos_mxs if mx in shared_mxs]
+                        query_mxs_shared = [mx for mx in query_mxs if mx in shared_mxs] 
+                        #### add subsampling here for faster runtime for larger overlaps 
+                        # NOTE: then the ratio is important not the absolute number
+                        indices_ordered = self.order_indices(tidpos_mxs_shared, query_mxs_shared)
+                        disorder_score, orientation = self.orient_eval_order(indices_ordered)
+                        
+                    else:
+                        # only consider the size of sets and shred to calculate score
+                        final_score =  len(set(query_mxs).intersection(tidpos_mxs)) * 1000
+                        final_score = final_score / min(query_mxs_len, tidpos_mxs_len)
+                        
+                    
                     if self.args.map_pos == 1:
                         orientation = Physlr.determine_orientation(
                             tidpos_to_qpos.get((tid, tpos - 1), None),
@@ -2034,7 +2268,7 @@ class Physlr:
             print("See physlr --help for more information", file=sys.stderr)
             sys.exit(1)
 
-        query_mxs, mxtopos, backbones = self.map_indexing()
+        query_mxs, mxtopos, backbones, _moltomxs = self.map_indexing()
 
         # Map the query sequences to the physical map.
         num_mapped = 0
@@ -2842,8 +3076,8 @@ class Physlr:
             "--minimizer-overlap", action="store", dest="minimizer_overlap", type=float, default=0,
             help="Percent of edges to remove [0].")
         argparser.add_argument(
-            "--bx", action="store_true", dest="bx", default=True,
-            help="Set this flag if using linked reads (partially-oredered minimizers).")
+            "--ordered", action="store_true", dest="ordered", default=False,
+            help="Set this flag to use the order of minimizers.")
         argparser.add_argument(
             "--long", action="store_true", dest="long", default=False,
             help="Set this flag if using long reads (oredered minimizers).")

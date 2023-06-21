@@ -2,7 +2,7 @@
 # Pipeline for the Physlr program
 # Written by Shaun Jackman, Johnathan Wong, Amirhossein Afshinfard, Lauren Coombe, and Vladimir Nikolic
 #
-# note: in the context of long reads, barcode means read / sequencing molecule in this code. In case of long reads, we use the read's id as it's barcode id.
+# Note: in the context of long reads, barcode means read-name/sequencing-molecule in this code. In case of long reads, we use the read's id as it's barcode id.
 
 # Size of a k-mer.
 k=40
