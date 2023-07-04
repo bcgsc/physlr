@@ -1918,6 +1918,46 @@ class Physlr:
         return [dict1[element] for element in list2]
     
     @staticmethod
+    def longest_increasing_subarray(arr):
+        n = len(arr)
+        tail_values = [float('inf')] * n
+        prev_indices = [-1] * n
+        tail_indices = [0] * n
+        length = 1
+
+        for i in range(0, n):
+            if arr[i] < tail_values[0]:
+                tail_values[0] = arr[i]
+                tail_indices[0] = i
+            elif arr[i] >= tail_values[length - 1]:
+                tail_values[length] = arr[i]
+                prev_indices[i] = tail_indices[length - 1]
+                tail_indices[length] = i
+                length += 1
+            else:
+                left, right = 0, length - 1
+                while left < right:
+                    mid = (left + right) // 2
+                    if arr[i] >= tail_values[mid]:
+                        left = mid + 1
+                    else:
+                        right = mid
+
+                tail_values[left] = arr[i]
+                prev_indices[i] = tail_indices[left - 1]
+                tail_indices[left] = i
+
+        lis = []
+        current_index = tail_indices[length - 1]
+        while current_index >= 0:
+            lis.append(arr[current_index])
+            current_index = prev_indices[current_index]
+
+        lis.reverse()
+
+        return lis
+
+    @staticmethod
     def orient_eval_order(indices_ordered, technique = 1, lr_model = "linear"):
         """
         Given a perturbation of 1:n, determine the orientation and evaluate the orderness of indices
@@ -1988,9 +2028,9 @@ class Physlr:
             elif lr_model == "ransac":
                 coef = model.estimator_.coef_
 
-            if coef > 0.8 and coef < 1.2:
+            if coef > 0.7 and coef < 1.3:
                 orientation = "+"
-            elif coef < -0.8 and coef > -1.2:
+            elif coef < -0.7 and coef > -1.3:
                 orientation = "-"
             else:
                 orientation = "."
@@ -2001,6 +2041,20 @@ class Physlr:
         # technique 5: Inversion distance
         # technique 6: Kendall's tau
         # technique 7: Longest increasing subsequence
+        if technique == 7:
+            regular = Physlr.longest_increasing_subarray(indices_ordered)
+            reverse = Physlr.longest_increasing_subarray(indices_ordered[::-1])
+            if len(regular) > len(reverse):
+                orientation = "+"
+                lis = regular
+            else:
+                orientation = "-"
+                lis = reverse
+            score = (len(lis)*100)/len(indices_ordered)
+            if score < 50:
+                orientation = "."
+            return score, orientation
+            
         # technique 8: Longest monotonic subsequence
         # technique 9: Longest alternating subsequence
 
@@ -2106,7 +2160,7 @@ class Physlr:
             "Mapped", num_mapped, "sequences of", len(query_mxs),
             f"({round(100 * num_mapped / len(query_mxs), 2)}%)", file=sys.stderr)
 
-    def physlr_map_chap(self):
+    def physlr_map_old(self):
         """
         Map sequences to a physical map.
         Usage: physlr map TPATHS.path TMARKERS.tsv QMARKERS.tsv... >MAP.bed
@@ -2121,7 +2175,7 @@ class Physlr:
             print("See physlr --help for more information", file=sys.stderr)
             sys.exit(1)
 
-        query_mxs, mxtopos, _backbones, moltomxs = self.map_indexing()
+        query_mxs, mxtopos, _backbones, _moltomxs = self.map_indexing()
         
         # Map the query sequences to the physical map.
         num_mapped = 0
@@ -2141,12 +2195,6 @@ class Physlr:
             for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
                     mapped = True
-                    
-                    # retrieve minimizers of the target position
-                    tidpos_mxs = moltomxs.get((tid, tpos), ())
-                    shared_mxs = set(mxs).intersection(tidpos_mxs)
-                    
-                    
                     if self.args.map_pos == 1:
                         orientation = Physlr.determine_orientation(
                             tidpos_to_qpos.get((tid, tpos - 1), None),
@@ -2209,14 +2257,14 @@ class Physlr:
             for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
                     mapped = True
-                    
                     # we are considering mapping of qid to (tid, tpos) and they're minimnizers are available in mxs and moltomxs[(tid, tpos)] respectively
                     # now we need to find the shared minimizers between mxs and moltomxs[(tid, tpos)] that are in the same order
-                    query_mxs_len = len(query_mxs)
+                    set_query_mxs = set(query_mxs)
+                    query_mxs_len = len(set_query_mxs)
                     tidpos_mxs = moltomxs.get((tid, tpos), ())
                     tidpos_mxs_len = len(tidpos_mxs)
                     if self.args.ordered:
-                        shared_mxs = set(query_mxs).intersection(tidpos_mxs.get_set())
+                        shared_mxs = set_query_mxs.intersection(tidpos_mxs.get_set())
                         # shared_mxs = set(mxs).intersection(set(tidpos_mxs))
                         tidpos_mxs_shared = [mx for mx in tidpos_mxs if mx in shared_mxs]
                         query_mxs_shared = [mx for mx in query_mxs if mx in shared_mxs] 
@@ -2227,9 +2275,9 @@ class Physlr:
                         
                     else:
                         # only consider the size of sets and shred to calculate score
-                        final_score =  len(set(query_mxs).intersection(tidpos_mxs)) * 1000
+                        final_score =  len(set_query_mxs.intersection(tidpos_mxs)) * 100
                         final_score = final_score / min(query_mxs_len, tidpos_mxs_len)
-                        
+                        score = final_score
                     
                     if self.args.map_pos == 1:
                         orientation = Physlr.determine_orientation(
