@@ -2236,35 +2236,36 @@ class Physlr:
             print("See physlr --help for more information", file=sys.stderr)
             sys.exit(1)
 
-        query_mxs, mxtopos, _backbones, moltomxs = self.map_indexing()
+        queries_mxs, mxtopos, _backbones, moltomxs = self.map_indexing()
 
         # Map the query sequences to the physical map.
         num_mapped = 0
         print(int(timeit.default_timer() - t0),
                 "Mapping query sequences to the physical map - ordered: ", self.args.ordered, file=sys.stderr)
-        for qid, query_mxs in progress(query_mxs.items()):
+        for qid, query_mxs in progress(queries_mxs.items()):
             # Map each target position to a query position.
             tidpos_to_qpos = {}
+            set_query_mxs = set()
             for qpos, mx in enumerate(query_mxs):
                 for tidpos in mxtopos.get(mx, ()):
                     tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
+                # make a set
+                set_query_mxs.add(mx)
             for tidpos, qpos in tidpos_to_qpos.items():
                 tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
 
             # Count the number of minimizers mapped to each target position.
             tidpos_to_n = Counter(pos for mx in query_mxs for pos in mxtopos.get(mx, ()))
             tidpos_to_bs = dict()
-            
+            len_set_query_mxs = len(set_query_mxs)
             mapped = False
             for (tid, tpos), score in tidpos_to_n.items():
                 if score >= self.args.n:
                     mapped = True
                     # we are considering mapping of qid to (tid, tpos) and they're minimnizers are available in mxs and moltomxs[(tid, tpos)] respectively
-                    # now we need to find the shared minimizers between mxs and moltomxs[(tid, tpos)] that are in the same order
-                    set_query_mxs = set(query_mxs)
-                    query_mxs_len = len(set_query_mxs)
+                    # now we need to find the shared minimizers between mxs and moltomxs[(tid, tpos)] that are in the same order 
                     tidpos_mxs = moltomxs.get((tid, tpos), ())
-                    tidpos_mxs_len = len(tidpos_mxs)
+                    len_tidpos_mxs = len(tidpos_mxs)
                     if self.args.ordered:
                         shared_mxs = set_query_mxs.intersection(tidpos_mxs.get_set())
                         # shared_mxs = set(mxs).intersection(set(tidpos_mxs))
@@ -2277,7 +2278,7 @@ class Physlr:
                     else:
                         # only consider the size of sets and shred to calculate score
                         len_intersect =  len(set_query_mxs.intersection(tidpos_mxs))
-                        min_len = min(query_mxs_len, tidpos_mxs_len)
+                        min_len = min(len_set_query_mxs, len_tidpos_mxs)
                         if min_len > 0:
                             if min_len < final_score:
                                 print("STRANGE: min_len < final_score", file=sys.stderr)
@@ -2286,7 +2287,7 @@ class Physlr:
                         else:
                             print(
                                 "STRANGE: min_len <= 0 - ",
-                                "query mxs:", query_mxs_len," - target mxs:", tidpos_mxs_len,
+                                "query mxs:", len_set_query_mxs," - target mxs:", len_tidpos_mxs,
                                 file=sys.stderr)
                             final_score = 0
 
@@ -2308,7 +2309,7 @@ class Physlr:
                             before_median,
                             tidpos_to_qpos.get((tid, tpos + 0), None),
                             after_median)
-                    print(tid, tpos, tpos + 1, qid, score, orientation, final_score, len_intersect, min_len, sep="\t")
+                    print(tid, tpos, tpos + 1, qid, score, orientation, final_score, len_intersect, len_tidpos_mxs, len_set_query_mxs, min_len, sep="\t")
                     # print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
             if mapped:
                 num_mapped += 1
