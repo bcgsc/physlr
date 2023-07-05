@@ -2276,10 +2276,20 @@ class Physlr:
                         disorder_score, orientation = self.orient_eval_order(indices_ordered)
                     else:
                         # only consider the size of sets and shred to calculate score
-                        final_score =  len(set_query_mxs.intersection(tidpos_mxs)) * 100
-                        final_score = final_score / min(query_mxs_len, tidpos_mxs_len)
-                        score = final_score
-                    
+                        final_score =  len(set_query_mxs.intersection(tidpos_mxs))
+                        min_len = min(query_mxs_len, tidpos_mxs_len)
+                        if min_len > 0:
+                            if min_len < final_score:
+                                print("STRANGE: min_len < final_score", file=sys.stderr)
+                            else:
+                                final_score = final_score / min_len
+                        else:
+                            print(
+                                "STRANGE: min_len <= 0 - ",
+                                "query mxs:", query_mxs_len," - target mxs:", tidpos_mxs_len,
+                                file=sys.stderr)
+                            final_score = 0
+
                     if self.args.map_pos == 1:
                         orientation = Physlr.determine_orientation(
                             tidpos_to_qpos.get((tid, tpos - 1), None),
@@ -2298,7 +2308,8 @@ class Physlr:
                             before_median,
                             tidpos_to_qpos.get((tid, tpos + 0), None),
                             after_median)
-                    print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
+                    print(tid, tpos, tpos + 1, qid, score, orientation, final_score, sep="\t")
+                    # print(tid, tpos, tpos + 1, qid, score, orientation, sep="\t")
             if mapped:
                 num_mapped += 1
         print(
