@@ -2240,6 +2240,8 @@ class Physlr:
 
         # Map the query sequences to the physical map.
         num_mapped = 0
+        print(int(timeit.default_timer() - t0),
+                "Mapping query sequences to the physical map - ordered: ", self.args.ordered, file=sys.stderr)
         for qid, query_mxs in progress(query_mxs.items()):
             # Map each target position to a query position.
             tidpos_to_qpos = {}
@@ -2272,7 +2274,6 @@ class Physlr:
                         # NOTE: then the ratio is important not the absolute number
                         indices_ordered = self.order_indices(tidpos_mxs_shared, query_mxs_shared)
                         disorder_score, orientation = self.orient_eval_order(indices_ordered)
-                        
                     else:
                         # only consider the size of sets and shred to calculate score
                         final_score =  len(set_query_mxs.intersection(tidpos_mxs)) * 100
