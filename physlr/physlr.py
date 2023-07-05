@@ -405,9 +405,9 @@ class Physlr:
         bxtomxs = {}
         for filename in filenames:
             if ordered:
-                print(int(timeit.default_timer() - t0), "Reading", filename, " into ordered set.", file=sys.stderr)
+                print(int(timeit.default_timer() - t0), "Reading", filename, " lines as ordered set.", file=sys.stderr)
             else:
-                print(int(timeit.default_timer() - t0), "Reading", filename, " into unordered set.", file=sys.stderr)
+                print(int(timeit.default_timer() - t0), "Reading", filename, " lines as unordered set.", file=sys.stderr)
             with open(filename) as fin:
                 if Physlr.args.verbose >= 2:
                     progressbar = progress_bar_for_file(fin)
@@ -2247,18 +2247,19 @@ class Physlr:
         for qid, query_mxs in progress(queries_mxs.items()):
             # Map each target position to a query position.
             tidpos_to_qpos = {}
-            set_query_mxs = set()
+            # set_query_mxs = set()
             for qpos, mx in enumerate(query_mxs):
                 for tidpos in mxtopos.get(mx, ()):
                     tidpos_to_qpos.setdefault(tidpos, []).append(qpos)
                 # make a set
-                set_query_mxs.add(mx)
+                # set_query_mxs.add(mx)
             for tidpos, qpos in tidpos_to_qpos.items():
                 tidpos_to_qpos[tidpos] = statistics.median_low(qpos)
 
             # Count the number of minimizers mapped to each target position.
             tidpos_to_n = Counter(pos for mx in query_mxs for pos in mxtopos.get(mx, ()))
             tidpos_to_bs = dict()
+            set_query_mxs = set(query_mxs) # comment this out if other version is used (building the set)
             len_set_query_mxs = len(set_query_mxs)
             mapped = False
             for (tid, tpos), score in tidpos_to_n.items():
@@ -2266,7 +2267,7 @@ class Physlr:
                     mapped = True
                     # we are considering mapping of qid to (tid, tpos) and they're minimnizers are available in mxs and moltomxs[(tid, tpos)] respectively
                     # now we need to find the shared minimizers between mxs and moltomxs[(tid, tpos)] that are in the same order 
-                    tidpos_mxs = moltomxs.get((tid, tpos), ())
+                    tidpos_mxs = moltomxs[(tid, tpos)] # tidpos_mxs = moltomxs.get((tid, tpos), ())
                     len_tidpos_mxs = len(tidpos_mxs)
                     if self.args.ordered:
                         shared_mxs = set_query_mxs.intersection(tidpos_mxs.get_set())
@@ -2282,16 +2283,14 @@ class Physlr:
                         len_intersect =  len(set_query_mxs.intersection(tidpos_mxs))
                         min_len = min(len_set_query_mxs, len_tidpos_mxs)
                         if min_len > 0:
-                            if min_len < final_score:
-                                print("STRANGE: min_len < final_score", file=sys.stderr)
+                            if min_len < len_intersect:
+                                print("BUG: min_len < len_intersect - ", len_tidpos_mxs, len_set_query_mxs, file=sys.stderr)
                             else:
                                 final_score = len_intersect * 100 / min_len
                         else:
-                            print(
-                                "STRANGE: min_len <= 0 - ",
-                                "query mxs:", len_set_query_mxs," - target mxs:", len_tidpos_mxs,
-                                file=sys.stderr)
                             final_score = 0
+                            print("STRANGE: final_score <= 0 - ", len_tidpos_mxs, len_set_query_mxs, len_intersect, file=sys.stderr)
+                            
 
                     if self.args.map_pos == 1:
                         orientation = Physlr.determine_orientation(
