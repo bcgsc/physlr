@@ -403,9 +403,11 @@ class Physlr:
     def read_minimizers(filenames, long=False, ordered=False):
         "Read minimizers in TSV format. Returns unordered set or ordered list."
         bxtomxs = {}
-        
         for filename in filenames:
-            print(int(timeit.default_timer() - t0), "Reading", filename, file=sys.stderr)
+            if ordered:
+                print(int(timeit.default_timer() - t0), "Reading", filename, " into ordered set.", file=sys.stderr)
+            else:
+                print(int(timeit.default_timer() - t0), "Reading", filename, " into unordered set.", file=sys.stderr)
             with open(filename) as fin:
                 if Physlr.args.verbose >= 2:
                     progressbar = progress_bar_for_file(fin)
@@ -416,14 +418,14 @@ class Physlr:
                     if len(fields) < 2:
                         continue
                     bx = fields[0]
-                    if not ordered:
-                        if bx not in bxtomxs:
-                            bxtomxs[bx] = set()
-                        bxtomxs[bx].update(int(mx.split(":", 1)[0]) for mx in fields[1].split())
-                    else:
+                    if ordered:
                         if bx not in bxtomxs:
                             bxtomxs[bx] = OrderedSet()
                         bxtomxs[bx].extend(int(mx.split(":", 1)[0]) for mx in fields[1].split())
+                    else:
+                        if bx not in bxtomxs:
+                            bxtomxs[bx] = set()
+                        bxtomxs[bx].update(int(mx.split(":", 1)[0]) for mx in fields[1].split())
                 if Physlr.args.verbose >= 2:
                     progressbar.close()
             print(int(timeit.default_timer() - t0), "Read", filename, file=sys.stderr)
