@@ -400,7 +400,7 @@ class Physlr:
             "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
 
     @staticmethod
-    def read_minimizers(filenames, long=False, ordered=False):
+    def read_minimizers(filenames, ordered=False):
         "Read minimizers in TSV format. Returns unordered set or ordered list."
         bxtomxs = {}
         for filename in filenames:
@@ -2238,7 +2238,7 @@ class Physlr:
             print("See physlr --help for more information", file=sys.stderr)
             sys.exit(1)
 
-        queries_mxs, mxtopos, _backbones, moltomxs = self.map_indexing()
+        queries_mxs, mxtopos, backbones, moltomxs = self.map_indexing()
 
         # Map the query sequences to the physical map.
         num_mapped = 0
@@ -2266,8 +2266,15 @@ class Physlr:
                 if score >= self.args.n:
                     mapped = True
                     # we are considering mapping of qid to (tid, tpos) and they're minimnizers are available in mxs and moltomxs[(tid, tpos)] respectively
-                    # now we need to find the shared minimizers between mxs and moltomxs[(tid, tpos)] that are in the same order 
-                    tidpos_mxs = moltomxs[(tid, tpos)] # tidpos_mxs = moltomxs.get((tid, tpos), ())
+                    # now we need to find the shared minimizers between mxs and moltomxs[bx] for bx of (tid, tpos) and then order them and then evaluate the orientation 
+                    
+                    # find what bx is for (tid, tpos)
+                    if Physlr.args.mx_type == "unsplit":
+                        # mol = backbones[tid][tpos] may need to change to account for _ in the name
+                        print("Error: --mx-type unsplit is not supported yet", file=sys.stderr) 
+                        exit(1)
+                    mol = backbones[tid][tpos]
+                    tidpos_mxs = moltomxs[mol]
                     len_tidpos_mxs = len(tidpos_mxs)
                     if self.args.ordered:
                         shared_mxs = set_query_mxs.intersection(tidpos_mxs.get_set())
