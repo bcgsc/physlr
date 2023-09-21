@@ -1112,11 +1112,11 @@ min_path_size=200
 	$(time) $(python) $(bin)/physlr map-mkt -V$V -n$(map_n) $^ >$@
 
 # Map the reference to the backbone graph and output PAF.
-%.map.$(ref).n$(map_n).paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+%.map.$(ref).n10.paf.gz: %.path $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf -V$V -n$(map_n) $^ | $(gzip) >$@
 
 # Map the reference to the backbone graph with split minimizers and output PAF.
-%.backbone.map-split.$(ref).n$(map_n).paf.gz: %.backbone.path %.split.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
+%.backbone.map-split.$(ref).n10.paf.gz: %.backbone.path %.split.tsv $(name)/$(ref).k$k-w$w.physlr.tsv
 	$(time) $(python) $(bin)/physlr map-paf --mx-type split -V$V -n$(map_n) $^ | $(gzip) >$@
 
 # Lift over query coordinates of a PAF file from minimzer index to nucleotide coordinate.
