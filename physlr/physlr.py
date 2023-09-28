@@ -958,7 +958,9 @@ class Physlr:
         adj_offset = 10000
         graph_filenames = [self.args.FILES[0]]
         bed_filenames = [self.args.FILES[1]]
-        g = self.read_graph(graph_filenames)
+        
+        # print reading the bed file
+        print(int(timeit.default_timer() - t0), "reading bed file: ", bed_filenames, file=sys.stderr)
         map_dict = {}
         with open(bed_filenames) as fin:
             for line in fin:
@@ -970,6 +972,9 @@ class Physlr:
                 qual = fields[4]
                 orientation = fields[5]
                 map_dict[name] = [chrom, start, end, qual, orientation]
+        # print read the bed file
+        print(int(timeit.default_timer() - t0), "read bed file", file=sys.stderr)        
+        g = self.read_graph(graph_filenames)
         missing = set()
         for u, v in g.edges():
             # get the barcodes (read names) of the edge
@@ -3160,7 +3165,7 @@ class Physlr:
             help="A command")
         argparser.add_argument(
             "FILES", nargs="+",
-            help="FASTA/FASTQ, TSV, or GraphViz format")
+            help="FASTA/FASTQ, TSV, BED or GraphViz format")
         argparser.add_argument(
             "--prune-branches", action="store", dest="prune_branches", type=int, default=10,
             help="size of the branches to be pruned [10]. set to 0 to skip prunning.")
