@@ -956,7 +956,7 @@ class Physlr:
         # print starting the function
         print(int(timeit.default_timer() - t0), "labelling edges", file=sys.stderr)
         adj_offset = 10000
-        graph_filenames = self.args.FILES[0]
+        graph_filenames = [self.args.FILES[0]]
         bed_filenames = self.args.FILES[1]
         
         # print reading the bed file
