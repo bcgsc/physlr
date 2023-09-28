@@ -953,6 +953,8 @@ class Physlr:
 
     def physlr_label_edges(self):
         "label edges of a graph based on a ground truth bed/bam file"
+        # print starting the function
+        print(int(timeit.default_timer() - t0), "labelling edges", file=sys.stderr)
         adj_offset = 10000
         graph_filenames = [self.args.FILES[0]]
         bed_filenames = [self.args.FILES[1]]
