@@ -15,6 +15,7 @@ import sys
 import timeit
 import numpy as np
 from collections import Counter
+# import pysam
 
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import RANSACRegressor
@@ -950,6 +951,48 @@ class Physlr:
             "with fewer than", min_component_size, "vertices in a component.",
             file=sys.stderr)
 
+    def physlr_label_edges(self):
+        "label edges of a graph based on a ground truth bed/bam file"
+        adj_offset = 10000
+        graph_filenames = [self.args.FILES[0]]
+        bed_filenames = [self.args.FILES[1]]
+        g = self.read_graph(graph_filenames)
+        map_dict = {}
+        with open(bed_filenames) as fin:
+            for line in fin:
+                fields = line.split()
+                chrom = fields[0]
+                start = int(fields[1])
+                end = int(fields[2])
+                name = fields[3]
+                qual = fields[4]
+                orientation = fields[5]
+                map_dict[name] = [chrom, start, end, qual, orientation]
+        missing = set()
+        for u, v in g.edges():
+            # get the barcodes (read names) of the edge
+            u_name = u.split("_")[0]
+            v_name = v.split("_")[0]
+            # check if the two reads overlap in the bam file
+            if u_name in map_dict and v_name in map_dict:
+                u_chrom, u_start, u_end, u_qual, u_orientation = map_dict[u_name]
+                v_chrom, v_start, v_end, v_qual, v_orientation = map_dict[v_name]
+                # if they dont overlap, multiply the edge weight by -1
+                if u_chrom != v_chrom or (u_end + adj_offset) < v_start or (v_end + adj_offset) < u_start:
+                    g[u][v]["m"] = -1 * g[u][v]["m"]
+            else:
+                g[u][v]["m"] = -1 * g[u][v]["m"]
+                if u_name not in map_dict:
+                    missing.add(u_name)
+                if v_name not in map_dict:
+                    missing.add(v_name)
+        if missing:
+            print(
+                int(timeit.default_timer() - t0),
+                "Warning:", len(missing)," reads are missing from the bed file:",
+                file=sys.stderr)
+        self.write_graph(g, sys.stdout, self.args.graph_format)        
+        
     def physlr_filter(self):
         "Filter a graph."
         g = self.read_graph(self.args.FILES)
