@@ -1194,6 +1194,10 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 %.m$m.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr filter-overlap --minimizer-overlap $m -V$V $< >$@
 
+# Label edges based on a ground truth bed file.
+%.labeled.tsv: %.tsv $(lr).bed
+	$(python) $(bin)/physlr label-edges -V$V $^ >$@
+
 # Keep the best edges of each vertex.
 %.best$(bestn).tsv: %.tsv
 	$(python) $(bin)/physlr best-edges --bestn=$(bestn) -V$V $< >$@
