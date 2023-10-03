@@ -384,9 +384,9 @@ class Physlr:
             "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
 
     @staticmethod
-    def keep_best_edges(g, bestm):
+    def keep_best_edges(g, bestn):
         """Keep the best edges of each vertex."""
-        if bestm is None:
+        if bestn is None:
             return
         num_edges = g.number_of_edges()
         num_removed = 0
@@ -395,7 +395,7 @@ class Physlr:
         for u in progress(us):
             vs = list(g[u])
             vs.sort(key=lambda v, u=u: g[u][v]["m"], reverse=True)
-            for v in vs[bestm:]:
+            for v in vs[bestn:]:
                 g.remove_edge(u, v)
                 num_removed += 1
         print(
@@ -1068,7 +1068,7 @@ class Physlr:
         """Keep the best edges of each vertex."""
         g = self.read_graph(self.args.FILES)
         Physlr.filter_edges(g, self.args.m)
-        Physlr.keep_best_edges(g, self.args.bestm)
+        Physlr.keep_best_edges(g, self.args.bestn)
         Physlr.filter_edges_per_node(g, self.args.worstm)
         self.write_graph(g, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
@@ -3158,8 +3158,8 @@ class Physlr:
             "-m", "--min-m", action="store", dest="m", type=int, default=0,
             help="remove edges with fewer than n shared minimizers [0]")
         argparser.add_argument(
-            "--bestm", action="store", dest="bestm", type=int, default=None,
-            help="Keep the best m edges of each vertex [None]")
+            "--bestn", action="store", dest="bestn", type=int, default=None,
+            help="Keep the best n edges of each vertex [None]")
         argparser.add_argument(
             "--worstm", action="store", dest="worstm", type=int, default=None,
             help="Remove the worst m% edges of each vertex [None]")
