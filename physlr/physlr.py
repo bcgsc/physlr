@@ -368,7 +368,7 @@ class Physlr:
         for u in progress(g.nodes()):
             vs = list(g[u])
             vs.sort(key=lambda v, u=u: g[u][v]["m"])
-            edges += [(u, v) for v in vs[0:round((arg_m * len(vs))/100)]]
+            remove_edges += [(u, v) for v in vs[0:round((arg_m * len(vs))/100)]]
         print(
             int(timeit.default_timer() - t0),
             "Removed", len(remove_edges), "edges, as ", arg_m,
@@ -376,7 +376,7 @@ class Physlr:
             "from", g.number_of_edges(), " edges",
             f"({round(100 * len(remove_edges) / g.number_of_edges(), 2)}%)",
             file=sys.stderr)
-        g.remove_edges_from(edges)
+        g.remove_edges_from(remove_edges)
         
         num_singletons = Physlr.remove_singletons(g)
         print(
