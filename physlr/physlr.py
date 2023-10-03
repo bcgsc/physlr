@@ -362,7 +362,7 @@ class Physlr:
     @staticmethod
     def filter_edges_per_node(g, arg_m):
         "Remove arg_m (%) of the edges (per node) with lowest edge weight."
-        if arg_m == 0:
+        if arg_m == 0 or arg_m == None:
             return   
         remove_edges = []
         for u in progress(g.nodes()):
