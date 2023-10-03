@@ -349,11 +349,35 @@ class Physlr:
         edges = [(u, v) for u, v, m in progress(g.edges(data="m")) if m < arg_m]
         print(
             int(timeit.default_timer() - t0),
-            "Removed", len(edges), "edges with fewer than", arg_m,
-            "common minimizers of", g.number_of_edges(),
+            "Removed", len(edges), "edges - ", arg_m,
+            " % lowest edge weights from total of", g.number_of_edges(), " edges",
             f"({round(100 * len(edges) / g.number_of_edges(), 2)}%)", file=sys.stderr)
         g.remove_edges_from(edges)
 
+        num_singletons = Physlr.remove_singletons(g)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
+
+    @staticmethod
+    def filter_edges_per_node(g, arg_m):
+        "Remove arg_m (%) of the edges (per node) with lowest edge weight."
+        if arg_m == 0:
+            return   
+        remove_edges = []
+        for u in progress(g.nodes()):
+            vs = list(g[u])
+            vs.sort(key=lambda v, u=u: g[u][v]["m"])
+            edges += [(u, v) for v in vs[0:round((arg_m * len(vs))/100)]]
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", len(remove_edges), "edges, as ", arg_m,
+            " % weakest edges per node",
+            "from", g.number_of_edges(), " edges",
+            f"({round(100 * len(remove_edges) / g.number_of_edges(), 2)}%)",
+            file=sys.stderr)
+        g.remove_edges_from(edges)
+        
         num_singletons = Physlr.remove_singletons(g)
         print(
             int(timeit.default_timer() - t0),
@@ -374,6 +398,32 @@ class Physlr:
             for v in vs[bestm:]:
                 g.remove_edge(u, v)
                 num_removed += 1
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", num_removed, "non-best edges of", g.number_of_edges(),
+            f"({round(100 * num_removed / num_edges, 2)}%)", file=sys.stderr)
+
+        num_singletons = Physlr.remove_singletons(g)
+        print(
+            int(timeit.default_timer() - t0),
+            "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
+        
+    @staticmethod
+    def keep_best_edges2(g, bestm):
+        """Keep the m best edges of each vertex."""
+        if bestm is None:
+            return
+        num_edges = g.number_of_edges()
+        num_removed = 0
+        edges_to_remove = []
+        us = list(g.nodes)
+        us.sort(key=g.degree, reverse=True)
+        for u in progress(us):
+            vs = list(g[u])
+            vs.sort(key=lambda v, u=u: g[u][v]["m"], reverse=True)
+            edges_to_remove += [(u, v) for v in vs[bestm:]]
+        num_removed = len(edges_to_remove)
+        g.remove_edges_from(edges_to_remove)
         print(
             int(timeit.default_timer() - t0),
             "Removed", num_removed, "non-best edges of", g.number_of_edges(),
@@ -996,10 +1046,10 @@ class Physlr:
         if missing:
             print(
                 int(timeit.default_timer() - t0),
-                "Warning:", len(missing)," reads are missing from the bed file:",
+                "Warning:", len(missing)," reads are missing from the bed file.",
                 file=sys.stderr)
-        self.write_graph(g, sys.stdout, self.args.graph_format)        
-        
+        self.write_graph(g, sys.stdout, self.args.graph_format)
+
     def physlr_filter(self):
         "Filter a graph."
         g = self.read_graph(self.args.FILES)
@@ -1019,6 +1069,7 @@ class Physlr:
         g = self.read_graph(self.args.FILES)
         Physlr.filter_edges(g, self.args.m)
         Physlr.keep_best_edges(g, self.args.bestm)
+        Physlr.filter_edges_per_node(g, self.args.worstm)
         self.write_graph(g, sys.stdout, self.args.graph_format)
         print(int(timeit.default_timer() - t0), "Wrote graph", file=sys.stderr)
 
@@ -3109,6 +3160,9 @@ class Physlr:
         argparser.add_argument(
             "--bestm", action="store", dest="bestm", type=int, default=None,
             help="Keep the best m edges of each vertex [None]")
+        argparser.add_argument(
+            "--worstm", action="store", dest="worstm", type=int, default=None,
+            help="Remove the worst m% edges of each vertex [None]")
         argparser.add_argument(
             "--min-length", action="store", dest="min_length", type=int, default=0,
             help="remove sequences with length less than N bp [0]")
