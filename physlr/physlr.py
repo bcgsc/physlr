@@ -409,9 +409,9 @@ class Physlr:
             "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
         
     @staticmethod
-    def keep_best_edges2(g, bestm):
+    def keep_best_edges2(g, bestn):
         """Keep the m best edges of each vertex."""
-        if bestm is None:
+        if bestn is None:
             return
         num_edges = g.number_of_edges()
         num_removed = 0
@@ -421,7 +421,7 @@ class Physlr:
         for u in progress(us):
             vs = list(g[u])
             vs.sort(key=lambda v, u=u: g[u][v]["m"], reverse=True)
-            edges_to_remove += [(u, v) for v in vs[bestm:]]
+            edges_to_remove += [(u, v) for v in vs[bestn:]]
         num_removed = len(edges_to_remove)
         g.remove_edges_from(edges_to_remove)
         print(
@@ -449,6 +449,56 @@ class Physlr:
         print(
             int(timeit.default_timer() - t0),
             "Removed", num_singletons, "isolated vertices.", file=sys.stderr)
+
+    @staticmethod
+    def read_read_pairs(filename):
+        "Read pairs of read names (and edge wight)."
+        pairs = []
+        # print timeit and reading filename
+        print(int(timeit.default_timer() - t0), "Reading ", filename, file=sys.stderr)
+        with open(filename) as fin:
+            for line in fin:
+                xs = line.split()
+                if len(xs) == 2:
+                    pairs.append((xs[0], xs[1], 1))
+                elif len(xs) == 3:
+                    pairs.append((xs[0], xs[1], int(xs[2])))
+                else:
+                    print("Unexpected row:", line, file=sys.stderr)
+                    sys.exit(1)
+        # print timeit and read filename
+        print(int(timeit.default_timer() - t0), "Read ", filename, file=sys.stderr)
+        return pairs
+
+    @staticmethod
+    def overlap_read_pairs(bxtomxs, read_pairs):
+        "Calculate the overlap signatures for read pairs."
+        
+        indices_list = []
+        print(int(timeit.default_timer() - t0),
+              "Calculating the minimizer overlap signatures for read pairs:",
+              file=sys.stderr)
+        for read_pair in progress(read_pairs):
+            read1 = read_pair[0]
+            read2 = read_pair[1]
+            weight = read_pair[2]
+            if read1 in bxtomxs and read2 in bxtomxs:
+                mxs1 = bxtomxs[read1]
+                mxs2 = bxtomxs[read2]
+                # make a dict of the minimizers of the second read and their index
+                mxs2_dict = {}
+                for i, mx in enumerate(mxs2):
+                    mxs2_dict[mx] = i
+                # for each minimizer of the first read, check if it is in the dict of the second read and record the index
+                indices = []
+                for mx1 in mxs1:
+                    if mx1 in mxs2_dict:
+                        indices.append(mxs2_dict[mx1])
+                    else:
+                        indices.append(0)
+            indices_list.append([read1, read2, weight, indices])
+        print(int(timeit.default_timer() - t0), "Calculated the minimizer overlap signatures for read pairs", file=sys.stderr)
+        return indices_list
 
     @staticmethod
     def read_minimizers(filenames, ordered=False):
@@ -1049,6 +1099,17 @@ class Physlr:
                 "Warning:", len(missing)," reads are missing from the bed file.",
                 file=sys.stderr)
         self.write_graph(g, sys.stdout, self.args.graph_format)
+
+    def physlr_overlap_read_pairs(self):
+        "Report minimizer overlap signature of pairs of reads."
+        bxtomxs = Physlr.read_minimizers([self.args.FILES[0]], ordered=True)
+        # read the read pairs using function read_read_pairs
+        read_pairs = Physlr.read_read_pairs([self.args.FILES[1]])
+        indices_list = Physlr.overlap_read_pairs(bxtomxs, read_pairs)
+        # print timeit and outputting the indices
+        print(int(timeit.default_timer() - t0), "Printing the results.", file=sys.stderr)
+        for indices in indices_list:
+            print(indices[0], indices[1], indices[2], ','.join(map(str, indices[3])), sep='\t', file=sys.stdout)
 
     def physlr_filter(self):
         "Filter a graph."
