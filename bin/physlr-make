@@ -1202,6 +1202,10 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 %.overlap-pairs.tsv: %.tsv %.read-pairs.tsv
 	$(python) $(bin)/physlr overlap-read-pairs -V$V $^ >$@
 
+# Overlap read pairs
+%.score-pairs.tsv: %.tsv %.read-pairs.tsv
+	$(python) $(bin)/physlr score-read-pairs -V$V $^ >$@
+	
 # overlap reade pairs with a variable in the name
 %.overlap-pairs.$(subsample).tsv: %.tsv %.read-pairs.$(subsample).tsv
 	$(python) $(bin)/physlr overlap-read-pairs -V$V $^ >$@

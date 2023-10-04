@@ -1103,14 +1103,28 @@ class Physlr:
     def physlr_overlap_read_pairs(self):
         "Report minimizer overlap signature of pairs of reads."
         bxtomxs = Physlr.read_minimizers([self.args.FILES[0]], ordered=True)
-        # read the read pairs using function read_read_pairs
         read_pairs = Physlr.read_read_pairs(self.args.FILES[1])
         indices_list = Physlr.overlap_read_pairs(bxtomxs, read_pairs)
-        # print timeit and outputting the indices
         print(int(timeit.default_timer() - t0), "Printing the results.", file=sys.stderr)
         for indices in indices_list:
             print(indices[0], indices[1], indices[2], ','.join(map(str, indices[3])), sep='\t', file=sys.stdout)
 
+    def physlr_score_read_pairs(self):
+        # overlap read pairs and score the minimizer signatures using orient_eval_order
+        bxtomxs = Physlr.read_minimizers([self.args.FILES[0]], ordered=True)
+        read_pairs = Physlr.read_read_pairs(self.args.FILES[1])
+        indices_list = Physlr.overlap_read_pairs(bxtomxs, read_pairs)
+        scored_indices_list = []
+        for indices in indices_list:
+            # drop any values in indices[3] that are 0
+            valid_indices = [i for i in indices[3] if i != 0]
+            score, orientation = Physlr.orient_eval_order(valid_indices)
+            scored_indices_list.append([indices[0], indices[1], indices[2], score[0], score[1], orientation])
+        for scored_indices in scored_indices_list:
+            print(timeit.default_timer() - t0," Printing the results.", file=sys.stderr)
+            print("read1, read2, weight, loss, slope, orientation", file=sys.stdout)
+            print(scored_indices[0], scored_indices[1], scored_indices[2], scored_indices[3], scored_indices[4], scored_indices[5], sep='\t', file=sys.stdout)
+        
     def physlr_filter(self):
         "Filter a graph."
         g = self.read_graph(self.args.FILES)
@@ -2122,7 +2136,7 @@ class Physlr:
         return lis
 
     @staticmethod
-    def orient_eval_order(indices_ordered, technique = 1, lr_model = "linear"):
+    def orient_eval_order(indices_ordered, technique = 3, lr_model = "linear"):
         """
         Given a perturbation of 1:n, determine the orientation and evaluate the orderness of indices
         using various techniques such as entropy, linear regression, etc.
@@ -2198,7 +2212,8 @@ class Physlr:
                 orientation = "-"
             else:
                 orientation = "."
-            return loss_r2, orientation
+            return [loss_r2, coef], orientation, 
+            #return loss_r2, orientation, 
         
         # technique 3.2: Segmental/piecewise linear regression
         # technique 4: Spearman's rho
