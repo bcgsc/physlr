@@ -1104,7 +1104,7 @@ class Physlr:
         "Report minimizer overlap signature of pairs of reads."
         bxtomxs = Physlr.read_minimizers([self.args.FILES[0]], ordered=True)
         # read the read pairs using function read_read_pairs
-        read_pairs = Physlr.read_read_pairs([self.args.FILES[1]])
+        read_pairs = Physlr.read_read_pairs(self.args.FILES[1])
         indices_list = Physlr.overlap_read_pairs(bxtomxs, read_pairs)
         # print timeit and outputting the indices
         print(int(timeit.default_timer() - t0), "Printing the results.", file=sys.stderr)
