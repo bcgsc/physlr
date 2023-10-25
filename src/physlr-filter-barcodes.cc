@@ -54,12 +54,6 @@ printUsage(const std::string& progname)
 
 using Mx = uint64_t;
 using MxVal = uint64_t;
-// struct MxwithPos {
-//     Mx hvalue;
-//     std::size_t position;
-//     MxwithPos(Mx hvalue, std::size_t position) : hvalue(hvalue), position(position) {}
-//     MxwithPos() : hvalue(0), position(0) {}
-// };
 using MxPos = std::size_t;
 using Mxs = tsl::robin_set<MxVal>;
 using MxwithPos = std::pair<MxVal, MxPos>;
@@ -181,18 +175,21 @@ removeSingletonMxs(BxtoMxs& bxtomxs, bool silent)
 	uint64_t singletons = 0;
 	tsl::robin_map<Mx, bool> counted;
 	for (const auto& item : bxtomxs) {
-		// MxswithPos not_singletons;
-        std::unique_ptr<MxswithPos> not_singletons;
-		not_singletons->reserve(item.second.size());
+		MxswithPos not_singletons;
+        //std::unique_ptr<MxswithPos> not_singletons;
+		//not_singletons->reserve(item.second.size());
+		not_singletons.reserve(item.second.size());
 		for (const auto& mx : item.second) {
 			if (counts[mx.first] >= 2) {
-				not_singletons->insert({mx.first, mx.second});
+				//not_singletons->insert({mx.first, mx.second});
+				not_singletons.insert({mx.first, mx.second});
 			} else {
 				++singletons;
 			}
 		}
 		uniqueMxs.insert(item.second.begin(), item.second.end()); // need to do before removing!
-		bxtomxs[item.first] = std::move(*not_singletons);
+		//bxtomxs[item.first] = std::move(*not_singletons);
+		bxtomxs[item.first] = std::move(not_singletons);
 	}
 	auto t = std::chrono::steady_clock::now();
 	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0);
