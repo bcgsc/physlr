@@ -53,13 +53,16 @@ printUsage(const std::string& progname)
 }
 
 using Mx = uint64_t;
-struct MxwithPos {
-    Mx hvalue;
-    std::size_t position;
-    MxwithPos(Mx hvalue, std::size_t position) : hvalue(hvalue), position(position) {}
-    MxwithPos() : hvalue(0), position(0) {}
-};
-using Mxs = tsl::robin_set<Mx>;
+using MxVal = uint64_t;
+// struct MxwithPos {
+//     Mx hvalue;
+//     std::size_t position;
+//     MxwithPos(Mx hvalue, std::size_t position) : hvalue(hvalue), position(position) {}
+//     MxwithPos() : hvalue(0), position(0) {}
+// };
+using MxPos = std::size_t;
+using Mxs = tsl::robin_set<MxVal>;
+using MxwithPos = std::pair<MxVal, MxPos>;
 using MxswithPos = tsl::robin_set<MxwithPos>;
 using Bx = std::string;
 using BxtoMxs = tsl::robin_map<Bx, MxswithPos>;
@@ -93,7 +96,7 @@ readMxs(std::istream& is, const std::string& ipath, bool silent, bool positioned
                 }
                 mxpos = mx.substr(mxsep+1);
                 mx = mx.substr(0, mxsep);
-                bxtomxs[bx].insert({strtoull(mx.c_str(), nullptr, 0), strtoull(mxpos.c_str(), nullptr, 0)});
+                bxtomxs[bx].insert( std::pair<MxVal, MxPos>(strtoull(mx.c_str(), nullptr, 0), strtoull(mxpos.c_str(), nullptr, 0)) );
             }
         } else { 
             while (iss >> mx) {
@@ -109,7 +112,7 @@ readMxs(std::istream& is, const std::string& ipath, bool silent, bool positioned
                 } else if (hasPos) {
                     mx = mx.substr(0, mx.find(":"));
                 }
-                bxtomxs[bx].insert({strtoull(mx.c_str(), nullptr, 0), -1});
+                bxtomxs[bx].insert(std::pair<MxVal, MxPos>(strtoull(mx.c_str(), nullptr, 0), -1));
             }
         }
 	}
@@ -131,9 +134,9 @@ writeMxs(BxtoMxs bxtomxs, std::ostream& os, const std::string& opath, bool silen
 		char sep = '\t';
 		for (const auto& mx : mxs) {
 			if (positioned)
-                os << sep << mx.hvalue << ":" << mx.position;
+                os << sep << mx.first << ":" << mx.second;
 			else
-                os << sep << mx.hvalue;
+                os << sep << mx.first;
             sep = ' ';
 		}
 		os << '\n';
@@ -153,7 +156,7 @@ countMxs(const BxtoMxs& bxtomxs, bool silent)
 	for (const auto& item : bxtomxs) {
 		const auto& mxs = item.second;
 		for (const auto& mx : mxs) {
-            auto mxhvalue = mx.hvalue;
+            auto mxhvalue = mx.first;
 			if (counts.find(mxhvalue) == counts.end()) {
 				counts[mxhvalue] = 1;
 			} else {
@@ -182,8 +185,8 @@ removeSingletonMxs(BxtoMxs& bxtomxs, bool silent)
         std::unique_ptr<MxswithPos> not_singletons;
 		not_singletons->reserve(item.second.size());
 		for (const auto& mx : item.second) {
-			if (counts[mx.hvalue] >= 2) {
-				not_singletons->insert({mx.hvalue, mx.position});
+			if (counts[mx.first] >= 2) {
+				not_singletons->insert({mx.first, mx.second});
 			} else {
 				++singletons;
 			}
