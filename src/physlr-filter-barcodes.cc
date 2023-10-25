@@ -42,23 +42,31 @@ static void
 printUsage(const std::string& progname)
 {
 	std::cout << "Usage:  " << progname
-	          << "  -n n -N N [-s] [-o file] file...\n\n"
+	          << "  -n n -N N [-s] [-p] [-o file] file...\n\n"
 	             "  -s         silent; disable verbose output\n"
 	             "  -o file    write output to file, default is stdout\n"
 	             "  -n         minimum number of minimizers per barcode\n"
 	             "  -N         maximum number of minimizers per barcode\n"
+                 "  -p         indicate that the minimizers contain position\n"
 	             "  --help     display this help and exit\n"
 	             "  file       space separated list of FASTQ files\n";
 }
 
 using Mx = uint64_t;
+struct MxwithPos {
+    Mx hvalue;
+    std::size_t position;
+    MxwithPos(Mx hvalue, std::size_t position) : hvalue(hvalue), position(position) {}
+    MxwithPos() : hvalue(0), position(0) {}
+};
 using Mxs = tsl::robin_set<Mx>;
+using MxswithPos = tsl::robin_set<MxwithPos>;
 using Bx = std::string;
-using BxtoMxs = tsl::robin_map<Bx, Mxs>;
+using BxtoMxs = tsl::robin_map<Bx, MxswithPos>;
 using MxtoCounts = tsl::robin_map<Mx, unsigned>;
 
 static BxtoMxs
-readMxs(std::istream& is, const std::string& ipath, bool silent)
+readMxs(std::istream& is, const std::string& ipath, bool silent, bool positioned)
 {
 	if (is.peek() == std::ifstream::traits_type::eof()) {
 		std::cerr << "physlr-filterbarcodes: error: Empty input file: " << ipath << '\n';
@@ -67,12 +75,43 @@ readMxs(std::istream& is, const std::string& ipath, bool silent)
 	BxtoMxs bxtomxs;
 	Bx bx;
 	std::string mx;
+    std::string mxpos;
 	std::string mx_line;
+    bool warned = false;
+    bool hasPos = false;
 	while ((is >> bx) && (getline(is, mx_line))) {
 		std::istringstream iss(mx_line);
-		while (iss >> mx) {
-			bxtomxs[bx].insert(strtoull(mx.c_str(), nullptr, 0));
-		}
+        // if the file does not contain minimizer positions, then add -1 as position
+		if (positioned) {
+            while (iss >> mx) {
+                size_t mxsep = mx.find(":");
+                if (mxsep == std::string::npos){
+                    // print error message if the minimizer position is not given and exit
+                    std::cerr << "physlr-filter-barcodes: error: minimizer position not provided: " << ipath << '\n';
+                    std::cerr << " barcode: " << bx << " | minimizer: " << mx << '\n';
+                    exit(EXIT_FAILURE);
+                }
+                mxpos = mx.substr(mxsep+1);
+                mx = mx.substr(0, mxsep);
+                bxtomxs[bx].insert({strtoull(mx.c_str(), nullptr, 0), strtoull(mxpos.c_str(), nullptr, 0)});
+            }
+        } else { 
+            while (iss >> mx) {
+                if (!warned){
+                    warned = true;
+                    if (mx.find(":") != std::string::npos){
+                        // print error message if the minimizer position is included in file and exit
+                        std::cerr << "physlr-filter-barcodes: warning: skipping minimizer position." << '\n';
+                        std::cerr << " Set -p to avoid skipping." << '\n';
+                        hasPos = true;
+                        mx = mx.substr(0, mx.find(":"));
+                    }
+                } else if (hasPos) {
+                    mx = mx.substr(0, mx.find(":"));
+                }
+                bxtomxs[bx].insert({strtoull(mx.c_str(), nullptr, 0), -1});
+            }
+        }
 	}
 	auto t = std::chrono::steady_clock::now();
 	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0);
@@ -83,7 +122,7 @@ readMxs(std::istream& is, const std::string& ipath, bool silent)
 }
 
 static void
-writeMxs(BxtoMxs bxtomxs, std::ostream& os, const std::string& opath, bool silent)
+writeMxs(BxtoMxs bxtomxs, std::ostream& os, const std::string& opath, bool silent, bool positioned)
 {
 	for (const auto& item : bxtomxs) {
 		const auto& bx = item.first;
@@ -91,8 +130,11 @@ writeMxs(BxtoMxs bxtomxs, std::ostream& os, const std::string& opath, bool silen
 		os << bx;
 		char sep = '\t';
 		for (const auto& mx : mxs) {
-			os << sep << mx;
-			sep = ' ';
+			if (positioned)
+                os << sep << mx.hvalue << ":" << mx.position;
+			else
+                os << sep << mx.hvalue;
+            sep = ' ';
 		}
 		os << '\n';
 		assert_good(os, opath);
@@ -111,10 +153,11 @@ countMxs(const BxtoMxs& bxtomxs, bool silent)
 	for (const auto& item : bxtomxs) {
 		const auto& mxs = item.second;
 		for (const auto& mx : mxs) {
-			if (counts.find(mx) == counts.end()) {
-				counts[mx] = 1;
+            auto mxhvalue = mx.hvalue;
+			if (counts.find(mxhvalue) == counts.end()) {
+				counts[mxhvalue] = 1;
 			} else {
-				++counts[mx];
+				++counts[mxhvalue];
 			}
 		}
 	}
@@ -135,17 +178,18 @@ removeSingletonMxs(BxtoMxs& bxtomxs, bool silent)
 	uint64_t singletons = 0;
 	tsl::robin_map<Mx, bool> counted;
 	for (const auto& item : bxtomxs) {
-		Mxs not_singletons;
-		not_singletons.reserve(item.second.size());
+		// MxswithPos not_singletons;
+        std::unique_ptr<MxswithPos> not_singletons;
+		not_singletons->reserve(item.second.size());
 		for (const auto& mx : item.second) {
-			if (counts[mx] >= 2) {
-				not_singletons.insert(mx);
+			if (counts[mx.hvalue] >= 2) {
+				not_singletons->insert({mx.hvalue, mx.position});
 			} else {
 				++singletons;
 			}
 		}
 		uniqueMxs.insert(item.second.begin(), item.second.end()); // need to do before removing!
-		bxtomxs[item.first] = std::move(not_singletons);
+		bxtomxs[item.first] = std::move(*not_singletons);
 	}
 	auto t = std::chrono::steady_clock::now();
 	auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(t - t0);
@@ -165,13 +209,14 @@ physlr_filterbarcodes(
     const std::string& opath,
     const size_t n,
     const size_t N,
-    bool silent)
+    bool silent,
+    bool positioned)
 {
 	if (is.peek() == std::ifstream::traits_type::eof()) {
 		std::cerr << "physlr-filterbarcodes: error: Empty input file: " << ipath << '\n';
 		exit(EXIT_FAILURE);
 	}
-	BxtoMxs bxtomxs = readMxs(is, ipath, silent);
+	BxtoMxs bxtomxs = readMxs(is, ipath, silent, positioned);
 	unsigned initial_size = bxtomxs.size();
 	removeSingletonMxs(bxtomxs, silent);
 	unsigned too_few = 0, too_many = 0;
@@ -200,7 +245,7 @@ physlr_filterbarcodes(
 		          << 100.0 * too_many / initial_size << "%)\n";
 		std::cerr << "Wrote " << initial_size - too_few - too_many << " barcodes\n";
 	}
-	writeMxs(bxtomxs, os, opath, silent);
+	writeMxs(bxtomxs, os, opath, silent, positioned);
 }
 
 int
@@ -213,6 +258,7 @@ main(int argc, char* argv[])
 	static int help = 0;
 	unsigned n = 0;
 	unsigned N = 0;
+    bool positioned = false;
 	bool silent = false;
 	bool failed = false;
 	bool n_set = false;
@@ -239,7 +285,10 @@ main(int argc, char* argv[])
 			N_set = true;
 			N = strtoul(optarg, &end, 10);
 			break;
-		default:
+		case 'p':
+            positioned = true;
+            break;
+        default:
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -281,7 +330,7 @@ main(int argc, char* argv[])
 		}
 		std::ifstream ifs(infile);
 		assert_good(ifs, infile);
-		physlr_filterbarcodes(ifs, infile, ofs, outfile, n, N, silent);
+		physlr_filterbarcodes(ifs, infile, ofs, outfile, n, N, silent, positioned);
 	}
 	ofs.flush();
 	assert_good(ofs, outfile);
