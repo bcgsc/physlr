@@ -169,7 +169,7 @@ removeSingletonMxs(BxtoMxs& bxtomxs, bool silent)
 	std::cerr << "Counted " << counts.size() << " minimizers." << '\n';
 	Mxs uniqueMxs;
 	uint64_t singletons = 0;
-	tsl::robin_map<Mx, bool> counted;
+	robin_hood::unordered_map<Mx, bool> counted;
 	for (const auto& item : bxtomxs) {
 		//MxswithPos not_singletons;
         std::unique_ptr<MxswithPos> not_singletons;
