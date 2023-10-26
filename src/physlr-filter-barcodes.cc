@@ -1,6 +1,4 @@
-//#include "robin_hood.h"
-#include "tsl/robin_map.h"
-#include "tsl/robin_set.h"
+#include "robin_hood.h"
 #include <algorithm>
 #include <cassert>
 #include <chrono>
@@ -65,16 +63,12 @@ printUsage(const std::string& progname)
 }
 
 using Mx = uint64_t;
-//using Mxs = robin_hood::unordered_set<Mx>;
-using Mxs = tsl::robin_set<Mx>;
+using Mxs = robin_hood::unordered_set<Mx>;
 using MxwithPos = std::pair<Mx, std::size_t>;
-//using MxswithPos = robin_hood::unordered_set<MxwithPos, PairHash>;
-using MxswithPos = tsl::robin_set<MxwithPos, PairHash>;
+using MxswithPos = robin_hood::unordered_set<MxwithPos, PairHash>;
 using Bx = std::string;
-//using BxtoMxs = robin_hood::unordered_map<Bx, MxswithPos>;
-//using MxtoCounts = robin_hood::unordered_map<Mx, unsigned>;
-using BxtoMxs = tsl::robin_map<Bx, MxswithPos>;
-using MxtoCounts = tsl::robin_map<Mx, unsigned>;
+using BxtoMxs = robin_hood::unordered_map<Bx, MxswithPos>;
+using MxtoCounts = robin_hood::unordered_map<Mx, unsigned>;
 
 static BxtoMxs
 readMxs(std::istream& is, const std::string& ipath, bool silent, bool positioned)
