@@ -18,8 +18,19 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <boost/functional/hash.hpp>
 
 static std::chrono::time_point<std::chrono::steady_clock> t0; // NOLINT(cert-err58-cpp)
+
+struct PairHash {
+    template <typename T, typename U>
+    std::size_t operator()(const std::pair<T, U>& p) const {
+        std::size_t seed = 0;
+        boost::hash_combine(seed, p.first);
+        boost::hash_combine(seed, p.second);
+        return seed;
+    }
+};
 
 static inline void
 assert_good(const std::ios& stream, const std::string& path)
@@ -54,7 +65,7 @@ printUsage(const std::string& progname)
 using Mx = uint64_t;
 using Mxs = robin_hood::unordered_set<Mx>;
 using MxwithPos = std::pair<Mx, std::size_t>;
-using MxswithPos = robin_hood::unordered_set<MxwithPos>;
+using MxswithPos = robin_hood::unordered_set<MxwithPos, PairHash>;
 using Bx = std::string;
 using BxtoMxs = robin_hood::unordered_map<Bx, MxswithPos>;
 using MxtoCounts = robin_hood::unordered_map<Mx, unsigned>;
