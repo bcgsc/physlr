@@ -22,13 +22,19 @@
 
 static std::chrono::time_point<std::chrono::steady_clock> t0; // NOLINT(cert-err58-cpp)
 
+// struct PairHash {
+//     template <typename T, typename U>
+//     std::size_t operator()(const std::pair<T, U>& p) const {
+//         std::size_t seed = 0;
+//         boost::hash_combine(seed, p.first);
+//         boost::hash_combine(seed, p.second);
+//         return seed;
+//     }
+// };
+
 struct PairHash {
-    template <typename T, typename U>
-    std::size_t operator()(const std::pair<T, U>& p) const {
-        std::size_t seed = 0;
-        boost::hash_combine(seed, p.first);
-        boost::hash_combine(seed, p.second);
-        return seed;
+    inline std::size_t operator()(const std::pair<int,int> & v) const {
+        return v.first*31+v.second;
     }
 };
 
