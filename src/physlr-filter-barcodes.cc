@@ -273,7 +273,7 @@ main(int argc, char* argv[])
 	static int help = 0;
 	unsigned n = 0;
 	unsigned N = 0;
-    bool positioned = false;
+    bool positioned = true; // temporarily set to true, set to false and modify physlr-make
 	bool silent = false;
 	bool failed = false;
 	bool n_set = false;
