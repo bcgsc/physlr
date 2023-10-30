@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <boost/functional/hash.hpp>
 
 static std::chrono::time_point<std::chrono::steady_clock> t0; // NOLINT(cert-err58-cpp)
 
