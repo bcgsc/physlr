@@ -22,21 +22,21 @@
 
 static std::chrono::time_point<std::chrono::steady_clock> t0; // NOLINT(cert-err58-cpp)
 
-// struct PairHash {
-//     template <typename T, typename U>
-//     std::size_t operator()(const std::pair<T, U>& p) const {
-//         std::size_t seed = 0;
-//         boost::hash_combine(seed, p.first);
-//         boost::hash_combine(seed, p.second);
-//         return seed;
-//     }
-// };
-
 struct PairHash {
-    inline std::size_t operator()(const std::pair<int,int> & v) const {
-        return v.first*31+v.second;
+    template <typename T, typename U>
+    std::size_t operator()(const std::pair<T, U>& p) const {
+        std::size_t seed = 0;
+        boost::hash_combine(seed, p.first);
+        boost::hash_combine(seed, p.second);
+        return seed;
     }
 };
+
+// struct PairHash {
+//     inline std::size_t operator()(const std::pair<int,int> & v) const {
+//         return v.first*31+v.second;
+//     }
+// };
 
 static inline void
 assert_good(const std::ios& stream, const std::string& path)
@@ -184,7 +184,7 @@ removeSingletonMxs(BxtoMxs& bxtomxs, bool silent)
 {
 	MxtoCounts counts = countMxs(bxtomxs, silent);
 	std::cerr << "Counted " << counts.size() << " minimizers." << '\n';
-	Mxs uniqueMxs;
+	MxswithPos uniqueMxs;
 	uint64_t singletons = 0;
 	robin_hood::unordered_map<Mx, bool> counted;
 	for (const auto& item : bxtomxs) {
@@ -202,6 +202,7 @@ removeSingletonMxs(BxtoMxs& bxtomxs, bool silent)
 		}
 		
 		uniqueMxs.insert(item.second.begin(), item.second.end()); // need to do before removing!
+
 		//bxtomxs[item.first] = std::move(*not_singletons);
 		bxtomxs[item.first] = std::move(not_singletons);
 	}
