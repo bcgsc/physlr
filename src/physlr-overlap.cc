@@ -27,6 +27,7 @@
 namespace opt {
 static unsigned minM = 10;
 static unsigned threads = 1;
+static bool positioned = false;
 } // namespace opt
 
 #define PROGRAM "physlr-overlap"
@@ -38,7 +39,7 @@ printVersion()
 {
 	const char VERSION_MESSAGE[] =
 	    PROGRAM " (" PACKAGE_NAME ") " GIT_REVISION "\n"
-	            "Written by Justin Chu.\n"
+	            "Written by Amirhossein Afshinfard and Justin Chu.\n"
 	            "\n"
 	            "Copyright 2019 Canada's Michael Smith Genome Science Centre\n";
 	std::cerr << VERSION_MESSAGE << std::endl;
@@ -50,11 +51,12 @@ printHelpDialog()
 {
 	static const char dialog[] =
 	    "Usage: physlr-overlap [OPTION]... [MINIMIZERS.tsv]\n"
-	    "Read a sketch of linked reads and find overlapping barcodes.\n"
+	    "Read a sketch of linked/long reads and find overlapping barcodes/reads.\n"
 	    "  -m, --min-m=INT   Remove edges with fewer than m shared markers [10].\n"
 	    "  -t, --threads     threads [1]\n"
 	    "  -v, --version     Print version\n"
-	    "Report bugs to <cjustin@bcgsc.ca>.";
+		"  -p, --positioned Minimizers are positioned in the barcode/read \n"
+	    "Report bugs to <aafshinfard@bcgsc.ca>.";
 	std::cerr << dialog << std::endl;
 	exit(0);
 }
@@ -110,6 +112,7 @@ main(int argc, char* argv[])
 	static struct option long_options[] = { { "min-m", required_argument, nullptr, 'n' },
 		                                    { "threads", required_argument, nullptr, 't' },
 		                                    { "version", no_argument, nullptr, 'v' },
+											{ "positioned", no_argument, nullptr, 'p'},
 		                                    { nullptr, 0, nullptr, 0 } };
 
 	int i = 0;
@@ -129,6 +132,10 @@ main(int argc, char* argv[])
 				std::cerr << "Error - Invalid parameters! m: " << optarg << std::endl;
 				return 0;
 			}
+			break;
+		}
+		case 'p': {
+			opt::positioned = true;
 			break;
 		}
 		case 'v': {
@@ -182,6 +189,7 @@ main(int argc, char* argv[])
 	double sTime = omp_get_wtime();
 #endif
 	std::string barcodeBuffer;
+	std::string minimizerWithPosBuffer;
 	Minimizer minimizerBuffer;
 
 	// read in minimizer file
@@ -201,14 +209,34 @@ main(int argc, char* argv[])
 				barcodeToStr.emplace_back(barcodeBuffer);
 				barcodes[barcodeBuffer] = barcodeToStr.size() - 1;
 				barcodeToMinimizer.emplace_back(std::vector<Minimizer>());
-				while (ss >> minimizerBuffer) {
-					barcodeToMinimizer[barcodeToStr.size() - 1].emplace_back(minimizerBuffer);
-					minimizerToBarcode[minimizerBuffer].insert(barcodeToStr.size() - 1);
+				if (opt::positioned) {
+					while (ss >> minimizerWithPosBuffer) {
+						std::stringstream ss2(minimizerWithPosBuffer);
+						std::getline(ss2, minimizerWithPosBuffer, ':');
+						minimizerBuffer = std::stoull(minimizerWithPosBuffer);
+						barcodeToMinimizer[barcodeToStr.size() - 1].emplace_back(minimizerBuffer);
+						minimizerToBarcode[minimizerBuffer].insert(barcodeToStr.size() - 1);
+					}
+				} else {
+					while (ss >> minimizerBuffer) {
+						barcodeToMinimizer[barcodeToStr.size() - 1].emplace_back(minimizerBuffer);
+						minimizerToBarcode[minimizerBuffer].insert(barcodeToStr.size() - 1);
+					}
 				}
 			} else {
-				while (ss >> minimizerBuffer) {
-					barcodeToMinimizer[barcode->second].emplace_back(minimizerBuffer);
-					minimizerToBarcode[minimizerBuffer].insert(barcode->second);
+				if (opt::positioned) {
+					while (ss >> minimizerWithPosBuffer) {
+						std::stringstream ss2(minimizerWithPosBuffer);
+						std::getline(ss2, minimizerWithPosBuffer, ':');
+						minimizerBuffer = std::stoull(minimizerWithPosBuffer);
+						barcodeToMinimizer[barcode->second].emplace_back(minimizerBuffer);
+						minimizerToBarcode[minimizerBuffer].insert(barcode->second);
+					}
+				} else {
+					while (ss >> minimizerBuffer) {
+						barcodeToMinimizer[barcode->second].emplace_back(minimizerBuffer);
+						minimizerToBarcode[minimizerBuffer].insert(barcode->second);
+					}
 				}
 			}
 		}
