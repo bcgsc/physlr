@@ -766,7 +766,7 @@ ws77111.fq.gz: ws77111.lrbasic.trimadap.fq.gz
 
 # Homopolymer compress the Fastq file and add fake quality scores to maintain the format.
 %.hpc.fq: %.fq
-	seqtk hpc $< | seqtk seq -F '@' >$@
+	$(time) seqtk hpc $< | seqtk seq -F '@' >$@
 
 ################################################################################
 # EMA
