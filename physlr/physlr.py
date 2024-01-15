@@ -17,8 +17,10 @@ import numpy as np
 from collections import Counter
 # import pysam
 
+from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import RANSACRegressor
+from sklearn.linear_model import HuberRegressor
 
 import networkx as nx
 import tqdm
@@ -469,7 +471,59 @@ class Physlr:
         # print timeit and read filename
         print(int(timeit.default_timer() - t0), "Read ", filename, file=sys.stderr)
         return pairs
-
+    
+    @staticmethod
+    def sort_mxs_pos(mxs):
+        mxs.sort(key=lambda x: x[0])
+        return mxs
+    
+    @staticmethod
+    def overlap_read_pairs_pos(bxtomxs, read_pairs):
+        """
+        Return the overlap signatures for read pairs based on their minimizers and minimizer positions.
+        """
+        print(int(timeit.default_timer() - t0),
+              "Calculating the minimizer overlap signatures for read pairs:",
+              file=sys.stderr)
+        
+        mapped_read_pairs = []
+        bxtomxs_sorted = {}
+        
+        for read_pair in progress(read_pairs):
+            pos1, pos2 = [], []
+            read1 = read_pair[0]
+            read2 = read_pair[1]
+            weight = read_pair[2]
+            if read1 in bxtomxs and read2 in bxtomxs:
+                if read1 not in bxtomxs_sorted:
+                    bxtomxs[read1] = Physlr.sort_mxs_pos(bxtomxs[read1])
+                    bxtomxs_sorted[read1] = True
+                mxs1 = bxtomxs[read1]
+                mxs2 = bxtomxs[read2]
+                mxs2_mxshash = [mx[1] for mx in mxs2]
+                non_zero_met = False
+                for i in range(len(mxs1)):
+                    
+                    # index = mxs2.index(mxs1[i][1], key=lambda x: x[1])
+                    index = mxs2_mxshash.index(mxs1[i][1]) if mxs1[i][1] in mxs2_mxshash else -0
+                    if index != 0:
+                        non_zero_met = True
+                        pos1.append(mxs1[i][0])
+                        pos2.append(mxs2[index][0])
+                    else:
+                        if non_zero_met:
+                            pos1.append(mxs1[i][0])
+                            pos2.append(0)
+            
+            # remove zeros from the end of pos2 (and the corresponding pos1)
+            while pos2[-1] == 0:
+                pos2.pop()
+                pos1.pop()
+            
+            mapped_read_pairs.append([read1, read2, weight, pos1, pos2])
+                
+        return mapped_read_pairs
+    
     @staticmethod
     def overlap_read_pairs(bxtomxs, read_pairs):
         "Calculate the overlap signatures for read pairs."
@@ -1109,6 +1163,19 @@ class Physlr:
         for indices in indices_list:
             print(indices[0], indices[1], indices[2], ','.join(map(str, indices[3])), sep='\t', file=sys.stdout)
 
+    def physlr_evaluate_read_pairs(self):
+        bxtomxs = Physlr.read_minimizers_pos([self.args.FILES[0]], ordered=True)
+        read_pairs = Physlr.read_read_pairs(self.args.FILES[1])
+        mapped_read_pairs = Physlr.overlap_read_pairs_pos(bxtomxs, read_pairs)
+        scored_indices_list = []
+        for mapped_read_pair in mapped_read_pairs:
+            overlap, orientation, slope, r_sq = Physlr.overlap_assess_orient(mapped_read_pair[3], mapped_read_pair[4])
+            scored_indices_list.append([mapped_read_pair[0], mapped_read_pair[1], mapped_read_pair[2], overlap, orientation, slope, r_sq])
+        for scored_indices in scored_indices_list:
+            print(timeit.default_timer() - t0," Printing the results.", file=sys.stderr)
+            print("read1, read2, weight, overlap, orientation, slope, r_sq", file=sys.stdout)
+            print(scored_indices[0], scored_indices[1], scored_indices[2], scored_indices[3], scored_indices[4], scored_indices[5], scored_indices[6], sep='\t', file=sys.stdout)
+    
     def physlr_score_read_pairs(self):
         # overlap read pairs and score the minimizer signatures using orient_eval_order
         bxtomxs = Physlr.read_minimizers([self.args.FILES[0]], ordered=True)
@@ -2134,6 +2201,121 @@ class Physlr:
         lis.reverse()
 
         return lis
+
+    @staticmethod
+    def sort_relative(first, second):
+        perm = np.argsort(first)
+        sorted_first = list(np.array(first)[perm])
+        sorted_second = list(np.array(second)[perm])
+        return sorted_first, sorted_second
+
+    @staticmethod
+    def skip_unrelated_tails(first, second):
+        """
+        for a pair of overlapping reads, skip tails if they do not overlap.
+        """
+        first, second = Physlr.sort_relative(first, second)
+        
+        perc0 = 0.70
+        chunk_count = 30
+        first_overlapping = []
+        second_overlapping = []
+        chunk_size = int(len(first)/chunk_count)
+        
+        for i in range(chunk_count):
+            first_chunk = first[i*chunk_size:(i+1)*chunk_size]
+            second_chunk = second[i*chunk_size:(i+1)*chunk_size]
+            if (first_chunk.count(0) > (perc0*chunk_size)) or (second_chunk.count(0) > (perc0*chunk_size)):
+                continue
+            else:
+                first_overlapping.extend(first_chunk)
+                second_overlapping.extend(second_chunk)
+                
+        return first_overlapping, second_overlapping
+
+    @staticmethod
+    def calc_confidence_interval(x, y, y_pred):
+        """
+        Use x, y and predicted y (linear regression) to calculate the confidence interval for the model coefficients.
+        """
+        residuals = y - y_pred
+        s = np.sqrt(np.sum(residuals**2)/(len(x)-2))
+        t = stats.t.ppf(0.975, len(x)-2)
+        ci = t * s * np.sqrt(1/len(x) + (x - np.mean(x))**2 / np.sum((x - np.mean(x))**2))
+        
+        return ci
+    
+    @staticmethod
+    def linear_regression_full(first, second):
+        x = np.array(x).reshape((-1, 1))
+        y = np.array(y)
+        model = LinearRegression()
+        model.fit(x, y)
+        r_sq = model.score(x, y)
+        
+        # calculate the confidence interval for the model coefficients
+        ci = Physlr.calc_confidence_interval(x, y, model.predict(x))
+        
+        # y_pred = model.predict(x)
+        # residuals = y - y_pred
+        # s = np.sqrt(np.sum(residuals**2)/(len(x)-2))
+        # t = stats.t.ppf(0.975, len(x)-2)
+        # ci = t * s * np.sqrt(1/len(x) + (x - np.mean(x))**2 / np.sum((x - np.mean(x))**2))
+        
+        # May want to use model.intercept_ in the future
+        return model.coef_, r_sq, ci
+    
+    @staticmethod
+    def huber_linear_regression(first, second, epsilon=1.35):
+        """
+        Use Huber Regressor to fit a linear model to the data. Control amount of outliers with epsilon.
+        """
+        x = np.array(first).reshape((-1, 1))
+        y = np.array(second)
+        model = HuberRegressor(epsilon=epsilon)
+        model.fit(x, y)
+        r_sq = model.score(x, y)
+        
+        # calculate the confidence interval for the model coefficients
+        ci = Physlr.calc_confidence_interval(x, y, model.predict(x))
+
+        return model.coef_, r_sq, ci
+    
+    @staticmethod
+    def ransac_linear_regression(first, second, min_samples=0.9):
+        """
+        Use RANSAC Regressor to fit a linear model to the data. Control amount of outliers with min_samples.
+        """
+        x = np.array(first).reshape((-1, 1))
+        y = np.array(second)
+        model = RANSACRegressor(base_estimator=LinearRegression(), min_samples=min_samples)
+        model.fit(x, y)
+        r_sq = model.score(x, y)
+        # calculate the confidence interval for the model coefficients
+        ci = Physlr.calc_confidence_interval(x, y, model.predict(x))
+        
+        return model.estimator_.coef_, r_sq, ci
+          
+    @staticmethod
+    def overlap_assess_orient(first, second, technique=1):
+        """
+        Given the location of minimizers on two reads:
+        assess the quality of the overlap between the two reads, and determine the orientation of the overlap.
+        """
+        r_sq_threshold = 0.85
+        slope_range = [0.9, 1.1]
+        
+        first_overlap, second_overlap = Physlr.skip_unrelated_tails(first, second)
+        
+        if (technique == 1):
+            slope, r_sq, ci = Physlr.linear_regression_full(first_overlap, second_overlap)
+            if abs(slope) > slope_range[0] and abs(slope) < slope_range[1]:
+                if r_sq > r_sq_threshold:
+                    return True, "+" if slope > 0 else "-", slope, r_sq
+                else:
+                    return False, ".", slope, r_sq
+            else:
+                return False, ".", slope, r_sq
 
     @staticmethod
     def orient_eval_order(indices_ordered, technique = 3, lr_model = "linear"):
