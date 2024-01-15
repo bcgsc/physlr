@@ -71,7 +71,7 @@ endif
 endif
 
 # Minimum number of overlapping minimizers
-m=90
+m=92.5
 ifdef protocol
 ifeq ($(protocol), stlfr)
 m=85
@@ -211,7 +211,7 @@ help:
 	@echo "Usage: physlr [COMMAND] [OPTION=VALUE]..."
 	@echo "    Commands:"
 	@echo ""
-	@echo "	physical-map		run physlr and generate a physical map with linked reads (10X or stLFR)."
+	@echo "	physical-map		run physlr and generate a physical map with linked reads (10X or stLFR) or long reads."
 	@echo "	map-quality		calculate assembly-like quality metrics for a physical map (using a reference)."
 	@echo "	scaffolds	        run physlr and scaffold an existing assembly with a physical map."
 	@echo "	help                    display this help page."
@@ -232,9 +232,10 @@ help:
 	@echo " 			3: verbose messages."
 	@echo "	m 	% of edges to remove in the overlap graph [90]. Available options are [0-100]."
 	@echo "	python_executable	Path to the Python executable [pypy3]."
-	@echo "	protocol		Available options are stlfr and 10x. Specify the protocol option to use the default m value for the respective linked read protocol."
+	@echo "	protocol		Available options are stlfr and 10x for linked reads and ont and pacbio for long reads. Specify the protocol option to use correct pipeline for linked/long read dataset and the default m value for the respective read protocol."
 	@echo "					stlfr: m=85."
 	@echo "					10x: m=92.5."
+	@echo "					else: m=92.5."
 	@echo "					Default values for stlfr and 10x were obtained by finding a value that worked well across multiple data sets."
 	@echo "					Increasing this parameter would generate more conservative results."
 	@echo "					NOTE: protocol option overrides 'm'."
