@@ -89,6 +89,7 @@ bin/physlr-make help
 * [ntHits](https://github.com/bcgsc/ntHits)
 * [btllib](https://github.com/bcgsc/btllib)
 * GCC 5 or newer with [OpenMP](https://www.openmp.org) and [boost](https://www.boost.org)
+* [seqtk](https://github.com/lh3/seqtk) v1.4 (r122) for homopolymer compression of the input fastq file
 * Python 3.5 or newer and the following packages
     * [community](https://python-louvain.readthedocs.io/en/latest/api.html)
     * [networkx](https://networkx.github.io/)

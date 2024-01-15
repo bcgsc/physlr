@@ -764,6 +764,8 @@ ws77111.fq.gz: ws77111.lrbasic.trimadap.fq.gz
 %.scaftigs.fa: %.fa
 	seqtk cutN -n1 $< | tr :- _ | seqtk seq >$@
 
+%.hpc.fq: %.fq
+    seqtk hpc x.fq | seqtk seq -F '@'
 ################################################################################
 # EMA
 
