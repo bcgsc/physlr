@@ -764,8 +764,9 @@ ws77111.fq.gz: ws77111.lrbasic.trimadap.fq.gz
 %.scaftigs.fa: %.fa
 	seqtk cutN -n1 $< | tr :- _ | seqtk seq >$@
 
+# Homopolymer compress the Fastq file and add fake quality scores to maintain the format.
 %.hpc.fq: %.fq
-    seqtk hpc x.fq | seqtk seq -F '@'
+    seqtk hpc x.fq | seqtk seq -F '@' >$@
 ################################################################################
 # EMA
 
