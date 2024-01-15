@@ -87,7 +87,7 @@ bin/physlr-make help
 
 * [ntCard](https://github.com/bcgsc/ntCard)
 * [ntHits](https://github.com/bcgsc/ntHits)
-* [btllib](https://github.com/bcgsc/btllib)
+* [btllib](https://github.com/bcgsc/btllib) >= v1.5.0
 * GCC 5 or newer with [OpenMP](https://www.openmp.org) and [boost](https://www.boost.org)
 * [seqtk](https://github.com/lh3/seqtk) v1.4 (r122) for homopolymer compression of the input fastq file
 * Python 3.5 or newer and the following packages

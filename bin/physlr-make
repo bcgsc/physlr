@@ -40,6 +40,25 @@ python_executable=pypy3
 # Python interpreter.
 python=env PYTHONPATH=$(physlr_path) $(python_executable)
 
+# Indexlr sequencing technology
+seq_tech := --bx
+ifdef protocol
+
+ifneq ($(filter $(protocol),long ont pacbio),)
+	seq_tech := --long
+endif
+
+ifeq ($(filter $(protocol),long ont pacbio linked 10x stlfr),)
+$(error Invalid protocol value: $(protocol))
+endif
+endif
+
+# Indexlr inputs
+indexlr_read_params := $(seq_tech)
+ifdef indexlr_opts
+indexlr_read_params := $(seq_tech) $(indexlr_opts)
+endif
+
 # Name of the dataset.
 ifneq ($(filter z11%, $(ref)),)
 name=fish
@@ -874,13 +893,13 @@ $(ref)/$(ref).fa: $(ref).fa
 %.fa.gap.bed: %.fa
 	$(python) $(bin)/physlr fasta-gaps $< >$@
 
-# Index a FASTA file.
+# Index a FASTA file using indexlr.
 %.k$k-w$w.physlr.tsv: %.fa $(lr).k$k.bf
-	indexlr -t$t -k$k -w$w -r $(lr).k$k.bf --pos -o $@ $<
+	indexlr --long -t$t -k$k -w$w -r $(lr).k$k.bf --pos -o $@ $<
 
-# Index a compressed FASTQ file of linked reads.
+# Index a compressed FASTQ file of linked reads or long reads.
 %.k$k-w$w.physlr.tsv.gz: %.fq.gz %.k$k.bf
-	$(zcat) $< | $(time) indexlr --bx -t$t -k$k -w$w -r $(lr).k$k.bf - | $(gzip) >$@
+	$(zcat) $< | $(time) indexlr $(indexlr_read_params) -t$t -k$k -w$w -r $(lr).k$k.bf - | $(gzip) >$@
 
 # Identify the overlapping minimizers of each pair of barcodes.
 %.physlr.intersect.tsv: %.physlr.tsv

@@ -5,10 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="physlr",
-    version="1.0.4",
+    version="1.1.0",
     author="Amirhossein Afshinfard",
     author_email="aafshinfard@bcgsc.ca",
-    description="Next-generation Physical Maps using Linked Reads",
+    description="Next-generation Physical Maps using Linked Reads or Long Reads",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/bcgsc/physlr",
