@@ -131,7 +131,7 @@ arcs=false
 .DELETE_ON_ERROR:
 .SECONDARY:
 
-.PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map scaffolds
+.PHONY: f1chr4 f1chr2R f1 fishchr25 fish physical-map scaffolds non-chimerics
 all: f1chr4 f1chr2R f1 fishchr25 fish
 
 $(lr).physlr.physical-map.path: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.path
@@ -144,6 +144,9 @@ $(lr).physlr.physical-map.$(ref).map-quality.tsv: $(lr).physlr.physical-map.$(re
 	ln -sf $< $@
 
 $(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
+	ln -sf $< $@
+
+$(lr).physlr.non-chimerics.fq.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.reads.uniq.fq.gz
 	ln -sf $< $@
 
 scaffolds:
@@ -187,6 +190,17 @@ physical-map: \
 endif
 endif
 
+non-chimerics:
+
+ifndef lr
+non-chimerics: help
+	@echo ""
+	@echo "non-chimerics rule requires the lr parameter to be set"
+else
+non-chimerics: \
+	$(lr).physlr.non-chimerics.fq.gz
+	$(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.reads.fq.gz
+
 map-quality:
 
 ifndef lr
@@ -214,6 +228,7 @@ help:
 	@echo "	physical-map		run physlr and generate a physical map with linked reads (10X or stLFR) or long reads."
 	@echo "	map-quality		calculate assembly-like quality metrics for a physical map (using a reference)."
 	@echo "	scaffolds	        run physlr and scaffold an existing assembly with a physical map."
+	@echo "	non-chimerics		run physlr to exclude erroneous and chimeric reads from the read dataset (serves a better input to other tools like GoldRush)."
 	@echo "	help                    display this help page."
 	@echo "	version                 display the software version."
 	@echo ""
@@ -1194,6 +1209,30 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 # Separate barcodes into molecules using Louvain community detection.
 %.louvain.mol.tsv: %.tsv
 	$(time) $(python) $(bin)/physlr molecules -V$V -t$(max_t_py_molsep) --separation-strategy=bc+louvain $< >$@
+
+# output names of all the molecule names present in the molecule overlap graph, 
+%.mol.mols: %.mol.tsv
+	awk 'NF != 2 {print NR-1; exit}' $< | xargs -I {} head -n {} $< | awk 'NR > 1 {print $$1}' >$@
+
+# output names of all the reads present in the molecule overlap graph
+%.mol.reads: %.mol.mols
+	awk -F '_' '{sub(/_[0-9]+$/, "", $0); print}' $< | sort | uniq >$@
+
+# output names of the reads present with only one molecule in the molecule overlap graph
+%.mol.reads.uniq: %.mol.mols
+	awk -F '_' '{sub(/_[0-9]+$/, "", $0); print}' $< | srot | uniq -c | awk '$$1 == 1 {print $$2}' >$@
+
+# output names of the reads present with more than one molecule in the molecule overlap graph
+%.mol.reads.multi: %.mol.mols
+	awk -F '_' '{sub(/_[0-9]+$/, "", $0); print}' $< | srot | uniq -c | awk '$$1 > 1 {print $$2}' >$@
+
+# subsample the input read dataset to only include reads with readnames present in mol.reads
+%.mol.reads.fq.gz: $(lr).fq.gz %.mol.reads
+	seqtk subseq $< $*.mol.reads | $(gzip) >$@
+
+# subsample the input read dataset to only include reads with readnames present in mol.reads.uniq
+%.mol.reads.uniq.fq.gz: $(lr).fq.gz %.mol.reads.uniq
+	seqtk subseq $< $*.mol.reads.uniq | $(gzip) >$@
 
 # Make a vertex-induced subgraph
 %.subgraph-d$d.tsv: %.tsv
