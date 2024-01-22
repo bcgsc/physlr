@@ -200,6 +200,7 @@ else
 non-chimerics: \
 	$(lr).physlr.non-chimerics.fq.gz
 	$(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.reads.fq.gz
+endif
 
 map-quality:
 
