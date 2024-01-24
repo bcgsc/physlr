@@ -204,8 +204,8 @@ filter-reads: help
 	@echo "filter-reads rule requires the lr parameter to be set"
 else
 filter-reads: \
-	$(lr).physlr.mol.fq.gz
-	$(lr).physlr.mol.uniq.fq.gz
+	$(lr).physlr.mol.fq.gz \
+	$(lr).physlr.mol.uniq.fq.gz \
 	$(lr).physlr.$(lr).non-multi.fq.gz
 endif
 
