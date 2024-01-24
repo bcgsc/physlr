@@ -1244,7 +1244,7 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 
 # exclude the reads in mol.reads.multi from the input read dataset
 %.mol.$(lr).non-multi.fq.gz: $(lr).fq.gz %.mol.reads.multi
-	 $(zcat) $< | paste - - - - | grep -v -f -F $*.mol.reads.multi | tr "\t" "\n" | $(gzip) >$@
+	 $(zcat) $< | paste - - - - | grep -v -F -f $*.mol.reads.multi | tr "\t" "\n" | $(gzip) >$@
 
 # Make a vertex-induced subgraph
 %.subgraph-d$d.tsv: %.tsv
