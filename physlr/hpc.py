@@ -79,7 +79,12 @@ def process_reads(input_file, output_file, batch_size):
     """
     Read in a chunk of reads and do HPC encoding
     """
-    with open(input_file, 'r') as in_file, open(output_file, 'w') as out_file:
+    # make a function map between open ang gzip.open
+    import gzip
+    open_map = {'gz': gzip.open, 'fq': open, 'fastq': open, 'fa': open, 'fasta': open}
+    opener = open_map[input_file.split('.')[-1]]
+    
+    with opener(input_file, 'rt') as in_file, open(output_file, 'w') as out_file:
         counter = 0
         while True:
             print("Working on batch {} - time stamp {}".format(counter, datetime.datetime.now()), file=sys.stderr)
