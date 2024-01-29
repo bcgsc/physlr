@@ -813,6 +813,9 @@ ws77111.fq.gz: ws77111.lrbasic.trimadap.fq.gz
 
 %.hpc.fq.gz: %.fq
 	$(time) seqtk hpc $< | seqtk seq -F 'I' | $(gzip) >$@
+
+%.hpc.fq.gz: %.fq.gz
+	$(time) seqtk hpc $< | seqtk seq -F 'I' | $(gzip) >$@
 ################################################################################
 # gzip
 
