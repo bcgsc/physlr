@@ -1,7 +1,7 @@
 ####################################################################################################
 # Reads a chunks of fasta sequences or fastq reads (-b reads at a time for fastq) and performs RLE (without keeping track of counts), in other words homopolymer compression.
 # example command:
-# pypy3 hpcompress.py -i input.fq -o input.rle.fq -b 100000
+# pypy3 hpc.py -i input.fq -o input.rle.fq -b 100000
 # (automnatcially detects if input is fasta or fastq)
 # Author: Amirhossein Afshinfard aafshinfard@gmail.com
 
