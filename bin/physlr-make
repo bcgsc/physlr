@@ -809,7 +809,20 @@ ws77111.fq.gz: ws77111.lrbasic.trimadap.fq.gz
 
 # Homopolymer compress the Fastq file and add fake quality scores to maintain the format.
 %.hpc.fq: %.fq
-	$(time) seqtk hpc $< | seqtk seq -F '@' >$@
+	$(time) seqtk hpc $< | seqtk seq -F 'I' >$@
+
+%.hpc.fq.gz: %.fq
+	$(time) seqtk hpc $< | seqtk seq -F 'I' | $(gzip) >$@
+################################################################################
+# gzip
+
+# Compress a FASTQ file.
+%.fq.gz: %.fq
+	$(gzip) <$< >$@
+
+# Decompress a FASTQ file.
+%.fq: %.fq.gz
+	$(zcat) $< >$@
 
 ################################################################################
 # EMA
