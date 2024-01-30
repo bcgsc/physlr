@@ -1252,11 +1252,11 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 
 # subsample the input read dataset to only include reads with readnames present in mol.reads
 %.mol.reads.fq.gz: $(lr).fq.gz %.mol.reads
-	seqtk subseq $< $*.mol.reads | $(gzip) >$@
+	$(time) seqtk subseq $< $*.mol.reads | $(gzip) >$@
 
 # subsample the input read dataset to only include reads with readnames present in mol.reads.uniq
 %.mol.reads.uniq.fq.gz: $(lr).fq.gz %.mol.reads.uniq
-	seqtk subseq $< $*.mol.reads.uniq | $(gzip) >$@
+	$(time) seqtk subseq $< $*.mol.reads.uniq | $(gzip) >$@
 
 # exclude the reads in mol.reads.multi from the input read dataset
 %.mol.$(lr).non-multi.fq.gz: $(lr).fq.gz %.mol.reads.multi
