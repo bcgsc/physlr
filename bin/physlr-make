@@ -1236,19 +1236,19 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 
 # output names of all the molecule names present in the molecule overlap graph, 
 %.mol.mols: %.mol.tsv
-	awk 'NF != 2 {print NR-1; exit}' $< | xargs -I {} head -n {} $< | awk 'NR > 1 {print $$1}' >$@
+	$(time) awk 'NF != 2 {print NR-1; exit}' $< | xargs -I {} head -n {} $< | awk 'NR > 1 {print $$1}' >$@
 
 # output names of all the reads present in the molecule overlap graph by removing _number at the end of the read name
 %.mol.reads: %.mol.mols
-	awk '{print $$1}' $< | sed 's/_.*//' | sort | uniq >$@
+	$(time) awk '{print $$1}' $< | sed 's/_.*//' | sort | uniq >$@
 
 # output names of the reads present with only one molecule in the molecule overlap graph
 %.mol.reads.uniq: %.mol.mols
-	awk '{print $$1}' $< | sed 's/_.*//' | sort | uniq -c | awk '$$1 == 1 {print $$2}' >$@
+	$(time) awk '{print $$1}' $< | sed 's/_.*//' | sort | uniq -c | awk '$$1 == 1 {print $$2}' >$@
 
 # output names of the reads present with more than one molecule in the molecule overlap graph
 %.mol.reads.multi: %.mol.mols
-	awk '{print $$1}' $< | sed 's/_.*//' | sort | uniq -c | awk '$$1 > 1 {print $$2}' >$@
+	$(time) awk '{print $$1}' $< | sed 's/_.*//' | sort | uniq -c | awk '$$1 > 1 {print $$2}' >$@
 
 # subsample the input read dataset to only include reads with readnames present in mol.reads
 %.mol.reads.fq.gz: $(lr).fq.gz %.mol.reads
