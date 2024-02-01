@@ -155,13 +155,13 @@ $(lr).physlr.physical-map.$(ref).map-quality.tsv: $(lr).physlr.physical-map.$(re
 $(draft).physlr.fa: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.backbone.map-split.$(draft).n10.sort.best.bed.path.fa
 	ln -sf $< $@
 
-$(lr).physlr.mol.uniq.fq.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.reads.uniq.fq.gz
+$(lr).physlr.mol.uniq.fq.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.reads.uniq.$(lr2).fq.gz
 	ln -sf $< $@
 
-$(lr).physlr.mol.fq.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.reads.fq.gz
+$(lr).physlr.mol.fq.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.reads.$(lr2).fq.gz
 	ln -sf $< $@
 
-$(lr).physlr.$(lr).non-multi.fq.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.$(lr).non-multi.fq.gz
+$(lr).physlr.$(lr2).non-multi.fq.gz: $(lr).k$k-w$w.n$(minimum_barcode_multiplicity)-$(maximum_barcode_multiplicity).c2-x.physlr.overlap.m$m.mol.$(lr2).non-multi.fq.gz
 	ln -sf $< $@
 
 scaffolds:
@@ -1261,11 +1261,11 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 	$(time) awk '{print $$1}' $< | sed 's/_.*//' | sort | uniq -c | awk '$$1 > 1 {print $$2}' >$@
 
 # subsample the lr2 read dataset to only include reads with readnames present in mol.reads
-%.mol.reads.fq.gz: $(lr2).fq.gz %.mol.reads
+%.mol.reads.$(lr2).fq.gz: $(lr2).fq.gz %.mol.reads
 	$(time) seqtk subseq $< $*.mol.reads | $(gzip) >$@
 
 # subsample the lr2 read dataset to only include reads with readnames present in mol.reads.uniq
-%.mol.reads.uniq.fq.gz: $(lr2).fq.gz %.mol.reads.uniq
+%.mol.reads.uniq.$(lr2).fq.gz: $(lr2).fq.gz %.mol.reads.uniq
 	$(time) seqtk subseq $< $*.mol.reads.uniq | $(gzip) >$@
 
 # exclude the reads in mol.reads.multi from the lr2 read dataset
