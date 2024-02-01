@@ -80,6 +80,14 @@ m=92.5
 endif
 endif
 
+# lr2: source read dataset to filter
+ifndef lr2
+lr2=$(lr)
+# if filter-reads is set, but lr2 is not, print a warning that lr2 is set to lr
+ifdef filter-reads
+$(warning lr2 is not set, using lr as lr2: $(lr2).fq.gz)
+endif
+
 # Minimum/Maximum barcode multiplicity
 minimum_barcode_multiplicity=100
 maximum_barcode_multiplicity=5000
@@ -243,7 +251,8 @@ help:
 	@echo "    Options:"
 	@echo "	draft               draft name [draft]. File must have .fa extension."
 	@echo "	ref                 reference name [ref]. File must have .fa extension. If provided, will generate Quast metrics and backbone visualization relative to reference."
-	@echo "	lr                  read name [reads]. File must have .fq.gz extension."
+	@echo "	lr                  input read dataset [reads]. File must have .fq.gz extension."
+	@echo "	lr2                 read dataset to filter (filter-reads) [reads]. File must have .fq.gz extension."
 	@echo "	t		    number of threads used [16]."
 	@echo "	k		    size of k-mers [40]."
 	@echo "	w		    window size to choose minimizers [32]."
@@ -1250,16 +1259,16 @@ g=$(shell awk '{x += $$2} END{print x}' $(name)/$(ref).fa.fai)
 %.mol.reads.multi: %.mol.mols
 	$(time) awk '{print $$1}' $< | sed 's/_.*//' | sort | uniq -c | awk '$$1 > 1 {print $$2}' >$@
 
-# subsample the input read dataset to only include reads with readnames present in mol.reads
-%.mol.reads.fq.gz: $(lr).fq.gz %.mol.reads
+# subsample the lr2 read dataset to only include reads with readnames present in mol.reads
+%.mol.reads.fq.gz: $(lr2).fq.gz %.mol.reads
 	$(time) seqtk subseq $< $*.mol.reads | $(gzip) >$@
 
-# subsample the input read dataset to only include reads with readnames present in mol.reads.uniq
-%.mol.reads.uniq.fq.gz: $(lr).fq.gz %.mol.reads.uniq
+# subsample the lr2 read dataset to only include reads with readnames present in mol.reads.uniq
+%.mol.reads.uniq.fq.gz: $(lr2).fq.gz %.mol.reads.uniq
 	$(time) seqtk subseq $< $*.mol.reads.uniq | $(gzip) >$@
 
-# exclude the reads in mol.reads.multi from the input read dataset
-%.mol.$(lr).non-multi.fq.gz: $(lr).fq.gz %.mol.reads.multi
+# exclude the reads in mol.reads.multi from the lr2 read dataset
+%.mol.$(lr2).non-multi.fq.gz: $(lr2).fq.gz %.mol.reads.multi
 	 $(zcat) $< | paste - - - - | grep -v -F -f $*.mol.reads.multi | tr "\t" "\n" | $(gzip) >$@
 
 # Make a vertex-induced subgraph
