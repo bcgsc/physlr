@@ -87,6 +87,7 @@ lr2=$(lr)
 ifdef filter-reads
 $(warning lr2 is not set, using lr as lr2: $(lr2).fq.gz)
 endif
+endif
 
 # Minimum/Maximum barcode multiplicity
 minimum_barcode_multiplicity=100
